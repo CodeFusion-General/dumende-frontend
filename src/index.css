@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-roboto;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-montserrat font-bold;
+  }
+  
+  .emphasized-text {
+    @apply font-playfair italic;
+  }
+  
+  .section-padding {
+    @apply py-16 px-4 md:px-8 lg:px-12;
+  }
+  
+  .fixed-position {
+    position: fixed;
+    top: 4rem; /* Adjust this value based on your header height */
+    left: 17rem; /* Adjust this value based on your sidebar width */
+    right: 0;
+    width: calc(100% - 17rem);
+  }
+}
+
+/* Custom Utility Classes */
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-dark text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+  }
+  
+  .btn-accent {
+    @apply bg-accent hover:bg-accent-dark text-accent-foreground font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+  }
+  
+  .btn-outline {
+    @apply border border-primary text-primary hover:bg-primary hover:text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .transition-custom {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  /* Navbar Specific Styles */
+  .active-nav-item {
+    @apply text-white relative;
+  }
+  
+  .active-nav-item::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0.5 bg-accent transform origin-bottom-right transition-transform duration-300;
+  }
+  
+  /* Hover animation for nav items */
+  nav a:hover::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0.5 bg-accent scale-x-100 transform origin-bottom-left transition-transform duration-300;
+  }
+}
