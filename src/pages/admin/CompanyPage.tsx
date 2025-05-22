@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +16,22 @@ import {
 } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
+
+/* Backend hazır olduğunda kullanılacak interface:
+interface CompanyDetails {
+  legalName: string;
+  displayName: string;
+  taxNumber: string;
+  taxOffice: string;
+  authorizedPerson: string;
+  companyEmail: string;
+  nationalIdNumber: string;
+  mobilePhone: string;
+  landlinePhone?: string;
+  billingAddress: string;
+  iban: string;
+}
+*/
 
 // Define form schema with validation rules
 const companyFormSchema = z.object({
@@ -36,6 +51,11 @@ const companyFormSchema = z.object({
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
 
 const CompanyPage: React.FC = () => {
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  */
+
   // Initialize form with default values
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -54,7 +74,51 @@ const CompanyPage: React.FC = () => {
     },
   });
 
-  // Form submission handler
+  /* Backend hazır olduğunda kullanılacak useEffect:
+  useEffect(() => {
+    const fetchCompanyDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await companyService.getCompanyDetails();
+        form.reset(response);
+      } catch (error) {
+        console.error('Failed to fetch company details:', error);
+        setError('Şirket bilgileri yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Şirket bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompanyDetails();
+  }, [form]);
+
+  const onSubmit = async (data: CompanyFormValues) => {
+    try {
+      setLoading(true);
+      await companyService.updateCompanyDetails(data);
+      toast({
+        title: "Başarılı",
+        description: "Şirket bilgileri güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update company details:', error);
+      toast({
+        title: "Hata",
+        description: "Şirket bilgileri güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const onSubmit = (data: CompanyFormValues) => {
     console.log('Form submitted:', data);
     toast({

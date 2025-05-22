@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { X, ArrowLeft, Info } from 'lucide-react';
@@ -9,6 +8,7 @@ import ComparisonTable from '@/components/boats/ComparisonTable';
 import Navbar from '@/components/layout/Navbar';
 import EmptyComparison from '@/components/boats/EmptyComparison';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from '@/components/ui/use-toast';
 
 const CompareBoats = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +19,33 @@ const CompareBoats = () => {
   useEffect(() => {
     const boatIds = searchParams.get('ids')?.split(',') || [];
     
+    /* Backend hazır olduğunda kullanılacak kod:
+    if (boatIds.length) {
+      const fetchBoatsToCompare = async () => {
+        try {
+          setLoading(true);
+          const boatsToCompare = await Promise.all(
+            boatIds.map(id => boatService.getBoatById(id))
+          );
+          setSelectedBoats(boatsToCompare.slice(0, 4)); // Maximum 4 boats
+        } catch (error) {
+          console.error('Failed to fetch boats for comparison:', error);
+          setError('Tekneler yüklenirken bir hata oluştu.');
+          toast({
+            title: "Hata",
+            description: "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchBoatsToCompare();
+    }
+    */
+
+    // Mock veri - Backend hazır olduğunda kaldırılacak
     if (boatIds.length) {
       const boatsToCompare = boatListingData.filter(boat => 
         boatIds.includes(boat.id.toString())

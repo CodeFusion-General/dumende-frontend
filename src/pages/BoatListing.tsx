@@ -1,4 +1,5 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ImageGallery from '@/components/boats/ImageGallery';
@@ -11,6 +12,43 @@ import { Card } from '@/components/ui/card';
 import { Star, User } from 'lucide-react';
 
 const BoatListing = () => {
+  const { id } = useParams();
+
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [boatData, setBoatData] = useState<Boat | null>(null);
+  const [similarBoats, setSimilarBoats] = useState<Boat[]>([]);
+
+  useEffect(() => {
+    const fetchBoatData = async () => {
+      try {
+        setLoading(true);
+        const [boatDetails, similar] = await Promise.all([
+          boatService.getBoatById(id),
+          boatService.getSimilarBoats(id)
+        ]);
+        setBoatData(boatDetails);
+        setSimilarBoats(similar);
+      } catch (error) {
+        console.error('Failed to fetch boat details:', error);
+        setError('Tekne bilgileri yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchBoatData();
+    }
+  }, [id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!boatData) return <div>Tekne bulunamadı</div>;
+  */
+
+  // Mock veri - Backend hazır olduğunda kaldırılacak
   const boatData = {
     id: 'hnvtghv',
     name: 'Cruisers Yachts 328',

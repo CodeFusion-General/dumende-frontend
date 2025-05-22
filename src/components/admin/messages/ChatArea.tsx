@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Conversation, Message } from './types';
 import { Send, PaperclipIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ui/use-toast';
 
 interface ChatAreaProps {
   conversation: Conversation;
@@ -13,6 +13,36 @@ interface ChatAreaProps {
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({ conversation, sidebarOpen, toggleSidebar }) => {
+  /* Backend hazır olduğunda kullanılacak state:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        const response = await messageService.getConversationMessages(conversation.id);
+        setMessages(response);
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+        setError('Mesajlar yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Mesajlar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [conversation.id]);
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -62,6 +92,35 @@ const ChatArea: React.FC<ChatAreaProps> = ({ conversation, sidebarOpen, toggleSi
   const handleSend = () => {
     if (!newMessage.trim()) return;
     
+    /* Backend hazır olduğunda kullanılacak kod:
+    const sendMessage = async () => {
+      try {
+        setSending(true);
+        const messageData = {
+          conversationId: conversation.id,
+          text: newMessage,
+          sender: 'captain'
+        };
+        
+        const response = await messageService.sendMessage(messageData);
+        setMessages(prev => [...prev, response]);
+        setNewMessage('');
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        toast({
+          title: "Hata",
+          description: "Mesaj gönderilemedi. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setSending(false);
+      }
+    };
+
+    sendMessage();
+    */
+
+    // Mock implementation - Backend hazır olduğunda kaldırılacak
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -81,6 +140,26 @@ const ChatArea: React.FC<ChatAreaProps> = ({ conversation, sidebarOpen, toggleSi
       handleSend();
     }
   };
+
+  /* Backend hazır olduğunda kullanılacak dosya yükleme fonksiyonu:
+  const handleFileUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('conversationId', conversation.id);
+      
+      const response = await messageService.uploadFile(formData);
+      setMessages(prev => [...prev, response]);
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      toast({
+        title: "Hata",
+        description: "Dosya yüklenemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
 
   return (
     <div className="h-full flex flex-col bg-gray-50">

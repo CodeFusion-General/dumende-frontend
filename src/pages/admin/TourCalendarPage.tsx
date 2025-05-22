@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import CaptainLayout from '@/components/admin/layout/CaptainLayout';
 import { format, parseISO } from 'date-fns';
@@ -7,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from "@/lib/utils";
+import { toast } from '@/components/ui/use-toast';
 
 interface Event {
   date: string;
@@ -16,6 +16,60 @@ interface Event {
 
 const TourCalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    const fetchTourEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await tourService.getTourEvents();
+        setEvents(response);
+      } catch (error) {
+        console.error('Failed to fetch tour events:', error);
+        setError('Tur takvimi yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Tur takvimi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTourEvents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedDate) {
+      const fetchDateEvents = async () => {
+        try {
+          const dateStr = format(selectedDate, 'yyyy-MM-dd');
+          const response = await tourService.getDateEvents(dateStr);
+          setEvents(prev => {
+            const filtered = prev.filter(event => event.date !== dateStr);
+            return [...filtered, ...response];
+          });
+        } catch (error) {
+          console.error('Failed to fetch date events:', error);
+          toast({
+            title: "Hata",
+            description: "Seçilen tarihteki turlar yüklenemedi.",
+            variant: "destructive",
+          });
+        }
+      };
+
+      fetchDateEvents();
+    }
+  }, [selectedDate]);
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const [events, setEvents] = useState<Event[]>([
     { date: '2024-07-10', title: 'Adalar Turu', status: 'scheduled' },
     { date: '2024-07-15', title: 'Gün Batımı Turu', status: 'completed' },
@@ -26,6 +80,45 @@ const TourCalendarPage: React.FC = () => {
     document.documentElement.classList.add('scroll-smooth');
     return () => document.documentElement.classList.remove('scroll-smooth');
   }, []);
+
+  /* Backend hazır olduğunda kullanılacak fonksiyonlar:
+  const handleStatusChange = async (eventId: string, newStatus: string) => {
+    try {
+      await tourService.updateTourStatus(eventId, newStatus);
+      const response = await tourService.getTourEvents();
+      setEvents(response);
+      toast({
+        title: "Başarılı",
+        description: "Tur durumu güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update tour status:', error);
+      toast({
+        title: "Hata",
+        description: "Tur durumu güncellenemedi.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await tourService.deleteTourEvent(eventId);
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+      toast({
+        title: "Başarılı",
+        description: "Tur silindi.",
+      });
+    } catch (error) {
+      console.error('Failed to delete tour event:', error);
+      toast({
+        title: "Hata",
+        description: "Tur silinemedi.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
 
   const getStatusColor = (status: string) => {
     switch (status) {

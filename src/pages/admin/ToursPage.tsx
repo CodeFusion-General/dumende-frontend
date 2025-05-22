@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CaptainLayout from '@/components/admin/layout/CaptainLayout';
 import { Button } from '@/components/ui/button';
@@ -7,40 +6,20 @@ import { useNavigate } from 'react-router-dom';
 import ToursList from '@/components/admin/tours/ToursList';
 import TourFilters from '@/components/admin/tours/TourFilters';
 import EmptyTours from '@/components/admin/tours/EmptyTours';
+import { toast } from '@/components/ui/use-toast';
 
-// Mock data for tours
-const mockTours = [
-  {
-    id: '1',
-    title: 'Günbatımı Turu',
-    duration: '2 saat',
-    price: 1200,
-    location: 'İstanbul, Bebek',
-    status: 'active',
-    image: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
-    boat: 'Mavi Rüzgar'
-  },
-  {
-    id: '2',
-    title: 'Adalar Turu',
-    duration: '4 saat',
-    price: 2500,
-    location: 'İstanbul, Kadıköy',
-    status: 'draft',
-    image: 'https://images.unsplash.com/photo-1589046207215-55114aecf5a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
-    boat: 'Deniz Yıldızı'
-  },
-  {
-    id: '3',
-    title: 'Özel Yelken Turu',
-    duration: '6 saat',
-    price: 5000,
-    location: 'Bodrum, Yalıkavak',
-    status: 'inactive',
-    image: 'https://images.unsplash.com/photo-1669125256832-9e414ffc2d67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
-    boat: 'Rüzgar Gülü'
-  }
-];
+/* Backend hazır olduğunda kullanılacak interface:
+interface Tour {
+  id: string;
+  title: string;
+  duration: string;
+  price: number;
+  location: string;
+  status: 'active' | 'draft' | 'inactive';
+  image: string;
+  boat: string;
+}
+*/
 
 const ToursPage = () => {
   const navigate = useNavigate();
@@ -48,7 +27,68 @@ const ToursPage = () => {
   const [locationFilter, setLocationFilter] = useState('all');
   const [durationFilter, setDurationFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
-  const [tours, setTours] = useState(mockTours);
+  
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tours, setTours] = useState<Tour[]>([]);
+
+  useEffect(() => {
+    const fetchTours = async () => {
+      try {
+        setLoading(true);
+        const response = await tourService.getTours();
+        setTours(response);
+      } catch (error) {
+        console.error('Failed to fetch tours:', error);
+        setError('Turlar yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Turlar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTours();
+  }, []);
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
+  const [tours, setTours] = useState([
+    {
+      id: '1',
+      title: 'Günbatımı Turu',
+      duration: '2 saat',
+      price: 1200,
+      location: 'İstanbul, Bebek',
+      status: 'active',
+      image: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
+      boat: 'Mavi Rüzgar'
+    },
+    {
+      id: '2',
+      title: 'Adalar Turu',
+      duration: '4 saat',
+      price: 2500,
+      location: 'İstanbul, Kadıköy',
+      status: 'draft',
+      image: 'https://images.unsplash.com/photo-1589046207215-55114aecf5a3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
+      boat: 'Deniz Yıldızı'
+    },
+    {
+      id: '3',
+      title: 'Özel Yelken Turu',
+      duration: '6 saat',
+      price: 5000,
+      location: 'Bodrum, Yalıkavak',
+      status: 'inactive',
+      image: 'https://images.unsplash.com/photo-1669125256832-9e414ffc2d67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80',
+      boat: 'Rüzgar Gülü'
+    }
+  ]);
 
   const handleAddTour = () => {
     navigate('/captain/tours/new');
@@ -74,6 +114,46 @@ const ToursPage = () => {
     return matchesSearch && matchesLocation && matchesDuration && matchesPrice;
   });
 
+  /* Backend hazır olduğunda kullanılacak fonksiyonlar:
+  const handleDelete = async (id: string) => {
+    try {
+      await tourService.deleteTour(id);
+      setTours(prev => prev.filter(tour => tour.id !== id));
+      toast({
+        title: "Başarılı",
+        description: "Tur silindi.",
+      });
+    } catch (error) {
+      console.error('Failed to delete tour:', error);
+      toast({
+        title: "Hata",
+        description: "Tur silinemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await tourService.updateTourStatus(id, status);
+      const response = await tourService.getTours();
+      setTours(response);
+      toast({
+        title: "Başarılı",
+        description: "Tur durumu güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update tour status:', error);
+      toast({
+        title: "Hata",
+        description: "Tur durumu güncellenemedi.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const handleDelete = (id: string) => {
     setTours(tours.filter(tour => tour.id !== id));
   };

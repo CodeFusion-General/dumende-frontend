@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -8,6 +7,31 @@ import { Clock } from 'lucide-react';
 
 const Blog = () => {
   const { language } = useLanguage();
+  
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await blogService.getAllPosts();
+        setPosts(response);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch blog posts:', error);
+        setError(error);
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading blog posts</div>;
+  */
   
   const translations = {
     tr: {
@@ -24,6 +48,7 @@ const Blog = () => {
 
   const t = translations[language];
 
+  // Mock veri - Backend hazır olduğunda kaldırılacak
   const posts = [
     {
       id: "1",

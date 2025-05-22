@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CaptainLayout from '@/components/admin/layout/CaptainLayout';
 import VesselsList from '@/components/admin/vessels/VesselsList';
@@ -8,11 +7,70 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Ship, Plus, FileText, Shield, Utensils, MapPin, Image, Calendar } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 const VesselsPage = () => {
   const [activeTab, setActiveTab] = useState('list');
   const [editingVesselId, setEditingVesselId] = useState<string | null>(null);
   const [formTab, setFormTab] = useState('details');
+
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [vessel, setVessel] = useState<Vessel | null>(null);
+  const [formData, setFormData] = useState<VesselFormData>({
+    type: '',
+    brandModel: '',
+    name: '',
+    buildYear: '',
+    lastMaintenanceYear: '',
+    toiletCount: '',
+    fullCapacity: '',
+    diningCapacity: '',
+    length: '',
+    flag: '',
+    material: '',
+    // ... diğer form alanları
+  });
+
+  useEffect(() => {
+    if (editingVesselId) {
+      const fetchVessel = async () => {
+        try {
+          setLoading(true);
+          const response = await vesselService.getVesselById(editingVesselId);
+          setVessel(response);
+          setFormData({
+            type: response.type,
+            brandModel: response.brandModel,
+            name: response.name,
+            buildYear: response.buildYear,
+            lastMaintenanceYear: response.lastMaintenanceYear,
+            toiletCount: response.toiletCount,
+            fullCapacity: response.fullCapacity,
+            diningCapacity: response.diningCapacity,
+            length: response.length,
+            flag: response.flag,
+            material: response.material,
+            // ... diğer form alanları
+          });
+        } catch (error) {
+          console.error('Failed to fetch vessel:', error);
+          setError('Tekne bilgileri yüklenirken bir hata oluştu.');
+          toast({
+            title: "Hata",
+            description: "Tekne bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchVessel();
+    }
+  }, [editingVesselId]);
+  */
 
   const handleAddVessel = () => {
     setEditingVesselId(null);
@@ -30,6 +88,91 @@ const VesselsPage = () => {
     setActiveTab('list');
     setEditingVesselId(null);
   };
+
+  /* Backend hazır olduğunda kullanılacak form submit fonksiyonu:
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      
+      if (editingVesselId) {
+        await vesselService.updateVessel(editingVesselId, formData);
+        toast({
+          title: "Başarılı",
+          description: "Tekne bilgileri güncellendi.",
+        });
+      } else {
+        await vesselService.createVessel(formData);
+        toast({
+          title: "Başarılı",
+          description: "Yeni tekne eklendi.",
+        });
+      }
+      
+      handleBackToList();
+    } catch (error) {
+      console.error('Failed to save vessel:', error);
+      toast({
+        title: "Hata",
+        description: "Tekne kaydedilemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteVessel = async (id: string) => {
+    try {
+      await vesselService.deleteVessel(id);
+      toast({
+        title: "Başarılı",
+        description: "Tekne silindi.",
+      });
+      handleBackToList();
+    } catch (error) {
+      console.error('Failed to delete vessel:', error);
+      toast({
+        title: "Hata",
+        description: "Tekne silinemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleImageUpload = async (files: FileList) => {
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('images', file);
+      });
+      
+      if (editingVesselId) {
+        formData.append('vesselId', editingVesselId);
+      }
+      
+      const response = await vesselService.uploadImages(formData);
+      toast({
+        title: "Başarılı",
+        description: "Fotoğraflar yüklendi.",
+      });
+      
+      // Form datasını güncelle
+      setFormData(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...response.images]
+      }));
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      toast({
+        title: "Hata",
+        description: "Fotoğraflar yüklenemedi. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
 
   return (
     <CaptainLayout>

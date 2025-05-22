@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CaptainLayout from '@/components/admin/layout/CaptainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,11 +5,109 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarIcon, Clock, Edit, Trash2, Plus } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { toast } from '@/components/ui/use-toast';
+
+/* Backend hazır olduğunda kullanılacak interface:
+interface Availability {
+  id: string;
+  tourName: string;
+  vesselName: string;
+  startDate: string;
+  endDate: string;
+  status: 'available' | 'reserved' | 'completed';
+  vesselId: string;
+  tourId: string;
+}
+*/
 
 const AvailabilityPage = () => {
   const [activeTab, setActiveTab] = useState('available');
 
-  // Mock data for availability entries
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [availabilityEntries, setAvailabilityEntries] = useState<Availability[]>([]);
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        setLoading(true);
+        const response = await availabilityService.getAvailability();
+        setAvailabilityEntries(response);
+      } catch (error) {
+        console.error('Failed to fetch availability:', error);
+        setError('Müsaitlik bilgileri yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Müsaitlik bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailability();
+  }, []);
+
+  const handleAddAvailability = async (data: Partial<Availability>) => {
+    try {
+      const response = await availabilityService.createAvailability(data);
+      setAvailabilityEntries(prev => [...prev, response]);
+      toast({
+        title: "Başarılı",
+        description: "Yeni müsaitlik eklendi.",
+      });
+    } catch (error) {
+      console.error('Failed to add availability:', error);
+      toast({
+        title: "Hata",
+        description: "Müsaitlik eklenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateAvailability = async (id: string, data: Partial<Availability>) => {
+    try {
+      const response = await availabilityService.updateAvailability(id, data);
+      setAvailabilityEntries(prev => 
+        prev.map(entry => entry.id === id ? response : entry)
+      );
+      toast({
+        title: "Başarılı",
+        description: "Müsaitlik güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update availability:', error);
+      toast({
+        title: "Hata",
+        description: "Müsaitlik güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAvailability = async (id: string) => {
+    try {
+      await availabilityService.deleteAvailability(id);
+      setAvailabilityEntries(prev => prev.filter(entry => entry.id !== id));
+      toast({
+        title: "Başarılı",
+        description: "Müsaitlik silindi.",
+      });
+    } catch (error) {
+      console.error('Failed to delete availability:', error);
+      toast({
+        title: "Hata",
+        description: "Müsaitlik silinirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const availabilityEntries = [
     { 
       id: 1, 

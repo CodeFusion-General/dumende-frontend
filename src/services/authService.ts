@@ -1,56 +1,40 @@
-import axios from "@/lib/axios";
+import { BaseService } from './base/BaseService';
+import { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types/auth.types';
 
-export const register = async (data: any) => {
-    try {
-        const response = await axios.post("/auth/register", data);
-        return response.data;
-    } catch (error) {
-        console.error("Error registering user:", error);
-        throw error;
+class AuthService extends BaseService {
+    constructor() {
+        super('/auth');
+    }
+
+    public async register(data: RegisterRequest): Promise<AuthResponse> {
+        return this.post<AuthResponse>('/register', data);
+    }
+
+    public async login(data: LoginRequest): Promise<AuthResponse> {
+        const response = await this.post<AuthResponse>('/login', data);
+        if (response.token) {
+            localStorage.setItem('token', response.token);
+        }
+        return response;
+    }
+
+    public async logout(): Promise<void> {
+        await this.post<void>('/logout');
+        localStorage.removeItem('token');
+    }
+
+    public async getCurrentUser(): Promise<User> {
+        return this.get<User>('/user');
+    }
+
+    public async updateUser(data: Partial<User>): Promise<User> {
+        return this.put<User>('/user', data);
+    }
+
+    public async deleteUser(): Promise<void> {
+        await this.delete<void>('/user');
+        localStorage.removeItem('token');
     }
 }
-export const login = async (data: any) => {
-    try {
-        const response = await axios.post("/auth/login", data);
-        return response.data;
-    } catch (error) {
-        console.error("Error logging in user:", error);
-        throw error;
-    }
-}
-export const logout = async () => {
-    try {
-        const response = await axios.post("/auth/logout");
-        return response.data;
-    } catch (error) {
-        console.error("Error logging out user:", error);
-        throw error;
-    }
-}
-export const getUser = async () => {
-    try {
-        const response = await axios.get("/auth/user");
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching user:", error);
-        throw error;
-    }
-}
-export const updateUser = async (data: any) => {
-    try {
-        const response = await axios.put("/auth/user", data);
-        return response.data;
-    } catch (error) {
-        console.error("Error updating user:", error);
-        throw error;
-    }
-}
-export const deleteUser = async () => {
-    try {
-        const response = await axios.delete("/auth/user");
-        return response.data;
-    } catch (error) {
-        console.error("Error deleting user:", error);
-        throw error;
-    }
-}
+
+export const authService = new AuthService();

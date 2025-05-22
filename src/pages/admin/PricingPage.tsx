@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import CaptainLayout from '@/components/admin/layout/CaptainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,11 +8,134 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { DollarSign, Info } from 'lucide-react';
 import { Slider } from "@/components/ui/slider";
+import { toast } from '@/components/ui/use-toast';
+
+/* Backend hazır olduğunda kullanılacak interface:
+interface PricingData {
+  vesselId: string;
+  seasonalPricing: boolean;
+  weekendPricing: boolean;
+  standardWeekdayPrice: number;
+  standardWeekendPrice?: number;
+  peakWeekdayPrice?: number;
+  peakWeekendPrice?: number;
+  minimumHours: number;
+  services: {
+    foodService?: number;
+    musicService?: number;
+    decorationService?: number;
+    watersportService?: number;
+  };
+}
+*/
 
 const PricingPage = () => {
   const [activeTab, setActiveTab] = useState('hourly');
+  
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [vessels, setVessels] = useState<any[]>([]);
+  const [selectedVessel, setSelectedVessel] = useState<string>('');
+  const [pricingData, setPricingData] = useState<PricingData>({
+    vesselId: '',
+    seasonalPricing: false,
+    weekendPricing: false,
+    standardWeekdayPrice: 0,
+    minimumHours: 2,
+    services: {}
+  });
+
+  useEffect(() => {
+    const fetchVessels = async () => {
+      try {
+        const response = await vesselService.getVessels();
+        setVessels(response);
+      } catch (error) {
+        console.error('Failed to fetch vessels:', error);
+        toast({
+          title: "Hata",
+          description: "Tekneler yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchVessels();
+  }, []);
+
+  useEffect(() => {
+    if (selectedVessel) {
+      const fetchPricing = async () => {
+        try {
+          setLoading(true);
+          const response = await pricingService.getVesselPricing(selectedVessel);
+          setPricingData(response);
+        } catch (error) {
+          console.error('Failed to fetch pricing:', error);
+          toast({
+            title: "Hata",
+            description: "Fiyat bilgileri yüklenirken bir hata oluştu.",
+            variant: "destructive",
+          });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchPricing();
+    }
+  }, [selectedVessel]);
+  */
+
+  // Mock implementation - Backend hazır olduğunda kaldırılacak
   const [seasonalPricing, setSeasonalPricing] = useState(false);
   const [weekendPricing, setWeekendPricing] = useState(false);
+
+  /* Backend hazır olduğunda kullanılacak fonksiyonlar:
+  const handleVesselChange = (vesselId: string) => {
+    setSelectedVessel(vesselId);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      await pricingService.updateVesselPricing(selectedVessel, pricingData);
+      toast({
+        title: "Başarılı",
+        description: "Fiyat bilgileri güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update pricing:', error);
+      toast({
+        title: "Hata",
+        description: "Fiyat bilgileri güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServicePriceUpdate = async (serviceType: string, price: number) => {
+    try {
+      await pricingService.updateServicePrice(selectedVessel, serviceType, price);
+      toast({
+        title: "Başarılı",
+        description: "Hizmet fiyatı güncellendi.",
+      });
+    } catch (error) {
+      console.error('Failed to update service price:', error);
+      toast({
+        title: "Hata",
+        description: "Hizmet fiyatı güncellenirken bir hata oluştu.",
+        variant: "destructive",
+      });
+    }
+  };
+  */
   
   return (
     <CaptainLayout>

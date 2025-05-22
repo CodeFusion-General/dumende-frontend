@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
@@ -7,7 +6,34 @@ import { Clock } from 'lucide-react';
 const BlogPost = () => {
   const { id } = useParams();
   
-  // This would typically come from an API, using static data for now
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const response = await blogService.getPostById(id);
+        setPost(response);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch blog post:', error);
+        setError(error);
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPost();
+    }
+  }, [id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error loading blog post</div>;
+  */
+  
+  // Mock veri - Backend hazır olduğunda kaldırılacak
   const posts = {
     "1": {
       title: "Türkiye'nin En Güzel 10 Koyu",

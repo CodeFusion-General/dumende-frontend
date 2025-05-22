@@ -1,21 +1,38 @@
-import axios from "@/lib/axios";
+import { BaseService } from './base/BaseService';
+import { ContactMessage, ContactCreateRequest, ContactUpdateRequest } from '@/types/contact.types';
 
-export const postContactForm = async (data: any) => {
-  try {
-    const response = await axios.post("/contact", data);
-    return response.data;
-  } catch (error) {
-    console.error("Error posting contact form:", error);
-    throw error;
-  }
+class ContactService extends BaseService {
+    constructor() {
+        super('/contact');
+    }
+
+    public async getMessages(params?: {
+        status?: string;
+        startDate?: string;
+        endDate?: string;
+    }): Promise<ContactMessage[]> {
+        return this.get<ContactMessage[]>('', params);
+    }
+
+    public async getMessageById(id: number): Promise<ContactMessage> {
+        return this.get<ContactMessage>(`/${id}`);
+    }
+
+    public async createMessage(data: ContactCreateRequest): Promise<ContactMessage> {
+        return this.post<ContactMessage>('', data);
+    }
+
+    public async updateMessageStatus(id: number, data: ContactUpdateRequest): Promise<ContactMessage> {
+        return this.put<ContactMessage>(`/${id}`, data);
+    }
+
+    public async deleteMessage(id: number): Promise<void> {
+        return this.delete<void>(`/${id}`);
+    }
+
+    public async replyToMessage(id: number, reply: string): Promise<ContactMessage> {
+        return this.post<ContactMessage>(`/${id}/reply`, { reply });
+    }
 }
 
-export const postAskSpecialOffer = async (data: any) => {
-  try {
-    const response = await axios.post("/ask-special-offer", data);
-    return response.data;
-  } catch (error) {
-    console.error("Error posting ask special offer:", error);
-    throw error;
-  }
-}
+export const contactService = new ContactService();

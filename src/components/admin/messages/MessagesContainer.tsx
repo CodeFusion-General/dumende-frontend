@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ConversationSidebar from './ConversationSidebar';
 import ChatArea from './ChatArea';
@@ -6,11 +5,60 @@ import EmptyConversationState from './EmptyConversationState';
 import { Conversation } from './types';
 import { MOCK_CONVERSATIONS } from './mockData';
 import { useSidebar } from '@/components/ui/sidebar';
+import { toast } from '@/components/ui/use-toast';
 
 const MessagesContainer = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        const response = await messageService.getConversations();
+        setConversations(response);
+      } catch (error) {
+        console.error('Failed to fetch conversations:', error);
+        setError('Mesajlar yüklenirken bir hata oluştu.');
+        toast({
+          title: "Hata",
+          description: "Mesajlar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      const markAsRead = async () => {
+        try {
+          await messageService.markConversationAsRead(selectedConversation.id);
+          setConversations(prev => 
+            prev.map(conv => 
+              conv.id === selectedConversation.id 
+                ? { ...conv, unreadCount: 0, lastMessage: {...conv.lastMessage, isRead: true} } 
+                : conv
+            )
+          );
+        } catch (error) {
+          console.error('Failed to mark conversation as read:', error);
+        }
+      };
+
+      markAsRead();
+    }
+  }, [selectedConversation]);
+  */
   
   // Get the sidebar state to adjust layout
   const { state } = useSidebar();
@@ -19,7 +67,26 @@ const MessagesContainer = () => {
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
     
-    // Mark as read when selected
+    /* Backend hazır olduğunda kullanılacak kod:
+    // Conversation seçildiğinde mesajları yükle
+    const fetchMessages = async () => {
+      try {
+        const messages = await messageService.getConversationMessages(conversation.id);
+        setSelectedConversation(prev => prev ? { ...prev, messages } : null);
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+        toast({
+          title: "Hata",
+          description: "Mesajlar yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchMessages();
+    */
+    
+    // Mock implementation - Backend hazır olduğunda kaldırılacak
     setConversations(prev => 
       prev.map(conv => 
         conv.id === conversation.id 
@@ -30,6 +97,31 @@ const MessagesContainer = () => {
   };
   
   const handleSearchConversations = (query: string) => {
+    /* Backend hazır olduğunda kullanılacak kod:
+    const searchConversations = async () => {
+      try {
+        if (!query) {
+          const allConversations = await messageService.getConversations();
+          setConversations(allConversations);
+          return;
+        }
+        
+        const results = await messageService.searchConversations(query);
+        setConversations(results);
+      } catch (error) {
+        console.error('Failed to search conversations:', error);
+        toast({
+          title: "Hata",
+          description: "Arama yapılırken bir hata oluştu.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    searchConversations();
+    */
+
+    // Mock implementation - Backend hazır olduğunda kaldırılacak
     if (!query) {
       setConversations(MOCK_CONVERSATIONS);
       return;
@@ -46,6 +138,32 @@ const MessagesContainer = () => {
   };
   
   const handleArchiveConversation = (id: string) => {
+    /* Backend hazır olduğunda kullanılacak kod:
+    const archiveConversation = async () => {
+      try {
+        await messageService.archiveConversation(id);
+        setConversations(prev => prev.filter(conv => conv.id !== id));
+        if (selectedConversation?.id === id) {
+          setSelectedConversation(null);
+        }
+        toast({
+          title: "Başarılı",
+          description: "Konuşma arşivlendi.",
+        });
+      } catch (error) {
+        console.error('Failed to archive conversation:', error);
+        toast({
+          title: "Hata",
+          description: "Konuşma arşivlenirken bir hata oluştu.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    archiveConversation();
+    */
+
+    // Mock implementation - Backend hazır olduğunda kaldırılacak
     setConversations(prev => prev.filter(conv => conv.id !== id));
     if (selectedConversation?.id === id) {
       setSelectedConversation(null);

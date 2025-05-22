@@ -10,6 +10,11 @@ import CompareBar from '@/components/boats/CompareBar';
 import ServiceFilterBadge from '@/components/boats/ServiceFilterBadge';
 import { toast } from '@/components/ui/use-toast';
 
+/* Backend hazır olduğunda kullanılacak servis importları:
+import { boatService } from '@/services/boatService';
+import { Boat, BoatFilters } from '@/types/boat.types';
+*/
+
 const serviceBoatMap: Record<string, string[]> = {
   'evlilik-teklifi': ['Lüks Yat', 'Motorlu Yat'],
   'dogum-gunu': ['Motorlu Yat', 'Sürat Teknesi', 'Katamaran'],
@@ -34,6 +39,13 @@ const BoatsPage = () => {
   const [filteredBoats, setFilteredBoats] = useState(boatListingData);
   const [comparedBoats, setComparedBoats] = useState<string[]>([]);
   
+  /* Backend hazır olduğunda kullanılacak state:
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [allBoats, setAllBoats] = useState<Boat[]>([]);
+  const [filteredBoats, setFilteredBoats] = useState<Boat[]>([]);
+  */
+
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [capacity, setCapacity] = useState<string>('');
@@ -60,9 +72,61 @@ const BoatsPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const serviceParam = searchParams.get('service');
   
+  /* Backend hazır olduğunda kullanılacak useEffect:
+  useEffect(() => {
+    const fetchBoats = async () => {
+      try {
+        setLoading(true);
+        const boats = await boatService.getAllBoats();
+        setAllBoats(boats);
+        setFilteredBoats(boats);
+      } catch (error) {
+        console.error('Failed to fetch boats:', error);
+        setError('Tekneler yüklenirken bir hata oluştu.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoats();
+  }, []);
+  */
+
   useEffect(() => {
     let results = [...allBoats];
     
+    /* Backend hazır olduğunda kullanılacak filtre fonksiyonu:
+    const applyFilters = async () => {
+      try {
+        setLoading(true);
+        const filters: BoatFilters = {
+          types: selectedTypes,
+          locations: selectedLocations,
+          features: selectedFeatures,
+          capacity: capacity ? parseInt(capacity) : undefined,
+          minPrice: priceRange[0],
+          maxPrice: priceRange[1],
+          service: serviceParam || undefined,
+          sortBy: sortBy
+        };
+
+        const filteredResults = await boatService.getFilteredBoats(filters);
+        setFilteredBoats(filteredResults);
+      } catch (error) {
+        console.error('Failed to apply filters:', error);
+        toast({
+          title: "Filtreler uygulanırken hata oluştu",
+          description: "Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // applyFilters();
+    */
+
     if (serviceParam) {
       const compatibleTypes = serviceBoatMap[serviceParam] || [];
       if (compatibleTypes.length > 0) {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -81,6 +80,24 @@ const Register = () => {
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     console.log(values);
+    /* Backend hazır olduğunda kullanılacak kod:
+    try {
+      const registerData = {
+        email: values.email,
+        password: values.password,
+        name: `${values.firstName} ${values.lastName}`,
+        username: values.username
+      };
+      const response = await authService.register(registerData);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      // Hata mesajını kullanıcıya göster
+    }
+    */
   };
 
   return (

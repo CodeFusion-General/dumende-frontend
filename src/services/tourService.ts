@@ -1,20 +1,49 @@
-import axios from "@/lib/axios";
+import { BaseService } from './base/BaseService';
+import { Tour, TourCreateRequest, TourUpdateRequest } from '@/types/tour.types';
 
-export const getTours = async () => {
-  try {
-    const response = await axios.get("/tours");
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching tours:", error);
-    throw error;
-  }
-}
-export const getTourById = async (id: string) => {
-    try {
-        const response = await axios.get(`/tours/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching tour:", error);
-        throw error;
+class TourService extends BaseService {
+    constructor() {
+        super('/tours');
+    }
+
+    public async getTours(params?: {
+        location?: string;
+        minDuration?: number;
+        maxPrice?: number;
+        available?: boolean;
+        boatId?: number;
+        captainId?: number;
+    }): Promise<Tour[]> {
+        return this.get<Tour[]>('', params);
+    }
+
+    public async getTourById(id: number): Promise<Tour> {
+        return this.get<Tour>(`/${id}`);
+    }
+
+    public async createTour(data: TourCreateRequest): Promise<Tour> {
+        return this.post<Tour>('', data);
+    }
+
+    public async updateTour(id: number, data: TourUpdateRequest): Promise<Tour> {
+        return this.put<Tour>(`/${id}`, data);
+    }
+
+    public async deleteTour(id: number): Promise<void> {
+        return this.delete<void>(`/${id}`);
+    }
+
+    public async getTourAvailability(id: number, date: string): Promise<boolean> {
+        return this.get<boolean>(`/${id}/availability`, { date });
+    }
+
+    public async getToursByBoat(boatId: number): Promise<Tour[]> {
+        return this.get<Tour[]>(`/boat/${boatId}`);
+    }
+
+    public async getToursByCaptain(captainId: number): Promise<Tour[]> {
+        return this.get<Tour[]>(`/captain/${captainId}`);
     }
 }
+
+export const tourService = new TourService();

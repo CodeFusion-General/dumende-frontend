@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '../components/layout/Layout';
 import { Button } from '../components/ui/button';
@@ -7,9 +6,40 @@ import { Textarea } from '../components/ui/textarea';
 import { MapPin, Phone, Mail } from 'lucide-react';
 
 const Contact = () => {
+  /* Backend hazır olduğunda kullanılacak state:
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  */
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Form submission logic would go here
+    /* Backend hazır olduğunda kullanılacak kod:
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    const contactData = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      subject: formData.get('subject') as string,
+      message: formData.get('message') as string,
+    };
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await contactService.sendContactForm(contactData);
+      setSuccess(true);
+      form.reset();
+    } catch (error) {
+      setError('Mesajınız gönderilemedi. Lütfen daha sonra tekrar deneyin.');
+      console.error('Failed to send contact form:', error);
+    } finally {
+      setLoading(false);
+    }
+    */
+    console.log('Form submitted');
   };
 
   return (

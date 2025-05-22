@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { toast } from "@/components/ui/use-toast";
 import {
   Popover,
   PopoverContent,
@@ -28,14 +29,40 @@ interface BookingFormProps {
   price: number;
   isHourly?: boolean;
   maxGuests: number;
+  boatId: string;
 }
 
-export function BookingForm({ price, isHourly = true, maxGuests }: BookingFormProps) {
+export function BookingForm({ price, isHourly = true, maxGuests, boatId }: BookingFormProps) {
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
   const [guests, setGuests] = useState<number>(2);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  /* Backend hazır olduğunda kullanılacak state:
+  const [loading, setLoading] = useState(false);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchAvailableTimeSlots = async () => {
+      if (date) {
+        try {
+          const slots = await bookingService.getAvailableTimeSlots(boatId, format(date, 'yyyy-MM-dd'));
+          setAvailableTimeSlots(slots);
+        } catch (error) {
+          console.error('Failed to fetch available time slots:', error);
+          toast({
+            title: "Müsait saatler yüklenemedi",
+            description: "Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchAvailableTimeSlots();
+  }, [date, boatId]);
+  */
   
   // Generate available time slots
   const timeSlots = Array.from({ length: 11 }, (_, i) => {
@@ -48,6 +75,50 @@ export function BookingForm({ price, isHourly = true, maxGuests }: BookingFormPr
   const subtotal = price * totalHours;
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
+
+  /* Backend hazır olduğunda kullanılacak rezervasyon fonksiyonu:
+  const handleBooking = async () => {
+    if (!date || !startTime) {
+      toast({
+        title: "Eksik bilgi",
+        description: "Lütfen tarih ve saat seçin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const bookingData = {
+        boatId,
+        date: format(date, 'yyyy-MM-dd'),
+        startTime,
+        duration,
+        guests,
+        totalPrice: total
+      };
+
+      const response = await bookingService.createBooking(bookingData);
+      
+      toast({
+        title: "Rezervasyon talebi gönderildi",
+        description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
+      });
+
+      // Rezervasyon sayfasına yönlendir
+      navigate(`/bookings/${response.id}`);
+    } catch (error) {
+      console.error('Booking failed:', error);
+      toast({
+        title: "Rezervasyon yapılamadı",
+        description: "Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  */
 
   // Mobile booking button sticky footer
   const MobileBookingFooter = () => (
