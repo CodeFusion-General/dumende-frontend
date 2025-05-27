@@ -14,9 +14,8 @@ class BoatService extends BaseService {
     super("/boats");
   }
 
-  public async getBoats(filters?: BoatFilters): Promise<BoatDTO[]> {
-    const queryString = filters ? this.buildQueryString(filters) : "";
-    return this.get<BoatDTO[]>(`?${queryString}`);
+  public async getBoats(): Promise<BoatDTO[]> {
+    return this.get<BoatDTO[]>("");
   }
 
   public async getBoatById(id: number): Promise<BoatDTO> {
@@ -27,8 +26,8 @@ class BoatService extends BaseService {
     return this.post<BoatDTO>("", data);
   }
 
-  public async updateBoat(id: number, data: UpdateBoatDTO): Promise<BoatDTO> {
-    return this.put<BoatDTO>(`/${id}`, data);
+  public async updateBoat(data: UpdateBoatDTO): Promise<BoatDTO> {
+    return this.put<BoatDTO>("", data);
   }
 
   public async deleteBoat(id: number): Promise<void> {
@@ -109,16 +108,27 @@ class BoatService extends BaseService {
 
   // Search and Filter
   public async searchBoats(params: {
+    name?: string;
     location?: string;
     minCapacity?: number;
-    maxPrice?: number;
     type?: string;
-    features?: string[];
+    minPrice?: number;
+    maxPrice?: number;
     startDate?: string;
     endDate?: string;
   }): Promise<BoatDTO[]> {
-    const queryString = this.buildQueryString(params);
-    return this.get<BoatDTO[]>(`/search?${queryString}`);
+    const queryParams = new URLSearchParams();
+    
+    if (params.name) queryParams.append("name", params.name);
+    if (params.location) queryParams.append("location", params.location);
+    if (params.minCapacity) queryParams.append("minCapacity", params.minCapacity.toString());
+    if (params.type) queryParams.append("type", params.type);
+    if (params.minPrice) queryParams.append("minPrice", params.minPrice.toString());
+    if (params.maxPrice) queryParams.append("maxPrice", params.maxPrice.toString());
+    if (params.startDate) queryParams.append("startDate", params.startDate);
+    if (params.endDate) queryParams.append("endDate", params.endDate);
+
+    return this.get<BoatDTO[]>(`/search?${queryParams.toString()}`);
   }
 
   // Pagination support
@@ -143,6 +153,20 @@ class BoatService extends BaseService {
   }> {
     const url = boatId ? `/statistics/${boatId}` : "/statistics";
     return this.get(url);
+  }
+
+  // Boat Status Operations
+  public async updateBoatStatus(id: number, status: string): Promise<void> {
+    return this.patch<void>(`/${id}/status?status=${status}`);
+  }
+
+  public async updateBoatRating(id: number, rating: number): Promise<void> {
+    return this.patch<void>(`/${id}/rating?rating=${rating}`);
+  }
+
+  // Existence check
+  public async existsBoatById(id: number): Promise<boolean> {
+    return this.get<boolean>(`/exists/${id}`);
   }
 }
 

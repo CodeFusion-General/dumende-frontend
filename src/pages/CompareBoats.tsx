@@ -3,34 +3,34 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { X, ArrowLeft, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { boatListingData } from '@/data/boats';
 import ComparisonTable from '@/components/boats/ComparisonTable';
 import Navbar from '@/components/layout/Navbar';
 import EmptyComparison from '@/components/boats/EmptyComparison';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from '@/components/ui/use-toast';
+import { boatService } from '@/services/boatService';
+import { BoatDTO } from '@/types/boat.types';
 
 const CompareBoats = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedBoats, setSelectedBoats] = useState<any[]>([]);
+  const [selectedBoats, setSelectedBoats] = useState<BoatDTO[]>([]);
+  const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
   
   // Get boat IDs from URL params
   useEffect(() => {
     const boatIds = searchParams.get('ids')?.split(',') || [];
     
-    /* Backend hazır olduğunda kullanılacak kod:
     if (boatIds.length) {
       const fetchBoatsToCompare = async () => {
         try {
           setLoading(true);
           const boatsToCompare = await Promise.all(
-            boatIds.map(id => boatService.getBoatById(id))
+            boatIds.map(id => boatService.getBoatById(Number(id)))
           );
           setSelectedBoats(boatsToCompare.slice(0, 4)); // Maximum 4 boats
         } catch (error) {
           console.error('Failed to fetch boats for comparison:', error);
-          setError('Tekneler yüklenirken bir hata oluştu.');
           toast({
             title: "Hata",
             description: "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
@@ -42,15 +42,6 @@ const CompareBoats = () => {
       };
 
       fetchBoatsToCompare();
-    }
-    */
-
-    // Mock veri - Backend hazır olduğunda kaldırılacak
-    if (boatIds.length) {
-      const boatsToCompare = boatListingData.filter(boat => 
-        boatIds.includes(boat.id.toString())
-      );
-      setSelectedBoats(boatsToCompare.slice(0, 4)); // Maximum 4 boats
     }
   }, [searchParams]);
 
@@ -87,7 +78,11 @@ const CompareBoats = () => {
           </p>
         </div>
         
-        {selectedBoats.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : selectedBoats.length === 0 ? (
           <EmptyComparison />
         ) : (
           <>

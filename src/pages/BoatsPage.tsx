@@ -9,11 +9,8 @@ import BoatCard from '@/components/ui/BoatCard';
 import CompareBar from '@/components/boats/CompareBar';
 import ServiceFilterBadge from '@/components/boats/ServiceFilterBadge';
 import { toast } from '@/components/ui/use-toast';
-
-/* Backend hazır olduğunda kullanılacak servis importları:
 import { boatService } from '@/services/boatService';
-import { Boat, BoatFilters } from '@/types/boat.types';
-*/
+import { BoatDTO } from '@/types/boat.types';
 
 const serviceBoatMap: Record<string, string[]> = {
   'evlilik-teklifi': ['Lüks Yat', 'Motorlu Yat'],
@@ -30,22 +27,63 @@ const serviceBoatMap: Record<string, string[]> = {
   'yuzme-dalis-turu': ['Katamaran', 'Yelkenli']
 };
 
+// Mock data adapter to convert listing data to BoatDTO format
+const convertToBoatDTO = (mockData: any): BoatDTO => ({
+  id: mockData.id,
+  ownerId: 1, // Mock owner ID
+  name: mockData.name,
+  description: mockData.description || '',
+  model: mockData.model || '',
+  year: mockData.year,
+  length: 0, // Mock value
+  capacity: mockData.capacity,
+  dailyPrice: mockData.price,
+  hourlyPrice: 0, // Mock value
+  location: mockData.location,
+  rating: mockData.rating,
+  type: mockData.type,
+  status: 'ACTIVE',
+  brandModel: mockData.model || '',
+  buildYear: mockData.year,
+  captainIncluded: false,
+  images: mockData.images.map((url: string) => ({
+    id: 0,
+    boatId: mockData.id,
+    imageData: url,
+    isPrimary: false,
+    displayOrder: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  })),
+  features: mockData.features.map((feature: string, index: number) => ({
+    id: index,
+    boatId: mockData.id,
+    featureName: feature,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  })),
+  availabilities: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+});
+
 const BoatsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('popular');
-  const [allBoats] = useState(boatListingData);
-  const [filteredBoats, setFilteredBoats] = useState(boatListingData);
-  const [comparedBoats, setComparedBoats] = useState<string[]>([]);
   
-  /* Backend hazır olduğunda kullanılacak state:
+  // Mock data state (commented out but preserved)
+  /* const [allBoats] = useState(boatListingData);
+  const [filteredBoats, setFilteredBoats] = useState(boatListingData); */
+  
+  // Real data state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allBoats, setAllBoats] = useState<Boat[]>([]);
-  const [filteredBoats, setFilteredBoats] = useState<Boat[]>([]);
-  */
-
+  const [allBoats, setAllBoats] = useState<BoatDTO[]>([]);
+  const [filteredBoats, setFilteredBoats] = useState<BoatDTO[]>([]);
+  
+  const [comparedBoats, setComparedBoats] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [capacity, setCapacity] = useState<string>('');
@@ -62,7 +100,7 @@ const BoatsPage = () => {
     date: true
   });
   
-  const toggleSection = (section) => {
+  const toggleSection = (section: string) => {
     setOpenSections({
       ...openSections,
       [section]: !openSections[section]
@@ -72,156 +110,32 @@ const BoatsPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const serviceParam = searchParams.get('service');
   
-  /* Backend hazır olduğunda kullanılacak useEffect:
   useEffect(() => {
-    const fetchBoats = async () => {
-      try {
-        setLoading(true);
-        const boats = await boatService.getAllBoats();
-        setAllBoats(boats);
-        setFilteredBoats(boats);
-      } catch (error) {
-        console.error('Failed to fetch boats:', error);
-        setError('Tekneler yüklenirken bir hata oluştu.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBoats();
   }, []);
-  */
 
-  useEffect(() => {
-    let results = [...allBoats];
-    
-    /* Backend hazır olduğunda kullanılacak filtre fonksiyonu:
-    const applyFilters = async () => {
-      try {
-        setLoading(true);
-        const filters: BoatFilters = {
-          types: selectedTypes,
-          locations: selectedLocations,
-          features: selectedFeatures,
-          capacity: capacity ? parseInt(capacity) : undefined,
-          minPrice: priceRange[0],
-          maxPrice: priceRange[1],
-          service: serviceParam || undefined,
-          sortBy: sortBy
-        };
-
-        const filteredResults = await boatService.getFilteredBoats(filters);
-        setFilteredBoats(filteredResults);
-      } catch (error) {
-        console.error('Failed to apply filters:', error);
-        toast({
-          title: "Filtreler uygulanırken hata oluştu",
-          description: "Lütfen daha sonra tekrar deneyin.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // applyFilters();
-    */
-
-    if (serviceParam) {
-      const compatibleTypes = serviceBoatMap[serviceParam] || [];
-      if (compatibleTypes.length > 0) {
-        results = results.filter(boat => compatibleTypes.includes(boat.type));
-      }
-    }
-    
-    if (selectedTypes.length > 0) {
-      results = results.filter(boat => selectedTypes.includes(boat.type));
-    }
-    
-    if (selectedLocations.length > 0) {
-      results = results.filter(boat => selectedLocations.includes(boat.location));
-    }
-    
-    if (capacity) {
-      if (capacity === '20+') {
-        results = results.filter(boat => boat.capacity >= 20);
-      } else {
-        const [minCapacity, maxCapacity] = capacity.split('-').map(Number);
-        results = results.filter(boat => {
-          return boat.capacity >= minCapacity && boat.capacity <= maxCapacity;
-        });
-      }
-    }
-    
-    results = results.filter(boat => {
-      return boat.price >= priceRange[0] && boat.price <= priceRange[1];
-    });
-    
-    if (selectedFeatures.length > 0) {
-      results = results.filter(boat => {
-        return selectedFeatures.every(feature => boat.features.includes(feature));
-      });
-    }
-    
-    results = sortBoats(results, sortBy);
-    
-    setFilteredBoats(results);
-  }, [
-    allBoats, 
-    serviceParam, 
-    selectedTypes, 
-    selectedLocations, 
-    capacity, 
-    priceRange, 
-    selectedFeatures, 
-    sortBy
-  ]);
-  
-  const sortBoats = (boats, sortType) => {
-    const sortedBoats = [...boats];
-    switch (sortType) {
-      case 'price-asc':
-        return sortedBoats.sort((a, b) => a.price - b.price);
-      case 'price-desc':
-        return sortedBoats.sort((a, b) => b.price - a.price);
-      case 'newest':
-        return sortedBoats.sort((a, b) => b.id - a.id);
-      case 'popular':
-      default:
-        return sortedBoats.sort((a, b) => b.rating - a.rating);
+  const fetchBoats = async () => {
+    try {
+      setLoading(true);
+      
+      // Real API call
+      const response = await boatService.getBoats();
+      // Ensure we always set an array
+      const boats = Array.isArray(response) ? response : (response as any)?.content || [];
+      setAllBoats(boats);
+      setFilteredBoats(boats);
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching boats:', err);
+      setError('Tekneleri yüklerken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+      setAllBoats([]);
+      setFilteredBoats([]);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortBy(e.target.value);
-    toast({
-      title: "Sıralama güncellendi",
-      description: "Tekneler yeni sıralamaya göre listelendi.",
-      variant: "default",
-    });
-  };
-  
-  const handleCompareToggle = (id: string) => {
-    if (comparedBoats.includes(id)) {
-      setComparedBoats(comparedBoats.filter(boatId => boatId !== id));
-    } else {
-      if (comparedBoats.length < 3) {
-        setComparedBoats([...comparedBoats, id]);
-        toast({
-          title: "Tekne karşılaştırmaya eklendi",
-          description: "Karşılaştırma çubuğunda görebilirsiniz.",
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "En fazla 3 tekne karşılaştırabilirsiniz",
-          description: "Lütfen önce bir tekneyi çıkarın.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-  
+
   const handleFilterReset = () => {
     setSelectedTypes([]);
     setSelectedLocations([]);
@@ -230,96 +144,132 @@ const BoatsPage = () => {
     setCapacity('');
     if (serviceParam) {
       navigate('/boats');
-    } else {
-      toast({
-        title: "Filtreler temizlendi",
-        description: "Tüm tekneler gösteriliyor.",
-        variant: "default",
+    }
+  };
+
+  const applyFilters = async () => {
+    try {
+      setLoading(true);
+      
+      // Real API call
+      const response = await boatService.searchBoats({
+        type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
+        minCapacity: capacity ? parseInt(capacity) : undefined,
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+        location: selectedLocations.length > 0 ? selectedLocations[0] : undefined
       });
+      // Ensure we always set an array
+      const filteredResults = Array.isArray(response) ? response : (response as any)?.content || [];
+      setFilteredBoats(filteredResults);
+      
+    } catch (err) {
+      console.error('Error applying filters:', err);
+      toast({
+        title: 'Hata',
+        description: 'Filtreleri uygularken bir hata oluştu. Lütfen daha sonra tekrar deneyin.',
+        variant: 'destructive'
+      });
+      setFilteredBoats([]);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const handleApplyFilters = () => {
-    toast({
-      title: "Filtreler uygulandı",
-      description: `${filteredBoats.length} tekne filtrelere uygun bulundu.`,
-      variant: "default",
-    });
-  };
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim() !== '') {
-      const lowercaseQuery = query.toLowerCase();
-      const results = allBoats.filter(boat => 
-        boat.name.toLowerCase().includes(lowercaseQuery) || 
-        boat.type.toLowerCase().includes(lowercaseQuery)
-      );
-      setFilteredBoats(results);
-    } else {
-      handleApplyFilters();
+
+  useEffect(() => {
+    if (serviceParam && serviceBoatMap[serviceParam]) {
+      setSelectedTypes(serviceBoatMap[serviceParam]);
     }
-  };
-  
+  }, [serviceParam]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [selectedTypes, capacity, priceRange, selectedLocations, selectedFeatures]);
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-4">Hata</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="container-custom py-8">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="container mx-auto px-4 py-8">
+        <BoatListingHeader
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          totalBoats={filteredBoats.length}
+        />
+
+        <div className="flex flex-col md:flex-row gap-6">
           <FilterSidebar
             showFilters={showFilters}
             setShowFilters={setShowFilters}
             selectedTypes={selectedTypes}
             setSelectedTypes={setSelectedTypes}
+            capacity={capacity}
+            setCapacity={setCapacity}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
             selectedLocations={selectedLocations}
             setSelectedLocations={setSelectedLocations}
             selectedFeatures={selectedFeatures}
             setSelectedFeatures={setSelectedFeatures}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            capacity={capacity}
-            setCapacity={setCapacity}
             openSections={openSections}
             toggleSection={toggleSection}
             resetFilters={handleFilterReset}
-            applyFilters={handleApplyFilters}
+            applyFilters={applyFilters}
           />
-          
+
           <div className="flex-1">
             {serviceParam && (
               <div className="mb-4">
-                <ServiceFilterBadge service={serviceParam} />
+                <ServiceFilterBadge service={serviceParam} onRemove={() => navigate('/boats')} />
               </div>
             )}
-            
-            <BoatListingHeader
-              boatCount={filteredBoats.length}
-              sortBy={sortBy}
-              viewMode={viewMode}
-              onSortChange={handleSortChange}
-              setViewMode={setViewMode}
-              onSearch={handleSearch}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-            />
-            
-            {filteredBoats.length > 0 ? (
-              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} gap-6`}>
-                {filteredBoats.map(boat => (
-                  <BoatCard 
+
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div key={n} className="animate-pulse">
+                    <div className="bg-gray-200 h-64 rounded-lg mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredBoats.length > 0 ? (
+              <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'} gap-6`}>
+                {filteredBoats.map((boat) => (
+                  <BoatCard
                     key={boat.id}
-                    id={String(boat.id)}
-                    name={boat.name}
-                    type={boat.type}
-                    imageUrl={boat.image}
-                    location={boat.location}
-                    capacity={boat.capacity}
-                    price={boat.price}
-                    priceUnit={boat.priceUnit === 'günlük' ? 'day' : 'hour'}
-                    rating={boat.rating}
-                    onCompare={handleCompareToggle}
-                    isCompared={comparedBoats.includes(String(boat.id))}
+                    boat={boat}
+                    viewMode={viewMode}
+                    isCompared={comparedBoats.includes(boat.id.toString())}
+                    onCompareToggle={(id) => {
+                      if (comparedBoats.includes(id)) {
+                        setComparedBoats(comparedBoats.filter((boatId) => boatId !== id));
+                      } else if (comparedBoats.length < 3) {
+                        setComparedBoats([...comparedBoats, id]);
+                      } else {
+                        toast({
+                          title: "Karşılaştırma Limiti",
+                          description: "En fazla 3 tekneyi karşılaştırabilirsiniz.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
                   />
                 ))}
               </div>
@@ -328,15 +278,13 @@ const BoatsPage = () => {
             )}
           </div>
         </div>
-        
+
         {comparedBoats.length > 0 && (
-          <CompareBar 
-            comparedBoats={comparedBoats.map(id => {
-              const boat = boatListingData.find(b => String(b.id) === id);
-              return boat ? { id, name: boat.name } : { id, name: 'Unknown Boat' };
-            })} 
-            removeFromComparison={(id) => handleCompareToggle(String(id))}
-            clearComparison={() => setComparedBoats([])}
+          <CompareBar
+            comparedBoats={comparedBoats}
+            boats={allBoats}
+            onRemove={(id) => setComparedBoats(comparedBoats.filter((boatId) => boatId !== id))}
+            onClearAll={() => setComparedBoats([])}
           />
         )}
       </div>

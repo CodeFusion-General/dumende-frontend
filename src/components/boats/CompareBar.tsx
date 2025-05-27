@@ -1,63 +1,62 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BoatDTO } from '@/types/boat.types';
 
 interface CompareBarProps {
-  comparedBoats: any[];
-  removeFromComparison: (id: number) => void;
-  clearComparison: () => void;
+  comparedBoats: string[];
+  boats: BoatDTO[];
+  onRemove: (id: string) => void;
+  onClearAll: () => void;
 }
 
-const CompareBar: React.FC<CompareBarProps> = ({ comparedBoats, removeFromComparison, clearComparison }) => {
-  if (comparedBoats.length === 0) return null;
-  
+const CompareBar: React.FC<CompareBarProps> = ({
+  comparedBoats,
+  boats,
+  onRemove,
+  onClearAll
+}) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t border-gray-200 z-50 animate-slide-in-bottom">
-      <div className="container-custom py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <span className="text-sm font-medium text-gray-700 mr-4">
-              {comparedBoats.length} {comparedBoats.length === 1 ? 'Tekne' : 'Tekne'} Karşılaştırması
-            </span>
-            <div className="flex space-x-2 overflow-x-auto">
-              {comparedBoats.map((boat) => (
-                <div 
-                  key={boat.id} 
-                  className="flex items-center bg-gray-100 rounded-md py-1 px-2"
+    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-4">
+      <div className="container mx-auto flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          {comparedBoats.map((id) => {
+            const boat = boats.find(b => b.id.toString() === id);
+            return boat ? (
+              <div key={id} className="flex items-center space-x-2">
+                <img
+                  src={boat.images[0]?.imageData || '/placeholder-boat.jpg'}
+                  alt={boat.name}
+                  className="w-12 h-12 object-cover rounded"
+                />
+                <span className="font-medium">{boat.name}</span>
+                <button
+                  onClick={() => onRemove(id)}
+                  className="text-gray-500 hover:text-red-500"
                 >
-                  <span className="text-sm whitespace-nowrap">{boat.name}</span>
-                  <button 
-                    onClick={() => removeFromComparison(boat.id)}
-                    className="ml-1 p-1 hover:bg-gray-200 rounded-full"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={clearComparison}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Temizle
-            </button>
-            
-            <Button 
-              asChild
-              disabled={comparedBoats.length < 2}
-              className="whitespace-nowrap"
-              size="sm"
-            >
-              <Link to={`/compare-boats?ids=${comparedBoats.map(boat => boat.id).join(',')}`}>
-                Karşılaştır ({comparedBoats.length})
-              </Link>
-            </Button>
-          </div>
+                  Kaldır
+                </button>
+              </div>
+            ) : null;
+          })}
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onClearAll}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            Tümünü Temizle
+          </button>
+          <button
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+            onClick={() => navigate(`/compare-boats?ids=${comparedBoats.join(',')}`)}
+          >
+            Karşılaştır ({comparedBoats.length})
+          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 
 interface ServiceFilterBadgeProps {
   service: string;
+  onRemove: () => void;
 }
 
-const ServiceFilterBadge: React.FC<ServiceFilterBadgeProps> = ({ service }) => {
+const ServiceFilterBadge: React.FC<ServiceFilterBadgeProps> = ({ service, onRemove }) => {
   const navigate = useNavigate();
   
   // Format service name for display (convert slug to readable text)

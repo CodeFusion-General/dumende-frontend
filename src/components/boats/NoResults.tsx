@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,23 +8,17 @@ interface NoResultsProps {
 
 const NoResults: React.FC<NoResultsProps> = ({ onReset }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 text-center">
-      <div className="text-gray-400 mb-4">
-        <Search className="h-12 w-12 mx-auto" />
-      </div>
-      <h3 className="text-xl font-bold text-brand-secondary mb-2">
-        Aradığınız kriterlere uygun tekne bulunamadı
-      </h3>
-      <p className="text-gray-600 mb-6">
-        Lütfen filtrelerinizi değiştirerek tekrar deneyin.
+    <div className="text-center py-12">
+      <h3 className="text-xl font-semibold mb-2">Sonuç Bulunamadı</h3>
+      <p className="text-gray-600 mb-4">
+        Arama kriterlerinize uygun tekne bulunamadı. Lütfen filtrelerinizi değiştirip tekrar deneyin.
       </p>
-      <Button 
-        variant="outline" 
-        className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+      <button
         onClick={onReset}
+        className="text-primary hover:text-primary-dark underline"
       >
         Filtreleri Temizle
-      </Button>
+      </button>
     </div>
   );
 };

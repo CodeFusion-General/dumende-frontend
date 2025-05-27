@@ -6,7 +6,7 @@ class HttpClient {
 
     private constructor() {
         this.api = axios.create({
-            baseURL: /*import.meta.env.VITE_API_URL ||*/ "https://localhost:8080/api",
+            baseURL: "/api",
             headers: {
                 "Content-Type": "application/json",
             },

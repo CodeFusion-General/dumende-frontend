@@ -20,16 +20,16 @@ interface FilterSidebarProps {
   setShowFilters: (show: boolean) => void;
   selectedTypes: string[];
   setSelectedTypes: (types: string[]) => void;
+  capacity: string;
+  setCapacity: (capacity: string) => void;
+  priceRange: [number, number];
+  setPriceRange: (range: [number, number]) => void;
   selectedLocations: string[];
   setSelectedLocations: (locations: string[]) => void;
   selectedFeatures: string[];
   setSelectedFeatures: (features: string[]) => void;
-  priceRange: [number, number];
-  setPriceRange: (range: [number, number]) => void;
-  capacity: string;
-  setCapacity: (capacity: string) => void;
-  openSections: OpenSections;
-  toggleSection: (section: keyof OpenSections) => void;
+  openSections: Record<string, boolean>;
+  toggleSection: (section: string) => void;
   resetFilters: () => void;
   applyFilters: () => void;
 }

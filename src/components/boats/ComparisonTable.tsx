@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { X, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { BoatDTO } from '@/types/boat.types';
 
 interface ComparisonTableProps {
-  boats: any[];
+  boats: BoatDTO[];
   onRemove: (id: number) => void;
 }
 
@@ -33,7 +33,7 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
                   </button>
                   <div className="h-48 overflow-hidden">
                     <img
-                      src={boat.image}
+                      src={boat.images?.[0]?.imageData || '/placeholder-boat.jpg'}
                       alt={boat.name}
                       className="w-full h-full object-cover"
                     />
@@ -53,8 +53,8 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 <div className="font-bold text-primary">
-                  {boat.price} ₺
-                  <span className="text-gray-400 text-sm font-normal ml-1">/{boat.priceUnit}</span>
+                  {boat.dailyPrice} ₺
+                  <span className="text-gray-400 text-sm font-normal ml-1">/gün</span>
                 </div>
               </td>
             ))}
@@ -70,10 +70,10 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
           </tr>
           
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Kabin</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Model</td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
-                {boat.cabins} kabin
+                {boat.model}
               </td>
             ))}
           </tr>
@@ -82,7 +82,7 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
             <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Yapım Yılı</td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
-                {boat.year}
+                {boat.buildYear}
               </td>
             ))}
           </tr>
@@ -100,14 +100,15 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
             <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Değerlendirme</td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
-                <div className="flex items-center">
-                  <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold mr-2">
-                    {boat.rating}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    ({boat.reviewCount} yorum)
-                  </span>
-                </div>
+                {boat.rating ? (
+                  <div className="flex items-center">
+                    <span className="bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold mr-2">
+                      {boat.rating.toFixed(1)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-500">Henüz değerlendirme yok</span>
+                )}
               </td>
             ))}
           </tr>
@@ -118,7 +119,7 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 <ul className="space-y-2">
                   {featuresList.map((feature) => {
-                    const hasFeature = boat.features.includes(feature);
+                    const hasFeature = boat.features?.some(f => f.featureName === feature);
                     return (
                       <li key={feature} className="flex items-center text-sm">
                         {hasFeature ? (
