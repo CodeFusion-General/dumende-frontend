@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { MapPin, TrendingUp, DollarSign, Anchor } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { boatService, LocationStatistic } from "@/services/boatService";
 
 const Destinations = () => {
   const [destinations, setDestinations] = useState<LocationStatistic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDestinations();
@@ -108,6 +111,21 @@ const Destinations = () => {
       images[location] ||
       "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
     );
+  };
+
+  // Lokasyon filtreli tekne listesine yönlendirme
+  const handleViewBoats = (location: string) => {
+    console.log(
+      `🚀 Destinations: ${location} lokasyonu için tekneler görüntüleniyor...`
+    );
+
+    // URL parametreleri ile lokasyon filtrelemesi
+    const params = new URLSearchParams({
+      location: location,
+      filter: "location",
+    });
+
+    navigate(`/boats?${params.toString()}`);
   };
 
   if (loading) {
@@ -251,7 +269,10 @@ const Destinations = () => {
                 </div>
 
                 {/* CTA Button */}
-                <button className="w-full mt-4 bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300">
+                <button
+                  onClick={() => handleViewBoats(destination.location)}
+                  className="w-full mt-4 bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+                >
                   Tekneleri Görüntüle
                 </button>
               </div>

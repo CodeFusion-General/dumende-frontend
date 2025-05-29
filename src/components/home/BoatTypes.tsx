@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Anchor, TrendingUp, DollarSign, Hash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { boatService, TypeStatistic } from "@/services/boatService";
 
 const BoatTypes = () => {
   const [boatTypes, setBoatTypes] = useState<TypeStatistic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBoatTypes();
@@ -103,7 +106,7 @@ const BoatTypes = () => {
       SAILBOAT: "⛵",
       MOTOR_YACHT: "🛥️",
       CATAMARAN: "🚤",
-      MOTOR_BOAT: "��",
+      MOTOR_BOAT: "🚤",
       GULET: "⛵",
       RIB: "🚤",
       FISHING_BOAT: "🎣",
@@ -122,6 +125,19 @@ const BoatTypes = () => {
       "bg-indigo-500",
     ];
     return colors[index % colors.length];
+  };
+
+  // Tip filtreli tekne listesine yönlendirme
+  const handleViewBoatsByType = (type: string) => {
+    console.log(`🚀 BoatTypes: ${type} tipi için tekneler görüntüleniyor...`);
+
+    // URL parametreleri ile tip filtrelemesi
+    const params = new URLSearchParams({
+      type: type,
+      filter: "type",
+    });
+
+    navigate(`/boats?${params.toString()}`);
   };
 
   if (loading) {
@@ -255,7 +271,10 @@ const BoatTypes = () => {
               </div>
 
               {/* CTA */}
-              <button className="w-full mt-6 bg-gray-200 hover:bg-primary hover:text-white text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300">
+              <button
+                onClick={() => handleViewBoatsByType(boatType.type)}
+                className="w-full mt-6 bg-gray-200 hover:bg-primary hover:text-white text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300"
+              >
                 Bu Tip Tekneleri Görüntüle
               </button>
             </div>
