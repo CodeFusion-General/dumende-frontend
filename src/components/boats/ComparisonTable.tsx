@@ -46,8 +46,10 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   <div className="h-48 overflow-hidden">
                     <img
                       src={
-                        boat.images?.[0]
-                          ? getImageUrl(boat.images[0].id)
+                        boat.images?.find((img) => img && img.id)
+                          ? getImageUrl(
+                              boat.images.find((img) => img && img.id)!.id
+                            )
                           : "/placeholder-boat.jpg"
                       }
                       alt={boat.name}

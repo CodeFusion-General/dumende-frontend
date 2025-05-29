@@ -42,6 +42,13 @@ const BoatListing = () => {
     enabled: !!boatData?.type, // Only run when we have boat type
   });
 
+  // Geçerli fotoğrafları filtrele - sadece boatData varsa
+  const validImages = boatData?.images
+    ? boatData.images
+        .filter((img) => img && img.id) // null/undefined kontrolü
+        .map((img) => getImageUrl(img.id))
+    : [];
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -111,9 +118,13 @@ const BoatListing = () => {
       <Navbar />
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <ImageGallery
-            images={boatData.images.map((img) => getImageUrl(img.id))}
-          />
+          {validImages.length > 0 ? (
+            <ImageGallery images={validImages} />
+          ) : (
+            <div className="aspect-video bg-gray-200 rounded-xl flex items-center justify-center">
+              <p className="text-gray-500">Bu tekne için fotoğraf bulunmuyor</p>
+            </div>
+          )}
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">

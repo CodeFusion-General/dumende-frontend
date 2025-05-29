@@ -30,8 +30,10 @@ const CompareBar: React.FC<CompareBarProps> = ({
               <div key={id} className="flex items-center space-x-2">
                 <img
                   src={
-                    boat.images[0]
-                      ? getImageUrl(boat.images[0].id)
+                    boat.images?.find((img) => img && img.id)
+                      ? getImageUrl(
+                          boat.images.find((img) => img && img.id)!.id
+                        )
                       : "/placeholder-boat.jpg"
                   }
                   alt={boat.name}

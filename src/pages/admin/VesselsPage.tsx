@@ -24,8 +24,17 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { boatService } from "@/services/boatService";
-import { BoatDTO, CreateVesselDTO, UpdateVesselDTO } from "@/types/boat.types";
-import { compressImage, validateImageFile } from "@/lib/imageUtils";
+import {
+  BoatDTO,
+  CreateVesselDTO,
+  UpdateVesselDTO,
+  BoatImageDTO,
+} from "@/types/boat.types";
+import {
+  compressImage,
+  validateImageFile,
+  getImageUrl,
+} from "@/lib/imageUtils";
 
 // Form data interface
 interface VesselFormData {
@@ -75,6 +84,8 @@ interface VesselFormData {
 
   // Dosyalar
   images: File[];
+  existingImages: BoatImageDTO[]; // Mevcut fotoğraflar
+  imageIdsToRemove: number[]; // Silinecek fotoğraf ID'leri
   features: string[];
 }
 
@@ -122,6 +133,8 @@ const VesselsPage = () => {
     organizationTypes: [],
     organizationDetails: "",
     images: [],
+    existingImages: [],
+    imageIdsToRemove: [],
     features: [],
   });
 
@@ -212,11 +225,13 @@ const VesselsPage = () => {
       djService: "",
       waterSports: "",
       otherServices: "",
-      shortDescription: vessel.description || "",
-      detailedDescription: vessel.description || "",
+      shortDescription: "",
+      detailedDescription: "",
       organizationTypes: [],
       organizationDetails: "",
       images: [],
+      existingImages: vessel.images || [], // Mevcut fotoğrafları yükle
+      imageIdsToRemove: [],
       features: vessel.features?.map((f) => f.featureName) || [],
     });
   };
@@ -254,6 +269,8 @@ const VesselsPage = () => {
       organizationTypes: [],
       organizationDetails: "",
       images: [],
+      existingImages: [],
+      imageIdsToRemove: [],
       features: [],
     });
   };
@@ -328,20 +345,18 @@ const VesselsPage = () => {
   const formDataToUpdateDTO = (data: VesselFormData): UpdateVesselDTO => {
     return {
       id: editingVesselId!,
-      name: data.name.trim(),
-      description: data.detailedDescription || data.shortDescription || "",
+      name: data.name,
+      description: data.description,
       model: data.brandModel,
-      year: parseInt(data.buildYear) || undefined,
+      buildYear: parseInt(data.buildYear) || undefined,
       length: parseFloat(data.length) || undefined,
       capacity: parseInt(data.fullCapacity) || undefined,
       dailyPrice: parseFloat(data.dailyPrice) || undefined,
       hourlyPrice: parseFloat(data.hourlyPrice) || undefined,
-      location: data.location.trim(),
+      location: data.location,
       type: data.type,
       brandModel: data.brandModel,
-      buildYear: parseInt(data.buildYear) || undefined,
-      pricePerHour: parseFloat(data.hourlyPrice) || undefined,
-      pricePerDay: parseFloat(data.dailyPrice) || undefined,
+      imageIdsToRemove: data.imageIdsToRemove, // Silinecek fotoğraf ID'leri
     };
   };
 
@@ -368,6 +383,28 @@ const VesselsPage = () => {
     setEditingVesselId(null);
     setCurrentVessel(null);
     resetForm();
+  };
+
+  // Mevcut fotoğrafı kaldırma
+  const handleRemoveExistingImage = (imageId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingImages: prev.existingImages.filter((img) => img.id !== imageId),
+      imageIdsToRemove: [...prev.imageIdsToRemove, imageId],
+    }));
+
+    toast({
+      title: "Fotoğraf Kaldırıldı",
+      description: "Fotoğraf kaydedildiğinde silinecek olarak işaretlendi.",
+    });
+  };
+
+  // Yeni fotoğrafı kaldırma
+  const handleRemoveNewImage = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
   };
 
   // Optimize edilmiş resim yükleme fonksiyonu
@@ -495,6 +532,19 @@ const VesselsPage = () => {
         // Update existing vessel - resim güncellemesi ayrı handle edilir
         const updateDTO = formDataToUpdateDTO(formData);
         await boatService.updateVessel(updateDTO);
+
+        // Silinecek fotoğrafları sil
+        if (formData.imageIdsToRemove.length > 0) {
+          console.log("🗑️ Silinecek fotoğraflar:", formData.imageIdsToRemove);
+          for (const imageId of formData.imageIdsToRemove) {
+            try {
+              await boatService.deleteBoatImage(editingVesselId, imageId);
+              console.log(`✅ Fotoğraf ${imageId} silindi`);
+            } catch (error) {
+              console.error(`❌ Fotoğraf ${imageId} silinemedi:`, error);
+            }
+          }
+        }
 
         // Eğer yeni resimler eklendiyse, onları da yükle
         if (formData.images.length > 0) {
@@ -1272,6 +1322,47 @@ const VesselsPage = () => {
                   <TabsContent value="photos" className="p-6">
                     <h2 className="text-xl font-medium mb-4">Fotoğraflar</h2>
                     <div className="space-y-6">
+                      {/* Mevcut Fotoğraflar - Düzenleme modunda göster */}
+                      {editingVesselId &&
+                        formData.existingImages.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">
+                              Mevcut Fotoğraflar (
+                              {formData.existingImages.length})
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                              {formData.existingImages.map((image, index) => (
+                                <div key={image.id} className="relative group">
+                                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                    <img
+                                      src={getImageUrl(image.id)}
+                                      alt={`Mevcut fotoğraf ${index + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleRemoveExistingImage(image.id)
+                                    }
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    ×
+                                  </button>
+                                  {image.isPrimary && (
+                                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                      Ana
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Mevcut #{image.displayOrder}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                         <Image className="mx-auto h-12 w-12 mb-4 text-gray-400" />
                         <h3 className="text-lg font-medium text-gray-900 mb-1">
@@ -1311,11 +1402,11 @@ const VesselsPage = () => {
                         </p>
                       </div>
 
-                      {/* Selected images preview */}
+                      {/* Yeni Eklenen Fotoğraflar */}
                       {formData.images.length > 0 && (
                         <div>
                           <h4 className="text-sm font-medium text-gray-700 mb-3">
-                            Seçilen Fotoğraflar ({formData.images.length})
+                            Yeni Eklenen Fotoğraflar ({formData.images.length})
                           </h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {formData.images.map((file, index) => (
@@ -1323,24 +1414,20 @@ const VesselsPage = () => {
                                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                                   <img
                                     src={URL.createObjectURL(file)}
-                                    alt={`Preview ${index + 1}`}
+                                    alt={`Yeni fotoğraf ${index + 1}`}
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      images: prev.images.filter(
-                                        (_, i) => i !== index
-                                      ),
-                                    }));
-                                  }}
+                                  onClick={() => handleRemoveNewImage(index)}
                                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                   ×
                                 </button>
+                                <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                                  Yeni
+                                </div>
                                 <p className="text-xs text-gray-500 mt-1 truncate">
                                   {file.name}
                                 </p>

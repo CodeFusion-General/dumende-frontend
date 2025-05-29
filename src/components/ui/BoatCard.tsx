@@ -80,12 +80,16 @@ const BoatCard: React.FC<BoatCardProps> = ({
   const getImageUrl_component = () => {
     if (isLegacyMode && imageUrl) return imageUrl;
     if (normalizedBoat.images && normalizedBoat.images.length > 0) {
-      const primaryImage = normalizedBoat.images.find((img) => img.isPrimary);
+      // Geçerli fotoğrafları filtrele
+      const validImages = normalizedBoat.images.filter((img) => img && img.id);
+      if (validImages.length === 0) return "/placeholder-boat.jpg";
+
+      const primaryImage = validImages.find((img) => img.isPrimary);
       if (primaryImage) {
         return getImageUrl(primaryImage.id);
       }
-      // Fallback to first image
-      return getImageUrl(normalizedBoat.images[0].id);
+      // Fallback to first valid image
+      return getImageUrl(validImages[0].id);
     }
     return "/placeholder-boat.jpg";
   };

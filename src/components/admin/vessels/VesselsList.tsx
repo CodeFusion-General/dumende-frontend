@@ -104,14 +104,20 @@ const VesselsList: React.FC<VesselsListProps> = ({
         return "https://images.unsplash.com/photo-1527679124583-9208be990bb5?q=80&w=1000";
       }
 
+      // Geçerli fotoğrafları filtrele
+      const validImages = images.filter((img) => img && img.id);
+      if (validImages.length === 0) {
+        return "https://images.unsplash.com/photo-1527679124583-9208be990bb5?q=80&w=1000";
+      }
+
       // Primary image varsa onu kullan
-      const primaryImage = images.find((img) => img.isPrimary);
+      const primaryImage = validImages.find((img) => img.isPrimary);
       if (primaryImage) {
         return getImageUrl(primaryImage.id);
       }
 
-      // Yoksa ilk resmi kullan
-      return getImageUrl(images[0].id);
+      // Yoksa ilk geçerli resmi kullan
+      return getImageUrl(validImages[0].id);
     };
 
     return {
