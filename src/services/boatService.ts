@@ -40,13 +40,16 @@ class BoatService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<boolean> {
-    return this.get<boolean>(`/${id}/availability`, { startDate, endDate });
+    return this.get<boolean>(`/availabilities/boat/${id}/available-range`, {
+      startDate,
+      endDate,
+    });
   }
 
   public async getBoatAvailabilities(
     boatId: number
   ): Promise<AvailabilityDTO[]> {
-    return this.get<AvailabilityDTO[]>(`/${boatId}/availabilities`);
+    return this.get<AvailabilityDTO[]>(`/availabilities/boat/${boatId}`);
   }
 
   public async createAvailability(
@@ -58,7 +61,7 @@ class BoatService extends BaseService {
   public async updateAvailability(
     data: UpdateAvailabilityDTO
   ): Promise<AvailabilityDTO> {
-    return this.put<AvailabilityDTO>(`/availabilities/${data.id}`, data);
+    return this.put<AvailabilityDTO>(`/availabilities`, data);
   }
 
   public async deleteAvailability(id: number): Promise<void> {
@@ -81,14 +84,14 @@ class BoatService extends BaseService {
     isPrimary = false,
     displayOrder = 1
   ): Promise<BoatDTO> {
-    return this.uploadFile<BoatDTO>(`/${boatId}/images`, file, {
+    return this.uploadFile<BoatDTO>(`/boat-images/boat/${boatId}`, file, {
       isPrimary,
       displayOrder,
     });
   }
 
   public async deleteBoatImage(boatId: number, imageId: number): Promise<void> {
-    return this.delete<void>(`/${boatId}/images/${imageId}`);
+    return this.delete<void>(`/boat-images/${imageId}`);
   }
 
   // Feature Management
@@ -96,14 +99,16 @@ class BoatService extends BaseService {
     boatId: number,
     featureName: string
   ): Promise<BoatDTO> {
-    return this.post<BoatDTO>(`/${boatId}/features`, { featureName });
+    return this.post<BoatDTO>(`/boat-features/boat/${boatId}`, {
+      featureName,
+    });
   }
 
   public async removeBoatFeature(
     boatId: number,
     featureId: number
   ): Promise<void> {
-    return this.delete<void>(`/${boatId}/features/${featureId}`);
+    return this.delete<void>(`/boat-features/${featureId}`);
   }
 
   // Search and Filter
@@ -118,13 +123,16 @@ class BoatService extends BaseService {
     endDate?: string;
   }): Promise<BoatDTO[]> {
     const queryParams = new URLSearchParams();
-    
+
     if (params.name) queryParams.append("name", params.name);
     if (params.location) queryParams.append("location", params.location);
-    if (params.minCapacity) queryParams.append("minCapacity", params.minCapacity.toString());
+    if (params.minCapacity)
+      queryParams.append("minCapacity", params.minCapacity.toString());
     if (params.type) queryParams.append("type", params.type);
-    if (params.minPrice) queryParams.append("minPrice", params.minPrice.toString());
-    if (params.maxPrice) queryParams.append("maxPrice", params.maxPrice.toString());
+    if (params.minPrice)
+      queryParams.append("minPrice", params.minPrice.toString());
+    if (params.maxPrice)
+      queryParams.append("maxPrice", params.maxPrice.toString());
     if (params.startDate) queryParams.append("startDate", params.startDate);
     if (params.endDate) queryParams.append("endDate", params.endDate);
 
