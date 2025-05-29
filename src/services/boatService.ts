@@ -9,6 +9,39 @@ import {
   UpdateAvailabilityDTO,
 } from "@/types/boat.types";
 
+// Yeni tip tanımları
+export interface LocationStatistic {
+  location: string;
+  boatCount: number;
+  averagePrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export interface TypeStatistic {
+  type: string;
+  boatCount: number;
+  averagePrice: number;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export interface AdvancedSearchRequest {
+  location?: string;
+  type?: string;
+  minCapacity?: number;
+  maxCapacity?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  startDate?: string;
+  endDate?: string;
+  captainIncluded?: boolean;
+  minYear?: number;
+  maxYear?: number;
+  minLength?: number;
+  maxLength?: number;
+}
+
 class BoatService extends BaseService {
   constructor() {
     super("/boats");
@@ -137,6 +170,41 @@ class BoatService extends BaseService {
     if (params.endDate) queryParams.append("endDate", params.endDate);
 
     return this.get<BoatDTO[]>(`/search?${queryParams.toString()}`);
+  }
+
+  // *** YENİ API'LER - Backend Entegrasyonu ***
+
+  // Lokasyonlar
+  public async getAllLocations(): Promise<string[]> {
+    console.log("🚀 BoatService: Lokasyonlar getiriliyor...");
+    return this.get<string[]>("/locations");
+  }
+
+  // İstatistikler
+  public async getLocationStatistics(): Promise<LocationStatistic[]> {
+    console.log("🚀 BoatService: Lokasyon istatistikleri getiriliyor...");
+    return this.get<LocationStatistic[]>("/statistics/by-location");
+  }
+
+  public async getTypeStatistics(): Promise<TypeStatistic[]> {
+    console.log("🚀 BoatService: Tip istatistikleri getiriliyor...");
+    return this.get<TypeStatistic[]>("/statistics/by-type");
+  }
+
+  public async countBoatsByLocation(location: string): Promise<number> {
+    return this.get<number>(`/count/location/${encodeURIComponent(location)}`);
+  }
+
+  public async countBoatsByType(type: string): Promise<number> {
+    return this.get<number>(`/count/type/${encodeURIComponent(type)}`);
+  }
+
+  // Gelişmiş arama
+  public async advancedSearch(
+    searchRequest: AdvancedSearchRequest
+  ): Promise<BoatDTO[]> {
+    console.log("🚀 BoatService: Gelişmiş arama yapılıyor...", searchRequest);
+    return this.post<BoatDTO[]>("/search/advanced", searchRequest);
   }
 
   // Pagination support
