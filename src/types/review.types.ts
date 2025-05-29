@@ -1,10 +1,18 @@
 // Review ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+// CustomerDTO tanımı (backend CustomerDTO ile uyumlu)
+export interface CustomerDTO {
+  id: number;
+  fullName: string;
+  phoneNumber: string;
+  profileImage?: string; // Base64 encoded string veya URL
+}
+
 // Review Types
 export interface ReviewDTO {
   id: number;
   bookingId: number;
-  customer: UserDTO; // UserDTO referansı
+  customer: CustomerDTO; // Güncellenmiş CustomerDTO kullanıyoruz
   boatId?: number; // Tekne değerlendirmesi için
   tourId?: number; // Tur değerlendirmesi için
   rating: number; // 1-5 arası
