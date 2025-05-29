@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BoatDTO } from "@/types/boat.types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getImageUrl } from "@/lib/imageUtils";
 
 const BoatListing = () => {
   const { id } = useParams();
@@ -110,7 +111,9 @@ const BoatListing = () => {
       <Navbar />
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <ImageGallery images={boatData.images.map((img) => img.imageData)} />
+          <ImageGallery
+            images={boatData.images.map((img) => getImageUrl(img.id))}
+          />
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">

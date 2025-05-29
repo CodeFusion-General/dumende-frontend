@@ -2,6 +2,7 @@ import React from "react";
 import { Star, Users, Anchor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BoatDTO } from "@/types/boat.types";
+import { getImageUrl, getPrimaryImageUrl } from "@/lib/imageUtils";
 
 // Eski format için backward compatibility interface
 interface LegacyBoat {
@@ -76,18 +77,20 @@ const BoatCard: React.FC<BoatCardProps> = ({
   }
 
   // Get primary image URL or fallback
-  const getImageUrl = () => {
+  const getImageUrl_component = () => {
     if (isLegacyMode && imageUrl) return imageUrl;
     if (normalizedBoat.images && normalizedBoat.images.length > 0) {
-      return (
-        normalizedBoat.images.find((img) => img.isPrimary)?.imageData ||
-        normalizedBoat.images[0].imageData
-      );
+      const primaryImage = normalizedBoat.images.find((img) => img.isPrimary);
+      if (primaryImage) {
+        return getImageUrl(primaryImage.id);
+      }
+      // Fallback to first image
+      return getImageUrl(normalizedBoat.images[0].id);
     }
     return "/placeholder-boat.jpg";
   };
 
-  const imageUrl_final = getImageUrl();
+  const imageUrl_final = getImageUrl_component();
 
   return (
     <div className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">

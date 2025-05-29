@@ -1,8 +1,9 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { BoatDTO } from '@/types/boat.types';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BoatDTO } from "@/types/boat.types";
+import { getImageUrl } from "@/lib/imageUtils";
 
 interface CompareBarProps {
   comparedBoats: string[];
@@ -15,7 +16,7 @@ const CompareBar: React.FC<CompareBarProps> = ({
   comparedBoats,
   boats,
   onRemove,
-  onClearAll
+  onClearAll,
 }) => {
   const navigate = useNavigate();
 
@@ -24,11 +25,15 @@ const CompareBar: React.FC<CompareBarProps> = ({
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {comparedBoats.map((id) => {
-            const boat = boats.find(b => b.id.toString() === id);
+            const boat = boats.find((b) => b.id.toString() === id);
             return boat ? (
               <div key={id} className="flex items-center space-x-2">
                 <img
-                  src={boat.images[0]?.imageData || '/placeholder-boat.jpg'}
+                  src={
+                    boat.images[0]
+                      ? getImageUrl(boat.images[0].id)
+                      : "/placeholder-boat.jpg"
+                  }
                   alt={boat.name}
                   className="w-12 h-12 object-cover rounded"
                 />
@@ -43,7 +48,7 @@ const CompareBar: React.FC<CompareBarProps> = ({
             ) : null;
           })}
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <button
             onClick={onClearAll}
@@ -53,7 +58,9 @@ const CompareBar: React.FC<CompareBarProps> = ({
           </button>
           <button
             className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
-            onClick={() => navigate(`/compare-boats?ids=${comparedBoats.join(',')}`)}
+            onClick={() =>
+              navigate(`/compare-boats?ids=${comparedBoats.join(",")}`)
+            }
           >
             Karşılaştır ({comparedBoats.length})
           </button>

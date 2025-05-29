@@ -32,51 +32,44 @@ const BoatTypes = () => {
       console.error("❌ BoatTypes istatistik hatası:", error);
       setError("Veriler yüklenirken bir hata oluştu");
 
-      // Hata durumunda fallback data
-      setBoatTypes([
+      // Mock data with basic boat types
+      const mockBoatTypes = [
         {
           type: "SAILBOAT",
-          boatCount: 35,
-          averagePrice: 2800,
-          minPrice: 1000,
-          maxPrice: 8000,
+          count: 25,
+          averagePrice: 2500,
+          minPrice: 1200,
+          maxPrice: 4000,
         },
         {
-          type: "MOTOR_YACHT",
-          boatCount: 28,
-          averagePrice: 4500,
-          minPrice: 2000,
+          type: "MOTORBOAT",
+          count: 35,
+          averagePrice: 1800,
+          minPrice: 800,
+          maxPrice: 3500,
+        },
+        {
+          type: "YACHT",
+          count: 15,
+          averagePrice: 8500,
+          minPrice: 5000,
           maxPrice: 15000,
         },
         {
-          type: "CATAMARAN",
-          boatCount: 22,
-          averagePrice: 3500,
-          minPrice: 1500,
-          maxPrice: 12000,
-        },
-        {
-          type: "MOTOR_BOAT",
-          boatCount: 18,
-          averagePrice: 2200,
-          minPrice: 800,
-          maxPrice: 6000,
-        },
-        {
-          type: "GULET",
-          boatCount: 15,
-          averagePrice: 3800,
-          minPrice: 1800,
-          maxPrice: 10000,
-        },
-        {
-          type: "RIB",
-          boatCount: 12,
-          averagePrice: 1800,
+          type: "SPEEDBOAT",
+          count: 20,
+          averagePrice: 1200,
           minPrice: 600,
-          maxPrice: 4000,
+          maxPrice: 2000,
         },
-      ]);
+        {
+          type: "CATAMARAN",
+          count: 12,
+          averagePrice: 3200,
+          minPrice: 2000,
+          maxPrice: 5000,
+        },
+      ];
     } finally {
       setLoading(false);
     }
@@ -86,33 +79,26 @@ const BoatTypes = () => {
     return `₺${price.toLocaleString("tr-TR")}`;
   };
 
-  const getTypeDisplayName = (type: string) => {
+  const getTypeDisplayName = (type: string): string => {
     const typeNames: { [key: string]: string } = {
       SAILBOAT: "Yelkenli",
-      MOTOR_YACHT: "Motor Yat",
+      MOTORBOAT: "Motor Bot",
+      YACHT: "Yat",
+      SPEEDBOAT: "Hız Teknesi",
       CATAMARAN: "Katamaran",
-      MOTOR_BOAT: "Motor Tekne",
-      GULET: "Gulet",
-      RIB: "RIB Bot",
-      FISHING_BOAT: "Balık Teknesi",
-      SPEED_BOAT: "Hız Teknesi",
     };
     return typeNames[type] || type;
   };
 
-  const getTypeIcon = (type: string) => {
-    // Her tip için farklı emoji/ikon
-    const typeIcons: { [key: string]: string } = {
+  const getTypeIcon = (type: string): string => {
+    const icons: { [key: string]: string } = {
       SAILBOAT: "⛵",
-      MOTOR_YACHT: "🛥️",
-      CATAMARAN: "🚤",
-      MOTOR_BOAT: "🚤",
-      GULET: "⛵",
-      RIB: "🚤",
-      FISHING_BOAT: "🎣",
-      SPEED_BOAT: "💨",
+      MOTORBOAT: "🚤",
+      YACHT: "🛥️",
+      SPEEDBOAT: "💨",
+      CATAMARAN: "⛵",
     };
-    return typeIcons[type] || "⚓";
+    return icons[type] || "🚢";
   };
 
   const getTypeColor = (index: number) => {

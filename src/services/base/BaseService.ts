@@ -123,6 +123,28 @@ export abstract class BaseService {
     }
   }
 
+  // Multiple file upload support
+  protected async uploadMultipleFiles<T>(
+    url: string,
+    formData: FormData
+  ): Promise<T> {
+    try {
+      const response: AxiosResponse<T> = await this.api.post(
+        `${this.baseUrl}${url}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   // Pagination support
   protected async getPaginated<T>(
     url: string,

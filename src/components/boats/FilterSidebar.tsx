@@ -42,17 +42,12 @@ interface FilterSidebarProps {
 }
 
 // Tekne tipi mapping (backend enum → frontend display)
-const boatTypeMapping: Record<string, string> = {
+const typeDisplayNames: { [key: string]: string } = {
   SAILBOAT: "Yelkenli",
-  MOTOR_YACHT: "Motor Yat",
+  MOTORBOAT: "Motor Bot",
+  YACHT: "Yat",
+  SPEEDBOAT: "Hız Teknesi",
   CATAMARAN: "Katamaran",
-  MOTOR_BOAT: "Motor Tekne",
-  GULET: "Gulet",
-  RIB: "RIB Bot",
-  FISHING_BOAT: "Balık Teknesi",
-  SPEED_BOAT: "Hız Teknesi",
-  LUXURY_YACHT: "Lüks Yat",
-  PARTY_BOAT: "Parti Teknesi",
 };
 
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
@@ -89,7 +84,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     return Array.from(typeSet)
       .map((type) => ({
         value: type,
-        label: boatTypeMapping[type] || type,
+        label: typeDisplayNames[type] || type,
         count: allBoats.filter((boat) => boat.type === type).length,
       }))
       .sort((a, b) => b.count - a.count); // En çok teknesi olan tip önce
