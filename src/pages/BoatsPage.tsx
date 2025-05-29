@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import BoatListingHeader from "@/components/boats/BoatListingHeader";
@@ -67,6 +67,23 @@ const convertToBoatDTO = (mockData: any): BoatDTO => ({
   updatedAt: new Date().toISOString(),
 });
 
+// Debounce hook
+const useDebounce = (value: any, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 const BoatsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -100,6 +117,17 @@ const BoatsPage = () => {
     date: true,
   });
 
+  // **PERFORMANCE OPTIMIZATION**
+  // Debounce filter değişikliklerini (500ms gecikme)
+  const debouncedSelectedTypes = useDebounce(selectedTypes, 300);
+  const debouncedCapacity = useDebounce(capacity, 300);
+  const debouncedPriceRange = useDebounce(priceRange, 500); // Fiyat için biraz daha uzun
+  const debouncedSelectedLocations = useDebounce(selectedLocations, 300);
+  const debouncedSelectedFeatures = useDebounce(selectedFeatures, 300);
+
+  const searchParams = new URLSearchParams(location.search);
+  const serviceParam = searchParams.get("service");
+
   const toggleSection = (section: string) => {
     setOpenSections({
       ...openSections,
@@ -107,8 +135,79 @@ const BoatsPage = () => {
     });
   };
 
-  const searchParams = new URLSearchParams(location.search);
-  const serviceParam = searchParams.get("service");
+  // Performance için memoized applyFilters
+  const applyFilters = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      console.log("🔄 Filtreleri uygulayın:", {
+        types: debouncedSelectedTypes,
+        capacity: debouncedCapacity,
+        priceRange: debouncedPriceRange,
+        locations: debouncedSelectedLocations,
+        features: debouncedSelectedFeatures,
+      });
+
+      // Real API call
+      const response = await boatService.searchBoats({
+        type:
+          debouncedSelectedTypes.length > 0
+            ? debouncedSelectedTypes[0]
+            : undefined,
+        minCapacity: debouncedCapacity
+          ? parseInt(debouncedCapacity.split("-")[0])
+          : undefined,
+        minPrice: debouncedPriceRange[0],
+        maxPrice: debouncedPriceRange[1],
+        location:
+          debouncedSelectedLocations.length > 0
+            ? debouncedSelectedLocations[0]
+            : undefined,
+      });
+
+      // Ensure we always set an array
+      const filteredResults = Array.isArray(response)
+        ? response
+        : (response as any)?.content || [];
+
+      console.log(
+        "✅ Filtreleme sonucu:",
+        filteredResults.length,
+        "tekne bulundu"
+      );
+      setFilteredBoats(filteredResults);
+    } catch (err) {
+      console.error("❌ Filter uygulama hatası:", err);
+      toast({
+        title: "Hata",
+        description:
+          "Filtreleri uygularken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+      setFilteredBoats([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    debouncedSelectedTypes,
+    debouncedCapacity,
+    debouncedPriceRange,
+    debouncedSelectedLocations,
+    debouncedSelectedFeatures,
+  ]);
+
+  // Optimized reset function
+  const handleFilterReset = useCallback(() => {
+    console.log("🔄 Filtreler sıfırlanıyor...");
+    setSelectedTypes([]);
+    setSelectedLocations([]);
+    setSelectedFeatures([]);
+    setPriceRange([500, 30000]);
+    setCapacity("");
+    if (serviceParam) {
+      navigate("/boats");
+    }
+  }, [serviceParam, navigate]);
 
   useEffect(() => {
     fetchBoats();
@@ -168,63 +267,25 @@ const BoatsPage = () => {
     }
   };
 
-  const handleFilterReset = () => {
-    setSelectedTypes([]);
-    setSelectedLocations([]);
-    setSelectedFeatures([]);
-    setPriceRange([500, 30000]);
-    setCapacity("");
-    if (serviceParam) {
-      navigate("/boats");
-    }
-  };
-
-  const applyFilters = async () => {
-    try {
-      setLoading(true);
-
-      // Real API call
-      const response = await boatService.searchBoats({
-        type: selectedTypes.length > 0 ? selectedTypes[0] : undefined,
-        minCapacity: capacity ? parseInt(capacity) : undefined,
-        minPrice: priceRange[0],
-        maxPrice: priceRange[1],
-        location:
-          selectedLocations.length > 0 ? selectedLocations[0] : undefined,
-      });
-      // Ensure we always set an array
-      const filteredResults = Array.isArray(response)
-        ? response
-        : (response as any)?.content || [];
-      setFilteredBoats(filteredResults);
-    } catch (err) {
-      console.error("Error applying filters:", err);
-      toast({
-        title: "Hata",
-        description:
-          "Filtreleri uygularken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        variant: "destructive",
-      });
-      setFilteredBoats([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (serviceParam && serviceBoatMap[serviceParam]) {
       setSelectedTypes(serviceBoatMap[serviceParam]);
     }
   }, [serviceParam]);
 
+  // Debounced değerler değiştiğinde filtreleri uygula
   useEffect(() => {
-    applyFilters();
+    if (allBoats.length > 0) {
+      // Sadece tekneler yüklendikten sonra filtrele
+      applyFilters();
+    }
   }, [
-    selectedTypes,
-    capacity,
-    priceRange,
-    selectedLocations,
-    selectedFeatures,
+    debouncedSelectedTypes,
+    debouncedCapacity,
+    debouncedPriceRange,
+    debouncedSelectedLocations,
+    debouncedSelectedFeatures,
+    applyFilters,
   ]);
 
   if (error) {
@@ -271,6 +332,8 @@ const BoatsPage = () => {
             toggleSection={toggleSection}
             resetFilters={handleFilterReset}
             applyFilters={applyFilters}
+            allBoats={allBoats}
+            filteredCount={filteredBoats.length}
           />
 
           <div className="flex-1">
