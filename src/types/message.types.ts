@@ -1,10 +1,18 @@
 // Message ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
-// ReadStatus Enum (backend'den)
+// ReadStatus Enum (backend'den - Java enum'u ile uyumlu)
 export enum ReadStatus {
   UNREAD = "UNREAD",
   READ = "READ",
-  DELIVERED = "DELIVERED",
+}
+
+// UserDTO tanımı (backend'deki User entity'sine uygun)
+export interface UserDTO {
+  id: number;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  profileImage?: string; // byte[] -> string (base64 veya URL)
 }
 
 // Message Types
@@ -40,12 +48,18 @@ export interface MessageQuery {
   includeDeleted?: boolean;
 }
 
-// UserDTO tanımı (message içinde kullanılan basit versiyon)
-export interface UserDTO {
-  id: number;
-  fullName: string;
-  phoneNumber: string;
-  profileImage?: string; // byte[] -> string (base64 veya URL)
+// Conversation helper types
+export interface ConversationInfo {
+  conversationId: string;
+  otherUser: {
+    id: number;
+    fullName: string;
+    email?: string;
+    profileImage?: string;
+  };
+  lastMessage?: MessageDTO;
+  unreadCount: number;
+  lastMessageTime?: string;
 }
 
 // Geriye uyumluluk için eski interface'lerin alias'ları

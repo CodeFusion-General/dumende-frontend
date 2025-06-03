@@ -1,98 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import CaptainLayout from '@/components/admin/layout/CaptainLayout';
-import { format, parseISO } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import React, { useState, useEffect } from "react";
+import CaptainLayout from "@/components/admin/layout/CaptainLayout";
+import { format, parseISO } from "date-fns";
+import { tr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { toast } from '@/components/ui/use-toast';
+import { toast } from "@/components/ui/use-toast";
+import { tourService } from "@/services/tourService";
+import { TourDateDTO, TourDTO } from "@/types/tour.types";
 
-interface Event {
+interface CalendarEvent {
+  id: number;
   date: string;
   title: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: "AVAILABLE" | "FULL" | "CANCELLED";
+  tourId: number;
+  maxGuests: number;
+  tourName?: string;
 }
 
 const TourCalendarPage: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
-  /* Backend hazır olduğunda kullanılacak state ve useEffect:
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [tours, setTours] = useState<TourDTO[]>([]);
 
   useEffect(() => {
-    const fetchTourEvents = async () => {
-      try {
-        setLoading(true);
-        const response = await tourService.getTourEvents();
-        setEvents(response);
-      } catch (error) {
-        console.error('Failed to fetch tour events:', error);
-        setError('Tur takvimi yüklenirken bir hata oluştu.');
-        toast({
-          title: "Hata",
-          description: "Tur takvimi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTourEvents();
+    fetchTourCalendarData();
   }, []);
 
   useEffect(() => {
     if (selectedDate) {
-      const fetchDateEvents = async () => {
-        try {
-          const dateStr = format(selectedDate, 'yyyy-MM-dd');
-          const response = await tourService.getDateEvents(dateStr);
-          setEvents(prev => {
-            const filtered = prev.filter(event => event.date !== dateStr);
-            return [...filtered, ...response];
-          });
-        } catch (error) {
-          console.error('Failed to fetch date events:', error);
-          toast({
-            title: "Hata",
-            description: "Seçilen tarihteki turlar yüklenemedi.",
-            variant: "destructive",
-          });
-        }
-      };
-
-      fetchDateEvents();
+      filterEventsByDate(selectedDate);
     }
   }, [selectedDate]);
-  */
 
-  // Mock implementation - Backend hazır olduğunda kaldırılacak
-  const [events, setEvents] = useState<Event[]>([
-    { date: '2024-07-10', title: 'Adalar Turu', status: 'scheduled' },
-    { date: '2024-07-15', title: 'Gün Batımı Turu', status: 'completed' },
-    { date: '2024-07-20', title: 'Özel Tekne Kiralama', status: 'cancelled' },
-  ]);
-
-  useEffect(() => {
-    document.documentElement.classList.add('scroll-smooth');
-    return () => document.documentElement.classList.remove('scroll-smooth');
-  }, []);
-
-  /* Backend hazır olduğunda kullanılacak fonksiyonlar:
-  const handleStatusChange = async (eventId: string, newStatus: string) => {
+  const fetchTourCalendarData = async () => {
     try {
-      await tourService.updateTourStatus(eventId, newStatus);
-      const response = await tourService.getTourEvents();
-      setEvents(response);
+      setLoading(true);
+      setError(null);
+
+      // TODO: guideId'yi auth context'ten al
+      const currentGuideId = 1;
+
+      // Get all tours for the guide
+      const toursData = await tourService.getToursByGuideId(currentGuideId);
+      setTours(toursData);
+
+      // Get all tour dates and convert to calendar events
+      const allEvents: CalendarEvent[] = [];
+
+      for (const tour of toursData) {
+        const tourDates = await tourService.getTourDatesByTourId(tour.id);
+
+        for (const tourDate of tourDates) {
+          allEvents.push({
+            id: tourDate.id,
+            date: format(parseISO(tourDate.startDate), "yyyy-MM-dd"),
+            title: `${tour.name} - ${format(
+              parseISO(tourDate.startDate),
+              "HH:mm"
+            )}`,
+            status: tourDate.availabilityStatus as
+              | "AVAILABLE"
+              | "FULL"
+              | "CANCELLED",
+            tourId: tour.id,
+            maxGuests: tourDate.maxGuests,
+            tourName: tour.name,
+          });
+        }
+      }
+
+      setEvents(allEvents);
+      console.log(
+        "✅ Tur takvimi başarıyla yüklendi:",
+        allEvents.length,
+        "etkinlik"
+      );
+    } catch (error) {
+      console.error("❌ Tur takvimi yükleme hatası:", error);
+      setError("Tur takvimi yüklenirken bir hata oluştu.");
+      toast({
+        title: "Hata",
+        description:
+          "Tur takvimi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterEventsByDate = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    return events.filter((event) => event.date === dateStr);
+  };
+
+  const handleStatusChange = async (eventId: number, newStatus: string) => {
+    try {
+      await tourService.updateTourDateAvailabilityStatus(eventId, newStatus);
+      await fetchTourCalendarData(); // Refresh calendar data
       toast({
         title: "Başarılı",
         description: "Tur durumu güncellendi.",
       });
     } catch (error) {
-      console.error('Failed to update tour status:', error);
+      console.error("❌ Tur durumu güncelleme hatası:", error);
       toast({
         title: "Hata",
         description: "Tur durumu güncellenemedi.",
@@ -101,63 +119,129 @@ const TourCalendarPage: React.FC = () => {
     }
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!window.confirm("Bu tur tarihini silmek istediğinize emin misiniz?")) {
+      return;
+    }
+
     try {
-      await tourService.deleteTourEvent(eventId);
-      setEvents(prev => prev.filter(event => event.id !== eventId));
+      await tourService.deleteTourDate(eventId);
+      setEvents((prev) => prev.filter((event) => event.id !== eventId));
       toast({
         title: "Başarılı",
-        description: "Tur silindi.",
+        description: "Tur tarihi silindi.",
       });
     } catch (error) {
-      console.error('Failed to delete tour event:', error);
+      console.error("❌ Tur tarihi silme hatası:", error);
       toast({
         title: "Hata",
-        description: "Tur silinemedi.",
+        description: "Tur tarihi silinemedi.",
         variant: "destructive",
       });
     }
   };
-  */
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled': return 'bg-blue-500';
-      case 'completed': return 'bg-green-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case "AVAILABLE":
+        return "bg-green-500";
+      case "FULL":
+        return "bg-orange-500";
+      case "CANCELLED":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
-  const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  const getStatusBadgeVariant = (
+    status: string
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'scheduled': return 'default';
-      case 'completed': return 'secondary';
-      case 'cancelled': return 'destructive';
-      default: return 'outline';
+      case "AVAILABLE":
+        return "default";
+      case "FULL":
+        return "secondary";
+      case "CANCELLED":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "AVAILABLE":
+        return "Müsait";
+      case "FULL":
+        return "Dolu";
+      case "CANCELLED":
+        return "İptal";
+      default:
+        return status;
     }
   };
 
   // Create a date matcher function for the calendar
   const isDateWithEvent = (date: Date): boolean => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return events.some(event => event.date === dateStr);
+    const dateStr = format(date, "yyyy-MM-dd");
+    return events.some((event) => event.date === dateStr);
   };
 
   // Create a custom day content render function
-  const dayClassName = (date: Date, events: Event[]) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+  const dayClassName = (date: Date, events: CalendarEvent[]) => {
+    const dateStr = format(date, "yyyy-MM-dd");
     const eventForDate = events.find((event) => event.date === dateStr);
-    
+
     if (eventForDate) {
       return cn(
-        "relative flex h-9 w-9 items-center justify-center",
+        "relative flex h-9 w-9 items-center justify-center text-white",
         getStatusColor(eventForDate.status)
       );
     }
-    
+
     return "relative flex h-9 w-9 items-center justify-center";
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <CaptainLayout>
+        <div className="container mx-auto py-8">
+          <h1 className="text-2xl font-bold mb-4">Tur Takvimi</h1>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-center text-gray-600">Takvim yükleniyor...</p>
+          </div>
+        </div>
+      </CaptainLayout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <CaptainLayout>
+        <div className="container mx-auto py-8">
+          <h1 className="text-2xl font-bold mb-4">Tur Takvimi</h1>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-center text-red-600">{error}</p>
+            <div className="text-center mt-4">
+              <button
+                onClick={fetchTourCalendarData}
+                className="bg-[#15847c] hover:bg-[#0e5c56] text-white px-4 py-2 rounded"
+              >
+                Tekrar Dene
+              </button>
+            </div>
+          </div>
+        </div>
+      </CaptainLayout>
+    );
+  }
+
+  const selectedDateEvents = selectedDate
+    ? filterEventsByDate(selectedDate)
+    : [];
 
   return (
     <CaptainLayout>
@@ -173,12 +257,12 @@ const TourCalendarPage: React.FC = () => {
                   onSelect={setSelectedDate}
                   className="rounded-md"
                   modifiers={{
-                    hasEvent: isDateWithEvent
+                    hasEvent: isDateWithEvent,
                   }}
                   modifiersStyles={{
                     hasEvent: {
-                      fontWeight: "bold"
-                    }
+                      fontWeight: "bold",
+                    },
                   }}
                   components={{
                     Day: ({ date, ...props }) => {
@@ -187,54 +271,96 @@ const TourCalendarPage: React.FC = () => {
                           {date.getDate()}
                         </div>
                       );
-                    }
+                    },
                   }}
                 />
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                    <span>Planlanmış</span>
+                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                    <span>Müsait</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                    <span>Tamamlanmış</span>
+                    <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                    <span>Dolu</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                    <span>İptal Edilmiş</span>
+                    <span>İptal</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <div className="flex-1">
-              {selectedDate && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h2 className="text-lg font-semibold mb-4">
-                      {format(selectedDate, 'd MMMM yyyy', { locale: tr })} Tarihindeki Turlar
-                    </h2>
-                    
-                    {events.filter(event => event.date === format(selectedDate, 'yyyy-MM-dd')).length > 0 ? (
-                      <ul className="space-y-3">
-                        {events
-                          .filter(event => event.date === format(selectedDate, 'yyyy-MM-dd'))
-                          .map((event, index) => (
-                            <li key={index} className="flex justify-between items-center p-3 border rounded-md">
-                              <span>{event.title}</span>
-                              <Badge variant={getStatusBadgeVariant(event.status)}>
-                                {event.status === 'scheduled' ? 'Planlandı' : 
-                                 event.status === 'completed' ? 'Tamamlandı' : 'İptal Edildi'}
-                              </Badge>
-                            </li>
-                          ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500">Bu tarihte planlanmış tur bulunmamaktadır.</p>
-                    )}
-                  </CardContent>
-                </Card>
+              <h2 className="text-lg font-semibold mb-4">
+                {selectedDate
+                  ? `${format(selectedDate, "dd MMMM yyyy", {
+                      locale: tr,
+                    })} - Turlar`
+                  : "Tarih seçin"}
+              </h2>
+
+              {selectedDateEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedDateEvents.map((event) => (
+                    <Card key={event.id} className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{event.title}</h3>
+                          <p className="text-sm text-gray-600">
+                            Maksimum {event.maxGuests} kişi
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Tur: {event.tourName}
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Badge variant={getStatusBadgeVariant(event.status)}>
+                            {getStatusText(event.status)}
+                          </Badge>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() =>
+                                handleStatusChange(event.id, "AVAILABLE")
+                              }
+                              className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded"
+                              disabled={event.status === "AVAILABLE"}
+                            >
+                              Müsait
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(event.id, "FULL")
+                              }
+                              className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded"
+                              disabled={event.status === "FULL"}
+                            >
+                              Dolu
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleStatusChange(event.id, "CANCELLED")
+                              }
+                              className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded"
+                              disabled={event.status === "CANCELLED"}
+                            >
+                              İptal
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event.id)}
+                              className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200"
+                            >
+                              Sil
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">Bu tarihte hiç tur bulunmuyor.</p>
               )}
             </div>
           </div>

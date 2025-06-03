@@ -1,48 +1,47 @@
-
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Upload, X, Star } from 'lucide-react';
+import React, { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Upload, X, Star } from "lucide-react";
 
 interface TourPhotosTabProps {
-  photos: string[];
-  onChange: (photos: string[]) => void;
+  photos: File[];
+  onChange: (photos: File[]) => void;
 }
 
 const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
   const [featuredIndex, setFeaturedIndex] = useState<number>(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // In a real application, this would handle file uploads to a server
+  // Handle file uploads
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    // For demo purposes, we'll just use URL.createObjectURL
-    // In a real app, you'd upload these to your server/storage
+    // Add new files to existing photos
     const newPhotos = [...photos];
     for (let i = 0; i < files.length; i++) {
-      if (newPhotos.length < 10) {  // Max 10 photos
-        newPhotos.push(URL.createObjectURL(files[i]));
+      if (newPhotos.length < 10) {
+        // Max 10 photos
+        newPhotos.push(files[i]);
       }
     }
-    
+
     onChange(newPhotos);
-    
+
     // Reset the input value so the same file can be selected again
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const removePhoto = (index: number) => {
     const newPhotos = [...photos];
     newPhotos.splice(index, 1);
     onChange(newPhotos);
-    
+
     // Adjust featured index if needed
     if (index === featuredIndex) {
-      setFeaturedIndex(0);  // Default to first photo
+      setFeaturedIndex(0); // Default to first photo
     } else if (index < featuredIndex) {
-      setFeaturedIndex(featuredIndex - 1);  // Shift down
+      setFeaturedIndex(featuredIndex - 1); // Shift down
     }
   };
 
@@ -61,17 +60,17 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
 
   const handleDrop = (index: number) => {
     if (draggedIndex === null) return;
-    
+
     const newPhotos = [...photos];
     const draggedPhoto = newPhotos[draggedIndex];
-    
+
     // Remove from original position
     newPhotos.splice(draggedIndex, 1);
     // Add at new position
     newPhotos.splice(index, 0, draggedPhoto);
-    
+
     onChange(newPhotos);
-    
+
     // Update featured index if it was moved
     if (featuredIndex === draggedIndex) {
       setFeaturedIndex(index);
@@ -80,23 +79,32 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
     } else if (featuredIndex < draggedIndex && featuredIndex >= index) {
       setFeaturedIndex(featuredIndex + 1);
     }
-    
+
     setDraggedIndex(null);
+  };
+
+  // Convert File to URL for display
+  const getPhotoUrl = (file: File): string => {
+    return URL.createObjectURL(file);
   };
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Fotoğraflar</h2>
       <p className="text-sm text-gray-500">
-        Tur için en fazla 10 fotoğraf ekleyebilirsiniz. İlk fotoğraf ana görsel olarak kullanılacaktır.
-        Fotoğrafları sürükleyerek sıralayabilir veya yıldız işaretine tıklayarak öne çıkarabilirsiniz.
+        Tur için en fazla 10 fotoğraf ekleyebilirsiniz. İlk fotoğraf ana görsel
+        olarak kullanılacaktır. Fotoğrafları sürükleyerek sıralayabilir veya
+        yıldız işaretine tıklayarak öne çıkarabilirsiniz.
       </p>
 
       <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#15847c] transition-colors">
         <Upload className="h-12 w-12 text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-700 mb-2">Fotoğrafları Buraya Sürükleyin</h3>
+        <h3 className="text-lg font-medium text-gray-700 mb-2">
+          Fotoğrafları Buraya Sürükleyin
+        </h3>
         <p className="text-gray-500 mb-4 text-center">
-          JPG veya PNG formatında, en fazla 10 adet fotoğraf. Her dosya maksimum 5MB olabilir.
+          JPG veya PNG formatında, en fazla 10 adet fotoğraf. Her dosya maksimum
+          5MB olabilir.
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           <input
@@ -123,14 +131,16 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
 
       {photos.length > 0 && (
         <div>
-          <h3 className="text-lg font-medium mb-3">Yüklenen Fotoğraflar ({photos.length}/10)</h3>
+          <h3 className="text-lg font-medium mb-3">
+            Yüklenen Fotoğraflar ({photos.length}/10)
+          </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {photos.map((photo, index) => (
               <Card
                 key={index}
                 className={`relative group overflow-hidden ${
-                  index === featuredIndex ? 'ring-2 ring-[#15847c]' : ''
-                } ${draggedIndex === index ? 'opacity-50' : ''}`}
+                  index === featuredIndex ? "ring-2 ring-[#15847c]" : ""
+                } ${draggedIndex === index ? "opacity-50" : ""}`}
                 draggable={true}
                 onDragStart={() => handleDragStart(index)}
                 onDragOver={handleDragOver}
@@ -138,7 +148,7 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
               >
                 <div className="aspect-square relative">
                   <img
-                    src={photo}
+                    src={getPhotoUrl(photo)}
                     alt={`Tour photo ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -149,7 +159,9 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
                         variant="ghost"
                         size="icon"
                         className={`bg-white/80 hover:bg-white ${
-                          index === featuredIndex ? 'text-yellow-500' : 'text-gray-500'
+                          index === featuredIndex
+                            ? "text-yellow-500"
+                            : "text-gray-500"
                         }`}
                         onClick={() => setFeatured(index)}
                       >
