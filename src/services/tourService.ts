@@ -16,192 +16,312 @@ import {
 
 class TourService extends BaseService {
   constructor() {
-    super("/tours");
+    super("/api");
   }
 
-  public async getTours(filters?: TourFilters): Promise<TourDTO[]> {
-    const queryString = filters ? this.buildQueryString(filters) : "";
-    return this.get<TourDTO[]>(`?${queryString}`);
+  // ======= Tour CRUD Operations =======
+  public async getTours(): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>("/tours");
   }
 
   public async getTourById(id: number): Promise<TourDTO> {
-    return this.get<TourDTO>(`/${id}`);
+    return this.get<TourDTO>(`/tours/${id}`);
   }
 
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
-    return this.post<TourDTO>("", data);
+    return this.post<TourDTO>("/tours", data);
   }
 
   public async updateTour(data: UpdateTourDTO): Promise<TourDTO> {
-    return this.put<TourDTO>(`/${data.id}`, data);
+    return this.put<TourDTO>("/tours", data);
   }
 
   public async deleteTour(id: number): Promise<void> {
-    return this.delete<void>(`/${id}`);
+    return this.delete<void>(`/tours/${id}`);
   }
 
-  public async updateTourStatus(
-    id: number,
-    status: TourStatus
-  ): Promise<TourDTO> {
-    return this.patch<TourDTO>(`/${id}/status`, { status });
+  public async updateTourStatus(id: number, status: string): Promise<void> {
+    return this.patch<void>(`/tours/${id}/status?status=${status}`);
   }
 
-  // Tour Date Management
-  public async getTourDates(tourId: number): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(`/${tourId}/dates`);
+  public async updateTourRating(id: number, rating: number): Promise<void> {
+    return this.patch<void>(`/tours/${id}/rating?rating=${rating}`);
   }
 
+  // ======= Tour Query Operations =======
+  public async getToursByBoatId(boatId: number): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(`/tours/boat/${boatId}`);
+  }
+
+  public async getToursByGuideId(guideId: number): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(`/tours/guide/${guideId}`);
+  }
+
+  public async searchToursByName(name: string): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(
+      `/tours/search/name?name=${encodeURIComponent(name)}`
+    );
+  }
+
+  public async searchToursByLocation(location: string): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(
+      `/tours/search/location?location=${encodeURIComponent(location)}`
+    );
+  }
+
+  public async searchToursByPriceRange(
+    minPrice: number,
+    maxPrice: number
+  ): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(
+      `/tours/search/price-range?minPrice=${minPrice}&maxPrice=${maxPrice}`
+    );
+  }
+
+  public async searchToursByCapacity(minCapacity: number): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(
+      `/tours/search/capacity?minCapacity=${minCapacity}`
+    );
+  }
+
+  public async existsTourById(id: number): Promise<boolean> {
+    return this.get<boolean>(`/tours/exists/${id}`);
+  }
+
+  // ======= Tour Date Operations =======
+  public async getTourDateById(id: number): Promise<TourDateDTO> {
+    return this.get<TourDateDTO>(`/tour-dates/${id}`);
+  }
+
+  public async getAllTourDates(): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>("/tour-dates");
+  }
+
+  public async getTourDatesByTourId(tourId: number): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(`/tour-dates/tour/${tourId}`);
+  }
+
+  public async getTourDatesByStatus(status: string): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(`/tour-dates/status?status=${status}`);
+  }
+
+  public async getTourDatesByTourIdAndStatus(
+    tourId: number,
+    status: string
+  ): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(
+      `/tour-dates/tour/${tourId}/status?status=${status}`
+    );
+  }
+
+  public async getTourDatesByStartDate(
+    startDate: string
+  ): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(
+      `/tour-dates/search/start-date?startDate=${startDate}`
+    );
+  }
+
+  public async getTourDatesByEndDate(endDate: string): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(
+      `/tour-dates/search/end-date?endDate=${endDate}`
+    );
+  }
+
+  public async getTourDatesByDateRange(
+    startDate: string,
+    endDate: string
+  ): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(
+      `/tour-dates/search/date-range?startDate=${startDate}&endDate=${endDate}`
+    );
+  }
+
+  public async getTourDatesByTourIdAndDateRange(
+    tourId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<TourDateDTO[]> {
+    return this.get<TourDateDTO[]>(
+      `/tour-dates/tour/${tourId}/date-range?startDate=${startDate}&endDate=${endDate}`
+    );
+  }
+
+  public async existsTourDateById(id: number): Promise<boolean> {
+    return this.get<boolean>(`/tour-dates/exists/${id}`);
+  }
+
+  // ======= Tour Date Command Operations =======
   public async createTourDate(data: CreateTourDateDTO): Promise<TourDateDTO> {
-    return this.post<TourDateDTO>("/dates", data);
+    return this.post<TourDateDTO>("/tour-dates", data);
+  }
+
+  public async createTourDatesBatch(
+    tourId: number,
+    tourDates: CreateTourDateDTO[]
+  ): Promise<TourDateDTO[]> {
+    return this.post<TourDateDTO[]>(
+      `/tour-dates/tour/${tourId}/batch`,
+      tourDates
+    );
   }
 
   public async updateTourDate(data: UpdateTourDateDTO): Promise<TourDateDTO> {
-    return this.put<TourDateDTO>(`/dates/${data.id}`, data);
+    return this.put<TourDateDTO>("/tour-dates", data);
   }
 
   public async deleteTourDate(id: number): Promise<void> {
-    return this.delete<void>(`/dates/${id}`);
+    return this.delete<void>(`/tour-dates/${id}`);
   }
 
-  public async updateTourDateAvailability(
-    dateId: number,
-    status: TourAvailabilityStatus
-  ): Promise<TourDateDTO> {
-    return this.patch<TourDateDTO>(`/dates/${dateId}/availability`, {
-      availabilityStatus: status,
-    });
+  public async deleteTourDatesByTourId(tourId: number): Promise<void> {
+    return this.delete<void>(`/tour-dates/tour/${tourId}`);
   }
 
-  // Tour Image Management
-  public async getTourImages(tourId: number): Promise<TourImageDTO[]> {
-    return this.get<TourImageDTO[]>(`/${tourId}/images`);
+  public async updateTourDateAvailabilityStatus(
+    id: number,
+    status: string
+  ): Promise<void> {
+    return this.patch<void>(`/tour-dates/${id}/status?status=${status}`);
   }
 
-  public async uploadTourImage(
-    tourId: number,
-    file: File,
-    displayOrder = 1
+  public async updateTourDateRange(
+    id: number,
+    startDate: string,
+    endDate: string
+  ): Promise<void> {
+    return this.patch<void>(
+      `/tour-dates/${id}/date-range?startDate=${startDate}&endDate=${endDate}`
+    );
+  }
+
+  public async updateTourDateMaxGuests(
+    id: number,
+    maxGuests: number
+  ): Promise<void> {
+    return this.patch<void>(
+      `/tour-dates/${id}/max-guests?maxGuests=${maxGuests}`
+    );
+  }
+
+  // ======= Tour Image Operations =======
+  public async getTourImageById(id: number): Promise<TourImageDTO> {
+    return this.get<TourImageDTO>(`/tour-images/${id}`);
+  }
+
+  public async getAllTourImages(): Promise<TourImageDTO[]> {
+    return this.get<TourImageDTO[]>("/tour-images");
+  }
+
+  public async getTourImagesByTourId(tourId: number): Promise<TourImageDTO[]> {
+    return this.get<TourImageDTO[]>(`/tour-images/tour/${tourId}`);
+  }
+
+  public async getTourImagesByTourIdOrdered(
+    tourId: number
+  ): Promise<TourImageDTO[]> {
+    return this.get<TourImageDTO[]>(`/tour-images/tour/${tourId}/ordered`);
+  }
+
+  public async existsTourImageById(id: number): Promise<boolean> {
+    return this.get<boolean>(`/tour-images/exists/${id}`);
+  }
+
+  // ======= Tour Image Command Operations =======
+  public async createTourImage(
+    data: CreateTourImageDTO
   ): Promise<TourImageDTO> {
-    return this.uploadFile<TourImageDTO>(`/${tourId}/images`, file, {
-      displayOrder,
-    });
+    return this.post<TourImageDTO>("/tour-images", data);
+  }
+
+  public async createTourImagesBatch(
+    tourId: number,
+    tourImages: CreateTourImageDTO[]
+  ): Promise<TourImageDTO[]> {
+    return this.post<TourImageDTO[]>(
+      `/tour-images/tour/${tourId}/batch`,
+      tourImages
+    );
   }
 
   public async updateTourImage(
     data: UpdateTourImageDTO
   ): Promise<TourImageDTO> {
-    return this.put<TourImageDTO>(`/images/${data.id}`, data);
+    return this.put<TourImageDTO>("/tour-images", data);
   }
 
   public async deleteTourImage(id: number): Promise<void> {
-    return this.delete<void>(`/images/${id}`);
+    return this.delete<void>(`/tour-images/${id}`);
   }
 
-  // Availability and Booking
-  public async getTourAvailability(
+  public async deleteTourImagesByTourId(tourId: number): Promise<void> {
+    return this.delete<void>(`/tour-images/tour/${tourId}`);
+  }
+
+  public async updateTourImageDisplayOrder(
     id: number,
-    date: string
-  ): Promise<{
-    available: boolean;
-    availableSpots: number;
-    maxGuests: number;
-    status: TourAvailabilityStatus;
-  }> {
-    return this.get(`/${id}/availability`, { date });
+    displayOrder: number
+  ): Promise<void> {
+    return this.patch<void>(
+      `/tour-images/${id}/display-order?displayOrder=${displayOrder}`
+    );
   }
 
-  public async getAvailableTourDates(
-    tourId: number,
-    month?: string
-  ): Promise<TourDateDTO[]> {
-    const params = month ? { month } : {};
-    return this.get<TourDateDTO[]>(`/${tourId}/available-dates`, params);
-  }
-
-  // Related queries
-  public async getToursByBoat(boatId: number): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/boat/${boatId}`);
-  }
-
-  public async getToursByGuide(guideId: number): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/guide/${guideId}`);
-  }
-
-  public async getToursByLocation(location: string): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/location/${encodeURIComponent(location)}`);
-  }
-
-  // Search and Filter
+  // ======= Helper Methods =======
   public async searchTours(params: {
     name?: string;
     location?: string;
     minPrice?: number;
     maxPrice?: number;
-    startDate?: string;
-    endDate?: string;
-    capacity?: number;
-    guideId?: number;
-    boatId?: number;
+    minCapacity?: number;
   }): Promise<TourDTO[]> {
-    const queryString = this.buildQueryString(params);
-    return this.get<TourDTO[]>(`/search?${queryString}`);
-  }
+    let results: TourDTO[] = [];
 
-  public async getPopularTours(limit = 10): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/popular?limit=${limit}`);
-  }
-
-  public async getFeaturedTours(limit = 5): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/featured?limit=${limit}`);
-  }
-
-  // Pricing
-  public async calculateTourPrice(
-    tourId: number,
-    data: {
-      startDate: string;
-      endDate?: string;
-      passengerCount: number;
+    if (params.name) {
+      results = await this.searchToursByName(params.name);
+    } else if (params.location) {
+      results = await this.searchToursByLocation(params.location);
+    } else if (params.minPrice && params.maxPrice) {
+      results = await this.searchToursByPriceRange(
+        params.minPrice,
+        params.maxPrice
+      );
+    } else if (params.minCapacity) {
+      results = await this.searchToursByCapacity(params.minCapacity);
+    } else {
+      results = await this.getTours();
     }
-  ): Promise<{
-    basePrice: number;
-    totalPrice: number;
-    breakdown: {
-      perPerson: number;
-      persons: number;
-      seasonMultiplier: number;
-      taxes: number;
-      fees: number;
-    };
-  }> {
-    return this.post(`/${tourId}/calculate-price`, data);
+
+    return results;
   }
 
-  // Pagination support
-  public async getToursPaginated(
-    filters?: TourFilters & {
-      page?: number;
-      size?: number;
-      sort?: string;
-    }
-  ) {
-    return this.getPaginated<TourDTO>("/paginated", filters);
+  // Backward compatibility methods
+  public async getToursByLocation(location: string): Promise<TourDTO[]> {
+    return this.searchToursByLocation(location);
   }
 
-  // Statistics
-  public async getTourStatistics(tourId?: number): Promise<{
-    totalTours: number;
-    activeTours: number;
-    averageRating: number;
-    totalBookings: number;
-    totalRevenue: number;
-    popularLocations: string[];
-    bookingRate: number;
-    seasonalData: Array<{ month: string; bookings: number; revenue: number }>;
-  }> {
-    const url = tourId ? `/statistics/${tourId}` : "/statistics";
-    return this.get(url);
+  public async getToursByGuide(guideId: number): Promise<TourDTO[]> {
+    return this.getToursByGuideId(guideId);
+  }
+
+  public async getToursByBoat(boatId: number): Promise<TourDTO[]> {
+    return this.getToursByBoatId(boatId);
+  }
+
+  public async getTourDates(tourId: number): Promise<TourDateDTO[]> {
+    return this.getTourDatesByTourId(tourId);
+  }
+
+  public async getTourImages(tourId: number): Promise<TourImageDTO[]> {
+    return this.getTourImagesByTourIdOrdered(tourId);
+  }
+
+  public async deleteToursByBoatId(boatId: number): Promise<void> {
+    return this.delete<void>(`/tours/boat/${boatId}`);
+  }
+
+  public async deleteToursByGuideId(guideId: number): Promise<void> {
+    return this.delete<void>(`/tours/guide/${guideId}`);
   }
 }
 

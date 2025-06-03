@@ -9,6 +9,19 @@ import {
   ContactUpdateRequest,
 } from "@/types/contact.types";
 
+export interface ContactMessage {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}
+
+export interface ContactResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+}
+
 class ContactService extends BaseService {
   constructor() {
     super("/contact");
@@ -202,6 +215,11 @@ class ContactService extends BaseService {
     topCategories: Array<{ category: string; count: number }>;
   }> {
     return this.get("/statistics");
+  }
+
+  public async submitMessage(data: ContactMessage): Promise<ContactResponse> {
+    console.log("🚀 ContactService: İletişim formu gönderiliyor...", data);
+    return this.post<ContactResponse>("/message", data);
   }
 }
 

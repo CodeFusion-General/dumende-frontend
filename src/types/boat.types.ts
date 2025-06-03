@@ -157,3 +157,8 @@ export interface BoatFilters {
 export interface Boat extends BoatDTO {}
 export interface BoatCreateRequest extends CreateBoatDTO {}
 export interface BoatUpdateRequest extends UpdateBoatDTO {}
+
+// VesselsPage için alias'lar
+export interface CreateVesselDTO extends CreateBoatDTO {}
+export interface UpdateVesselDTO extends UpdateBoatDTO {}
+export interface VesselDTO extends BoatDTO {}

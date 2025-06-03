@@ -1,11 +1,14 @@
 // Booking ve Payment ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+// Helper type for Long (Java Long to TypeScript)
+type Long = number;
+
 // Booking (Rezervasyon) Types
 export interface BookingDTO {
-  id: number;
-  customerId: number;
-  boatId: number;
-  tourId?: number; // Opsiyonel, tour ile ilişkilendirme varsa
+  id: Long;
+  customerId: Long;
+  boatId: Long;
+  tourId?: Long; // Opsiyonel, tour ile ilişkilendirme varsa
   startDate: string; // LocalDate -> string
   endDate: string; // LocalDate -> string
   status: string; // BookingStatus enum değeri
@@ -17,9 +20,9 @@ export interface BookingDTO {
 }
 
 export interface CreateBookingDTO {
-  customerId: number;
-  boatId: number;
-  tourId?: number; // Opsiyonel, tour ile ilişkilendirme yapılacaksa
+  customerId: Long;
+  boatId: Long;
+  tourId?: Long; // Opsiyonel, tour ile ilişkilendirme yapılacaksa
   startDate: string; // LocalDate -> string
   endDate: string; // LocalDate -> string
   totalPrice: number; // Double -> number
@@ -28,10 +31,10 @@ export interface CreateBookingDTO {
 }
 
 export interface UpdateBookingDTO {
-  id: number; // Güncellenecek kaydın ID'si
-  customerId?: number;
-  boatId?: number;
-  tourId?: number;
+  id: Long; // Güncellenecek kaydın ID'si
+  customerId?: Long;
+  boatId?: Long;
+  tourId?: Long;
   startDate?: string; // LocalDate -> string
   endDate?: string; // LocalDate -> string
   status?: string; // BookingStatus enum değeri
@@ -56,18 +59,18 @@ export interface PaymentDTO {
 }
 
 export interface CreatePaymentDTO {
-  bookingId: number;
+  bookingId: Long;
   amount: number; // Double -> number
   currency: string;
   paymentMethod: string;
-  transactionId: string;
-  paymentDate: string; // LocalDateTime -> string
+  transactionId?: string;
+  paymentDate?: string; // LocalDateTime -> string
   notes?: string; // Opsiyonel
 }
 
 export interface UpdatePaymentDTO {
-  id: number;
-  bookingId?: number;
+  id: Long;
+  bookingId?: Long;
   amount?: number; // Double -> number
   currency?: string;
   paymentMethod?: string;
@@ -83,6 +86,7 @@ export enum BookingStatus {
   CONFIRMED = "CONFIRMED",
   CANCELLED = "CANCELLED",
   COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
 }
 
 export enum PaymentStatus {
@@ -99,12 +103,73 @@ export interface BookingUpdateRequest extends UpdateBookingDTO {}
 
 // Filtreleme için kullanılan interface
 export interface BookingFilters {
-  customerId?: number;
-  boatId?: number;
-  tourId?: number;
-  status?: BookingStatus;
+  status?: BookingStatus[];
+  boatId?: Long;
+  tourId?: Long;
+  customerId?: Long;
   startDate?: string;
   endDate?: string;
   minPrice?: number;
   maxPrice?: number;
+  minPassengers?: number;
+  maxPassengers?: number;
+}
+
+// Extended Booking with related data (frontend için)
+export interface BookingWithDetails {
+  id: Long;
+  customerId: Long;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  boatId: Long;
+  boatName?: string;
+  boatType?: string;
+  boatLocation?: string;
+  tourId?: Long;
+  tourName?: string;
+  tourDescription?: string;
+  startDate: string;
+  endDate: string;
+  status: BookingStatus;
+  totalPrice: number;
+  passengerCount: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Booking statistics
+export interface BookingStatistics {
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  cancelledBookings: number;
+  completedBookings: number;
+  totalRevenue: number;
+  thisMonthBookings: number;
+  thisMonthRevenue: number;
+}
+
+// Calendar event for booking display
+export interface BookingCalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  status: BookingStatus;
+  color: string;
+  customerName?: string;
+  passengerCount: number;
+  totalPrice: number;
+  notes?: string;
+}
+
+// Booking query parameters
+export interface BookingQuery {
+  page?: number;
+  size?: number;
+  sort?: string;
+  direction?: "ASC" | "DESC";
+  filters?: BookingFilters;
 }

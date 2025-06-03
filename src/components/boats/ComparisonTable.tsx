@@ -1,20 +1,29 @@
-import React from 'react';
-import { X, CheckCircle2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { BoatDTO } from '@/types/boat.types';
+import React from "react";
+import { X, CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { BoatDTO } from "@/types/boat.types";
+import { getImageUrl } from "@/lib/imageUtils";
 
 interface ComparisonTableProps {
   boats: BoatDTO[];
   onRemove: (id: number) => void;
 }
 
-const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) => {
+const ComparisonTable: React.FC<ComparisonTableProps> = ({
+  boats,
+  onRemove,
+}) => {
   const featuresList = [
-    'Klima', 'Jakuzi', 'Flybridge', 'Snorkel Ekipmanı', 
-    'Jet Ski', 'Balık Tutma Ekipmanı', 'Wi-Fi'
+    "Klima",
+    "Jakuzi",
+    "Flybridge",
+    "Snorkel Ekipmanı",
+    "Jet Ski",
+    "Balık Tutma Ekipmanı",
+    "Wi-Fi",
   ];
-  
+
   return (
     <div className="min-w-[800px]">
       <table className="w-full border-collapse">
@@ -22,7 +31,10 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
           <tr>
             <th className="min-w-[180px] bg-gray-50 p-4 text-left border-r border-gray-100"></th>
             {boats.map((boat) => (
-              <th key={boat.id} className="min-w-[250px] p-0 border-r border-gray-100">
+              <th
+                key={boat.id}
+                className="min-w-[250px] p-0 border-r border-gray-100"
+              >
                 <div className="relative">
                   <button
                     onClick={() => onRemove(boat.id)}
@@ -33,7 +45,13 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
                   </button>
                   <div className="h-48 overflow-hidden">
                     <img
-                      src={boat.images?.[0]?.imageData || '/placeholder-boat.jpg'}
+                      src={
+                        boat.images?.find((img) => img && img.id)
+                          ? getImageUrl(
+                              boat.images.find((img) => img && img.id)!.id
+                            )
+                          : "/placeholder-boat.jpg"
+                      }
                       alt={boat.name}
                       className="w-full h-full object-cover"
                     />
@@ -49,55 +67,69 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
         </thead>
         <tbody>
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Fiyat</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Fiyat
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 <div className="font-bold text-primary">
                   {boat.dailyPrice} ₺
-                  <span className="text-gray-400 text-sm font-normal ml-1">/gün</span>
+                  <span className="text-gray-400 text-sm font-normal ml-1">
+                    /gün
+                  </span>
                 </div>
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Kapasite</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Kapasite
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 {boat.capacity} kişi
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Model</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Model
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 {boat.model}
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Yapım Yılı</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Yapım Yılı
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 {boat.buildYear}
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Lokasyon</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Lokasyon
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 {boat.location}
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Değerlendirme</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Değerlendirme
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 {boat.rating ? (
@@ -107,23 +139,32 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
                     </span>
                   </div>
                 ) : (
-                  <span className="text-sm text-gray-500">Henüz değerlendirme yok</span>
+                  <span className="text-sm text-gray-500">
+                    Henüz değerlendirme yok
+                  </span>
                 )}
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">Özellikler</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              Özellikler
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 <ul className="space-y-2">
                   {featuresList.map((feature) => {
-                    const hasFeature = boat.features?.some(f => f.featureName === feature);
+                    const hasFeature = boat.features?.some(
+                      (f) => f.featureName === feature
+                    );
                     return (
                       <li key={feature} className="flex items-center text-sm">
                         {hasFeature ? (
-                          <CheckCircle2 size={16} className="text-green-500 mr-2" />
+                          <CheckCircle2
+                            size={16}
+                            className="text-green-500 mr-2"
+                          />
                         ) : (
                           <XCircle size={16} className="text-gray-400 mr-2" />
                         )}
@@ -137,15 +178,15 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({ boats, onRemove }) =>
               </td>
             ))}
           </tr>
-          
+
           <tr className="border-t border-gray-100">
-            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">İşlem</td>
+            <td className="bg-gray-50 font-medium p-4 border-r border-gray-100">
+              İşlem
+            </td>
             {boats.map((boat) => (
               <td key={boat.id} className="p-4 border-r border-gray-100">
                 <Button asChild className="w-full">
-                  <Link to={`/boats/${boat.id}`}>
-                    Detayları Görüntüle
-                  </Link>
+                  <Link to={`/boats/${boat.id}`}>Detayları Görüntüle</Link>
                 </Button>
               </td>
             ))}
