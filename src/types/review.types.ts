@@ -10,42 +10,48 @@ export interface CustomerDTO {
 
 // Review Types
 export interface ReviewDTO {
-  id: number;
-  bookingId: number;
-  customer: CustomerDTO; // Güncellenmiş CustomerDTO kullanıyoruz
-  boatId?: number; // Tekne değerlendirmesi için
-  tourId?: number; // Tur değerlendirmesi için
-  rating: number; // 1-5 arası
-  comment?: string; // Opsiyonel yorum (max 500 karakter)
-  date: string; // LocalDate -> string
-  createdAt: string; // LocalDateTime -> string
-  updatedAt: string; // LocalDateTime -> string
+  reviewId: Long;
+  customerId: Long;
+  customerName?: string;
+  customerEmail?: string;
+  boatId?: Long;
+  boatName?: string;
+  tourId?: Long;
+  tourName?: string;
+  bookingId?: Long;
+  rating: number;
+  comment: string;
+  reviewDate: string; // LocalDateTime string format
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateReviewCommand {
-  bookingId: number;
-  rating: number; // 1-5 arası zorunlu
-  comment?: string; // Opsiyonel (max 500 karakter)
-  date?: string; // LocalDate -> string, opsiyonel
+  customerId: Long;
+  boatId?: Long;
+  tourId?: Long;
+  bookingId?: Long;
+  rating: number;
+  comment: string;
 }
 
 export interface UpdateReviewCommand {
-  reviewId: number;
-  rating: number; // 1-5 arası zorunlu
-  comment?: string; // Opsiyonel (max 500 karakter)
+  reviewId: Long;
+  rating?: number;
+  comment?: string;
 }
 
 export interface ReviewQuery {
-  id?: number;
-  bookingId?: number;
-  customerId?: number;
-  boatId?: number;
-  tourId?: number;
-  minRating?: number; // Minimum değerlendirme puanı
-  maxRating?: number; // Maximum değerlendirme puanı
-  fromDate?: string; // Başlangıç tarihi (LocalDate -> string)
-  toDate?: string; // Bitiş tarihi (LocalDate -> string)
-  includeDeleted?: boolean;
+  customerId?: Long;
+  boatId?: Long;
+  tourId?: Long;
+  bookingId?: Long;
+  minRating?: number;
+  maxRating?: number;
+  startDate?: string;
+  endDate?: string;
+  isActive?: boolean;
 }
 
 // UserDTO tanımı (review içinde kullanılan basit versiyon)
@@ -56,23 +62,53 @@ export interface UserDTO {
   profileImage?: string; // byte[] -> string (base64 veya URL)
 }
 
-// Geriye uyumluluk için eski interface'lerin alias'ları
-export interface Review extends Omit<ReviewDTO, "customer"> {
-  userId: number; // customer.id yerine
-  userName?: string; // customer.fullName yerine
-}
-
+// Alias'lar for backward compatibility
 export interface ReviewCreateRequest extends CreateReviewCommand {}
 export interface ReviewUpdateRequest extends UpdateReviewCommand {}
 
 // Filtreleme için kullanılan interface
 export interface ReviewFilters {
-  boatId?: number;
-  tourId?: number;
-  customerId?: number;
-  minRating?: number;
-  maxRating?: number;
-  startDate?: string;
-  endDate?: string;
-  hasComment?: boolean; // Yorumu olan değerlendirmeler
+  fiveStars: boolean;
+  fourStars: boolean;
+  threeStars: boolean;
+  twoStars: boolean;
+  oneStars: boolean;
+  boatId?: Long;
+  tourId?: Long;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
 }
+
+// Review statistics
+export interface ReviewStatistics {
+  totalReviews: number;
+  averageRating: number;
+  lastMonthReviews: number;
+  ratingDistribution: RatingDistribution[];
+}
+
+export interface RatingDistribution {
+  rating: number;
+  count: number;
+  percentage: number;
+}
+
+// For compatibility with existing components
+export interface Review {
+  id: string;
+  userName: string;
+  date: string;
+  rating: number;
+  comment: string;
+  tourName?: string;
+  boatName?: string;
+  customerId?: Long;
+  boatId?: Long;
+  tourId?: Long;
+  bookingId?: Long;
+}
+
+// Helper type for Long (Java Long to TypeScript)
+type Long = number;

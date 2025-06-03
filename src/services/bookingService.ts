@@ -9,6 +9,8 @@ import {
   CreatePaymentDTO,
   UpdatePaymentDTO,
   PaymentStatus,
+  BookingWithDetails,
+  BookingStatistics,
 } from "@/types/booking.types";
 
 class BookingService extends BaseService {
@@ -185,6 +187,331 @@ class BookingService extends BaseService {
     const queryString = params ? this.buildQueryString(params) : "";
     return this.get(`/statistics?${queryString}`);
   }
+
+  // Public methods for helper services access
+  public async getBookingsByStatus(status: string): Promise<BookingDTO[]> {
+    return this.get<BookingDTO[]>(`/status`, { status });
+  }
+
+  public async getBookingsByDateRange(
+    startDate: string,
+    endDate: string
+  ): Promise<BookingDTO[]> {
+    return this.get<BookingDTO[]>(`/date-range`, { startDate, endDate });
+  }
+
+  public async checkBookingExists(id: number): Promise<boolean> {
+    return this.get<boolean>(`/exists/${id}`);
+  }
+
+  public async deleteBookingsByCustomerId(customerId: number): Promise<void> {
+    return this.delete<void>(`/customer/${customerId}`);
+  }
+
+  public async deleteBookingsByBoatId(boatId: number): Promise<void> {
+    return this.delete<void>(`/boat/${boatId}`);
+  }
+
+  public async deleteBookingsByTourId(tourId: number): Promise<void> {
+    return this.delete<void>(`/tour/${tourId}`);
+  }
+
+  public async updateBookingStatusById(
+    id: number,
+    status: string
+  ): Promise<void> {
+    return this.patch<void>(`/${id}/status?status=${status}`, null);
+  }
+
+  public async getBoatsByOwnerId(ownerId: number): Promise<any[]> {
+    return this.get<any[]>(`/boats/owner/${ownerId}`);
+  }
+
+  public async getToursByBoatId(boatId: number): Promise<any[]> {
+    return this.get<any[]>(`/tours/boat/${boatId}`);
+  }
+
+  public async getUserById(userId: number): Promise<any> {
+    return this.get<any>(`/users/${userId}`);
+  }
+
+  public async getBoatById(boatId: number): Promise<any> {
+    return this.get<any>(`/boats/${boatId}`);
+  }
+
+  public async getTourById(tourId: number): Promise<any> {
+    return this.get<any>(`/tours/${tourId}`);
+  }
 }
 
 export const bookingService = new BookingService();
+
+// Booking Query Service - BaseService kullanarak
+export const bookingQueryService = {
+  // Get booking by ID
+  findBookingById: async (id: number): Promise<BookingDTO> => {
+    return bookingService.getBookingById(id);
+  },
+
+  // Get all bookings
+  findAllBookings: async (): Promise<BookingDTO[]> => {
+    return bookingService.getBookings();
+  },
+
+  // Get bookings by customer ID
+  findBookingsByCustomerId: async (
+    customerId: number
+  ): Promise<BookingDTO[]> => {
+    return bookingService.getCustomerBookings(customerId);
+  },
+
+  // Get bookings by boat ID
+  findBookingsByBoatId: async (boatId: number): Promise<BookingDTO[]> => {
+    return bookingService.getBoatBookings(boatId);
+  },
+
+  // Get bookings by tour ID
+  findBookingsByTourId: async (tourId: number): Promise<BookingDTO[]> => {
+    return bookingService.getTourBookings(tourId);
+  },
+
+  // Get bookings by status
+  findBookingsByStatus: async (status: string): Promise<BookingDTO[]> => {
+    return bookingService.getBookingsByStatus(status);
+  },
+
+  // Get bookings by date range
+  findBookingsByDateRange: async (
+    startDate: string,
+    endDate: string
+  ): Promise<BookingDTO[]> => {
+    return bookingService.getBookingsByDateRange(startDate, endDate);
+  },
+
+  // Check if booking exists
+  existsBookingById: async (id: number): Promise<boolean> => {
+    return bookingService.checkBookingExists(id);
+  },
+};
+
+// Booking Command Service - BaseService kullanarak
+export const bookingCommandService = {
+  // Create new booking
+  createBooking: async (command: CreateBookingDTO): Promise<BookingDTO> => {
+    return bookingService.createBooking(command);
+  },
+
+  // Update existing booking
+  updateBooking: async (command: UpdateBookingDTO): Promise<BookingDTO> => {
+    return bookingService.updateBooking(command);
+  },
+
+  // Delete booking
+  deleteBooking: async (id: number): Promise<void> => {
+    return bookingService.deleteBooking(id);
+  },
+
+  // Delete bookings by customer ID
+  deleteBookingsByCustomerId: async (customerId: number): Promise<void> => {
+    return bookingService.deleteBookingsByCustomerId(customerId);
+  },
+
+  // Delete bookings by boat ID
+  deleteBookingsByBoatId: async (boatId: number): Promise<void> => {
+    return bookingService.deleteBookingsByBoatId(boatId);
+  },
+
+  // Delete bookings by tour ID
+  deleteBookingsByTourId: async (tourId: number): Promise<void> => {
+    return bookingService.deleteBookingsByTourId(tourId);
+  },
+
+  // Update booking status
+  updateBookingStatus: async (id: number, status: string): Promise<void> => {
+    return bookingService.updateBookingStatusById(id, status);
+  },
+};
+
+// Helper functions for owner/captain specific data - BaseService kullanarak
+export const bookingHelperService = {
+  // Get all bookings for owner's boats
+  getBookingsForOwnerBoats: async (ownerId: number): Promise<BookingDTO[]> => {
+    try {
+      // First get owner's boats
+      const boats = await bookingService.getBoatsByOwnerId(ownerId);
+
+      // Get bookings for each boat
+      const bookingsPromises = boats.map((boat: any) =>
+        bookingService.getBoatBookings(boat.id)
+      );
+
+      const bookingsArrays = await Promise.all(bookingsPromises);
+      return bookingsArrays.flat();
+    } catch (error) {
+      console.error("Error fetching bookings for owner boats:", error);
+      return [];
+    }
+  },
+
+  // Get all bookings for owner's tours
+  getBookingsForOwnerTours: async (ownerId: number): Promise<BookingDTO[]> => {
+    try {
+      // First get owner's boats, then tours for those boats
+      const boats = await bookingService.getBoatsByOwnerId(ownerId);
+
+      const bookingsPromises: Promise<BookingDTO[]>[] = [];
+
+      for (const boat of boats) {
+        const tours = await bookingService.getToursByBoatId(boat.id);
+
+        tours.forEach((tour: any) => {
+          bookingsPromises.push(bookingService.getTourBookings(tour.id));
+        });
+      }
+
+      const bookingsArrays = await Promise.all(bookingsPromises);
+      return bookingsArrays.flat();
+    } catch (error) {
+      console.error("Error fetching bookings for owner tours:", error);
+      return [];
+    }
+  },
+
+  // Get all bookings for an owner (boats + tours)
+  getAllBookingsForOwner: async (ownerId: number): Promise<BookingDTO[]> => {
+    try {
+      const [boatBookings, tourBookings] = await Promise.all([
+        bookingHelperService.getBookingsForOwnerBoats(ownerId),
+        bookingHelperService.getBookingsForOwnerTours(ownerId),
+      ]);
+
+      // Combine and deduplicate bookings
+      const allBookings = [...boatBookings, ...tourBookings];
+      const uniqueBookings = allBookings.filter(
+        (booking, index, self) =>
+          index === self.findIndex((b) => b.id === booking.id)
+      );
+
+      return uniqueBookings;
+    } catch (error) {
+      console.error("Error fetching all bookings for owner:", error);
+      return [];
+    }
+  },
+
+  // Get bookings for specific boat with details
+  getBookingsWithDetailsForBoat: async (
+    boatId: number
+  ): Promise<BookingWithDetails[]> => {
+    try {
+      const bookings = await bookingService.getBoatBookings(boatId);
+
+      // Enrich with additional data
+      const bookingsWithDetails: BookingWithDetails[] = [];
+
+      for (const booking of bookings) {
+        try {
+          // Get customer info
+          const customer = await bookingService.getUserById(booking.customerId);
+
+          // Get boat info
+          const boat = await bookingService.getBoatById(booking.boatId);
+
+          // Get tour info if exists
+          let tour = null;
+          if (booking.tourId) {
+            tour = await bookingService.getTourById(booking.tourId);
+          }
+
+          const bookingWithDetails: BookingWithDetails = {
+            ...booking,
+            customerName: customer.fullName,
+            customerEmail: customer.email,
+            customerPhone: customer.phoneNumber,
+            boatName: boat.name,
+            boatType: boat.type,
+            boatLocation: boat.location,
+            tourName: tour?.name,
+            tourDescription: tour?.description,
+            status: booking.status as any,
+          };
+
+          bookingsWithDetails.push(bookingWithDetails);
+        } catch (err) {
+          console.error("Error enriching booking data:", err);
+          // Add booking without additional details
+          bookingsWithDetails.push({
+            ...booking,
+            status: booking.status as any,
+          });
+        }
+      }
+
+      return bookingsWithDetails;
+    } catch (error) {
+      console.error("Error fetching bookings with details:", error);
+      return [];
+    }
+  },
+
+  // Calculate booking statistics for owner
+  calculateBookingStatistics: async (
+    ownerId: number
+  ): Promise<BookingStatistics> => {
+    try {
+      const bookings = await bookingHelperService.getAllBookingsForOwner(
+        ownerId
+      );
+
+      const stats: BookingStatistics = {
+        totalBookings: bookings.length,
+        pendingBookings: bookings.filter((b) => b.status === "PENDING").length,
+        confirmedBookings: bookings.filter((b) => b.status === "CONFIRMED")
+          .length,
+        cancelledBookings: bookings.filter((b) => b.status === "CANCELLED")
+          .length,
+        completedBookings: bookings.filter((b) => b.status === "COMPLETED")
+          .length,
+        totalRevenue: bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+        thisMonthBookings: 0,
+        thisMonthRevenue: 0,
+      };
+
+      // Calculate this month's stats
+      const thisMonth = new Date();
+      thisMonth.setDate(1);
+      thisMonth.setHours(0, 0, 0, 0);
+
+      const thisMonthBookings = bookings.filter((booking) => {
+        const bookingDate = new Date(booking.createdAt);
+        return bookingDate >= thisMonth;
+      });
+
+      stats.thisMonthBookings = thisMonthBookings.length;
+      stats.thisMonthRevenue = thisMonthBookings.reduce(
+        (sum, b) => sum + (b.totalPrice || 0),
+        0
+      );
+
+      return stats;
+    } catch (error) {
+      console.error("Error calculating booking statistics:", error);
+      return {
+        totalBookings: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0,
+        completedBookings: 0,
+        totalRevenue: 0,
+        thisMonthBookings: 0,
+        thisMonthRevenue: 0,
+      };
+    }
+  },
+};
+
+export default {
+  query: bookingQueryService,
+  command: bookingCommandService,
+  helper: bookingHelperService,
+};
