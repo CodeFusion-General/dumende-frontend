@@ -4,15 +4,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Calendar as CalendarIcon,
   Clock,
   Edit,
   Trash2,
   Plus,
+  Ship,
+  Info,
 } from "lucide-react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { toast } from "@/components/ui/use-toast";
 import { availabilityService } from "@/services/availabilityService";
+import { boatService } from "@/services/boatService";
 import {
   AvailabilityDTO,
   CreateAvailabilityDTO,
@@ -20,6 +30,7 @@ import {
   CreateAvailabilityPeriodCommand,
   CalendarAvailability,
 } from "@/types/availability.types";
+import { BoatDTO } from "@/types/boat.types";
 
 interface AvailabilityEntry {
   id: number;
@@ -38,29 +49,78 @@ const AvailabilityPage = () => {
   const [availabilityEntries, setAvailabilityEntries] = useState<
     AvailabilityEntry[]
   >([]);
+  const [boats, setBoats] = useState<BoatDTO[]>([]);
+  const [selectedBoat, setSelectedBoat] = useState<BoatDTO | null>(null);
+  const [boatsLoading, setBoatsLoading] = useState(true);
 
-  // TODO: Get from auth context or boat selection
-  const currentBoatId = 1; // Temporary hardcoded value
+  // TODO: Get from auth context - temporarily hardcoded owner ID
+  const currentOwnerId = 2; // Ahmet Yılmaz from test data
 
   console.log("🚀 AvailabilityPage component rendered!");
 
   useEffect(() => {
-    console.log("🔄 useEffect triggered - about to fetch availability data");
-    fetchAvailabilityData();
+    console.log("🔄 useEffect triggered - fetching boats first");
+    fetchBoats();
   }, []);
 
+  useEffect(() => {
+    if (selectedBoat) {
+      console.log("🔄 Selected boat changed - fetching availability data");
+      fetchAvailabilityData();
+    }
+  }, [selectedBoat]);
+
+  const fetchBoats = async () => {
+    console.log("🎯 fetchBoats function called!");
+
+    try {
+      setBoatsLoading(true);
+      setError(null);
+
+      console.log("🔍 Getting boats for ownerId:", currentOwnerId);
+
+      // Get boats for the current owner
+      const ownerBoats = await boatService.getBoatsByOwner(currentOwnerId);
+
+      console.log("✅ Raw boats data:", ownerBoats);
+      setBoats(ownerBoats);
+
+      // Auto-select first boat if available
+      if (ownerBoats.length > 0 && !selectedBoat) {
+        setSelectedBoat(ownerBoats[0]);
+        console.log("✅ Auto-selected first boat:", ownerBoats[0].name);
+      }
+
+      console.log("✅ Gemiler başarıyla yüklendi:", ownerBoats.length, "gemi");
+    } catch (error) {
+      console.error("❌ Gemiler yüklenirken hata:", error);
+      console.error("❌ Error details:", error.message, error.stack);
+      setError("Gemi bilgileri yüklenirken bir hata oluştu.");
+      toast({
+        title: "Hata",
+        description:
+          "Gemi bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setBoatsLoading(false);
+    }
+  };
+
   const fetchAvailabilityData = async () => {
+    if (!selectedBoat) return;
+
     console.log("🎯 fetchAvailabilityData function called!");
 
     try {
       setLoading(true);
       setError(null);
 
-      console.log("🔍 Getting availability for boatId:", currentBoatId);
+      console.log("🔍 Getting availability for boatId:", selectedBoat.id);
 
-      // Get availability data for the current boat
+      // Get availability data for the selected boat
       const availabilities =
-        await availabilityService.getAvailabilitiesByBoatId(currentBoatId);
+        await availabilityService.getAvailabilitiesByBoatId(selectedBoat.id);
 
       console.log("✅ Raw availability data:", availabilities);
 
@@ -100,12 +160,29 @@ const AvailabilityPage = () => {
     }
   };
 
+  const handleBoatChange = (boatId: string) => {
+    const boat = boats.find((b) => b.id.toString() === boatId);
+    if (boat) {
+      setSelectedBoat(boat);
+      console.log("🔄 Boat changed to:", boat.name);
+    }
+  };
+
   const handleAddAvailability = async (
     data: Partial<CreateAvailabilityDTO>
   ) => {
+    if (!selectedBoat) {
+      toast({
+        title: "Hata",
+        description: "Lütfen önce bir gemi seçin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const createCommand: CreateAvailabilityDTO = {
-        boatId: currentBoatId,
+        boatId: selectedBoat.id,
         date: data.date!,
         isAvailable: data.isAvailable ?? true,
         priceOverride: data.priceOverride,
@@ -256,9 +333,18 @@ const AvailabilityPage = () => {
     endDate: string,
     isAvailable: boolean = true
   ) => {
+    if (!selectedBoat) {
+      toast({
+        title: "Hata",
+        description: "Lütfen önce bir gemi seçin.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const command: CreateAvailabilityPeriodCommand = {
-        boatId: currentBoatId,
+        boatId: selectedBoat.id,
         startDate,
         endDate,
         isAvailable,
@@ -296,15 +382,15 @@ const AvailabilityPage = () => {
     });
   };
 
-  // Loading state
-  if (loading) {
+  // Loading state for boats
+  if (boatsLoading) {
     return (
       <SidebarProvider>
         <CaptainLayout>
           <div className="flex h-[50vh] w-full items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#15847c] mx-auto mb-4"></div>
-              <p className="text-gray-600">Müsaitlik verileri yükleniyor...</p>
+              <p className="text-gray-600">Gemi bilgileri yükleniyor...</p>
             </div>
           </div>
         </CaptainLayout>
@@ -321,7 +407,7 @@ const AvailabilityPage = () => {
             <div className="text-center">
               <p className="text-red-600 mb-4">{error}</p>
               <button
-                onClick={fetchAvailabilityData}
+                onClick={fetchBoats}
                 className="bg-[#15847c] hover:bg-[#0e5c56] text-white px-4 py-2 rounded"
               >
                 Tekrar Dene
@@ -333,15 +419,65 @@ const AvailabilityPage = () => {
     );
   }
 
+  // No boats available
+  if (boats.length === 0) {
+    return (
+      <SidebarProvider>
+        <CaptainLayout>
+          <div className="flex h-[50vh] w-full items-center justify-center">
+            <div className="text-center">
+              <Ship className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">
+                Henüz kayıtlı geminiz bulunmamaktadır.
+              </p>
+              <p className="text-sm text-gray-500">
+                Müsaitlik yönetimi için önce bir gemi eklemeniz gerekiyor.
+              </p>
+            </div>
+          </div>
+        </CaptainLayout>
+      </SidebarProvider>
+    );
+  }
+
   return (
     <SidebarProvider>
       <CaptainLayout>
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold flex items-center">
-              <Clock className="mr-2" />
-              Müsaitlik
-            </h1>
+          {/* Header with Boat Selector */}
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold flex items-center">
+                <Clock className="mr-2" />
+                Müsaitlik
+              </h1>
+
+              {/* Boat Selector */}
+              <div className="flex items-center space-x-2">
+                <Ship className="h-5 w-5 text-gray-600" />
+                <Select
+                  value={selectedBoat?.id.toString()}
+                  onValueChange={handleBoatChange}
+                >
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue placeholder="Gemi seçin..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boats.map((boat) => (
+                      <SelectItem key={boat.id} value={boat.id.toString()}>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{boat.name}</span>
+                          <span className="text-sm text-gray-500">
+                            ({boat.location})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <Button
               className="bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
               onClick={() => {
@@ -349,11 +485,45 @@ const AvailabilityPage = () => {
                 const today = new Date().toISOString().split("T")[0];
                 handleAddAvailability({ date: today, isAvailable: true });
               }}
+              disabled={!selectedBoat}
             >
               <Plus size={16} className="mr-1" /> Yeni Müsaitlik Ekle
             </Button>
           </div>
 
+          {/* Selected Boat Info */}
+          {selectedBoat && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-blue-900">
+                    {selectedBoat.name}
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm text-blue-700">
+                    <div>
+                      <span className="font-medium">Tip:</span>{" "}
+                      {selectedBoat.type}
+                    </div>
+                    <div>
+                      <span className="font-medium">Lokasyon:</span>{" "}
+                      {selectedBoat.location}
+                    </div>
+                    <div>
+                      <span className="font-medium">Kapasite:</span>{" "}
+                      {selectedBoat.capacity} kişi
+                    </div>
+                    <div>
+                      <span className="font-medium">Günlük Fiyat:</span> ₺
+                      {selectedBoat.dailyPrice}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rest of the component remains the same */}
           <div className="bg-white rounded-lg shadow-md border border-gray-100">
             <Tabs
               defaultValue="available"
@@ -369,101 +539,126 @@ const AvailabilityPage = () => {
               </TabsList>
 
               <TabsContent value="available" className="p-6">
-                <div className="space-y-4">
-                  {availabilityEntries
-                    .filter((entry) => entry.isAvailable)
-                    .map((entry) => (
-                      <AvailabilityCard
-                        key={entry.id}
-                        entry={entry}
-                        onToggle={handleToggleAvailability}
-                        onUpdate={handleUpdateAvailability}
-                        onDelete={handleDeleteAvailability}
-                      />
-                    ))}
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#15847c]"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {availabilityEntries
+                      .filter((entry) => entry.isAvailable)
+                      .map((entry) => (
+                        <AvailabilityCard
+                          key={entry.id}
+                          entry={entry}
+                          onToggle={handleToggleAvailability}
+                          onUpdate={handleUpdateAvailability}
+                          onDelete={handleDeleteAvailability}
+                        />
+                      ))}
 
-                  {availabilityEntries.filter((entry) => entry.isAvailable)
-                    .length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Henüz müsait gün eklenmemiş.</p>
-                      <Button
-                        className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
-                        onClick={() => {
-                          const today = new Date().toISOString().split("T")[0];
-                          handleAddAvailability({
-                            date: today,
-                            isAvailable: true,
-                          });
-                        }}
-                      >
-                        <Plus size={16} className="mr-1" /> Müsaitlik Ekle
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                    {availabilityEntries.filter((entry) => entry.isAvailable)
+                      .length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Henüz müsait gün eklenmemiş.</p>
+                        <Button
+                          className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
+                          onClick={() => {
+                            const today = new Date()
+                              .toISOString()
+                              .split("T")[0];
+                            handleAddAvailability({
+                              date: today,
+                              isAvailable: true,
+                            });
+                          }}
+                          disabled={!selectedBoat}
+                        >
+                          <Plus size={16} className="mr-1" /> Müsaitlik Ekle
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="unavailable" className="p-6">
-                <div className="space-y-4">
-                  {availabilityEntries
-                    .filter((entry) => !entry.isAvailable)
-                    .map((entry) => (
-                      <AvailabilityCard
-                        key={entry.id}
-                        entry={entry}
-                        onToggle={handleToggleAvailability}
-                        onUpdate={handleUpdateAvailability}
-                        onDelete={handleDeleteAvailability}
-                      />
-                    ))}
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#15847c]"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {availabilityEntries
+                      .filter((entry) => !entry.isAvailable)
+                      .map((entry) => (
+                        <AvailabilityCard
+                          key={entry.id}
+                          entry={entry}
+                          onToggle={handleToggleAvailability}
+                          onUpdate={handleUpdateAvailability}
+                          onDelete={handleDeleteAvailability}
+                        />
+                      ))}
 
-                  {availabilityEntries.filter((entry) => !entry.isAvailable)
-                    .length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Müsait olmayan gün bulunmamaktadır.</p>
-                    </div>
-                  )}
-                </div>
+                    {availabilityEntries.filter((entry) => !entry.isAvailable)
+                      .length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Müsait olmayan gün bulunmamaktadır.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="all" className="p-6">
-                <div className="space-y-4">
-                  {availabilityEntries
-                    .sort(
-                      (a, b) =>
-                        new Date(b.date).getTime() - new Date(a.date).getTime()
-                    )
-                    .map((entry) => (
-                      <AvailabilityCard
-                        key={entry.id}
-                        entry={entry}
-                        onToggle={handleToggleAvailability}
-                        onUpdate={handleUpdateAvailability}
-                        onDelete={handleDeleteAvailability}
-                      />
-                    ))}
+                {loading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#15847c]"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {availabilityEntries
+                      .sort(
+                        (a, b) =>
+                          new Date(b.date).getTime() -
+                          new Date(a.date).getTime()
+                      )
+                      .map((entry) => (
+                        <AvailabilityCard
+                          key={entry.id}
+                          entry={entry}
+                          onToggle={handleToggleAvailability}
+                          onUpdate={handleUpdateAvailability}
+                          onDelete={handleDeleteAvailability}
+                        />
+                      ))}
 
-                  {availabilityEntries.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Henüz müsaitlik kaydı bulunmamaktadır.</p>
-                      <Button
-                        className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
-                        onClick={() => {
-                          const today = new Date().toISOString().split("T")[0];
-                          const weekLater = new Date(
-                            Date.now() + 7 * 24 * 60 * 60 * 1000
-                          )
-                            .toISOString()
-                            .split("T")[0];
-                          handleCreatePeriod(today, weekLater, true);
-                        }}
-                      >
-                        <Plus size={16} className="mr-1" /> Haftalık Müsaitlik
-                        Oluştur
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                    {availabilityEntries.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Henüz müsaitlik kaydı bulunmamaktadır.</p>
+                        <Button
+                          className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
+                          onClick={() => {
+                            const today = new Date()
+                              .toISOString()
+                              .split("T")[0];
+                            const weekLater = new Date(
+                              Date.now() + 7 * 24 * 60 * 60 * 1000
+                            )
+                              .toISOString()
+                              .split("T")[0];
+                            handleCreatePeriod(today, weekLater, true);
+                          }}
+                          disabled={!selectedBoat}
+                        >
+                          <Plus size={16} className="mr-1" /> Haftalık Müsaitlik
+                          Oluştur
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
