@@ -10,8 +10,9 @@ class CommentService extends BaseService {
         const params = new URLSearchParams();
         if (filters?.entityType) params.append('entityType', filters.entityType);
         if (filters?.entityId) params.append('entityId', filters.entityId.toString());
-        
-        return this.get<Comment[]>(`/comments?${params.toString()}`);
+
+        // baseUrl already includes "/comments", so we avoid duplicating the path
+        return this.get<Comment[]>(`?${params.toString()}`);
     }
 
     public async getCommentById(id: number): Promise<Comment> {
@@ -19,15 +20,15 @@ class CommentService extends BaseService {
     }
 
     public async createComment(data: Omit<Comment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Comment> {
-        return this.post<Comment>('/comments', data);
+        return this.post<Comment>('', data);
     }
 
     public async updateComment(id: number, data: Partial<Comment>): Promise<Comment> {
-        return this.put<Comment>(`/comments/${id}`, data);
+        return this.put<Comment>(`/${id}`, data);
     }
 
     public async deleteComment(id: number): Promise<void> {
-        return this.delete<void>(`/comments/${id}`);
+        return this.delete<void>(`/${id}`);
     }
 
     public async getCommentsByBoat(boatId: number): Promise<Comment[]> {
