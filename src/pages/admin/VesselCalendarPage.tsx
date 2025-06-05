@@ -22,9 +22,7 @@ import { toast } from "@/hooks/use-toast";
 import { bookingHelperService } from "@/services/bookingService";
 import { BookingWithDetails, BookingStatus } from "@/types/booking.types";
 import { BoatDTO } from "@/types/boat.types";
-import axios from "axios";
-
-const API_BASE_URL = "http://localhost:8080/api";
+import { boatService } from "@/services/boatService";
 
 const VesselCalendarPage: React.FC = () => {
   // TODO: Replace with actual logged-in user ID
@@ -45,10 +43,8 @@ const VesselCalendarPage: React.FC = () => {
     const loadBoats = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `${API_BASE_URL}/boats/owner/${ownerId}`
-        );
-        setBoats(response.data);
+        const boatsData = await boatService.getBoatsByOwner(ownerId);
+        setBoats(boatsData);
       } catch (err) {
         console.error("Error loading boats:", err);
         setError("Tekneler yüklenirken bir hata oluştu.");
