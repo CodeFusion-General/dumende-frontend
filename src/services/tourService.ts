@@ -16,7 +16,7 @@ import {
 
 class TourService extends BaseService {
   constructor() {
-    super("/api");
+    super("");
   }
 
   // ======= Tour CRUD Operations =======
@@ -90,51 +90,65 @@ class TourService extends BaseService {
 
   // ======= Tour Date Operations =======
   public async getTourDateById(id: number): Promise<TourDateDTO> {
-    return this.get<TourDateDTO>(`/tour-dates/${id}`);
+    try {
+      const response = await this.api.get<TourDateDTO>(`/tour-dates/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   public async getAllTourDates(): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>("/tour-dates");
+    return this.api.get<TourDateDTO[]>("/tour-dates").then((res) => res.data);
   }
 
   public async getTourDatesByTourId(tourId: number): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(`/tour-dates/tour/${tourId}`);
+    return this.api
+      .get<TourDateDTO[]>(`/tour-dates/tour/${tourId}`)
+      .then((res) => res.data);
   }
 
   public async getTourDatesByStatus(status: string): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(`/tour-dates/status?status=${status}`);
+    return this.api
+      .get<TourDateDTO[]>(`/tour-dates/status?status=${status}`)
+      .then((res) => res.data);
   }
 
   public async getTourDatesByTourIdAndStatus(
     tourId: number,
     status: string
   ): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(
-      `/tour-dates/tour/${tourId}/status?status=${status}`
-    );
+    return this.api
+      .get<TourDateDTO[]>(`/tour-dates/tour/${tourId}/status?status=${status}`)
+      .then((res) => res.data);
   }
 
   public async getTourDatesByStartDate(
     startDate: string
   ): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(
-      `/tour-dates/search/start-date?startDate=${startDate}`
-    );
+    return this.api
+      .get<TourDateDTO[]>(
+        `/tour-dates/search/start-date?startDate=${startDate}`
+      )
+      .then((res) => res.data);
   }
 
   public async getTourDatesByEndDate(endDate: string): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(
-      `/tour-dates/search/end-date?endDate=${endDate}`
-    );
+    return this.api
+      .get<TourDateDTO[]>(`/tour-dates/search/end-date?endDate=${endDate}`)
+      .then((res) => res.data);
   }
 
   public async getTourDatesByDateRange(
     startDate: string,
     endDate: string
   ): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(
-      `/tour-dates/search/date-range?startDate=${startDate}&endDate=${endDate}`
-    );
+    return this.api
+      .get<TourDateDTO[]>(
+        `/tour-dates/search/date-range?startDate=${startDate}&endDate=${endDate}`
+      )
+      .then((res) => res.data);
   }
 
   public async getTourDatesByTourIdAndDateRange(
@@ -142,47 +156,58 @@ class TourService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<TourDateDTO[]> {
-    return this.get<TourDateDTO[]>(
-      `/tour-dates/tour/${tourId}/date-range?startDate=${startDate}&endDate=${endDate}`
-    );
+    return this.api
+      .get<TourDateDTO[]>(
+        `/tour-dates/tour/${tourId}/date-range?startDate=${startDate}&endDate=${endDate}`
+      )
+      .then((res) => res.data);
   }
 
   public async existsTourDateById(id: number): Promise<boolean> {
-    return this.get<boolean>(`/tour-dates/exists/${id}`);
+    return this.api
+      .get<boolean>(`/tour-dates/exists/${id}`)
+      .then((res) => res.data);
   }
 
   // ======= Tour Date Command Operations =======
   public async createTourDate(data: CreateTourDateDTO): Promise<TourDateDTO> {
-    return this.post<TourDateDTO>("/tour-dates", data);
+    return this.api
+      .post<TourDateDTO>("/tour-dates", data)
+      .then((res) => res.data);
   }
 
   public async createTourDatesBatch(
     tourId: number,
     tourDates: CreateTourDateDTO[]
   ): Promise<TourDateDTO[]> {
-    return this.post<TourDateDTO[]>(
-      `/tour-dates/tour/${tourId}/batch`,
-      tourDates
-    );
+    return this.api
+      .post<TourDateDTO[]>(`/tour-dates/tour/${tourId}/batch`, tourDates)
+      .then((res) => res.data);
   }
 
   public async updateTourDate(data: UpdateTourDateDTO): Promise<TourDateDTO> {
-    return this.put<TourDateDTO>("/tour-dates", data);
+    return this.api
+      .put<TourDateDTO>("/tour-dates", data)
+      .then((res) => res.data);
   }
 
   public async deleteTourDate(id: number): Promise<void> {
-    return this.delete<void>(`/tour-dates/${id}`);
+    return this.api.delete<void>(`/tour-dates/${id}`).then((res) => res.data);
   }
 
   public async deleteTourDatesByTourId(tourId: number): Promise<void> {
-    return this.delete<void>(`/tour-dates/tour/${tourId}`);
+    return this.api
+      .delete<void>(`/tour-dates/tour/${tourId}`)
+      .then((res) => res.data);
   }
 
   public async updateTourDateAvailabilityStatus(
     id: number,
     status: string
   ): Promise<void> {
-    return this.patch<void>(`/tour-dates/${id}/status?status=${status}`);
+    return this.api
+      .patch<void>(`/tour-dates/${id}/status?status=${status}`)
+      .then((res) => res.data);
   }
 
   public async updateTourDateRange(
@@ -190,81 +215,98 @@ class TourService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<void> {
-    return this.patch<void>(
-      `/tour-dates/${id}/date-range?startDate=${startDate}&endDate=${endDate}`
-    );
+    return this.api
+      .patch<void>(
+        `/tour-dates/${id}/date-range?startDate=${startDate}&endDate=${endDate}`
+      )
+      .then((res) => res.data);
   }
 
   public async updateTourDateMaxGuests(
     id: number,
     maxGuests: number
   ): Promise<void> {
-    return this.patch<void>(
-      `/tour-dates/${id}/max-guests?maxGuests=${maxGuests}`
-    );
+    return this.api
+      .patch<void>(`/tour-dates/${id}/max-guests?maxGuests=${maxGuests}`)
+      .then((res) => res.data);
   }
 
   // ======= Tour Image Operations =======
   public async getTourImageById(id: number): Promise<TourImageDTO> {
-    return this.get<TourImageDTO>(`/tour-images/${id}`);
+    return this.api
+      .get<TourImageDTO>(`/tour-images/${id}`)
+      .then((res) => res.data);
   }
 
   public async getAllTourImages(): Promise<TourImageDTO[]> {
-    return this.get<TourImageDTO[]>("/tour-images");
+    return this.api.get<TourImageDTO[]>("/tour-images").then((res) => res.data);
   }
 
   public async getTourImagesByTourId(tourId: number): Promise<TourImageDTO[]> {
-    return this.get<TourImageDTO[]>(`/tour-images/tour/${tourId}`);
+    return this.api
+      .get<TourImageDTO[]>(`/tour-images/tour/${tourId}`)
+      .then((res) => res.data);
   }
 
   public async getTourImagesByTourIdOrdered(
     tourId: number
   ): Promise<TourImageDTO[]> {
-    return this.get<TourImageDTO[]>(`/tour-images/tour/${tourId}/ordered`);
+    return this.api
+      .get<TourImageDTO[]>(`/tour-images/tour/${tourId}/ordered`)
+      .then((res) => res.data);
   }
 
   public async existsTourImageById(id: number): Promise<boolean> {
-    return this.get<boolean>(`/tour-images/exists/${id}`);
+    return this.api
+      .get<boolean>(`/tour-images/exists/${id}`)
+      .then((res) => res.data);
   }
 
   // ======= Tour Image Command Operations =======
   public async createTourImage(
     data: CreateTourImageDTO
   ): Promise<TourImageDTO> {
-    return this.post<TourImageDTO>("/tour-images", data);
+    return this.api
+      .post<TourImageDTO>("/tour-images", data)
+      .then((res) => res.data);
   }
 
   public async createTourImagesBatch(
     tourId: number,
     tourImages: CreateTourImageDTO[]
   ): Promise<TourImageDTO[]> {
-    return this.post<TourImageDTO[]>(
-      `/tour-images/tour/${tourId}/batch`,
-      tourImages
-    );
+    return this.api
+      .post<TourImageDTO[]>(`/tour-images/tour/${tourId}/batch`, tourImages)
+      .then((res) => res.data);
   }
 
   public async updateTourImage(
     data: UpdateTourImageDTO
   ): Promise<TourImageDTO> {
-    return this.put<TourImageDTO>("/tour-images", data);
+    return this.api
+      .put<TourImageDTO>("/tour-images", data)
+      .then((res) => res.data);
   }
 
   public async deleteTourImage(id: number): Promise<void> {
-    return this.delete<void>(`/tour-images/${id}`);
+    return this.api.delete<void>(`/tour-images/${id}`).then((res) => res.data);
   }
 
   public async deleteTourImagesByTourId(tourId: number): Promise<void> {
-    return this.delete<void>(`/tour-images/tour/${tourId}`);
+    return this.api
+      .delete<void>(`/tour-images/tour/${tourId}`)
+      .then((res) => res.data);
   }
 
   public async updateTourImageDisplayOrder(
     id: number,
     displayOrder: number
   ): Promise<void> {
-    return this.patch<void>(
-      `/tour-images/${id}/display-order?displayOrder=${displayOrder}`
-    );
+    return this.api
+      .patch<void>(
+        `/tour-images/${id}/display-order?displayOrder=${displayOrder}`
+      )
+      .then((res) => res.data);
   }
 
   // ======= Helper Methods =======

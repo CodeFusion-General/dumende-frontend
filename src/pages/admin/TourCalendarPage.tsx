@@ -265,7 +265,7 @@ const TourCalendarPage: React.FC = () => {
                     },
                   }}
                   components={{
-                    Day: ({ date, ...props }) => {
+                    Day: ({ date, displayMonth, ...props }) => {
                       return (
                         <div className={dayClassName(date, events)} {...props}>
                           {date.getDate()}
