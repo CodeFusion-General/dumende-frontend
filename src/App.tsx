@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import AvailabilityPage from "./pages/admin/AvailabilityPage";
 import PricingPage from "./pages/admin/PricingPage";
 import ToursPage from "./pages/admin/ToursPage";
 import NewTourPage from "./pages/admin/NewTourPage";
+import TourDetailPage from "./pages/TourDetailPage";
 import CompanyPage from "./pages/admin/CompanyPage";
 import VesselCalendarPage from "./pages/admin/VesselCalendarPage";
 import TourCalendarPage from "./pages/admin/TourCalendarPage";
@@ -49,21 +49,30 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<BlogPost />} />
-            
+
+            {/* Tour Detail Route */}
+            <Route path="/tours/:id" element={<TourDetailPage />} />
+
             {/* Captain Panel Routes */}
             <Route path="/captain" element={<Dashboard />} />
             <Route path="/captain/vessels" element={<VesselsPage />} />
             <Route path="/captain/tours" element={<ToursPage />} />
             <Route path="/captain/tours/new" element={<NewTourPage />} />
             <Route path="/captain/tours/:id" element={<NewTourPage />} />
-            <Route path="/captain/availability" element={<AvailabilityPage />} />
+            <Route
+              path="/captain/availability"
+              element={<AvailabilityPage />}
+            />
             <Route path="/captain/messages" element={<MessagesPage />} />
             <Route path="/captain/pricing" element={<PricingPage />} />
             <Route path="/captain/company" element={<CompanyPage />} />
             <Route path="/captain/calendar" element={<VesselCalendarPage />} />
-            <Route path="/captain/tour-calendar" element={<TourCalendarPage />} />
+            <Route
+              path="/captain/tour-calendar"
+              element={<TourCalendarPage />}
+            />
             <Route path="/captain/ratings" element={<RatingsPage />} />
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

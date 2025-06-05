@@ -41,7 +41,7 @@ export interface TourImageDTO {
 
 export interface CreateTourImageDTO {
   tourId: number;
-  imageData: string; // byte[] -> string (base64 veya URL)
+  imageData: string; // Backend'te byte[] bekliyor, frontend base64 string gönderiyor
   displayOrder: number;
 }
 

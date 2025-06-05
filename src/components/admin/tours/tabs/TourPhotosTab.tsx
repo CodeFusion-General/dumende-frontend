@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Star } from "lucide-react";
@@ -11,21 +11,88 @@ interface TourPhotosTabProps {
 const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
   const [featuredIndex, setFeaturedIndex] = useState<number>(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file select button click
+  const handleFileSelectClick = () => {
+    console.log("🖱️ Dosya seç butonuna tıklandı");
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+      console.log("✅ File input trigger edildi");
+    }
+  };
+
+  // Handle drag and drop for file upload area
+  const handleDropFiles = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      console.log("📁 Drag & drop ile dosya bırakıldı:", files.length, "adet");
+
+      // Create a fake change event to reuse existing logic
+      const fakeEvent = {
+        target: { files, value: "" },
+      } as React.ChangeEvent<HTMLInputElement>;
+
+      handleFileChange(fakeEvent);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   // Handle file uploads
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files) {
+      console.log("❌ Dosya seçilmedi");
+      return;
+    }
+
+    console.log("📁 Dosya seçildi:", files.length, "adet");
 
     // Add new files to existing photos
     const newPhotos = [...photos];
+    let addedCount = 0;
+
     for (let i = 0; i < files.length; i++) {
       if (newPhotos.length < 10) {
         // Max 10 photos
-        newPhotos.push(files[i]);
+        const file = files[i];
+
+        // File size check (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          console.warn(
+            "⚠️ Dosya çok büyük:",
+            file.name,
+            file.size / (1024 * 1024),
+            "MB"
+          );
+          continue;
+        }
+
+        // File type check
+        if (!file.type.startsWith("image/")) {
+          console.warn("⚠️ Geçersiz dosya türü:", file.name, file.type);
+          continue;
+        }
+
+        newPhotos.push(file);
+        addedCount++;
+        console.log(
+          "✅ Dosya eklendi:",
+          file.name,
+          file.size / (1024 * 1024),
+          "MB"
+        );
       }
     }
 
+    console.log("📸 Toplam fotoğraf sayısı:", newPhotos.length);
     onChange(newPhotos);
 
     // Reset the input value so the same file can be selected again
@@ -97,7 +164,12 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
         yıldız işaretine tıklayarak öne çıkarabilirsiniz.
       </p>
 
-      <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#15847c] transition-colors">
+      <div
+        className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#15847c] transition-colors"
+        onDragOver={handleDragOver}
+        onDrop={handleDropFiles}
+        onDragLeave={handleDragLeave}
+      >
         <Upload className="h-12 w-12 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-700 mb-2">
           Fotoğrafları Buraya Sürükleyin
@@ -108,24 +180,23 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           <input
-            id="photo-upload"
+            ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png"
+            accept="image/jpeg,image/png,image/jpg"
             multiple
             onChange={handleFileChange}
             className="hidden"
             disabled={photos.length >= 10}
           />
-          <label htmlFor="photo-upload">
-            <Button
-              type="button"
-              variant="outline"
-              className="cursor-pointer"
-              disabled={photos.length >= 10}
-            >
-              Dosya Seç
-            </Button>
-          </label>
+          <Button
+            type="button"
+            variant="outline"
+            className="cursor-pointer"
+            disabled={photos.length >= 10}
+            onClick={handleFileSelectClick}
+          >
+            {photos.length >= 10 ? "Maksimum Fotoğraf Sayısı" : "Dosya Seç"}
+          </Button>
         </div>
       </div>
 
