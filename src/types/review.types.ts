@@ -10,10 +10,8 @@ export interface CustomerDTO {
 
 // Review Types
 export interface ReviewDTO {
-  reviewId: Long;
-  customerId: Long;
-  customerName?: string;
-  customerEmail?: string;
+  id: Long;
+  customer: CustomerDTO;
   boatId?: Long;
   boatName?: string;
   tourId?: Long;

@@ -79,7 +79,6 @@ const Register = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
     /* Backend hazır olduğunda kullanılacak kod:
     try {
       const registerData = {

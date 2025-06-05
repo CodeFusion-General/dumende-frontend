@@ -19,17 +19,15 @@ const BoatTypes = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("🚀 BoatTypes: Backend'den tip istatistikleri çekiliyor...");
 
       const typeStats = await boatService.getTypeStatistics();
-      console.log("✅ BoatTypes: İstatistikler başarıyla alındı:", typeStats);
 
       // Tip istatistiklerini tekne sayısına göre sırala
       const sortedTypes = typeStats.sort((a, b) => b.boatCount - a.boatCount);
 
       setBoatTypes(sortedTypes);
     } catch (error) {
-      console.error("❌ BoatTypes istatistik hatası:", error);
+      console.error("BoatTypes istatistik hatası:", error);
       setError("Veriler yüklenirken bir hata oluştu");
 
       // Mock data with basic boat types
@@ -115,7 +113,6 @@ const BoatTypes = () => {
 
   // Tip filtreli tekne listesine yönlendirme
   const handleViewBoatsByType = (type: string) => {
-    console.log(`🚀 BoatTypes: ${type} tipi için tekneler görüntüleniyor...`);
 
     // URL parametreleri ile tip filtrelemesi
     const params = new URLSearchParams({
@@ -156,12 +153,6 @@ const BoatTypes = () => {
                 </div>
               </div>
             ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-500">
-              📡 Backend'den tip istatistikleri yükleniyor...
-            </p>
           </div>
         </div>
       </section>
@@ -265,13 +256,6 @@ const BoatTypes = () => {
               </button>
             </div>
           ))}
-        </div>
-
-        {/* Backend Status */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            ✅ {boatTypes.length} tekne tipi istatistiği backend'den yüklendi
-          </p>
         </div>
       </div>
     </section>

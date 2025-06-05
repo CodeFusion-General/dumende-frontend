@@ -76,6 +76,21 @@ const BoatCard: React.FC<BoatCardProps> = ({
     );
   }
 
+  const handleType = (type: string) => {
+    switch (type) {
+      case "SAILBOAT":
+        return "Yelkenli Tekne";
+      case "MOTORBOAT":
+        return "Motorlu Tekne";
+      case "SPEEDBOAT":
+        return "Hız Teknesi";
+      case "YACHT":
+        return "Yat";
+      default:
+        return "Tekne";
+    }
+  };
+
   // Get primary image URL or fallback
   const getImageUrl_component = () => {
     if (isLegacyMode && imageUrl) return imageUrl;
@@ -104,9 +119,9 @@ const BoatCard: React.FC<BoatCardProps> = ({
           alt={normalizedBoat.name || "Tekne"}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-3 right-3 bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold">
+       {/* <div className="absolute top-3 right-3 bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold">
           {normalizedBoat.type || "Tekne"}
-        </div>
+        </div> */}
       </div>
 
       <div className="p-4">
@@ -133,7 +148,7 @@ const BoatCard: React.FC<BoatCardProps> = ({
           </div>
           <div className="flex items-center text-gray-600">
             <Anchor size={16} className="mr-1" />
-            <span className="text-sm">{normalizedBoat.type || "Tekne"}</span>
+            <span className="text-sm">{handleType(normalizedBoat.type)}</span>
           </div>
         </div>
 

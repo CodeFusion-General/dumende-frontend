@@ -139,15 +139,6 @@ const BoatsPage = () => {
   const applyFilters = useCallback(async () => {
     try {
       setLoading(true);
-
-      console.log("🔄 Filtreleri uygulayın:", {
-        types: debouncedSelectedTypes,
-        capacity: debouncedCapacity,
-        priceRange: debouncedPriceRange,
-        locations: debouncedSelectedLocations,
-        features: debouncedSelectedFeatures,
-      });
-
       // Real API call
       const response = await boatService.searchBoats({
         type:
@@ -170,14 +161,9 @@ const BoatsPage = () => {
         ? response
         : (response as any)?.content || [];
 
-      console.log(
-        "✅ Filtreleme sonucu:",
-        filteredResults.length,
-        "tekne bulundu"
-      );
       setFilteredBoats(filteredResults);
     } catch (err) {
-      console.error("❌ Filter uygulama hatası:", err);
+      console.error("Filter uygulama hatası:", err);
       toast({
         title: "Hata",
         description:
@@ -198,7 +184,6 @@ const BoatsPage = () => {
 
   // Optimized reset function
   const handleFilterReset = useCallback(() => {
-    console.log("🔄 Filtreler sıfırlanıyor...");
     setSelectedTypes([]);
     setSelectedLocations([]);
     setSelectedFeatures([]);
@@ -222,22 +207,15 @@ const BoatsPage = () => {
     const typeFilter = searchParams.get("type");
     const filterType = searchParams.get("filter");
 
-    console.log("🔍 BoatsPage: URL parametreleri okunuyor...", {
-      location: locationFilter,
-      type: typeFilter,
-      filter: filterType,
-    });
 
     // Lokasyon filtresi varsa uygula
     if (locationFilter && filterType === "location") {
       setSelectedLocations([locationFilter]);
-      console.log(`📍 Lokasyon filtresi uygulanıyor: ${locationFilter}`);
     }
 
     // Tip filtresi varsa uygula
     if (typeFilter && filterType === "type") {
       setSelectedTypes([typeFilter]);
-      console.log(`⛵ Tip filtresi uygulanıyor: ${typeFilter}`);
     }
   };
 

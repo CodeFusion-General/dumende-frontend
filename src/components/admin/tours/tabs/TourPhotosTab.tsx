@@ -15,10 +15,8 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
 
   // Handle file select button click
   const handleFileSelectClick = () => {
-    console.log("🖱️ Dosya seç butonuna tıklandı");
     if (fileInputRef.current) {
       fileInputRef.current.click();
-      console.log("✅ File input trigger edildi");
     }
   };
 
@@ -29,7 +27,6 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      console.log("📁 Drag & drop ile dosya bırakıldı:", files.length, "adet");
 
       // Create a fake change event to reuse existing logic
       const fakeEvent = {
@@ -49,11 +46,8 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) {
-      console.log("❌ Dosya seçilmedi");
       return;
     }
-
-    console.log("📁 Dosya seçildi:", files.length, "adet");
 
     // Add new files to existing photos
     const newPhotos = [...photos];
@@ -83,16 +77,9 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
 
         newPhotos.push(file);
         addedCount++;
-        console.log(
-          "✅ Dosya eklendi:",
-          file.name,
-          file.size / (1024 * 1024),
-          "MB"
-        );
       }
     }
 
-    console.log("📸 Toplam fotoğraf sayısı:", newPhotos.length);
     onChange(newPhotos);
 
     // Reset the input value so the same file can be selected again

@@ -40,17 +40,11 @@ class CompanyService extends BaseService {
       ...companyData,
     };
 
-    console.log("🏢 CompanyService - Şirket bilgileri güncelleniyor:");
-    console.log("👤 User ID:", userId);
-    console.log("📋 Company Data:", companyData);
-    console.log("📤 Final Request:", JSON.stringify(request, null, 2));
-
     try {
       const updatedUser = await this.put("/update", request);
-      console.log("✅ Şirket bilgileri başarıyla güncellendi:", updatedUser);
       return updatedUser;
     } catch (error: any) {
-      console.error("❌ Şirket bilgileri güncellenirken hata:", error);
+      console.error("Şirket bilgileri güncellenirken hata:", error);
       console.error("📤 Hatalı Request:", JSON.stringify(request, null, 2));
 
       // Backend validation errors'u logla

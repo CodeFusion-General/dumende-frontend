@@ -42,12 +42,8 @@ class ReviewService extends BaseService {
     return this.get<ReviewDTO[]>(`/boat/${boatId}`);
   }
 
-  public async getBoatRating(boatId: number): Promise<{
-    averageRating: number;
-    totalReviews: number;
-    ratingDistribution: Record<number, number>;
-  }> {
-    return this.get(`/boat/${boatId}/rating`);
+  public async getBoatRating(boatId: number): Promise<number> {
+    return this.get(`/boat/${boatId}/average-rating`);
   }
 
   // Tour Reviews
@@ -309,7 +305,7 @@ export const reviewHelperService = {
       const allReviews = [...boatReviews, ...tourReviews];
       const uniqueReviews = allReviews.filter(
         (review, index, self) =>
-          index === self.findIndex((r) => r.reviewId === review.reviewId)
+          index === self.findIndex((r) => r.id === review.id)
       );
 
       return uniqueReviews;

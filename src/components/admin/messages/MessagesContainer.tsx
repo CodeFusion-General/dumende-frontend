@@ -24,39 +24,30 @@ const MessagesContainer = () => {
   const { state } = useSidebar();
   const isPrimarySidebarExpanded = state === "expanded";
 
-  console.log("🚀 MessagesContainer component rendered!");
 
   // Fetch conversations on component mount
   useEffect(() => {
-    console.log("🔄 useEffect triggered - about to fetch conversations");
     fetchConversations();
   }, []);
 
   // Mark conversation as read when selected
   useEffect(() => {
     if (selectedConversation) {
-      console.log("📖 Marking conversation as read:", selectedConversation.id);
       markConversationAsRead(selectedConversation.id);
     }
   }, [selectedConversation]);
 
   const fetchConversations = async () => {
-    console.log("🎯 fetchConversations function called!");
-
-    try {
+      try {
       setLoading(true);
       setError(null);
 
       // TODO: Get currentUserId from auth context
       const currentUserId = 1; // Temporary hardcoded value
 
-      console.log("🔍 Getting conversations for userId:", currentUserId);
-
       const conversationInfos = await messageService.getUserConversations(
         currentUserId
       );
-
-      console.log("✅ Raw conversation data:", conversationInfos);
 
       // Convert ConversationInfo to Conversation format
       const formattedConversations: Conversation[] = conversationInfos.map(
@@ -90,16 +81,10 @@ const MessagesContainer = () => {
         })
       );
 
-      console.log("✅ Formatted conversations:", formattedConversations);
       setConversations(formattedConversations);
-      console.log(
-        "✅ Konuşmalar başarıyla yüklendi:",
-        formattedConversations.length,
-        "konuşma"
-      );
     } catch (error) {
-      console.error("❌ Konuşmalar yüklenirken hata:", error);
-      console.error("❌ Error details:", error.message, error.stack);
+      console.error("Konuşmalar yüklenirken hata:", error);
+      console.error("Error details:", error.message, error.stack);
       setError("Mesajlar yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -135,7 +120,7 @@ const MessagesContainer = () => {
         )
       );
     } catch (error) {
-      console.error("❌ Konuşma okundu olarak işaretlenirken hata:", error);
+      console.error("Konuşma okundu olarak işaretlenirken hata:", error);
     }
   };
 
@@ -168,7 +153,7 @@ const MessagesContainer = () => {
           : null
       );
     } catch (error) {
-      console.error("❌ Mesajlar yüklenirken hata:", error);
+      console.error("Mesajlar yüklenirken hata:", error);
       toast({
         title: "Hata",
         description: "Mesajlar yüklenirken bir hata oluştu.",
@@ -222,7 +207,7 @@ const MessagesContainer = () => {
 
       setConversations(formattedConversations);
     } catch (error) {
-      console.error("❌ Arama yapılırken hata:", error);
+      console.error("Arama yapılırken hata:", error);
       toast({
         title: "Hata",
         description: "Arama yapılırken bir hata oluştu.",
@@ -247,7 +232,7 @@ const MessagesContainer = () => {
         description: "Konuşma silindi.",
       });
     } catch (error) {
-      console.error("❌ Konuşma silinirken hata:", error);
+      console.error("Konuşma silinirken hata:", error);
       toast({
         title: "Hata",
         description: "Konuşma silinirken bir hata oluştu.",

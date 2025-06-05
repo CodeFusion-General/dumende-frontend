@@ -174,9 +174,7 @@ const BoatListing = () => {
               </div>
 
               <Reviews
-                reviews={[]}
-                averageRating={boatData.rating || 0}
-                reviewCount={0}
+                boatId={boatData.id}
               />
 
               <div className="mt-16">

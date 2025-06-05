@@ -29,7 +29,7 @@ const TourDetailPage: React.FC = () => {
       const tourData = await tourService.getTourById(tourId);
       setTour(tourData);
     } catch (error) {
-      console.error("❌ Tur detayları yüklenirken hata:", error);
+      console.error("Tur detayları yüklenirken hata:", error);
       setError("Tur detayları yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",

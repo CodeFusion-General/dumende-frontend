@@ -107,7 +107,7 @@ const NewTourPage = () => {
         photos: photoFiles,
       });
     } catch (error) {
-      console.error("❌ Tur verileri yüklenirken hata:", error);
+      console.error("Tur verileri yüklenirken hata:", error);
       toast({
         title: "Hata",
         description: "Tur verileri yüklenirken bir hata oluştu.",
@@ -286,9 +286,6 @@ const NewTourPage = () => {
           tourImageIdsToRemove: [],
         };
 
-        console.log("🚀 Tur güncelleniyor:");
-        console.log("📋 Update Tour DTO:", updateTourDTO);
-
         const updatedTour = await tourService.updateTour(updateTourDTO);
 
         toast({
@@ -296,25 +293,13 @@ const NewTourPage = () => {
           description: "Tur başarıyla güncellendi.",
         });
 
-        console.log("✅ Tur güncellendi:", updatedTour);
       } else {
         // Create new tour
         // Create tour images DTOs
         const tourImages: CreateTourImageDTO[] = [];
-        console.log(
-          "📸 Fotoğraf işleme başlıyor:",
-          formData.photos.length,
-          "fotoğraf"
-        );
 
         for (let i = 0; i < formData.photos.length; i++) {
           const file = formData.photos[i];
-          console.log(
-            `📸 Fotoğraf ${i + 1} işleniyor:`,
-            file.name,
-            file.size / (1024 * 1024),
-            "MB"
-          );
 
           try {
             const base64Data = await fileToBase64(file);
@@ -323,17 +308,12 @@ const NewTourPage = () => {
               imageData: base64Data,
               displayOrder: i + 1,
             });
-            console.log(
-              `✅ Fotoğraf ${i + 1} işlendi: base64 boyutu`,
-              base64Data.length,
-              "karakter"
-            );
+
           } catch (error) {
-            console.error(`❌ Fotoğraf ${i + 1} işlenirken hata:`, error);
+            console.error(`Fotoğraf ${i + 1} işlenirken hata:`, error);
           }
         }
 
-        console.log("📸 Toplam işlenen fotoğraf:", tourImages.length);
 
         // Create tour dates DTOs - Backend LocalDateTime format uyumlu
         const tourDates: CreateTourDateDTO[] = formData.dates.tourDates.map(
@@ -368,15 +348,6 @@ const NewTourPage = () => {
           tourImages,
         };
 
-        console.log("🚀 Tur oluşturuluyor:");
-        console.log("📋 Tour DTO:", {
-          ...createTourDTO,
-          tourImages: createTourDTO.tourImages.map((img) => ({
-            ...img,
-            imageData: `[${img.imageData.length} karakter base64 data]`,
-          })),
-        });
-
         const newTour = await tourService.createTour(createTourDTO);
 
         toast({
@@ -384,12 +355,11 @@ const NewTourPage = () => {
           description: "Tur başarıyla oluşturuldu.",
         });
 
-        console.log("✅ Tur oluşturuldu:", newTour);
       }
 
       navigate("/captain/tours");
     } catch (error) {
-      console.error("❌ Tur işlemi hatası:", error);
+      console.error("Tur işlemi hatası:", error);
       toast({
         title: "Hata",
         description: isEditMode

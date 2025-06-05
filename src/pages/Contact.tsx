@@ -39,7 +39,6 @@ const Contact = () => {
       setLoading(false);
     }
     */
-    console.log('Form submitted');
   };
 
   return (
