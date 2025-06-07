@@ -26,18 +26,22 @@ import {
 } from "@/components/ui/card";
 
 interface BookingFormProps {
-  price: number;
+  dailyPrice: number;
+  hourlyPrice: number;
   isHourly?: boolean;
   maxGuests: number;
   boatId: string;
 }
 
-export function BookingForm({ price, isHourly = true, maxGuests, boatId }: BookingFormProps) {
+export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
   const [guests, setGuests] = useState<number>(2);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Toggle between hourly and daily pricing
+  const [isHourlyMode, setIsHourlyMode] = useState<boolean>(defaultIsHourly);
   
   /* Backend hazır olduğunda kullanılacak state:
   const [loading, setLoading] = useState(false);
@@ -70,9 +74,12 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
     return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
   });
 
+  // Dynamic duration options based on mode
+  const durationOptions = isHourlyMode ? [2, 4, 6, 8] : [1, 2, 3, 4];
+
   // Calculate total price
-  const totalHours = isHourly ? duration : 1;
-  const subtotal = price * totalHours;
+  const totalUnits = duration; // hours or days depending on mode
+  const subtotal = isHourlyMode ? hourlyPrice * totalUnits : dailyPrice * totalUnits;
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
 
@@ -125,8 +132,8 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden">
       <div className="flex justify-between items-center">
         <div className="text-left">
-          <span className="text-lg font-semibold">${price}</span>
-          <span className="text-gray-500 ml-1">{isHourly ? '/hour' : '/day'}</span>
+          <span className="text-lg font-semibold">${isHourlyMode ? hourlyPrice : dailyPrice}</span>
+          <span className="text-gray-500 ml-1">{isHourlyMode ? '/hour' : '/day'}</span>
         </div>
         
         <Button 
@@ -157,6 +164,22 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
       </div>
       
       <div className="p-4 overflow-auto h-full pb-24">
+        <div className="flex mb-3 ">
+          <Button
+            variant="outline"
+            className={cn("flex-1 rounded-none rounded-l-md", isHourlyMode && "bg-gray-200")}
+            onClick={() => setIsHourlyMode(true)}
+          >
+            Hourly
+          </Button>
+          <Button
+            variant="outline"
+            className={cn("flex-1 rounded-none rounded-r-md", !isHourlyMode && "bg-gray-200")}
+            onClick={() => setIsHourlyMode(false)}
+          >
+            Daily
+          </Button>
+        </div>
         {/* Form fields - duplicate of desktop for mobile */}
         <div className="space-y-4">
           <div>
@@ -215,13 +238,13 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-                <SelectContent>
-                  {[2, 4, 6, 8].map((hours) => (
-                    <SelectItem key={hours} value={hours.toString()}>
-                      {hours} hours
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+              <SelectContent>
+                {durationOptions.map((val) => (
+                  <SelectItem key={val} value={val.toString()}>
+                    {val} {isHourlyMode ? 'hours' : val === 1 ? 'day' : 'days'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
               </Select>
             </div>
           </div>
@@ -249,7 +272,7 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
         {/* Price summary */}
         <div className="mt-6 space-y-3 border-t border-b py-4 my-4">
           <div className="flex justify-between">
-            <span className="text-gray-600">${price} × {totalHours} {isHourly ? 'hours' : 'days'}</span>
+            <span className="text-gray-600">${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits} {isHourlyMode ? 'hours' : totalUnits === 1 ? 'day' : 'days'}</span>
             <span>${subtotal}</span>
           </div>
           <div className="flex justify-between">
@@ -275,16 +298,32 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
     <>
       <Card className="sticky top-24 hidden md:block">
         <CardHeader className="pb-3">
+          <div className="flex mb-3">
+            <Button
+              variant="outline"
+              className={cn("flex-1 rounded-none rounded-l-md", isHourlyMode && "bg-gray-200")}
+              onClick={() => setIsHourlyMode(true)}
+            >
+              Hourly
+            </Button>
+            <Button
+              variant="outline"
+              className={cn("flex-1 rounded-none rounded-r-md", !isHourlyMode && "bg-gray-200")}
+              onClick={() => setIsHourlyMode(false)}
+            >
+              Daily
+            </Button>
+          </div>
           <div className="flex justify-between">
             <div>
-              <span className="text-lg font-semibold">${price}</span>
-              <span className="text-gray-500 ml-1">{isHourly ? '/hour' : '/day'}</span>
+              <span className="text-lg font-semibold">${isHourlyMode ? hourlyPrice : dailyPrice}</span>
+              <span className="text-gray-500 ml-1">{isHourlyMode ? '/hour' : '/day'}</span>
             </div>
-            <div className="flex items-center">
+            {/*<div className="flex items-center">
               <Star size={16} className="text-yellow-400 fill-yellow-400" />
               <span className="ml-1 text-sm font-medium">4.9</span>
               <span className="text-sm text-gray-500 ml-1">(32)</span>
-            </div>
+            </div>*/}
           </div>
         </CardHeader>
 
@@ -346,9 +385,9 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[2, 4, 6, 8].map((hours) => (
-                    <SelectItem key={hours} value={hours.toString()}>
-                      {hours} hours
+                  {durationOptions.map((val) => (
+                    <SelectItem key={val} value={val.toString()}>
+                      {val} {isHourlyMode ? 'hours' : val === 1 ? 'day' : 'days'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -385,7 +424,7 @@ export function BookingForm({ price, isHourly = true, maxGuests, boatId }: Booki
         <CardFooter className="border-t pt-4">
           <div className="space-y-3 w-full">
             <div className="flex justify-between">
-              <span className="text-gray-600">${price} × {totalHours} {isHourly ? 'hours' : 'days'}</span>
+              <span className="text-gray-600">${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits} {isHourlyMode ? 'hours' : totalUnits === 1 ? 'day' : 'days'}</span>
               <span>${subtotal}</span>
             </div>
             <div className="flex justify-between">

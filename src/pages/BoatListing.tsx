@@ -192,7 +192,8 @@ const BoatListing = () => {
             </div>
             <div className="lg:col-span-1">
               <BookingForm
-                price={Number(boatData.dailyPrice) || 0}
+                dailyPrice={Number(boatData.dailyPrice) || 0}
+                hourlyPrice={Number(boatData.hourlyPrice) || 0}
                 isHourly={false}
                 maxGuests={boatData.capacity}
                 boatId={boatData.id.toString()}

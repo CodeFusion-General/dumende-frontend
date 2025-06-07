@@ -32,6 +32,8 @@ interface BoatCardProps {
   price?: number;
   priceUnit?: "day" | "hour";
   rating?: number;
+  /** Determines whether the card should show hourly or daily pricing */
+  isHourlyMode?: boolean;
 }
 
 const BoatCard: React.FC<BoatCardProps> = ({
@@ -39,6 +41,7 @@ const BoatCard: React.FC<BoatCardProps> = ({
   viewMode = "grid",
   isCompared = false,
   onCompareToggle = () => {},
+  isHourlyMode = false,
   // Legacy props
   id,
   name,
@@ -90,6 +93,15 @@ const BoatCard: React.FC<BoatCardProps> = ({
         return "Tekne";
     }
   };
+
+  // Determine which price and unit to show
+  const isHourly = isLegacyMode ? priceUnit === "hour" : isHourlyMode;
+  const displayPrice = isLegacyMode
+    ? price || 0
+    : isHourly
+      ? normalizedBoat.hourlyPrice ?? normalizedBoat.dailyPrice
+      : normalizedBoat.dailyPrice;
+  const displayUnit = isHourly ? "saat" : "gün";
 
   // Get primary image URL or fallback
   const getImageUrl_component = () => {
@@ -154,10 +166,8 @@ const BoatCard: React.FC<BoatCardProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="font-bold text-primary">
-            {normalizedBoat.dailyPrice || price || 0} ₺
-            <span className="text-gray-400 text-sm font-normal">
-              /{isLegacyMode && priceUnit === "hour" ? "saat" : "gün"}
-            </span>
+            {displayPrice} ₺
+            <span className="text-gray-400 text-sm font-normal">/{displayUnit}</span>
           </div>
 
           <div className="flex space-x-2">

@@ -89,6 +89,8 @@ const BoatsPage = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("popular");
+  // Hourly vs Daily price view
+  const [isHourlyMode, setIsHourlyMode] = useState<boolean>(true);
 
   // Mock data state (commented out but preserved)
   /* const [allBoats] = useState(boatListingData);
@@ -290,6 +292,8 @@ const BoatsPage = () => {
           showFilters={showFilters}
           setShowFilters={setShowFilters}
           totalBoats={filteredBoats.length}
+          isHourlyMode={isHourlyMode}
+          setIsHourlyMode={setIsHourlyMode}
         />
 
         <div className="flex flex-col md:flex-row gap-6">
@@ -347,6 +351,7 @@ const BoatsPage = () => {
                     key={boat.id}
                     boat={boat}
                     viewMode={viewMode}
+                    isHourlyMode={isHourlyMode}
                     isCompared={comparedBoats.includes(boat.id.toString())}
                     onCompareToggle={(id) => {
                       if (comparedBoats.includes(id)) {

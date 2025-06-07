@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 interface BoatListingHeaderProps {
   viewMode: 'grid' | 'list';
@@ -18,6 +19,8 @@ interface BoatListingHeaderProps {
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
   totalBoats: number;
+  isHourlyMode: boolean;
+  setIsHourlyMode: (value: boolean) => void;
 }
 
 const BoatListingHeader: React.FC<BoatListingHeaderProps> = ({
@@ -27,7 +30,9 @@ const BoatListingHeader: React.FC<BoatListingHeaderProps> = ({
   setSortBy,
   showFilters,
   setShowFilters,
-  totalBoats
+  totalBoats,
+  isHourlyMode,
+  setIsHourlyMode
 }) => {
   return (
     <div className="flex items-center justify-between mb-6">
@@ -38,6 +43,16 @@ const BoatListingHeader: React.FC<BoatListingHeaderProps> = ({
       </div>
 
       <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm">Saatlik</span>
+          <Switch
+            checked={!isHourlyMode}               // knob right => Günlük
+            onCheckedChange={(checked) => setIsHourlyMode(!checked)}
+            className="bg-[#0e637a] data-[state=unchecked]:bg-[#0e637a] data-[state=checked]:bg-[#0e637a]"
+          />
+          <span className="text-sm">Günlük</span>
+        </div>
+
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sıralama" />
