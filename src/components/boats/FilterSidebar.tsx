@@ -321,11 +321,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                   Max: {priceRange[1].toLocaleString("tr-TR")} ₺
                 </span>
               </div>
-              <div className="text-center text-xs text-gray-500 mb-2">
-                📊 Mevcut fiyat aralığı:{" "}
-                {priceRange_min_max.min.toLocaleString("tr-TR")} ₺ -{" "}
-                {priceRange_min_max.max.toLocaleString("tr-TR")} ₺
-              </div>
               <div className="mb-6 px-1">
                 <Slider
                   defaultValue={[priceRange[0], priceRange[1]]}
@@ -486,14 +481,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             >
               Filtreleri Temizle
             </Button>
-
-            {/* Dynamic Stats */}
-            <div className="text-center text-xs text-gray-500 mt-2 space-y-1">
-              <div>📊 Toplam {allBoats.length} tekne</div>
-              <div>🎯 {availableBoatTypes.length} farklı tip</div>
-              <div>🌍 {availableLocations.length} lokasyon</div>
-              <div>⚙️ {availableFeatures.length} özellik</div>
-            </div>
           </div>
         </div>
       </div>

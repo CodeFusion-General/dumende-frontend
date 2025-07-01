@@ -29,22 +29,13 @@ class TourService extends BaseService {
   }
 
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
-    console.log("📡 TourService.createTour çağrıldı");
-    console.log("📋 Gönderilen data:", {
-      ...data,
-      tourImages:
-        data.tourImages?.map((img) => ({
-          ...img,
-          imageData: `[${img.imageData?.length || 0} karakter]`,
-        })) || [],
-    });
+   
 
     try {
       const result = await this.post<TourDTO>("/tours", data);
-      console.log("✅ Tur başarıyla oluşturuldu:", result.id);
       return result;
     } catch (error) {
-      console.error("❌ TourService.createTour hatası:", error);
+      console.error("TourService.createTour hatası:", error);
       throw error;
     }
   }

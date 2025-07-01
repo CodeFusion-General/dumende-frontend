@@ -77,13 +77,9 @@ const TourCalendarPage: React.FC = () => {
       }
 
       setEvents(allEvents);
-      console.log(
-        "✅ Tur takvimi başarıyla yüklendi:",
-        allEvents.length,
-        "etkinlik"
-      );
+
     } catch (error) {
-      console.error("❌ Tur takvimi yükleme hatası:", error);
+      console.error("Tur takvimi yükleme hatası:", error);
       setError("Tur takvimi yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -110,7 +106,7 @@ const TourCalendarPage: React.FC = () => {
         description: "Tur durumu güncellendi.",
       });
     } catch (error) {
-      console.error("❌ Tur durumu güncelleme hatası:", error);
+      console.error("Tur durumu güncelleme hatası:", error);
       toast({
         title: "Hata",
         description: "Tur durumu güncellenemedi.",
@@ -132,7 +128,7 @@ const TourCalendarPage: React.FC = () => {
         description: "Tur tarihi silindi.",
       });
     } catch (error) {
-      console.error("❌ Tur tarihi silme hatası:", error);
+      console.error("Tur tarihi silme hatası:", error);
       toast({
         title: "Hata",
         description: "Tur tarihi silinemedi.",

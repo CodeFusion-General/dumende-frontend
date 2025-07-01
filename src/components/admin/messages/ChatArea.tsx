@@ -62,7 +62,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
       setMessages(formattedMessages);
     } catch (error) {
-      console.error("❌ Mesajlar yüklenirken hata:", error);
+      console.error("Mesajlar yüklenirken hata:", error);
       toast({
         title: "Hata",
         description:
@@ -109,9 +109,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
       setMessages((prev) => [...prev, newMessageFormatted]);
       setNewMessage("");
 
-      console.log("✅ Mesaj gönderildi:", response);
     } catch (error) {
-      console.error("❌ Mesaj gönderilirken hata:", error);
+      console.error("Mesaj gönderilirken hata:", error);
       toast({
         title: "Hata",
         description: "Mesaj gönderilemedi. Lütfen daha sonra tekrar deneyin.",

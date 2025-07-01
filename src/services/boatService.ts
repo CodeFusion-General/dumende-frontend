@@ -179,18 +179,15 @@ class BoatService extends BaseService {
 
   // Lokasyonlar
   public async getAllLocations(): Promise<string[]> {
-    console.log("🚀 BoatService: Lokasyonlar getiriliyor...");
     return this.get<string[]>("/locations");
   }
 
   // İstatistikler
   public async getLocationStatistics(): Promise<LocationStatistic[]> {
-    console.log("🚀 BoatService: Lokasyon istatistikleri getiriliyor...");
     return this.get<LocationStatistic[]>("/statistics/by-location");
   }
 
   public async getTypeStatistics(): Promise<TypeStatistic[]> {
-    console.log("🚀 BoatService: Tip istatistikleri getiriliyor...");
     return this.get<TypeStatistic[]>("/statistics/by-type");
   }
 
@@ -206,7 +203,6 @@ class BoatService extends BaseService {
   public async advancedSearch(
     searchRequest: AdvancedSearchRequest
   ): Promise<BoatDTO[]> {
-    console.log("🚀 BoatService: Gelişmiş arama yapılıyor...", searchRequest);
     return this.post<BoatDTO[]>("/search/advanced", searchRequest);
   }
 
@@ -252,29 +248,22 @@ class BoatService extends BaseService {
 
   // Admin tarafından tekne yönetimi
   public async getVesselsByOwner(ownerId: number): Promise<BoatDTO[]> {
-    console.log(`🚀 BoatService: Owner ${ownerId} tekneleri getiriliyor...`);
     return this.get<BoatDTO[]>(`/owner/${ownerId}`);
   }
 
   public async createVessel(vesselData: CreateVesselDTO): Promise<BoatDTO> {
-    console.log("🚀 BoatService: Yeni tekne oluşturuluyor...", vesselData);
     return this.post<BoatDTO>("", vesselData);
   }
 
   public async updateVessel(vesselData: UpdateVesselDTO): Promise<BoatDTO> {
-    console.log("🚀 BoatService: Tekne güncelleniyor...", vesselData);
     return this.put<BoatDTO>("", vesselData);
   }
 
   public async deleteVessel(id: number): Promise<void> {
-    console.log(`🚀 BoatService: Tekne ${id} siliniyor...`);
     return this.delete<void>(`/${id}`);
   }
 
   public async updateVesselStatus(id: number, status: string): Promise<void> {
-    console.log(
-      `🚀 BoatService: Tekne ${id} durumu "${status}" olarak güncelleniyor...`
-    );
     return this.patch<void>(
       `/${id}/status?status=${encodeURIComponent(status)}`
     );
@@ -285,10 +274,6 @@ class BoatService extends BaseService {
     boatId: number,
     files: FileList
   ): Promise<BoatDTO> {
-    console.log(
-      `🚀 BoatService: Tekne ${boatId} için ${files.length} fotoğraf yükleniyor...`
-    );
-
     const formData = new FormData();
     Array.from(files).forEach((file, index) => {
       formData.append("images", file);
@@ -313,7 +298,6 @@ class BoatService extends BaseService {
   }
 
   public async deleteVesselImage(imageId: number): Promise<void> {
-    console.log(`🚀 BoatService: Fotoğraf ${imageId} siliniyor...`);
     try {
       const response = await this.api.delete(`/boat-images/${imageId}`);
       return response.data;
@@ -328,10 +312,6 @@ class BoatService extends BaseService {
     boatId: number,
     features: string[]
   ): Promise<BoatDTO> {
-    console.log(
-      `🚀 BoatService: Tekne ${boatId} özellikleri güncelleniyor...`,
-      features
-    );
     try {
       const response = await this.api.post(
         `/boat-features/boat/${boatId}/bulk`,
@@ -351,7 +331,6 @@ class BoatService extends BaseService {
     isValid: boolean;
     errors: string[];
   }> {
-    console.log("🚀 BoatService: Tekne verisi doğrulanıyor...", vesselData);
     try {
       return this.post<{ isValid: boolean; errors: string[] }>(
         "/validate",
@@ -369,10 +348,6 @@ class BoatService extends BaseService {
   public async createVesselWithOptimizedImages(
     vesselData: CreateVesselDTO
   ): Promise<BoatDTO> {
-    console.log(
-      "🚀 BoatService: Optimize edilmiş resimlerle tekne oluşturuluyor...",
-      vesselData
-    );
 
     // Önce resimler olmadan tekneyi oluştur
     const vesselDataWithoutImages = { ...vesselData, images: [] };
@@ -380,7 +355,6 @@ class BoatService extends BaseService {
 
     // Eğer resim varsa, compress edip ayrı ayrı yükle
     if (vesselData.images && vesselData.images.length > 0) {
-      console.log(`📷 ${vesselData.images.length} resim optimize ediliyor...`);
 
       const optimizedImages = await Promise.all(
         vesselData.images.map(async (imageDto, index) => ({
@@ -405,10 +379,6 @@ class BoatService extends BaseService {
       displayOrder: number;
     }>
   ): Promise<void> {
-    console.log(
-      `🚀 BoatService: Boat ${boatId} için ${images.length} optimize resim yükleniyor...`
-    );
-
     // baseURL zaten /api olduğu için /api prefix'i eklememeliyiz
     try {
       const response = await this.api.post(
@@ -426,10 +396,6 @@ class BoatService extends BaseService {
     boatId: number,
     files: FileList
   ): Promise<BoatDTO> {
-    console.log(
-      `🚀 BoatService: ${files.length} dosya compress edilip yükleniyor...`
-    );
-
     const compressedImages: Array<{
       imageData: string;
       isPrimary: boolean;
@@ -460,11 +426,8 @@ class BoatService extends BaseService {
           displayOrder: i + 1,
         });
 
-        console.log(
-          `📷 ${file.name} compress edildi (${(file.size / 1024).toFixed(0)}KB)`
-        );
       } catch (error) {
-        console.error(`❌ ${file.name} compress edilemedi:`, error);
+        console.error(`${file.name} compress edilemedi:`, error);
         throw new Error(`Resim işlenemedi: ${file.name}`);
       }
     }

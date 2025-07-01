@@ -49,7 +49,7 @@ const Dashboard = () => {
   ];
 
   // Load dashboard statistics
-  useEffect(() => {
+  /*useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
@@ -72,7 +72,7 @@ const Dashboard = () => {
     };
 
     loadDashboardData();
-  }, [ownerId]);
+  }, [ownerId]);*/
 
   return (
     <SidebarProvider>

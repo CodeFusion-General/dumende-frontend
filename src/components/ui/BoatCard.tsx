@@ -32,6 +32,8 @@ interface BoatCardProps {
   price?: number;
   priceUnit?: "day" | "hour";
   rating?: number;
+  /** Determines whether the card should show hourly or daily pricing */
+  isHourlyMode?: boolean;
 }
 
 const BoatCard: React.FC<BoatCardProps> = ({
@@ -39,6 +41,7 @@ const BoatCard: React.FC<BoatCardProps> = ({
   viewMode = "grid",
   isCompared = false,
   onCompareToggle = () => {},
+  isHourlyMode = false,
   // Legacy props
   id,
   name,
@@ -76,6 +79,30 @@ const BoatCard: React.FC<BoatCardProps> = ({
     );
   }
 
+  const handleType = (type: string) => {
+    switch (type) {
+      case "SAILBOAT":
+        return "Yelkenli Tekne";
+      case "MOTORBOAT":
+        return "Motorlu Tekne";
+      case "SPEEDBOAT":
+        return "Hız Teknesi";
+      case "YACHT":
+        return "Yat";
+      default:
+        return "Tekne";
+    }
+  };
+
+  // Determine which price and unit to show
+  const isHourly = isLegacyMode ? priceUnit === "hour" : isHourlyMode;
+  const displayPrice = isLegacyMode
+    ? price || 0
+    : isHourly
+      ? normalizedBoat.hourlyPrice ?? normalizedBoat.dailyPrice
+      : normalizedBoat.dailyPrice;
+  const displayUnit = isHourly ? "saat" : "gün";
+
   // Get primary image URL or fallback
   const getImageUrl_component = () => {
     if (isLegacyMode && imageUrl) return imageUrl;
@@ -104,9 +131,9 @@ const BoatCard: React.FC<BoatCardProps> = ({
           alt={normalizedBoat.name || "Tekne"}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-3 right-3 bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold">
+       {/* <div className="absolute top-3 right-3 bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold">
           {normalizedBoat.type || "Tekne"}
-        </div>
+        </div> */}
       </div>
 
       <div className="p-4">
@@ -133,16 +160,14 @@ const BoatCard: React.FC<BoatCardProps> = ({
           </div>
           <div className="flex items-center text-gray-600">
             <Anchor size={16} className="mr-1" />
-            <span className="text-sm">{normalizedBoat.type || "Tekne"}</span>
+            <span className="text-sm">{handleType(normalizedBoat.type)}</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
           <div className="font-bold text-primary">
-            {normalizedBoat.dailyPrice || price || 0} ₺
-            <span className="text-gray-400 text-sm font-normal">
-              /{isLegacyMode && priceUnit === "hour" ? "saat" : "gün"}
-            </span>
+            {displayPrice} ₺
+            <span className="text-gray-400 text-sm font-normal">/{displayUnit}</span>
           </div>
 
           <div className="flex space-x-2">

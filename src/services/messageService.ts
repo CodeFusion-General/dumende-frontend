@@ -53,15 +53,13 @@ class MessageService extends BaseService {
 
   public async getConversationIdsByUserId(userId: number): Promise<string[]> {
     try {
-      console.log("🔍 API: Getting conversation IDs for userId:", userId);
       const result = await this.get<string[]>(
         `/messages/conversations/user/${userId}`
       );
-      console.log("✅ API: Conversation IDs result:", result);
       return result;
     } catch (error) {
-      console.error("❌ API: Error getting conversation IDs:", error);
-      console.error("❌ API: Error details:", error.response?.data);
+      console.error("API: Error getting conversation IDs:", error);
+      console.error("API: Error details:", error.response?.data);
       throw error;
     }
   }
@@ -153,36 +151,17 @@ class MessageService extends BaseService {
     }[]
   > {
     try {
-      console.log(
-        "🔍 MessageService: Getting conversation IDs for userId:",
-        userId
-      );
 
       // Get all conversation IDs for the user
       const conversationIds = await this.getConversationIdsByUserId(userId);
 
-      console.log(
-        "🔍 MessageService: Found conversation IDs:",
-        conversationIds
-      );
-
       const conversations = [];
 
       for (const conversationId of conversationIds) {
-        console.log(
-          "🔍 MessageService: Processing conversation:",
-          conversationId
-        );
-
+       
         // Get messages for each conversation
         const messages = await this.getMessagesByConversationId(conversationId);
 
-        console.log(
-          "🔍 MessageService: Messages for",
-          conversationId,
-          ":",
-          messages.length
-        );
 
         if (messages.length === 0) continue;
 
@@ -210,7 +189,6 @@ class MessageService extends BaseService {
         });
       }
 
-      console.log("✅ MessageService: Final conversations:", conversations);
 
       // Sort by last message date
       return conversations.sort((a, b) => {
@@ -222,7 +200,7 @@ class MessageService extends BaseService {
       });
     } catch (error) {
       console.error(
-        "❌ MessageService: Error fetching user conversations:",
+        "MessageService: Error fetching user conversations:",
         error
       );
       return [];

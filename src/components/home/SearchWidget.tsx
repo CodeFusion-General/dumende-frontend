@@ -20,17 +20,11 @@ const SearchWidget = () => {
   const fetchLocations = async () => {
     try {
       setLocationsLoading(true);
-      console.log("🚀 SearchWidget: Backend'den lokasyonlar çekiliyor...");
-
       const locationList = await boatService.getAllLocations();
-      console.log(
-        "✅ SearchWidget: Lokasyonlar başarıyla alındı:",
-        locationList
-      );
 
       setLocations(locationList);
     } catch (error) {
-      console.error("❌ SearchWidget lokasyon hatası:", error);
+      console.error("SearchWidget lokasyon hatası:", error);
       // Hata durumunda fallback lokasyonlar
       setLocations([
         "İstanbul",
@@ -54,11 +48,6 @@ const SearchWidget = () => {
     }
 
     setLoading(true);
-    console.log("🔍 SearchWidget: Arama yapılıyor...", {
-      date,
-      location,
-      guests,
-    });
 
     try {
       // Misafir sayısını parse et
@@ -75,7 +64,6 @@ const SearchWidget = () => {
 
       // Arama yap ve sonuçlar sayfasına yönlendir
       const results = await boatService.advancedSearch(searchRequest);
-      console.log("✅ SearchWidget: Arama sonuçları:", results);
 
       // URL parametreleri ile tekne listesi sayfasına yönlendir
       const params = new URLSearchParams({
@@ -87,7 +75,7 @@ const SearchWidget = () => {
 
       navigate(`/boats?${params.toString()}`);
     } catch (error) {
-      console.error("❌ SearchWidget arama hatası:", error);
+      console.error("SearchWidget arama hatası:", error);
       alert("Arama sırasında bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
@@ -208,15 +196,6 @@ const SearchWidget = () => {
           </button>
         </div>
       </form>
-
-      {/* Backend bağlantı durumu */}
-      <div className="mt-4 text-center">
-        <p className="text-xs text-gray-500">
-          {locationsLoading
-            ? "📡 Backend'den lokasyonlar yükleniyor..."
-            : `✅ ${locations.length} lokasyon yüklendi`}
-        </p>
-      </div>
     </div>
   );
 };

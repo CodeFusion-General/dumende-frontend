@@ -15,26 +15,17 @@ const Testimonials = () => {
 
   const fetchTestimonials = async () => {
     try {
-      setLoading(true);
-      console.log("🚀 Testimonials: Backend'den yorumlar çekiliyor...");
-      console.log(
-        "📡 API URL:",
-        `${import.meta.env.VITE_API_BASE_URL || "/api"}/reviews?minRating=4`
-      );
-
       // En yüksek puanlı yorumları al
       const response = await reviewService.getReviews({
         minRating: 4,
       });
-      console.log("✅ Testimonials: API yanıtı alındı:", response);
-
       // İlk 5 yorum
       const topReviews = Array.isArray(response) ? response.slice(0, 5) : [];
       setReviews(topReviews);
       setError(null);
     } catch (err: any) {
-      console.error("❌ Testimonials API Hatası:", err);
-      console.error("❌ Hata detayları:", {
+      console.error("Testimonials API Hatası:", err);
+      console.error("Hata detayları:", {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
@@ -47,8 +38,6 @@ const Testimonials = () => {
         err.response?.statusText ||
         err.message ||
         "Yorumlar yüklenirken bir hata oluştu.";
-
-      console.log("🔄 Geçici olarak mock data kullanılıyor...");
 
       // Geçici mock data - backend düzelene kadar
       const mockReviews = [
@@ -173,7 +162,7 @@ const Testimonials = () => {
           </div>
 
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">❌ {error}</p>
+            <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={fetchTestimonials}
               className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"

@@ -218,7 +218,6 @@ class ContactService extends BaseService {
   }
 
   public async submitMessage(data: ContactMessage): Promise<ContactResponse> {
-    console.log("🚀 ContactService: İletişim formu gönderiliyor...", data);
     return this.post<ContactResponse>("/message", data);
   }
 }

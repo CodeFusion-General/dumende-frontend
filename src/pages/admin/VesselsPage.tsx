@@ -163,9 +163,8 @@ const VesselsPage = () => {
       const data = await boatService.getVesselsByOwner(ownerId);
       setVessels(data);
 
-      console.log("✅ Vessels başarıyla yüklendi:", data.length, "tekne");
     } catch (err) {
-      console.error("❌ Vessels yükleme hatası:", err);
+      console.error("Vessels yükleme hatası:", err);
       setError("Tekneler yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -183,9 +182,8 @@ const VesselsPage = () => {
       setLoading(true);
       const vessel = await boatService.getBoatById(id);
       setCurrentVessel(vessel);
-      console.log("✅ Vessel detayı yüklendi:", vessel.name);
     } catch (err) {
-      console.error("❌ Vessel detay yükleme hatası:", err);
+      console.error("Vessel detay yükleme hatası:", err);
       toast({
         title: "Hata",
         description: "Tekne bilgileri yüklenirken bir hata oluştu.",
@@ -464,13 +462,8 @@ const VesselsPage = () => {
 
           compressedImages.push(compressedFile);
 
-          console.log(
-            `📷 ${file.name} compress edildi: ${(file.size / 1024).toFixed(
-              0
-            )}KB → ${(compressedFile.size / 1024).toFixed(0)}KB`
-          );
         } catch (error) {
-          console.error(`❌ ${file.name} compress edilemedi:`, error);
+          console.error(`${file.name} compress edilemedi:`, error);
           errors.push(`${file.name} işlenemedi`);
         }
       }
@@ -480,10 +473,6 @@ const VesselsPage = () => {
         images: [...prev.images, ...compressedImages],
       }));
 
-      console.log(
-        "📷 Fotoğraflar optimize edilip form'a eklendi:",
-        compressedImages.length
-      );
 
       toast({
         title: "Başarılı",
@@ -498,7 +487,7 @@ const VesselsPage = () => {
         });
       }
     } catch (error) {
-      console.error("❌ Fotoğraf ekleme hatası:", error);
+      console.error("Fotoğraf ekleme hatası:", error);
       toast({
         title: "Hata",
         description:
@@ -535,13 +524,11 @@ const VesselsPage = () => {
 
         // Silinecek fotoğrafları sil
         if (formData.imageIdsToRemove.length > 0) {
-          console.log("🗑️ Silinecek fotoğraflar:", formData.imageIdsToRemove);
           for (const imageId of formData.imageIdsToRemove) {
             try {
               await boatService.deleteBoatImage(editingVesselId, imageId);
-              console.log(`✅ Fotoğraf ${imageId} silindi`);
             } catch (error) {
-              console.error(`❌ Fotoğraf ${imageId} silinemedi:`, error);
+              console.error(`Fotoğraf ${imageId} silinemedi:`, error);
             }
           }
         }
@@ -559,7 +546,6 @@ const VesselsPage = () => {
           description: "Tekne bilgileri güncellendi.",
         });
 
-        console.log("✅ Vessel güncellendi:", updateDTO.name);
       } else {
         // Create new vessel with optimized images
         if (formData.images.length > 0) {
@@ -596,7 +582,6 @@ const VesselsPage = () => {
             description: "Yeni tekne eklendi.",
           });
 
-          console.log("✅ Yeni vessel oluşturuldu:", newVessel.name);
         } else {
           // Resim olmadan tekne oluştur
           const createDTO = await formDataToCreateDTO(formData);
@@ -607,7 +592,6 @@ const VesselsPage = () => {
             description: "Yeni tekne eklendi.",
           });
 
-          console.log("✅ Yeni vessel oluşturuldu:", newVessel.name);
         }
       }
 
@@ -615,7 +599,7 @@ const VesselsPage = () => {
       await fetchVessels();
       handleBackToList();
     } catch (error) {
-      console.error("❌ Vessel kaydetme hatası:", error);
+      console.error("Vessel kaydetme hatası:", error);
       toast({
         title: "Hata",
         description: "Tekne kaydedilemedi. Lütfen daha sonra tekrar deneyin.",
@@ -649,7 +633,6 @@ const VesselsPage = () => {
         description: "Tekne silindi.",
       });
 
-      console.log("✅ Vessel silindi:", vesselId);
 
       // Liste güncelle
       await fetchVessels();
@@ -659,7 +642,7 @@ const VesselsPage = () => {
         handleBackToList();
       }
     } catch (error) {
-      console.error("❌ Vessel silme hatası:", error);
+      console.error("Vessel silme hatası:", error);
       toast({
         title: "Hata",
         description: "Tekne silinemedi. Lütfen daha sonra tekrar deneyin.",

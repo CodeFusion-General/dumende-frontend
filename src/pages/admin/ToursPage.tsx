@@ -49,9 +49,8 @@ const ToursPage = () => {
       const toursData = await tourService.getToursByGuideId(currentGuideId);
       setTours(toursData);
 
-      console.log("✅ Turlar başarıyla yüklendi:", toursData.length, "tur");
     } catch (error) {
-      console.error("❌ Turlar yüklenirken hata:", error);
+      console.error("Turlar yüklenirken hata:", error);
       setError("Turlar yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -113,7 +112,7 @@ const ToursPage = () => {
         description: "Tur silindi.",
       });
     } catch (error) {
-      console.error("❌ Tur silme hatası:", error);
+      console.error("Tur silme hatası:", error);
       toast({
         title: "Hata",
         description: "Tur silinemedi. Lütfen daha sonra tekrar deneyin.",
@@ -131,7 +130,7 @@ const ToursPage = () => {
         description: "Tur durumu güncellendi.",
       });
     } catch (error) {
-      console.error("❌ Tur durumu güncelleme hatası:", error);
+      console.error("Tur durumu güncelleme hatası:", error);
       toast({
         title: "Hata",
         description: "Tur durumu güncellenemedi.",

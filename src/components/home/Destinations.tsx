@@ -18,15 +18,8 @@ const Destinations = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log(
-        "🚀 Destinations: Backend'den lokasyon istatistikleri çekiliyor..."
-      );
 
       const locationStats = await boatService.getLocationStatistics();
-      console.log(
-        "✅ Destinations: İstatistikler başarıyla alındı:",
-        locationStats
-      );
 
       // En popüler 6 lokasyonu al (tekne sayısına göre sıralı)
       const topDestinations = locationStats
@@ -35,7 +28,7 @@ const Destinations = () => {
 
       setDestinations(topDestinations);
     } catch (error) {
-      console.error("❌ Destinations istatistik hatası:", error);
+      console.error("Destinations istatistik hatası:", error);
       setError("Veriler yüklenirken bir hata oluştu");
 
       // Hata durumunda fallback data
@@ -115,9 +108,6 @@ const Destinations = () => {
 
   // Lokasyon filtreli tekne listesine yönlendirme
   const handleViewBoats = (location: string) => {
-    console.log(
-      `🚀 Destinations: ${location} lokasyonu için tekneler görüntüleniyor...`
-    );
 
     // URL parametreleri ile lokasyon filtrelemesi
     const params = new URLSearchParams({
@@ -159,12 +149,6 @@ const Destinations = () => {
                 </div>
               </div>
             ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="text-sm text-gray-500">
-              📡 Backend'den lokasyon istatistikleri yükleniyor...
-            </p>
           </div>
         </div>
       </section>
@@ -278,13 +262,6 @@ const Destinations = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Backend Status */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            ✅ {destinations.length} lokasyon istatistiği backend'den yüklendi
-          </p>
         </div>
       </div>
     </section>

@@ -30,21 +30,13 @@ export abstract class BaseService {
   protected async get<T>(url: string, params?: any): Promise<T> {
     try {
       const fullUrl = `${this.baseUrl}${url}`;
-      console.log("🌐 API GET Request:", fullUrl, params ? { params } : "");
-
       const response: AxiosResponse<T> = await this.api.get(fullUrl, {
         params,
       });
 
-      console.log(
-        "✅ API GET Response:",
-        fullUrl,
-        response.status,
-        response.data
-      );
       return response.data;
     } catch (error) {
-      console.error("❌ API GET Error:", `${this.baseUrl}${url}`, error);
+      console.error("API GET Error:", `${this.baseUrl}${url}`, error);
       this.handleError(error);
       throw error;
     }

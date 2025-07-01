@@ -33,10 +33,8 @@ const ContactForm = () => {
     setSubmitError(null);
 
     try {
-      console.log("🚀 ContactForm: Backend'e mesaj gönderiliyor...", formData);
 
       const response = await contactService.submitMessage(formData);
-      console.log("✅ ContactForm: Mesaj başarıyla gönderildi:", response);
 
       setSubmitSuccess(true);
       setBackendMessage(response.message);
@@ -48,7 +46,7 @@ const ContactForm = () => {
         setBackendMessage("");
       }, 8000);
     } catch (error: any) {
-      console.error("❌ ContactForm mesaj gönderme hatası:", error);
+      console.error("ContactForm mesaj gönderme hatası:", error);
       setSubmitError(
         error.response?.data?.message ||
           "Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin."
@@ -121,9 +119,6 @@ const ContactForm = () => {
                     Mesajınız başarıyla gönderildi!
                   </p>
                   <p className="text-sm text-green-600">{backendMessage}</p>
-                  <p className="text-xs text-green-500 mt-2">
-                    ✅ Backend'den onay alındı
-                  </p>
                 </div>
               </div>
             )}
@@ -244,7 +239,6 @@ const ContactForm = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      <span>Backend'e gönderiliyor...</span>
                     </>
                   ) : (
                     <>
@@ -253,13 +247,6 @@ const ContactForm = () => {
                     </>
                   )}
                 </button>
-
-                {/* Backend Status */}
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">
-                    📡 Formlar backend ContactController'a gönderilir
-                  </p>
-                </div>
               </form>
             )}
 

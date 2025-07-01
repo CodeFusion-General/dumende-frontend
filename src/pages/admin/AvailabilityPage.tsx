@@ -56,45 +56,37 @@ const AvailabilityPage = () => {
   // TODO: Get from auth context - temporarily hardcoded owner ID
   const currentOwnerId = 2; // Ahmet Yılmaz from test data
 
-  console.log("🚀 AvailabilityPage component rendered!");
 
   useEffect(() => {
-    console.log("🔄 useEffect triggered - fetching boats first");
     fetchBoats();
   }, []);
 
   useEffect(() => {
     if (selectedBoat) {
-      console.log("🔄 Selected boat changed - fetching availability data");
       fetchAvailabilityData();
     }
   }, [selectedBoat]);
 
   const fetchBoats = async () => {
-    console.log("🎯 fetchBoats function called!");
 
     try {
       setBoatsLoading(true);
       setError(null);
 
-      console.log("🔍 Getting boats for ownerId:", currentOwnerId);
 
       // Get boats for the current owner
       const ownerBoats = await boatService.getBoatsByOwner(currentOwnerId);
 
-      console.log("✅ Raw boats data:", ownerBoats);
       setBoats(ownerBoats);
 
       // Auto-select first boat if available
       if (ownerBoats.length > 0 && !selectedBoat) {
         setSelectedBoat(ownerBoats[0]);
-        console.log("✅ Auto-selected first boat:", ownerBoats[0].name);
       }
 
-      console.log("✅ Gemiler başarıyla yüklendi:", ownerBoats.length, "gemi");
     } catch (error) {
-      console.error("❌ Gemiler yüklenirken hata:", error);
-      console.error("❌ Error details:", error.message, error.stack);
+      console.error("Gemiler yüklenirken hata:", error);
+      console.error("Error details:", error.message, error.stack);
       setError("Gemi bilgileri yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -110,19 +102,16 @@ const AvailabilityPage = () => {
   const fetchAvailabilityData = async () => {
     if (!selectedBoat) return;
 
-    console.log("🎯 fetchAvailabilityData function called!");
 
     try {
       setLoading(true);
       setError(null);
 
-      console.log("🔍 Getting availability for boatId:", selectedBoat.id);
 
       // Get availability data for the selected boat
       const availabilities =
         await availabilityService.getAvailabilitiesByBoatId(selectedBoat.id);
 
-      console.log("✅ Raw availability data:", availabilities);
 
       // Convert AvailabilityDTO to AvailabilityEntry format
       const formattedEntries: AvailabilityEntry[] = availabilities.map(
@@ -137,17 +126,10 @@ const AvailabilityPage = () => {
         })
       );
 
-      console.log("✅ Formatted availability entries:", formattedEntries);
       setAvailabilityEntries(formattedEntries);
-
-      console.log(
-        "✅ Müsaitlik verileri başarıyla yüklendi:",
-        formattedEntries.length,
-        "kayıt"
-      );
     } catch (error) {
-      console.error("❌ Müsaitlik verileri yüklenirken hata:", error);
-      console.error("❌ Error details:", error.message, error.stack);
+      console.error("Müsaitlik verileri yüklenirken hata:", error);
+      console.error("Error details:", error.message, error.stack);
       setError("Müsaitlik bilgileri yüklenirken bir hata oluştu.");
       toast({
         title: "Hata",
@@ -164,7 +146,6 @@ const AvailabilityPage = () => {
     const boat = boats.find((b) => b.id.toString() === boatId);
     if (boat) {
       setSelectedBoat(boat);
-      console.log("🔄 Boat changed to:", boat.name);
     }
   };
 
@@ -188,7 +169,6 @@ const AvailabilityPage = () => {
         priceOverride: data.priceOverride,
       };
 
-      console.log("🔍 Creating availability:", createCommand);
 
       const response = await availabilityService.createAvailability(
         createCommand
@@ -211,9 +191,8 @@ const AvailabilityPage = () => {
         description: "Yeni müsaitlik eklendi.",
       });
 
-      console.log("✅ Availability created successfully:", response);
     } catch (error) {
-      console.error("❌ Failed to add availability:", error);
+      console.error("Failed to add availability:", error);
       toast({
         title: "Hata",
         description: "Müsaitlik eklenirken bir hata oluştu.",
@@ -232,7 +211,6 @@ const AvailabilityPage = () => {
         ...data,
       };
 
-      console.log("🔍 Updating availability:", updateCommand);
 
       const response = await availabilityService.updateAvailability(
         updateCommand
@@ -257,9 +235,8 @@ const AvailabilityPage = () => {
         description: "Müsaitlik güncellendi.",
       });
 
-      console.log("✅ Availability updated successfully:", response);
     } catch (error) {
-      console.error("❌ Failed to update availability:", error);
+      console.error("Failed to update availability:", error);
       toast({
         title: "Hata",
         description: "Müsaitlik güncellenirken bir hata oluştu.",
@@ -270,7 +247,6 @@ const AvailabilityPage = () => {
 
   const handleDeleteAvailability = async (id: number) => {
     try {
-      console.log("🔍 Deleting availability:", id);
 
       await availabilityService.deleteAvailability(id);
       setAvailabilityEntries((prev) => prev.filter((entry) => entry.id !== id));
@@ -280,9 +256,8 @@ const AvailabilityPage = () => {
         description: "Müsaitlik silindi.",
       });
 
-      console.log("✅ Availability deleted successfully");
     } catch (error) {
-      console.error("❌ Failed to delete availability:", error);
+      console.error("Failed to delete availability:", error);
       toast({
         title: "Hata",
         description: "Müsaitlik silinirken bir hata oluştu.",
@@ -317,9 +292,8 @@ const AvailabilityPage = () => {
         } olarak güncellendi.`,
       });
 
-      console.log("✅ Availability status toggled successfully");
     } catch (error) {
-      console.error("❌ Failed to toggle availability:", error);
+      console.error("Failed to toggle availability:", error);
       toast({
         title: "Hata",
         description: "Müsaitlik durumu güncellenirken bir hata oluştu.",
@@ -350,8 +324,6 @@ const AvailabilityPage = () => {
         isAvailable,
       };
 
-      console.log("🔍 Creating availability period:", command);
-
       await availabilityService.createAvailabilityPeriod(command);
 
       // Refresh data after creating period
@@ -362,9 +334,8 @@ const AvailabilityPage = () => {
         description: "Dönem müsaitliği başarıyla oluşturuldu.",
       });
 
-      console.log("✅ Availability period created successfully");
     } catch (error) {
-      console.error("❌ Failed to create availability period:", error);
+      console.error("Failed to create availability period:", error);
       toast({
         title: "Hata",
         description: "Dönem müsaitliği oluşturulurken bir hata oluştu.",

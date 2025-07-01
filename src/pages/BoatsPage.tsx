@@ -89,6 +89,8 @@ const BoatsPage = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("popular");
+  // Hourly vs Daily price view
+  const [isHourlyMode, setIsHourlyMode] = useState<boolean>(true);
 
   // Mock data state (commented out but preserved)
   /* const [allBoats] = useState(boatListingData);
@@ -139,15 +141,6 @@ const BoatsPage = () => {
   const applyFilters = useCallback(async () => {
     try {
       setLoading(true);
-
-      console.log("🔄 Filtreleri uygulayın:", {
-        types: debouncedSelectedTypes,
-        capacity: debouncedCapacity,
-        priceRange: debouncedPriceRange,
-        locations: debouncedSelectedLocations,
-        features: debouncedSelectedFeatures,
-      });
-
       // Real API call
       const response = await boatService.searchBoats({
         type:
@@ -170,14 +163,9 @@ const BoatsPage = () => {
         ? response
         : (response as any)?.content || [];
 
-      console.log(
-        "✅ Filtreleme sonucu:",
-        filteredResults.length,
-        "tekne bulundu"
-      );
       setFilteredBoats(filteredResults);
     } catch (err) {
-      console.error("❌ Filter uygulama hatası:", err);
+      console.error("Filter uygulama hatası:", err);
       toast({
         title: "Hata",
         description:
@@ -198,7 +186,6 @@ const BoatsPage = () => {
 
   // Optimized reset function
   const handleFilterReset = useCallback(() => {
-    console.log("🔄 Filtreler sıfırlanıyor...");
     setSelectedTypes([]);
     setSelectedLocations([]);
     setSelectedFeatures([]);
@@ -222,22 +209,15 @@ const BoatsPage = () => {
     const typeFilter = searchParams.get("type");
     const filterType = searchParams.get("filter");
 
-    console.log("🔍 BoatsPage: URL parametreleri okunuyor...", {
-      location: locationFilter,
-      type: typeFilter,
-      filter: filterType,
-    });
 
     // Lokasyon filtresi varsa uygula
     if (locationFilter && filterType === "location") {
       setSelectedLocations([locationFilter]);
-      console.log(`📍 Lokasyon filtresi uygulanıyor: ${locationFilter}`);
     }
 
     // Tip filtresi varsa uygula
     if (typeFilter && filterType === "type") {
       setSelectedTypes([typeFilter]);
-      console.log(`⛵ Tip filtresi uygulanıyor: ${typeFilter}`);
     }
   };
 
@@ -312,6 +292,8 @@ const BoatsPage = () => {
           showFilters={showFilters}
           setShowFilters={setShowFilters}
           totalBoats={filteredBoats.length}
+          isHourlyMode={isHourlyMode}
+          setIsHourlyMode={setIsHourlyMode}
         />
 
         <div className="flex flex-col md:flex-row gap-6">
@@ -369,6 +351,7 @@ const BoatsPage = () => {
                     key={boat.id}
                     boat={boat}
                     viewMode={viewMode}
+                    isHourlyMode={isHourlyMode}
                     isCompared={comparedBoats.includes(boat.id.toString())}
                     onCompareToggle={(id) => {
                       if (comparedBoats.includes(id)) {
