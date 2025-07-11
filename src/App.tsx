@@ -16,6 +16,7 @@ import Contact from "./pages/Contact";
 import Register from "./pages/Register";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import MyBookings from "./pages/MyBookings";
 
 // Captain Panel pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -30,6 +31,7 @@ import VesselCalendarPage from "./pages/admin/VesselCalendarPage";
 import TourCalendarPage from "./pages/admin/TourCalendarPage";
 import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
+import BookingsPage from "./pages/admin/BookingsPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +51,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:id" element={<BlogPost />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
 
             {/* Tour Detail Route */}
             <Route path="/tours/:id" element={<TourDetailPage />} />
@@ -72,6 +75,7 @@ const App = () => (
               element={<TourCalendarPage />}
             />
             <Route path="/captain/ratings" element={<RatingsPage />} />
+            <Route path="/captain/bookings" element={<BookingsPage />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

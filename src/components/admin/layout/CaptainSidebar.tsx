@@ -42,7 +42,7 @@ const CaptainSidebar = () => {
     { label: 'Tekne Turu Takvimi', icon: <Calendar size={20} />, path: '/captain/tour-calendar' },
     { label: 'Fiyatlar', icon: <DollarSign size={20} />, path: '/captain/pricing' },
     { label: 'Finans', icon: <DollarSign size={20} />, path: '/captain/finance' },
-    { label: 'Rezervasyonlar', icon: <ClipboardList size={20} />, path: '/captain/reservations' },
+    { label: 'Rezervasyonlar', icon: <ClipboardList size={20} />, path: '/captain/bookings' },
     { label: 'Şirket', icon: <Building size={20} />, path: '/captain/company' },
     { label: 'Profil', icon: <User size={20} />, path: '/captain/profile' },
     { label: 'Puanlarım', icon: <Star size={20} />, path: '/captain/ratings' },
