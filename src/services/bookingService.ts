@@ -1,4 +1,5 @@
 import { BaseService } from "./base/BaseService";
+import { tokenUtils } from "@/lib/utils";
 import {
   BookingDTO,
   CreateBookingDTO,
@@ -15,12 +16,12 @@ import {
 
 // Token'dan userId decode eden yardımcı fonksiyon
 function getUserIdFromToken(): number | null {
-  const token = (typeof window !== 'undefined') ? document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] : null;
+  const token = tokenUtils.getAuthToken();
   if (!token) return null;
   try {
     const payload = token.split('.')[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return decoded.userId || decoded.id || decoded.sub || null;
+    return decoded.userId || null;
   } catch {
     return null;
   }
