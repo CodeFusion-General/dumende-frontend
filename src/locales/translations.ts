@@ -667,27 +667,68 @@ export const translations = {
     // Boat Owner Application
     boatOwnerApplication: {
       title: "Tekne Sahibi Başvurusu",
-      subtitle: "Tekne sahibi olmak için başvurun",
+      subtitle: "Tekne sahibi olmak için başvurunuzu tamamlayın",
+      loginRequired: {
+        title: "Giriş Yapın",
+        message: "Tekne sahibi başvurusu yapabilmek için önce giriş yapmanız gerekmektedir.",
+        loginButton: "Giriş Yap",
+        registerButton: "Hesap Oluştur"
+      },
+      applicationStatus: {
+        title: "Başvuru Durumu",
+        applicationDate: "Başvuru Tarihi",
+        reviewDate: "Değerlendirme Tarihi",
+        rejectionReason: "Ret Sebebi",
+        approvedMessage: "Başvurunuz onaylandı! Artık tekne sahibi olarak platform üzerinde işlem yapabilirsiniz.",
+        pendingMessage: "Başvurunuz değerlendiriliyor...",
+        rejectedMessage: "Başvurunuz reddedildi. Aşağıdaki sebeplerle:",
+        reapplyMessage: "Yeni başvuru yapabilirsiniz."
+      },
       form: {
+        title: "Başvuru Formu",
+        newApplicationTitle: "Yeni Başvuru",
         personalInfo: "Kişisel Bilgiler",
         companyInfo: "Şirket Bilgileri",
         boatInfo: "Tekne Bilgileri",
         documents: "Belgeler",
         companyName: "Şirket Adı",
+        companyNamePlaceholder: "Şirket adınız",
+        companyNameOptional: "Şirket Adı (Opsiyonel)",
         taxNumber: "Vergi Numarası",
+        taxNumberPlaceholder: "Vergi numaranız",
+        taxNumberOptional: "Vergi Numarası (Opsiyonel)",
         address: "Adres",
+        addressPlaceholder: "Adresiniz",
+        addressOptional: "Adres (Opsiyonel)",
         description: "Açıklama",
-        uploadDocuments: "Belge Yükle",
+        descriptionPlaceholder: "Kendinizi ve tekne sahibi olmak isteme nedeninizi açıklayın...",
+        descriptionRequired: "Açıklama *",
+        uploadDocuments: "Belgeler",
+        documentsOptional: "Belgeler (Opsiyonel)",
+        documentsDescription: "Kimlik, tekne ruhsatı vb. belgelerinizi yükleyebilirsiniz. (PDF, JPG, PNG formatında)",
         requiredDocuments: "Gerekli Belgeler",
-        submit: "Başvuru Yap",
+        submit: "Başvuruyu Gönder",
         submitting: "Başvuru gönderiliyor...",
-        success: "Başvurunuz başarıyla gönderildi",
+        success: "Başvurunuz başarıyla gönderildi! Değerlendirme süreci hakkında e-posta ile bilgilendirileceksiniz.",
         error: "Başvuru gönderilirken bir hata oluştu"
       },
       status: {
-        pending: "İnceleniyor",
+        pending: "Değerlendiriliyor",
         approved: "Onaylandı",
         rejected: "Reddedildi"
+      },
+      validation: {
+        companyNameMin: "Şirket adı en az 2 karakter olmalıdır",
+        taxNumberMin: "Vergi numarası en az 10 karakter olmalıdır",
+        addressMin: "Adres en az 10 karakter olmalıdır",
+        descriptionMin: "Açıklama en az 50 karakter olmalıdır"
+      },
+      reviewProcess: {
+        title: "Değerlendirme Süreci",
+        info1: "• Başvurunuz en geç 3 iş günü içinde değerlendirilecektir.",
+        info2: "• Değerlendirme sonucu e-posta ile bildirilecektir.",
+        info3: "• Başvuru durumunuzu bu sayfadan takip edebilirsiniz.",
+        info4: "• Sorularınız için destek ekibimizle iletişime geçebilirsiniz."
       }
     },
 
@@ -1371,27 +1412,68 @@ export const translations = {
     // Boat Owner Application
     boatOwnerApplication: {
       title: "Boat Owner Application",
-      subtitle: "Apply to become a boat owner",
+      subtitle: "Complete your application to become a boat owner",
+      loginRequired: {
+        title: "Login Required",
+        message: "You need to log in first to submit a boat owner application.",
+        loginButton: "Login",
+        registerButton: "Create Account"
+      },
+      applicationStatus: {
+        title: "Application Status",
+        applicationDate: "Application Date",
+        reviewDate: "Review Date",
+        rejectionReason: "Rejection Reason",
+        approvedMessage: "Your application has been approved! You can now operate as a boat owner on the platform.",
+        pendingMessage: "Your application is under review...",
+        rejectedMessage: "Your application has been rejected for the following reasons:",
+        reapplyMessage: "You can submit a new application."
+      },
       form: {
+        title: "Application Form",
+        newApplicationTitle: "New Application",
         personalInfo: "Personal Information",
         companyInfo: "Company Information",
         boatInfo: "Boat Information",
         documents: "Documents",
         companyName: "Company Name",
+        companyNamePlaceholder: "Your company name",
+        companyNameOptional: "Company Name (Optional)",
         taxNumber: "Tax Number",
+        taxNumberPlaceholder: "Your tax number",
+        taxNumberOptional: "Tax Number (Optional)",
         address: "Address",
+        addressPlaceholder: "Your address",
+        addressOptional: "Address (Optional)",
         description: "Description",
-        uploadDocuments: "Upload Documents",
+        descriptionPlaceholder: "Describe yourself and your reason for wanting to become a boat owner...",
+        descriptionRequired: "Description *",
+        uploadDocuments: "Documents",
+        documentsOptional: "Documents (Optional)",
+        documentsDescription: "You can upload your ID, boat license, and other documents. (PDF, JPG, PNG formats)",
         requiredDocuments: "Required Documents",
         submit: "Submit Application",
         submitting: "Submitting application...",
-        success: "Your application has been submitted successfully",
+        success: "Your application has been submitted successfully! You will be notified via email about the review process.",
         error: "An error occurred while submitting your application"
       },
       status: {
         pending: "Under Review",
         approved: "Approved",
         rejected: "Rejected"
+      },
+      validation: {
+        companyNameMin: "Company name must be at least 2 characters long",
+        taxNumberMin: "Tax number must be at least 10 characters long",
+        addressMin: "Address must be at least 10 characters long",
+        descriptionMin: "Description must be at least 50 characters long"
+      },
+      reviewProcess: {
+        title: "Review Process",
+        info1: "• Your application will be reviewed within 3 business days.",
+        info2: "• Review results will be sent via email.",
+        info3: "• You can track your application status from this page.",
+        info4: "• Contact our support team for any questions."
       }
     },
 

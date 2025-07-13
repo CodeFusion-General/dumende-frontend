@@ -256,17 +256,53 @@ class AuthService extends BaseService {
     applicationDate: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
   }[]> {
-    return this.authGet<any[]>("/admin/boat-owner-applications");
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // return this.authGet<any[]>("/admin/boat-owner-applications");
+    
+    // Mock data - örnek boat owner başvuruları
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return [
+      {
+        id: 1,
+        userId: 101,
+        username: "ahmet_kaptan",
+        email: "ahmet@example.com",
+        fullName: "Ahmet Kaptan",
+        phoneNumber: "+90 555 123 4567",
+        applicationDate: "2024-01-15T10:00:00Z",
+        status: 'PENDING'
+      },
+      {
+        id: 2,
+        userId: 102,
+        username: "mehmet_tekne",
+        email: "mehmet@example.com",
+        fullName: "Mehmet Tekne",
+        phoneNumber: "+90 555 987 6543",
+        applicationDate: "2024-01-10T14:30:00Z",
+        status: 'APPROVED'
+      }
+    ];
   }
 
   // Boat owner başvurusunu onayla (Admin only)
   public async approveBoatOwnerApplication(applicationId: number): Promise<void> {
-    return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
+    
+    // Mock onay işlemi
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log(`Mock boat owner application ${applicationId} approved`);
   }
 
   // Boat owner başvurusunu reddet (Admin only)
   public async rejectBoatOwnerApplication(applicationId: number, reason?: string): Promise<void> {
-    return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
+    
+    // Mock red işlemi
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log(`Mock boat owner application ${applicationId} rejected with reason:`, reason);
   }
 
   // Kullanıcıyı ID ile getir (Admin only)
@@ -294,39 +330,44 @@ class AuthService extends BaseService {
     description?: string;
     documents?: File[];
   }): Promise<void> {
-    const formData = new FormData();
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // const formData = new FormData();
     
-    if (applicationData.companyName) {
-      formData.append('companyName', applicationData.companyName);
-    }
-    if (applicationData.taxNumber) {
-      formData.append('taxNumber', applicationData.taxNumber);
-    }
-    if (applicationData.address) {
-      formData.append('address', applicationData.address);
-    }
-    if (applicationData.description) {
-      formData.append('description', applicationData.description);
-    }
+    // if (applicationData.companyName) {
+    //   formData.append('companyName', applicationData.companyName);
+    // }
+    // if (applicationData.taxNumber) {
+    //   formData.append('taxNumber', applicationData.taxNumber);
+    // }
+    // if (applicationData.address) {
+    //   formData.append('address', applicationData.address);
+    // }
+    // if (applicationData.description) {
+    //   formData.append('description', applicationData.description);
+    // }
     
-    // Belgeler varsa ekle
-    if (applicationData.documents) {
-      Array.from(applicationData.documents).forEach((file, index) => {
-        formData.append(`documents`, file);
-      });
-    }
+    // // Belgeler varsa ekle
+    // if (applicationData.documents) {
+    //   Array.from(applicationData.documents).forEach((file, index) => {
+    //     formData.append(`documents`, file);
+    //   });
+    // }
 
-    try {
-      const response = await this.authApi.post("/auth/boat-owner-application", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    // try {
+    //   const response = await this.authApi.post("/auth/boat-owner-application", formData, {
+    //     headers: {
+    //       "Content-Type": "multipart/form-data",
+    //     },
+    //   });
+    //   return response.data;
+    // } catch (error) {
+    //   this.handleError(error);
+    //   throw error;
+    // }
+    
+    // Mock başvuru gönderme simülasyonu
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Mock boat owner application submitted:', applicationData);
   }
 
   // Kullanıcının boat owner başvuru durumunu kontrol et
@@ -337,17 +378,36 @@ class AuthService extends BaseService {
     reviewDate?: string;
     rejectionReason?: string;
   } | null> {
-    try {
-      return await this.authGet<any>("/boat-owner-application/my");
-    } catch (error) {
-      // Başvuru yoksa null döner
-      return null;
-    }
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // try {
+    //   return await this.authGet<any>("/boat-owner-application/my");
+    // } catch (error) {
+    //   // Başvuru yoksa null döner
+    //   return null;
+    // }
+    
+    // Mock data - başvuru olmadığı durumu simüle ediyoruz
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return null; // Hiç başvuru yok
+    
+    // Aşağıdaki mock data'yı istediğiniz senaryoya göre değiştirebilirsiniz:
+    // return {
+    //   id: 1,
+    //   status: 'PENDING',
+    //   applicationDate: new Date().toISOString(),
+    //   reviewDate: undefined,
+    //   rejectionReason: undefined
+    // };
   }
 
   // Boat owner başvurusu iptal et
   public async cancelBoatOwnerApplication(): Promise<void> {
-    return this.authDelete<void>("/boat-owner-application/my");
+    // Backend henüz hazır olmadığı için mock data kullanıyoruz
+    // return this.authDelete<void>("/boat-owner-application/my");
+    
+    // Mock başvuru iptal etme simülasyonu
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log('Mock boat owner application cancelled');
   }
 }
 

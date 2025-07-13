@@ -15,19 +15,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { authService } from '@/services/authService';
 import { UserType } from '@/types/auth.types';
 import Layout from '@/components/layout/Layout';
-
-const applicationSchema = z.object({
-  companyName: z.string().min(2, 'Şirket adı en az 2 karakter olmalıdır').optional(),
-  taxNumber: z.string().min(10, 'Vergi numarası en az 10 karakter olmalıdır').optional(),
-  address: z.string().min(10, 'Adres en az 10 karakter olmalıdır').optional(),
-  description: z.string().min(50, 'Açıklama en az 50 karakter olmalıdır'),
-});
-
-type ApplicationFormData = z.infer<typeof applicationSchema>;
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 const BoatOwnerApplication = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
+
+  const applicationSchema = z.object({
+    companyName: z.string().min(2, t.boatOwnerApplication.validation.companyNameMin).optional(),
+    taxNumber: z.string().min(10, t.boatOwnerApplication.validation.taxNumberMin).optional(),
+    address: z.string().min(10, t.boatOwnerApplication.validation.addressMin).optional(),
+    description: z.string().min(50, t.boatOwnerApplication.validation.descriptionMin),
+  });
+
+  type ApplicationFormData = z.infer<typeof applicationSchema>;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -49,11 +53,14 @@ const BoatOwnerApplication = () => {
   });
 
   useEffect(() => {
+    // Authenticated olmayan kullanıcılar da sayfayı görebilir
+    // Ama form doldurmak için login olması gerekir
     if (!isAuthenticated) {
-      navigate('/');
       return;
     }
 
+    // Sadece CUSTOMER rolündeki kullanıcılar başvuru yapabilir
+    // BOAT_OWNER veya ADMIN zaten boat owner oldukları için başvuru yapamaz
     if (user?.role !== UserType.CUSTOMER) {
       navigate('/');
       return;
@@ -65,7 +72,7 @@ const BoatOwnerApplication = () => {
         const application = await authService.getMyBoatOwnerApplication();
         setExistingApplication(application);
       } catch (error) {
-        console.error('Başvuru kontrolü hatası:', error);
+        console.error('Application check error:', error);
       }
     };
 
@@ -95,7 +102,7 @@ const BoatOwnerApplication = () => {
       setError(
         err.response?.data?.message || 
         err.message || 
-        'Başvuru gönderilirken bir hata oluştu'
+        t.boatOwnerApplication.form.error
       );
     } finally {
       setIsLoading(false);
@@ -111,17 +118,19 @@ const BoatOwnerApplication = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary"><Clock className="w-4 h-4 mr-1" />Değerlendiriliyor</Badge>;
+        return <Badge variant="secondary"><Clock className="w-4 h-4 mr-1" />{t.boatOwnerApplication.status.pending}</Badge>;
       case 'APPROVED':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-4 h-4 mr-1" />Onaylandı</Badge>;
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-4 h-4 mr-1" />{t.boatOwnerApplication.status.approved}</Badge>;
       case 'REJECTED':
-        return <Badge variant="destructive"><XCircle className="w-4 h-4 mr-1" />Reddedildi</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-4 h-4 mr-1" />{t.boatOwnerApplication.status.rejected}</Badge>;
       default:
         return null;
     }
   };
 
-  if (!isAuthenticated || user?.role !== UserType.CUSTOMER) {
+  // Sadece CUSTOMER olmayan authenticated kullanıcıları engelle
+  // (BOAT_OWNER veya ADMIN zaten boat owner oldukları için başvuru yapamaz)
+  if (isAuthenticated && user?.role !== UserType.CUSTOMER) {
     return null;
   }
 
@@ -132,9 +141,9 @@ const BoatOwnerApplication = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <Ship className="w-16 h-16 mx-auto text-primary mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Tekne Sahibi Başvurusu</h1>
+            <h1 className="text-3xl font-bold mb-2">{t.boatOwnerApplication.title}</h1>
             <p className="text-muted-foreground">
-              Tekne sahibi olmak için başvurunuzu tamamlayın
+              {t.boatOwnerApplication.subtitle}
             </p>
           </div>
 
@@ -144,16 +153,16 @@ const BoatOwnerApplication = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Ship className="w-5 h-5" />
-                  Başvuru Durumu
+                  {t.boatOwnerApplication.applicationStatus.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Başvuru Tarihi: {new Date(existingApplication.applicationDate).toLocaleDateString('tr-TR')}</p>
+                    <p className="font-medium">{t.boatOwnerApplication.applicationStatus.applicationDate}: {new Date(existingApplication.applicationDate).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}</p>
                     {existingApplication.reviewDate && (
                       <p className="text-sm text-muted-foreground">
-                        Değerlendirme Tarihi: {new Date(existingApplication.reviewDate).toLocaleDateString('tr-TR')}
+                        {t.boatOwnerApplication.applicationStatus.reviewDate}: {new Date(existingApplication.reviewDate).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
                       </p>
                     )}
                   </div>
@@ -163,7 +172,7 @@ const BoatOwnerApplication = () => {
                 {existingApplication.status === 'REJECTED' && existingApplication.rejectionReason && (
                   <Alert variant="destructive" className="mt-4">
                     <AlertDescription>
-                      <strong>Ret Sebebi:</strong> {existingApplication.rejectionReason}
+                      <strong>{t.boatOwnerApplication.applicationStatus.rejectionReason}:</strong> {existingApplication.rejectionReason}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -171,7 +180,7 @@ const BoatOwnerApplication = () => {
                 {existingApplication.status === 'APPROVED' && (
                   <Alert className="mt-4">
                     <AlertDescription>
-                      Başvurunuz onaylandı! Artık tekne sahibi olarak platform üzerinde işlem yapabilirsiniz.
+                      {t.boatOwnerApplication.applicationStatus.approvedMessage}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -180,11 +189,39 @@ const BoatOwnerApplication = () => {
           )}
 
           {/* Başvuru Formu */}
-          {(!existingApplication || existingApplication.status === 'REJECTED') && (
+          {!isAuthenticated ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t.boatOwnerApplication.loginRequired.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Alert>
+                  <AlertDescription>
+                    {t.boatOwnerApplication.loginRequired.message}
+                  </AlertDescription>
+                </Alert>
+                <div className="mt-4 space-y-2">
+                  <Button 
+                    onClick={() => navigate('/login')}
+                    className="w-full"
+                  >
+                    {t.boatOwnerApplication.loginRequired.loginButton}
+                  </Button>
+                  <Button 
+                    onClick={() => navigate('/register')}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {t.boatOwnerApplication.loginRequired.registerButton}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (!existingApplication || existingApplication.status === 'REJECTED') && (
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {existingApplication?.status === 'REJECTED' ? 'Yeni Başvuru' : 'Başvuru Formu'}
+                  {existingApplication?.status === 'REJECTED' ? t.boatOwnerApplication.form.newApplicationTitle : t.boatOwnerApplication.form.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -198,18 +235,18 @@ const BoatOwnerApplication = () => {
                   {success && (
                     <Alert>
                       <AlertDescription>
-                        Başvurunuz başarıyla gönderildi! Değerlendirme süreci hakkında e-posta ile bilgilendirileceksiniz.
+                        {t.boatOwnerApplication.form.success}
                       </AlertDescription>
                     </Alert>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="companyName">Şirket Adı (Opsiyonel)</Label>
+                      <Label htmlFor="companyName">{t.boatOwnerApplication.form.companyNameOptional}</Label>
                       <Input
                         id="companyName"
                         type="text"
-                        placeholder="Şirket adınız"
+                        placeholder={t.boatOwnerApplication.form.companyNamePlaceholder}
                         disabled={isSubmitting || isLoading}
                         {...register('companyName')}
                       />
@@ -221,11 +258,11 @@ const BoatOwnerApplication = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="taxNumber">Vergi Numarası (Opsiyonel)</Label>
+                      <Label htmlFor="taxNumber">{t.boatOwnerApplication.form.taxNumberOptional}</Label>
                       <Input
                         id="taxNumber"
                         type="text"
-                        placeholder="Vergi numaranız"
+                        placeholder={t.boatOwnerApplication.form.taxNumberPlaceholder}
                         disabled={isSubmitting || isLoading}
                         {...register('taxNumber')}
                       />
@@ -238,11 +275,11 @@ const BoatOwnerApplication = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Adres (Opsiyonel)</Label>
+                    <Label htmlFor="address">{t.boatOwnerApplication.form.addressOptional}</Label>
                     <Input
                       id="address"
                       type="text"
-                      placeholder="Adresiniz"
+                      placeholder={t.boatOwnerApplication.form.addressPlaceholder}
                       disabled={isSubmitting || isLoading}
                       {...register('address')}
                     />
@@ -254,10 +291,10 @@ const BoatOwnerApplication = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Açıklama *</Label>
+                    <Label htmlFor="description">{t.boatOwnerApplication.form.descriptionRequired}</Label>
                     <Textarea
                       id="description"
-                      placeholder="Kendinizi ve tekne sahibi olmak isteme nedeninizi açıklayın..."
+                      placeholder={t.boatOwnerApplication.form.descriptionPlaceholder}
                       disabled={isSubmitting || isLoading}
                       {...register('description')}
                       rows={4}
@@ -270,7 +307,7 @@ const BoatOwnerApplication = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="documents">Belgeler (Opsiyonel)</Label>
+                    <Label htmlFor="documents">{t.boatOwnerApplication.form.documentsOptional}</Label>
                     <Input
                       id="documents"
                       type="file"
@@ -280,7 +317,7 @@ const BoatOwnerApplication = () => {
                       onChange={handleDocumentChange}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Kimlik, tekne ruhsatı vb. belgelerinizi yükleyebilirsiniz. (PDF, JPG, PNG formatında)
+                      {t.boatOwnerApplication.form.documentsDescription}
                     </p>
                   </div>
 
@@ -292,12 +329,12 @@ const BoatOwnerApplication = () => {
                     {isSubmitting || isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Başvuru gönderiliyor...
+                        {t.boatOwnerApplication.form.submitting}
                       </>
                     ) : (
                       <>
                         <Upload className="mr-2 h-4 w-4" />
-                        Başvuruyu Gönder
+                        {t.boatOwnerApplication.form.submit}
                       </>
                     )}
                   </Button>
@@ -310,14 +347,14 @@ const BoatOwnerApplication = () => {
           {existingApplication?.status === 'PENDING' && (
             <Card className="mt-8">
               <CardHeader>
-                <CardTitle>Değerlendirme Süreci</CardTitle>
+                <CardTitle>{t.boatOwnerApplication.reviewProcess.title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>• Başvurunuz en geç 3 iş günü içinde değerlendirilecektir.</p>
-                  <p>• Değerlendirme sonucu e-posta ile bildirilecektir.</p>
-                  <p>• Başvuru durumunuzu bu sayfadan takip edebilirsiniz.</p>
-                  <p>• Sorularınız için destek ekibimizle iletişime geçebilirsiniz.</p>
+                  <p>{t.boatOwnerApplication.reviewProcess.info1}</p>
+                  <p>{t.boatOwnerApplication.reviewProcess.info2}</p>
+                  <p>{t.boatOwnerApplication.reviewProcess.info3}</p>
+                  <p>{t.boatOwnerApplication.reviewProcess.info4}</p>
                 </div>
               </CardContent>
             </Card>

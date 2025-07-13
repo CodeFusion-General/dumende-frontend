@@ -90,9 +90,10 @@ const BoatCard: React.FC<BoatCardProps> = ({
   const priceLabel = isHourlyMode ? t.pages.boats.card.hourlyPrice : t.pages.boats.card.dailyPrice;
 
   const getImageUrl_component = () => {
-    if (boat?.images?.length > 0) {
-      return getPrimaryImageUrl(boat.images);
-    }
+    // Backend henüz hazır olmadığı için API çağrılarını yorum satırına alıyoruz
+    // if (boat?.images?.length > 0) {
+    //   return getPrimaryImageUrl(boat.id); // Düzeltme: boat.images yerine boat.id
+    // }
     if (boat?.imageUrl || imageUrl) {
       return boat?.imageUrl || imageUrl;
     }
