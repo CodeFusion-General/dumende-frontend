@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, DollarSign, Users, Clock } from 'lucide-react';
 import { format } from 'date-fns';
+import { tr } from 'date-fns/locale';
 import { bookingService } from '@/services/bookingService';
 import { authService } from '@/services/authService';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -55,16 +56,20 @@ const getStatusBadgeColor = (status: Booking['status']) => {
   }
 };
 
-const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
+const BookingCard: React.FC<{ booking: Booking; language: string; t: any }> = ({ booking, language, t }) => {
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     
+    const dateFormat = language === 'tr' ? 'dd MMM yyyy' : 'MMM dd, yyyy';
+    const shortFormat = language === 'tr' ? 'dd MMM' : 'MMM dd';
+    const locale = language === 'tr' ? tr : undefined;
+    
     if (startDate === endDate) {
-      return format(start, 'MMM dd, yyyy');
+      return format(start, dateFormat, { locale });
     }
     
-    return `${format(start, 'MMM dd')} - ${format(end, 'MMM dd, yyyy')}`;
+    return `${format(start, shortFormat, { locale })} - ${format(end, dateFormat, { locale })}`;
   };
 
   return (
@@ -81,7 +86,11 @@ const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
             variant={getStatusBadgeVariant(booking.status)}
             className={`font-roboto text-xs ${getStatusBadgeColor(booking.status)}`}
           >
-            {booking.status}
+            {booking.status === 'PENDING' && t.myBookings.status.pending}
+            {booking.status === 'CONFIRMED' && t.myBookings.status.confirmed}
+            {booking.status === 'CANCELLED' && t.myBookings.status.cancelled}
+            {booking.status === 'COMPLETED' && t.myBookings.status.completed}
+            {booking.status === 'NO_SHOW' && t.myBookings.status.noShow}
           </Badge>
         </div>
       </CardHeader>
@@ -99,7 +108,7 @@ const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               <span className="font-roboto text-sm text-muted-foreground">
-                {booking.passengerCount} {booking.passengerCount === 1 ? 'Passenger' : 'Passengers'}
+                {booking.passengerCount} {booking.passengerCount === 1 ? t.myBookings.card.passenger : t.myBookings.card.passengers}
               </span>
             </div>
           </div>
@@ -117,7 +126,7 @@ const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
           <div className="flex items-center space-x-2 pt-2 border-t border-border">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="font-roboto text-xs text-muted-foreground">
-              Booked on {format(new Date(booking.createdAt), 'MMM dd, yyyy \'at\' HH:mm')}
+              {t.myBookings.card.bookedOn} {format(new Date(booking.createdAt), language === 'tr' ? 'dd MMM yyyy \'saat\' HH:mm' : 'MMM dd, yyyy \'at\' HH:mm', { locale: language === 'tr' ? tr : undefined })}
             </span>
           </div>
         </div>
@@ -126,16 +135,16 @@ const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
   );
 };
 
-const EmptyState: React.FC = () => (
+const EmptyState: React.FC<{ t: any }> = ({ t }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
     <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
       <Calendar className="h-12 w-12 text-muted-foreground" />
     </div>
     <h3 className="font-montserrat font-semibold text-xl text-foreground mb-2">
-      No Bookings Yet
+      {t.myBookings.empty.title}
     </h3>
     <p className="font-roboto text-muted-foreground text-center max-w-sm">
-      You don't have any bookings yet. Start exploring our amazing boat tours!
+      {t.myBookings.empty.message}
     </p>
   </div>
 );
@@ -197,34 +206,34 @@ const MyBookings: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-montserrat font-bold text-3xl text-foreground mb-2">
-            My Bookings
+            {t.myBookings.title}
           </h1>
           <p className="font-roboto text-muted-foreground">
-            View and manage your boat tour reservations
+            {t.myBookings.subtitle}
           </p>
         </div>
 
         {loading ? (
           <div className="flex justify-center items-center py-16">
-            <span className="text-muted-foreground">Loading...</span>
+            <span className="text-muted-foreground">{t.myBookings.card.loading}</span>
           </div>
         ) : error ? (
           <div className="flex justify-center items-center py-16">
             <span className="text-destructive">{error}</span>
           </div>
         ) : !hasBookings ? (
-          <EmptyState />
+          <EmptyState t={t} />
         ) : (
           <div className="space-y-6">
             {/* Upcoming Bookings */}
             {upcomingBookings.length > 0 && (
               <div>
                 <h2 className="font-montserrat font-semibold text-xl text-foreground mb-4">
-                  Upcoming Tours
+                  {t.myBookings.tabs.upcoming}
                 </h2>
                 <div>
                   {upcomingBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard key={booking.id} booking={booking} language={language} t={t} />
                   ))}
                 </div>
               </div>
@@ -234,11 +243,11 @@ const MyBookings: React.FC = () => {
             {pastBookings.length > 0 && (
               <div>
                 <h2 className="font-montserrat font-semibold text-xl text-foreground mb-4">
-                  Past Tours
+                  {t.myBookings.tabs.past}
                 </h2>
                 <div>
                   {pastBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
+                    <BookingCard key={booking.id} booking={booking} language={language} t={t} />
                   ))}
                 </div>
               </div>

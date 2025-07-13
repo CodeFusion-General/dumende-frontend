@@ -581,10 +581,10 @@ export const translations = {
     // My Bookings
     myBookings: {
       title: "Rezervasyonlarım",
-      subtitle: "Geçmiş ve gelecek rezervasyonlarınız",
+      subtitle: "Tekne turu rezervasyonlarınızı görüntüleyin ve yönetin",
       tabs: {
-        upcoming: "Yaklaşan",
-        past: "Geçmiş",
+        upcoming: "Yaklaşan Turlar",
+        past: "Geçmiş Turlar",
         cancelled: "İptal Edilen"
       },
       status: {
@@ -605,13 +605,21 @@ export const translations = {
       },
       empty: {
         title: "Henüz rezervasyonunuz yok",
-        message: "İlk deniz maceranızı başlatmak için bir tekne kiralayın",
+        message: "Harika tekne turlarımızı keşfetmeye başlayın!",
         button: "Tekneleri Keşfet"
       },
       errors: {
         loadFailed: "Rezervasyonlar yüklenirken bir hata oluştu",
         userNotFound: "Kullanıcı bulunamadı veya oturum süresi doldu. Lütfen tekrar giriş yapın.",
         tryAgain: "Tekrar Dene"
+      },
+      card: {
+        passenger: "Yolcu",
+        passengers: "Yolcu",
+        bookedOn: "Rezervasyon tarihi",
+        at: "saat",
+        loading: "Yükleniyor...",
+        price: "Fiyat"
       }
     },
 
@@ -1326,10 +1334,10 @@ export const translations = {
     // My Bookings
     myBookings: {
       title: "My Bookings",
-      subtitle: "Your past and future bookings",
+      subtitle: "View and manage your boat tour reservations",
       tabs: {
-        upcoming: "Upcoming",
-        past: "Past",
+        upcoming: "Upcoming Tours",
+        past: "Past Tours",
         cancelled: "Cancelled"
       },
       status: {
@@ -1349,14 +1357,22 @@ export const translations = {
         contactSupport: "Contact Support"
       },
       empty: {
-        title: "You don't have any bookings yet",
-        message: "Rent a boat to start your first sea adventure",
+        title: "No Bookings Yet",
+        message: "You don't have any bookings yet. Start exploring our amazing boat tours!",
         button: "Explore Boats"
       },
       errors: {
         loadFailed: "An error occurred while loading bookings",
         userNotFound: "User not found or session expired. Please login again.",
         tryAgain: "Try Again"
+      },
+      card: {
+        passenger: "Passenger",
+        passengers: "Passengers",
+        bookedOn: "Booked on",
+        at: "at",
+        loading: "Loading...",
+        price: "Price"
       }
     },
 
