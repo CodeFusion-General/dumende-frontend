@@ -2,12 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { reviewService } from "@/services/reviewService";
 import { ReviewDTO } from "@/types/review.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const Testimonials = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviews, setReviews] = useState<ReviewDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     fetchTestimonials();
@@ -16,9 +20,7 @@ const Testimonials = () => {
   const fetchTestimonials = async () => {
     try {
       // En yüksek puanlı yorumları al
-      const response = await reviewService.getReviews({
-        minRating: 4,
-      });
+      const response = await reviewService.getReviewsByMinRating(4);
       // İlk 5 yorum
       const topReviews = Array.isArray(response) ? response.slice(0, 5) : [];
       setReviews(topReviews);
@@ -40,7 +42,7 @@ const Testimonials = () => {
         "Yorumlar yüklenirken bir hata oluştu.";
 
       // Geçici mock data - backend düzelene kadar
-      const mockReviews = [
+      const mockReviews: ReviewDTO[] = [
         {
           id: 1,
           rating: 5,
@@ -53,7 +55,8 @@ const Testimonials = () => {
             profileImage: null,
           },
           boatId: 1,
-          date: "2024-05-15",
+          reviewDate: "2024-05-15T10:00:00",
+          isActive: true,
           createdAt: "2024-05-15T10:00:00",
           updatedAt: "2024-05-15T10:00:00",
           bookingId: 1,
@@ -70,7 +73,8 @@ const Testimonials = () => {
             profileImage: null,
           },
           boatId: 2,
-          date: "2024-05-10",
+          reviewDate: "2024-05-10T14:30:00",
+          isActive: true,
           createdAt: "2024-05-10T14:30:00",
           updatedAt: "2024-05-10T14:30:00",
           bookingId: 2,
@@ -86,7 +90,8 @@ const Testimonials = () => {
             profileImage: null,
           },
           boatId: 3,
-          date: "2024-05-05",
+          reviewDate: "2024-05-05T16:45:00",
+          isActive: true,
           createdAt: "2024-05-05T16:45:00",
           updatedAt: "2024-05-05T16:45:00",
           bookingId: 3,
@@ -130,10 +135,10 @@ const Testimonials = () => {
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Müşteri Yorumları
+              {t.home.testimonials.title}
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
-              Müşterilerimizin deneyimleri ve değerli görüşleri
+              {t.home.testimonials.subtitle}
             </p>
           </div>
 
@@ -154,10 +159,10 @@ const Testimonials = () => {
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Müşteri Yorumları
+              {t.home.testimonials.title}
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
-              Müşterilerimizin deneyimleri ve değerli görüşleri
+              {t.home.testimonials.subtitle}
             </p>
           </div>
 
@@ -167,7 +172,7 @@ const Testimonials = () => {
               onClick={fetchTestimonials}
               className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
-              🔄 Tekrar Dene
+              🔄 {t.common.tryAgain}
             </button>
           </div>
         </div>
@@ -175,22 +180,23 @@ const Testimonials = () => {
     );
   }
 
-  // No reviews
+  // No reviews state
   if (reviews.length === 0) {
     return (
       <div className="section-padding bg-white">
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Müşteri Yorumları
+              {t.home.testimonials.title}
             </h2>
             <p className="text-gray-600 max-w-3xl mx-auto">
-              Müşterilerimizin deneyimleri ve değerli görüşleri
+              {t.home.testimonials.subtitle}
             </p>
           </div>
 
           <div className="text-center py-12">
-            <p className="text-gray-600">Henüz müşteri yorumu bulunmuyor.</p>
+            <div className="text-4xl mb-4">💬</div>
+            <p className="text-gray-600">{t.common.noDataAvailable}</p>
           </div>
         </div>
       </div>
@@ -202,90 +208,83 @@ const Testimonials = () => {
       <div className="container-custom">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Müşteri Yorumları
+            {t.home.testimonials.title}
           </h2>
           <p className="text-gray-600 max-w-3xl mx-auto">
-            Müşterilerimizin deneyimleri ve değerli görüşleri
+            {t.home.testimonials.subtitle}
           </p>
+          
+          {/* Demo Note */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
+            <p className="text-sm text-blue-700">
+              💡 {t.home.testimonials.demoNote}
+            </p>
+          </div>
         </div>
 
-        <div className="max-w-4xl mx-auto relative">
-          <div className="overflow-hidden">
-            <div
-              className="flex transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-            >
-              {reviews.map((review) => (
-                <div key={review.id} className="w-full flex-shrink-0 px-4">
-                  <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
-                    <div className="flex items-center space-x-4 mb-6">
-                      <img
-                        src={
-                          review.customer?.profileImage ||
-                          "/placeholder-avatar.jpg"
-                        }
-                        alt={review.customer?.fullName || "Müşteri"}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h4 className="text-lg font-bold text-gray-800">
-                          {review.customer?.fullName || "Anonim Müşteri"}
-                        </h4>
-                        <p className="text-primary text-sm">
-                          Tekne değerlendirmesi
-                        </p>
-                        <div className="flex mt-1">
-                          {renderStars(review.rating)}
-                        </div>
-                      </div>
-                    </div>
+        <div className="max-w-4xl mx-auto">
+          <div className="relative">
+            {/* Testimonial Card */}
+            <div className="bg-gray-50 rounded-2xl p-8 md:p-12 text-center">
+              <div className="flex justify-center mb-6">
+                {renderStars(reviews[currentIndex].rating)}
+              </div>
 
-                    <blockquote className="text-gray-600 italic">
-                      "
-                      {review.comment ||
-                        "Bu müşteri mükemmel bir deneyim yaşadı."}
-                      "
-                    </blockquote>
-                  </div>
+              <blockquote className="text-lg md:text-xl text-gray-700 mb-8 italic">
+                "{reviews[currentIndex].comment}"
+              </blockquote>
+
+              <div className="flex items-center justify-center space-x-4">
+                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-lg">
+                    {reviews[currentIndex].customer.fullName
+                      .split(" ")
+                      .map((name) => name[0])
+                      .join("")}
+                  </span>
                 </div>
-              ))}
+                <div>
+                  <h4 className="font-semibold text-gray-900">
+                    {reviews[currentIndex].customer.fullName}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {t.home.testimonials.boatReview}
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* Navigation Buttons */}
+            {reviews.length > 1 && (
+              <>
+                <button
+                  onClick={prevTestimonial}
+                  className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-600" />
+                </button>
+                <button
+                  onClick={nextTestimonial}
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-600" />
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-center mt-8 space-x-2">
-            <button
-              onClick={prevTestimonial}
-              className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="flex space-x-2 items-center">
+          {/* Dots Navigation */}
+          {reviews.length > 1 && (
+            <div className="flex justify-center mt-8 space-x-2">
               {reviews.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    index === currentIndex ? "bg-primary w-6" : "bg-gray-300"
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentIndex ? "bg-primary" : "bg-gray-300"
                   }`}
                 />
               ))}
-            </div>
-            <button
-              onClick={nextTestimonial}
-              className="p-2 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Backend status indicator */}
-          {reviews.length > 0 && (
-            <div className="text-center mt-6">
-              <p className="text-xs text-gray-400">
-                💡 Geçici demo verisi gösteriliyor - Backend review API'si
-                düzeltildikten sonra gerçek veriler gelecek
-              </p>
             </div>
           )}
         </div>

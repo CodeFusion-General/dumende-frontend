@@ -2,8 +2,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 const Footer = () => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <footer className="bg-secondary text-white">
       <div className="container-custom py-16">
@@ -16,7 +21,7 @@ const Footer = () => {
               </div>
             </Link>
             <p className="mt-4 text-gray-300">
-              Denizde özgürlüğün adresi. Lüks, konfor ve güvenliği bir arada sunan tekne kiralama hizmetleri.
+              {t.home.footer.description}
             </p>
             <div className="flex space-x-4 mt-4">
               <a href="#" className="hover:text-accent transition-colors">
@@ -36,72 +41,78 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-lg font-bold mb-4">Hızlı Bağlantılar</h3>
+            <h3 className="text-lg font-bold mb-4">{t.home.footer.quickLinks}</h3>
             <Link to="/boats" className="text-gray-300 hover:text-accent transition-colors">
-              Tekneler
+              {t.home.footer.boats}
             </Link>
             <Link to="/services" className="text-gray-300 hover:text-accent transition-colors">
-              Hizmetler
+              {t.home.footer.services}
             </Link>
             <Link to="/destinations" className="text-gray-300 hover:text-accent transition-colors">
-              Destinasyonlar
+              {t.home.footer.destinations}
             </Link>
             <Link to="/about" className="text-gray-300 hover:text-accent transition-colors">
-              Hakkımızda
+              {t.home.footer.about}
             </Link>
             <Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">
-              İletişim
+              {t.home.footer.contact}
             </Link>
           </div>
 
           {/* Legal */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-lg font-bold mb-4">Yasal</h3>
+            <h3 className="text-lg font-bold mb-4">{t.home.footer.legal}</h3>
             <Link to="/terms" className="text-gray-300 hover:text-accent transition-colors">
-              Kullanım Şartları
+              {t.home.footer.termsOfService}
             </Link>
             <Link to="/privacy" className="text-gray-300 hover:text-accent transition-colors">
-              Gizlilik Politikası
+              {t.home.footer.privacyPolicy}
             </Link>
             <Link to="/gdpr" className="text-gray-300 hover:text-accent transition-colors">
-              GDPR Bildirimi
+              {t.home.footer.gdpr}
             </Link>
             <Link to="/cookies" className="text-gray-300 hover:text-accent transition-colors">
-              Çerez Politikası
+              {t.home.footer.cookies}
             </Link>
             <Link to="/cancellation" className="text-gray-300 hover:text-accent transition-colors">
-              İptal ve İade Politikası
+              {t.home.footer.cancellation}
             </Link>
           </div>
 
           {/* Contact */}
           <div className="flex flex-col space-y-4">
-            <h3 className="text-lg font-bold mb-4">İletişim</h3>
+            <h3 className="text-lg font-bold mb-4">{t.home.footer.contact}</h3>
             <div className="flex items-start space-x-3">
-              <MapPin size={20} className="mt-1 flex-shrink-0" />
-              <p className="text-gray-300">
-                Fenerbahçe Marina, Kadıköy, İstanbul, Türkiye
-              </p>
+              <MapPin size={18} className="text-accent mt-1 flex-shrink-0" />
+              <div>
+                <p className="text-gray-300 text-sm">
+                  Fenerbahçe Marina, Kadıköy, İstanbul, Türkiye
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Phone size={20} />
-              <a href="tel:+902161234567" className="text-gray-300 hover:text-accent transition-colors">
-                +90 216 123 45 67
-              </a>
+            <div className="flex items-start space-x-3">
+              <Phone size={18} className="text-accent mt-1 flex-shrink-0" />
+              <div>
+                <a href="tel:+902161234567" className="text-gray-300 text-sm hover:text-accent transition-colors">
+                  +90 216 123 45 67
+                </a>
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              <Mail size={20} />
-              <a href="mailto:info@dumenden.com" className="text-gray-300 hover:text-accent transition-colors">
-                info@dumenden.com
-              </a>
+            <div className="flex items-start space-x-3">
+              <Mail size={18} className="text-accent mt-1 flex-shrink-0" />
+              <div>
+                <a href="mailto:info@dumenden.com" className="text-gray-300 text-sm hover:text-accent transition-colors">
+                  info@dumenden.com
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="border-t border-gray-700 mt-12 pt-8 text-center">
-          <p className="text-gray-400">
-            © {new Date().getFullYear()} dümende.com. Tüm hakları saklıdır.
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-600 mt-12 pt-8 text-center">
+          <p className="text-gray-400 text-sm">
+            © 2025 dümende.com. {t.home.footer.copyright}
           </p>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 import { UserType } from '@/types/auth.types';
 import {
   AlertDialog,
@@ -20,6 +22,8 @@ interface RoleGuardProps {
 
 export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles }) => {
   const { user, isAuthenticated } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
   const location = useLocation();
   const navigate = useNavigate();
   const [showDialog, setShowDialog] = useState(false);
@@ -42,10 +46,10 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles })
       if (isAdminPage) {
         // Admin sayfası için popup
         setDialogConfig({
-          title: 'Yönetici Yetkisi Gerekli',
-          description: 'Bu sayfaya erişmek için yönetici yetkisine sahip olmanız gerekiyor.',
+          title: t.errors.unauthorized,
+          description: t.admin.title + ' ' + t.errors.unauthorized,
           icon: <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />,
-          buttonText: 'Ana Sayfaya Dön',
+          buttonText: t.nav.home,
           buttonAction: () => {
             setShowDialog(false);
             navigate('/');
@@ -55,10 +59,10 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles })
         // Kaptan sayfası için popup
         if (user?.role === 'CUSTOMER') {
           setDialogConfig({
-            title: 'Kaptan Değilsiniz',
-            description: 'Bu sayfaya erişmek için tekne sahibi olmanız gerekiyor. Tekne sahibi olmak için lütfen başvurunuzu yapın.',
+            title: t.captain.noAccess.title,
+            description: t.captain.noAccess.message,
             icon: <Ship className="w-16 h-16 text-blue-500 mx-auto mb-4" />,
-            buttonText: 'Tekne Sahibi Başvurusu Yap',
+            buttonText: t.captain.noAccess.button,
             buttonAction: () => {
               setShowDialog(false);
               navigate('/boat-owner-application');
@@ -66,10 +70,10 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles })
           });
         } else {
           setDialogConfig({
-            title: 'Yetkisiz Erişim',
-            description: 'Bu sayfaya erişmek için tekne sahibi veya yönetici olmanız gerekiyor.',
+            title: t.errors.unauthorized,
+            description: t.captain.title + ' ' + t.errors.unauthorized,
             icon: <Ship className="w-16 h-16 text-blue-500 mx-auto mb-4" />,
-            buttonText: 'Ana Sayfaya Dön',
+            buttonText: t.nav.home,
             buttonAction: () => {
               setShowDialog(false);
               navigate('/');

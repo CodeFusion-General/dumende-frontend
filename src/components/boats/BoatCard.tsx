@@ -2,6 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface BoatCardProps {
   boat: any;
@@ -16,6 +18,9 @@ export const BoatCard: React.FC<BoatCardProps> = ({ boat, viewMode }) => {
 };
 
 const BoatCardGrid: React.FC<{ boat: any }> = ({ boat }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+  
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-xl">
       <div className="relative overflow-hidden h-60">
@@ -51,11 +56,11 @@ const BoatCardGrid: React.FC<{ boat: any }> = ({ boat }) => {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <Users className="h-4 w-4 mr-1" />
-            <span>{boat.capacity} Kişi</span>
+            <span>{boat.capacity} {t.boats.card.person}</span>
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <Bed className="h-4 w-4 mr-1" />
-            <span>{boat.cabins} Kabin</span>
+            <span>{boat.cabins} {t.boats.card.cabin}</span>
           </div>
         </div>
 

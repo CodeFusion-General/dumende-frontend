@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Anchor, TrendingUp, DollarSign, Hash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, TypeStatistic } from "@/services/boatService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const BoatTypes = () => {
   const [boatTypes, setBoatTypes] = useState<TypeStatistic[]>([]);
@@ -10,6 +12,8 @@ const BoatTypes = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     fetchBoatTypes();
@@ -78,14 +82,7 @@ const BoatTypes = () => {
   };
 
   const getTypeDisplayName = (type: string): string => {
-    const typeNames: { [key: string]: string } = {
-      SAILBOAT: "Yelkenli",
-      MOTORBOAT: "Motor Bot",
-      YACHT: "Yat",
-      SPEEDBOAT: "Hız Teknesi",
-      CATAMARAN: "Katamaran",
-    };
-    return typeNames[type] || type;
+    return t.home.boatTypes.types[type as keyof typeof t.home.boatTypes.types] || type;
   };
 
   const getTypeIcon = (type: string): string => {
@@ -123,142 +120,132 @@ const BoatTypes = () => {
     navigate(`/boats?${params.toString()}`);
   };
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Tekne Tipleri
+  return (
+    <div className="section-padding bg-gray-50">
+      <div className="container-custom">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              {t.home.boatTypes.title}
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Farklı tekne tiplerinde sunduğumuz kiralama seçeneklerini keşfedin
+            <p className="text-gray-600">
+              {t.home.boatTypes.subtitle}
             </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 rounded-xl p-6 animate-pulse"
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={fetchBoatTypes}
+                className="btn-primary"
               >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gray-300 rounded-full mr-4"></div>
-                  <div className="h-6 bg-gray-300 rounded w-32"></div>
-                </div>
-                <div className="space-y-3">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                {t.common.tryAgain}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="animate-pulse">
+                <div className="bg-white rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                    <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="h-6 w-24 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 w-16 bg-gray-200 rounded mb-4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 w-full bg-gray-200 rounded"></div>
+                    <div className="h-4 w-full bg-gray-200 rounded"></div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-    );
-  }
+        )}
 
-  return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            Tekne Tipleri
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Farklı tekne tiplerinde sunduğumuz kiralama seçeneklerini keşfedin
-          </p>
-        </div>
+        {/* Boat Types Grid */}
+        {!loading && boatTypes.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {boatTypes.map((type, index) => (
+              <div
+                key={type.type}
+                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-100 cursor-pointer"
+                onClick={() => handleViewBoatsByType(type.type)}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div 
+                    className="text-4xl p-2 rounded-full"
+                    style={{ backgroundColor: getTypeColor(index) }}
+                  >
+                    {getTypeIcon(type.type)}
+                  </div>
+                  <span className="text-sm text-gray-500 font-medium">
+                    #{index + 1} {t.home.boatTypes.popular}
+                  </span>
+                </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-center">
-            <p className="text-red-600">⚠️ {error}</p>
-            <button
-              onClick={fetchBoatTypes}
-              className="mt-2 text-sm text-red-800 underline hover:no-underline"
-            >
-              Tekrar Dene
-            </button>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {getTypeDisplayName(type.type)}
+                </h3>
+
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center justify-between">
+                    <span>{t.home.boatTypes.availableBoats}</span>
+                                         <span className="font-medium">
+                       {type.boatCount} {t.home.boatTypes.boats}
+                     </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>{t.home.boatTypes.averagePrice}</span>
+                    <span className="font-medium">{formatPrice(type.averagePrice)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>{t.home.boatTypes.priceRange}</span>
+                    <span className="font-medium">
+                      {formatPrice(type.minPrice)} - {formatPrice(type.maxPrice)}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewBoatsByType(type.type);
+                  }}
+                  className="w-full mt-4 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors flex items-center justify-center space-x-2"
+                >
+                  <span>{t.home.boatTypes.viewThisType}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {boatTypes.map((boatType, index) => (
-            <div
-              key={boatType.type}
-              className="group bg-gray-50 hover:bg-white rounded-xl p-6 transition-all duration-300 hover:shadow-lg border border-transparent hover:border-gray-200"
-            >
-              {/* Header */}
-              <div className="flex items-center mb-4">
-                <div
-                  className={`w-12 h-12 ${getTypeColor(
-                    index
-                  )} rounded-full flex items-center justify-center text-white text-xl mr-4 group-hover:scale-110 transition-transform duration-300`}
-                >
-                  {getTypeIcon(boatType.type)}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">
-                    {getTypeDisplayName(boatType.type)}
-                  </h3>
-                  <span className="text-sm text-gray-500">
-                    #{index + 1} Popüler
-                  </span>
-                </div>
-              </div>
-
-              {/* Statistics */}
-              <div className="space-y-3">
-                {/* Tekne Sayısı */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Hash className="text-blue-500 mr-2" size={16} />
-                    <span className="text-sm text-gray-600">Mevcut Tekne</span>
-                  </div>
-                  <span className="font-semibold text-gray-800">
-                    {boatType.boatCount} adet
-                  </span>
-                </div>
-
-                {/* Ortalama Fiyat */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <TrendingUp className="text-green-500 mr-2" size={16} />
-                    <span className="text-sm text-gray-600">
-                      Ortalama Fiyat
-                    </span>
-                  </div>
-                  <span className="font-semibold text-gray-800">
-                    {formatPrice(boatType.averagePrice)}
-                  </span>
-                </div>
-
-                {/* Fiyat Aralığı */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <DollarSign className="text-orange-500 mr-2" size={16} />
-                    <span className="text-sm text-gray-600">Fiyat Aralığı</span>
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {formatPrice(boatType.minPrice)} -{" "}
-                    {formatPrice(boatType.maxPrice)}
-                  </span>
-                </div>
-              </div>
-
-              {/* CTA */}
-              <button
-                onClick={() => handleViewBoatsByType(boatType.type)}
-                className="w-full mt-6 bg-gray-200 hover:bg-primary hover:text-white text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-300"
-              >
-                Bu Tip Tekneleri Görüntüle
-              </button>
+        {/* Empty State */}
+        {!loading && boatTypes.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-xl p-8 max-w-md mx-auto">
+              <div className="text-4xl mb-4">🚤</div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                {t.common.noDataAvailable}
+              </h3>
+              <p className="text-gray-600 text-sm">
+                {t.errors.somethingWentWrong}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
-    </section>
+    </div>
   );
 };
 

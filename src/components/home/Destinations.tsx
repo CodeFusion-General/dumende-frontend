@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { MapPin, TrendingUp, DollarSign, Anchor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, LocationStatistic } from "@/services/boatService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const Destinations = () => {
   const [destinations, setDestinations] = useState<LocationStatistic[]>([]);
@@ -9,6 +11,8 @@ const Destinations = () => {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     fetchDestinations();
@@ -29,7 +33,7 @@ const Destinations = () => {
       setDestinations(topDestinations);
     } catch (error) {
       console.error("Destinations istatistik hatası:", error);
-      setError("Veriler yüklenirken bir hata oluştu");
+      setError(t.errors.somethingWentWrong);
 
       // Hata durumunda fallback data
       setDestinations([
@@ -124,11 +128,10 @@ const Destinations = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Popüler Destinasyonlar
+              {t.home.destinations.title}
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              En çok tercih edilen lokasyonlarımızda tekne kiralama fırsatlarını
-              keşfedin
+              {t.home.destinations.subtitle}
             </p>
           </div>
 
@@ -160,11 +163,10 @@ const Destinations = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            Popüler Destinasyonlar
+            {t.home.destinations.title}
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            En çok tercih edilen lokasyonlarımızda tekne kiralama fırsatlarını
-            keşfedin
+            {t.home.destinations.subtitle}
           </p>
         </div>
 
@@ -175,7 +177,7 @@ const Destinations = () => {
               onClick={fetchDestinations}
               className="mt-2 text-sm text-red-800 underline hover:no-underline"
             >
-              Tekrar Dene
+              {t.common.tryAgain}
             </button>
           </div>
         )}
@@ -216,11 +218,11 @@ const Destinations = () => {
                     <div className="flex items-center">
                       <Anchor className="text-blue-500 mr-2" size={16} />
                       <span className="text-sm text-gray-600">
-                        Mevcut Tekne
+                        {t.home.destinations.availableBoats}
                       </span>
                     </div>
                     <span className="font-semibold text-gray-800">
-                      {destination.boatCount} adet
+                      {destination.boatCount} {t.home.destinations.boats}
                     </span>
                   </div>
 
@@ -229,7 +231,7 @@ const Destinations = () => {
                     <div className="flex items-center">
                       <TrendingUp className="text-green-500 mr-2" size={16} />
                       <span className="text-sm text-gray-600">
-                        Ortalama Fiyat
+                        {t.home.destinations.averagePrice}
                       </span>
                     </div>
                     <span className="font-semibold text-gray-800">
@@ -242,7 +244,7 @@ const Destinations = () => {
                     <div className="flex items-center">
                       <DollarSign className="text-yellow-500 mr-2" size={16} />
                       <span className="text-sm text-gray-600">
-                        Fiyat Aralığı
+                        {t.home.destinations.priceRange}
                       </span>
                     </div>
                     <span className="text-sm text-gray-600">
@@ -257,7 +259,7 @@ const Destinations = () => {
                   onClick={() => handleViewBoats(destination.location)}
                   className="w-full mt-4 bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300"
                 >
-                  Tekneleri Görüntüle
+                  {t.home.destinations.viewBoats}
                 </button>
               </div>
             </div>

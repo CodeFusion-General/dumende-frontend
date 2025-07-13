@@ -61,11 +61,11 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
     if (!user) return '';
     switch (user.role) {
       case 'CUSTOMER':
-        return 'Müşteri';
+        return language === 'tr' ? 'Müşteri' : 'Customer';
       case 'BOAT_OWNER':
-        return 'Tekne Sahibi';
+        return language === 'tr' ? 'Tekne Sahibi' : 'Boat Owner';
       case 'ADMIN':
-        return 'Yönetici';
+        return language === 'tr' ? 'Yönetici' : 'Admin';
       default:
         return '';
     }
@@ -141,48 +141,48 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       {getUserRoleText()}
                     </p>
                   </div>
-                  <DropdownMenuItem 
-                    onClick={() => window.location.href = '/my-bookings'}
-                    className="hover:bg-primary/10 cursor-pointer"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    Rezervasyonlarım
-                  </DropdownMenuItem>
-                  {user?.role === 'CUSTOMER' && (
-                    <DropdownMenuItem 
-                      onClick={() => window.location.href = '/boat-owner-application'}
-                      className="hover:bg-primary/10 cursor-pointer"
-                    >
-                      <Ship className="mr-2 h-4 w-4" />
-                      Tekne Sahibi Başvurusu
-                    </DropdownMenuItem>
-                  )}
-                  {user?.role === 'BOAT_OWNER' && (
-                    <DropdownMenuItem 
-                      onClick={() => window.location.href = '/captain'}
-                      className="hover:bg-primary/10 cursor-pointer"
-                    >
-                      <Anchor className="mr-2 h-4 w-4" />
-                      Kaptan Paneli
-                    </DropdownMenuItem>
-                  )}
-                  {user?.role === 'ADMIN' && (
-                    <DropdownMenuItem 
-                      onClick={() => window.location.href = '/admin'}
-                      className="hover:bg-primary/10 cursor-pointer"
-                    >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Admin Paneli
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={handleLogout}
-                    className="hover:bg-primary/10 cursor-pointer text-red-600"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Çıkış Yap
-                  </DropdownMenuItem>
+                            <DropdownMenuItem 
+            onClick={() => window.location.href = '/my-bookings'}
+            className="hover:bg-primary/10 cursor-pointer"
+          >
+            <User className="mr-2 h-4 w-4" />
+            {t.nav.myBookings}
+          </DropdownMenuItem>
+          {user?.role === 'CUSTOMER' && (
+            <DropdownMenuItem 
+              onClick={() => window.location.href = '/boat-owner-application'}
+              className="hover:bg-primary/10 cursor-pointer"
+            >
+              <Ship className="mr-2 h-4 w-4" />
+              {t.nav.boatOwnerApplication}
+            </DropdownMenuItem>
+          )}
+          {user?.role === 'BOAT_OWNER' && (
+            <DropdownMenuItem 
+              onClick={() => window.location.href = '/captain'}
+              className="hover:bg-primary/10 cursor-pointer"
+            >
+              <Anchor className="mr-2 h-4 w-4" />
+              {t.nav.captainPanel}
+            </DropdownMenuItem>
+          )}
+          {user?.role === 'ADMIN' && (
+            <DropdownMenuItem 
+              onClick={() => window.location.href = '/admin'}
+              className="hover:bg-primary/10 cursor-pointer"
+            >
+              <Shield className="mr-2 h-4 w-4" />
+              {t.nav.adminPanel}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleLogout}
+            className="hover:bg-primary/10 cursor-pointer text-red-600"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            {t.nav.logout}
+          </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

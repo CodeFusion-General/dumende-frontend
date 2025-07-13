@@ -11,6 +11,8 @@ import ServiceFilterBadge from "@/components/boats/ServiceFilterBadge";
 import { toast } from "@/components/ui/use-toast";
 import { boatService } from "@/services/boatService";
 import { BoatDTO } from "@/types/boat.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const serviceBoatMap: Record<string, string[]> = {
   "evlilik-teklifi": ["Lüks Yat", "Motorlu Yat"],
@@ -87,6 +89,8 @@ const useDebounce = (value: any, delay: number) => {
 const BoatsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("popular");
   // Hourly vs Daily price view
@@ -273,7 +277,7 @@ const BoatsPage = () => {
       <Layout>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Hata</h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">{t.common.error}</h2>
             <p className="text-gray-600">{error}</p>
           </div>
         </div>
@@ -362,7 +366,7 @@ const BoatsPage = () => {
                         setComparedBoats([...comparedBoats, id]);
                       } else {
                         toast({
-                          title: "Karşılaştırma Limiti",
+                          title: t.pages.boats.compare.title,
                           description:
                             "En fazla 3 tekneyi karşılaştırabilirsiniz.",
                           variant: "destructive",

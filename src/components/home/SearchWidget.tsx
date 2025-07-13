@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Calendar, MapPin, Users, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, AdvancedSearchRequest } from "@/services/boatService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const SearchWidget = () => {
   const [date, setDate] = useState("");
@@ -12,6 +14,8 @@ const SearchWidget = () => {
   const [locationsLoading, setLocationsLoading] = useState(true);
 
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     fetchLocations();
@@ -43,7 +47,7 @@ const SearchWidget = () => {
     e.preventDefault();
 
     if (!date || !location || !guests) {
-      alert("Lütfen tüm alanları doldurun.");
+      alert(t.search.errors.fillAllFields);
       return;
     }
 
@@ -76,7 +80,7 @@ const SearchWidget = () => {
       navigate(`/boats?${params.toString()}`);
     } catch (error) {
       console.error("SearchWidget arama hatası:", error);
-      alert("Arama sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+      alert(t.search.errors.searchError);
     } finally {
       setLoading(false);
     }
@@ -92,7 +96,7 @@ const SearchWidget = () => {
               htmlFor="date"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Tarih
+              {t.search.date}
             </label>
             <div className="relative">
               <input
@@ -117,7 +121,7 @@ const SearchWidget = () => {
               htmlFor="location"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Konum
+              {t.search.location}
             </label>
             <div className="relative">
               <select
@@ -130,8 +134,8 @@ const SearchWidget = () => {
               >
                 <option value="">
                   {locationsLoading
-                    ? "Lokasyonlar yükleniyor..."
-                    : "Konum Seçin"}
+                    ? (language === 'tr' ? "Lokasyonlar yükleniyor..." : "Loading locations...")
+                    : t.search.locationPlaceholder}
                 </option>
                 {locations.map((loc) => (
                   <option key={loc} value={loc}>
@@ -152,7 +156,7 @@ const SearchWidget = () => {
               htmlFor="guests"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Misafir Sayısı
+              {t.search.guests}
             </label>
             <div className="relative">
               <select
@@ -162,12 +166,12 @@ const SearchWidget = () => {
                 onChange={(e) => setGuests(e.target.value)}
                 required
               >
-                <option value="">Kişi Sayısı Seçin</option>
-                <option value="1-5">1-5 Kişi</option>
-                <option value="6-10">6-10 Kişi</option>
-                <option value="11-15">11-15 Kişi</option>
-                <option value="16-20">16-20 Kişi</option>
-                <option value="21-50">21+ Kişi</option>
+                <option value="">{t.search.guestsPlaceholder}</option>
+                <option value="1-5">1-5 {t.common.person}</option>
+                <option value="6-10">6-10 {t.common.person}</option>
+                <option value="11-15">11-15 {t.common.person}</option>
+                <option value="16-20">16-20 {t.common.person}</option>
+                <option value="21-50">21+ {t.common.person}</option>
               </select>
               <Users
                 className="absolute left-3 top-3.5 text-gray-400"
@@ -185,12 +189,12 @@ const SearchWidget = () => {
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Arıyor...</span>
+                <span>{language === 'tr' ? 'Arıyor...' : 'Searching...'}</span>
               </>
             ) : (
               <>
                 <Search size={18} />
-                <span>Ara</span>
+                <span>{t.search.searchButton}</span>
               </>
             )}
           </button>

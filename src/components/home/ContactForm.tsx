@@ -1,8 +1,13 @@
 import React, { useState } from "react";
 import { Mail, Send, CheckCircle, AlertCircle } from "lucide-react";
 import { contactService, ContactMessage } from "@/services/contactService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const ContactForm = () => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   const [formData, setFormData] = useState<ContactMessage>({
     name: "",
     email: "",
@@ -33,9 +38,7 @@ const ContactForm = () => {
     setSubmitError(null);
 
     try {
-
       const response = await contactService.submitMessage(formData);
-
       setSubmitSuccess(true);
       setBackendMessage(response.message);
       setFormData({ name: "", email: "", phone: "", message: "" });
@@ -48,8 +51,7 @@ const ContactForm = () => {
     } catch (error: any) {
       console.error("ContactForm mesaj gönderme hatası:", error);
       setSubmitError(
-        error.response?.data?.message ||
-          "Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin."
+        error.response?.data?.message || t.home.contact.form.error
       );
     } finally {
       setIsSubmitting(false);
@@ -66,202 +68,186 @@ const ContactForm = () => {
               <Mail className="w-7 h-7 text-primary" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Bize Ulaşın
+              {t.home.contact.title}
             </h2>
             <p className="text-gray-600 mb-6">
-              Sorularınız, özel istekleriniz veya rezervasyon bilgileri için
-              bizimle iletişime geçebilirsiniz. En kısa sürede size dönüş
-              yapacağız.
+              {t.home.contact.subtitle}
             </p>
 
             <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-              <h3 className="font-bold text-xl mb-4">İletişim Bilgileri</h3>
+              <h3 className="font-bold text-xl mb-4">{t.home.contact.info.title}</h3>
 
               <div className="space-y-4">
-                <div>
-                  <p className="text-gray-500 text-sm">Adres</p>
-                  <p className="font-medium">
-                    Fenerbahçe Marina, Kadıköy, İstanbul, Türkiye
-                  </p>
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {t.home.contact.info.address}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Fenerbahçe Marina, Kadıköy, İstanbul, Türkiye
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-sm">Telefon</p>
-                  <a
-                    href="tel:+902161234567"
-                    className="font-medium hover:text-primary transition-colors"
-                  >
-                    +90 216 123 45 67
-                  </a>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {t.home.contact.info.phone}
+                    </p>
+                    <p className="text-sm text-gray-600">+90 216 123 45 67</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-500 text-sm">E-posta</p>
-                  <a
-                    href="mailto:info@dumenden.com"
-                    className="font-medium hover:text-primary transition-colors"
-                  >
-                    info@dumenden.com
-                  </a>
+
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-1">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {t.home.contact.info.email}
+                    </p>
+                    <p className="text-sm text-gray-600">info@dumenden.com</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Form */}
-          <div className="bg-gray-50 rounded-xl border border-gray-100 p-6 md:p-8">
-            <h3 className="font-bold text-2xl mb-6">Mesaj Gönderin</h3>
+          <div className="bg-gray-50 p-8 rounded-xl">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+              {t.home.contact.form.title}
+            </h3>
 
             {/* Success Message */}
             {submitSuccess && (
-              <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6 flex items-start">
-                <CheckCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium mb-1">
-                    Mesajınız başarıyla gönderildi!
-                  </p>
-                  <p className="text-sm text-green-600">{backendMessage}</p>
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+                  <div>
+                    <p className="text-green-800 font-medium">
+                      {t.home.contact.form.success}
+                    </p>
+                    {backendMessage && (
+                      <p className="text-green-700 text-sm mt-1">
+                        {backendMessage}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Error Message */}
             {submitError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-start">
-                <AlertCircle className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium mb-1">Hata!</p>
-                  <p className="text-sm">{submitError}</p>
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
+                  <p className="text-red-800">{submitError}</p>
                 </div>
               </div>
             )}
 
-            {!submitSuccess && (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      İsim Soyisim <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                      placeholder="İsminizi giriniz"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      E-posta <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                      placeholder="E-posta adresinizi giriniz"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Telefon
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                    placeholder="Telefon numaranızı giriniz"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Mesajınız <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={4}
-                    required
-                    value={formData.message}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary"
-                    placeholder="Mesajınızı giriniz"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn-primary w-full flex items-center justify-center space-x-2 disabled:opacity-50"
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-900 mb-2"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={18} />
-                      <span>Mesaj Gönder</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+                  {t.home.contact.form.name} {t.home.contact.form.required}
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder={t.home.contact.form.namePlaceholder}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
 
-            {/* Show form again button after success */}
-            {submitSuccess && (
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
+                  {t.home.contact.form.email} {t.home.contact.form.required}
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder={t.home.contact.form.emailPlaceholder}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
+                  {t.home.contact.form.phone}
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder={t.home.contact.form.phonePlaceholder}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-medium text-gray-900 mb-2"
+                >
+                  {t.home.contact.form.message} {t.home.contact.form.required}
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  placeholder={t.home.contact.form.messagePlaceholder}
+                  required
+                  rows={5}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                />
+              </div>
+
               <button
-                onClick={() => {
-                  setSubmitSuccess(false);
-                  setBackendMessage("");
-                }}
-                className="w-full mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-primary-dark focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
               >
-                Yeni Mesaj Gönder
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-top-transparent"></div>
+                    <span>{t.home.contact.form.sending}</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>{t.home.contact.form.send}</span>
+                  </>
+                )}
               </button>
-            )}
+            </form>
           </div>
         </div>
       </div>

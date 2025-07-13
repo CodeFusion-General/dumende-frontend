@@ -10,6 +10,8 @@ import { boatTypes, locations, features } from "@/data/boats";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { BoatDTO } from "@/types/boat.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface OpenSections {
   boatType: boolean;
@@ -41,15 +43,6 @@ interface FilterSidebarProps {
   filteredCount: number;
 }
 
-// Tekne tipi mapping (backend enum → frontend display)
-const typeDisplayNames: { [key: string]: string } = {
-  SAILBOAT: "Yelkenli",
-  MOTORBOAT: "Motor Bot",
-  YACHT: "Yat",
-  SPEEDBOAT: "Hız Teknesi",
-  CATAMARAN: "Katamaran",
-};
-
 const FilterSidebar: React.FC<FilterSidebarProps> = ({
   showFilters,
   setShowFilters,
@@ -70,6 +63,24 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   allBoats,
   filteredCount,
 }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
+  // Tekne tipi mapping (backend enum → frontend display)
+  const getTypeDisplayName = (type: string): string => {
+    return t.pages.boats.filters.types[type as keyof typeof t.pages.boats.filters.types] || type;
+  };
+
+  // Özellik mapping
+  const getFeatureDisplayName = (feature: string): string => {
+    return t.pages.boats.filters.featuresList[feature as keyof typeof t.pages.boats.filters.featuresList] || feature;
+  };
+
+  // Kapasite mapping
+  const getCapacityDisplayName = (capacity: string): string => {
+    return t.pages.boats.filters.capacityRanges[capacity as keyof typeof t.pages.boats.filters.capacityRanges] || capacity;
+  };
+
   // *** PERFORMANCE OPTIMIZED DYNAMIC FILTERS ***
 
   // Dinamik tekne tipleri (memoized for performance)
@@ -84,7 +95,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     return Array.from(typeSet)
       .map((type) => ({
         value: type,
-        label: typeDisplayNames[type] || type,
+        label: getTypeDisplayName(type),
         count: allBoats.filter((boat) => boat.type === type).length,
       }))
       .sort((a, b) => b.count - a.count); // En çok teknesi olan tip önce
@@ -124,7 +135,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     return Array.from(featureSet)
       .map((feature) => ({
         value: feature,
-        label: feature,
+        label: getFeatureDisplayName(feature),
         count: allBoats.filter((boat) =>
           boat.features?.some((f) => f.featureName === feature)
         ).length,
@@ -194,7 +205,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const toggleBoatType = (value: string) => {
     if (selectedTypes.includes(value)) {
-      setSelectedTypes(selectedTypes.filter((type) => type !== value));
+      setSelectedTypes(selectedTypes.filter((t) => t !== value));
     } else {
       setSelectedTypes([...selectedTypes, value]);
     }
@@ -202,9 +213,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const toggleLocation = (value: string) => {
     if (selectedLocations.includes(value)) {
-      setSelectedLocations(
-        selectedLocations.filter((location) => location !== value)
-      );
+      setSelectedLocations(selectedLocations.filter((l) => l !== value));
     } else {
       setSelectedLocations([...selectedLocations, value]);
     }
@@ -212,9 +221,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const toggleFeature = (value: string) => {
     if (selectedFeatures.includes(value)) {
-      setSelectedFeatures(
-        selectedFeatures.filter((feature) => feature !== value)
-      );
+      setSelectedFeatures(selectedFeatures.filter((f) => f !== value));
     } else {
       setSelectedFeatures([...selectedFeatures, value]);
     }
@@ -225,266 +232,241 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   };
 
   return (
-    <>
-      <div className="md:hidden mb-4">
+    <div
+      className={`${
+        showFilters ? "block" : "hidden"
+      } md:block w-full md:w-80 bg-white border border-gray-200 rounded-lg p-6 h-fit`}
+    >
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          <Filter className="w-5 h-5 text-primary" />
+          <h3 className="text-lg font-semibold">{t.pages.boats.filters.title}</h3>
+        </div>
         <Button
-          variant="outline"
-          className="w-full flex items-center justify-center"
-          onClick={() => setShowFilters(!showFilters)}
+          variant="ghost"
+          size="sm"
+          onClick={resetFilters}
+          className="text-gray-500 hover:text-gray-700"
         >
-          {showFilters ? (
-            <X className="mr-2 h-4 w-4" />
-          ) : (
-            <Filter className="mr-2 h-4 w-4" />
-          )}
-          {showFilters ? "Filtreleri Kapat" : "Filtreleri Göster"}
+          {t.pages.boats.filters.clear}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowFilters(false)}
+          className="md:hidden"
+        >
+          <X className="w-4 h-4" />
         </Button>
       </div>
 
-      <div
-        className={`${
-          showFilters ? "block" : "hidden"
-        } md:block md:w-1/4 lg:w-1/5 pr-0 md:pr-6`}
-      >
-        <div className="bg-white rounded-lg shadow-md p-5 mb-6 sticky top-20">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-brand-secondary">Filtreler</h3>
-            <button
-              className="text-sm text-brand-primary hover:text-brand-secondary transition-colors"
-              onClick={resetFilters}
-            >
-              Temizle
-            </button>
-          </div>
-
-          <Collapsible
-            open={openSections.boatType}
-            onOpenChange={() => toggleSection("boatType")}
-            className="mb-6"
-          >
-            <CollapsibleTrigger className="flex items-center w-full font-semibold text-brand-secondary mb-3">
-              <span>Tekne Türü</span>
-              {openSections.boatType ? (
-                <ChevronUp className="ml-auto h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-auto h-4 w-4" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              {availableBoatTypes.map((boatType) => (
-                <div
-                  key={boatType.value}
-                  className="flex items-center justify-between"
+      <div className="space-y-6">
+        {/* Tekne Türü */}
+        <Collapsible
+          open={openSections.boatType}
+          onOpenChange={() => toggleSection("boatType")}
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
+            <span className="font-medium">{t.pages.boats.filters.type}</span>
+            {openSections.boatType ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {availableBoatTypes.map((boatType) => (
+              <div key={boatType.value} className="flex items-center justify-between">
+                <Label
+                  className="flex items-center space-x-2 cursor-pointer"
+                  onClick={() => toggleBoatType(boatType.value)}
                 >
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={boatType.value}
-                      checked={selectedTypes.includes(boatType.value)}
-                      onChange={() => toggleBoatType(boatType.value)}
-                      className="mr-2 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                    />
-                    <label
-                      htmlFor={boatType.value}
-                      className="text-sm text-gray-700"
-                    >
-                      {boatType.label}
-                    </label>
-                  </div>
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                    {boatType.count}
-                  </span>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Collapsible
-            open={openSections.priceRange}
-            onOpenChange={() => toggleSection("priceRange")}
-            className="mb-6"
-          >
-            <CollapsibleTrigger className="flex items-center w-full font-semibold text-brand-secondary mb-3">
-              <span>Fiyat Aralığı</span>
-              {openSections.priceRange ? (
-                <ChevronUp className="ml-auto h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-auto h-4 w-4" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="px-2">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-600">
-                  Min: {priceRange[0].toLocaleString("tr-TR")} ₺
-                </span>
-                <span className="text-sm text-gray-600">
-                  Max: {priceRange[1].toLocaleString("tr-TR")} ₺
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.includes(boatType.value)}
+                    onChange={() => toggleBoatType(boatType.value)}
+                    className="rounded border-gray-300"
+                  />
+                  <span>{boatType.label}</span>
+                </Label>
+                <span className="text-sm text-gray-500">
+                  {boatType.count}
                 </span>
               </div>
-              <div className="mb-6 px-1">
-                <Slider
-                  defaultValue={[priceRange[0], priceRange[1]]}
-                  min={priceRange_min_max.min}
-                  max={priceRange_min_max.max}
-                  step={priceRange_min_max.step}
-                  value={[priceRange[0], priceRange[1]]}
-                  onValueChange={handlePriceRangeChange}
-                  className="w-full"
-                />
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Fiyat Aralığı */}
+        <Collapsible
+          open={openSections.priceRange}
+          onOpenChange={() => toggleSection("priceRange")}
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
+            <span className="font-medium">{t.pages.boats.filters.priceRange}</span>
+            {openSections.priceRange ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4">
+            <div className="px-2">
+              <Slider
+                value={priceRange}
+                onValueChange={handlePriceRangeChange}
+                max={priceRange_min_max.max}
+                min={priceRange_min_max.min}
+                step={priceRange_min_max.step}
+                className="w-full"
+              />
+              <div className="flex justify-between mt-2 text-sm text-gray-600">
+                <span>{t.pages.boats.filters.min}: {priceRange[0].toLocaleString()} ₺</span>
+                <span>{t.pages.boats.filters.max}: {priceRange[1].toLocaleString()} ₺</span>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-          <Collapsible
-            open={openSections.capacity}
-            onOpenChange={() => toggleSection("capacity")}
-            className="mb-6"
-          >
-            <CollapsibleTrigger className="flex items-center w-full font-semibold text-brand-secondary mb-3">
-              <span>Kapasite</span>
-              {openSections.capacity ? (
-                <ChevronUp className="ml-auto h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-auto h-4 w-4" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              {availableCapacityRanges.map((range) => (
-                <div key={range} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id={`capacity-${range}`}
-                      name="capacity"
-                      value={range}
-                      checked={capacity === range}
-                      onChange={(e) => setCapacity(e.target.value)}
-                      className="mr-2 h-4 w-4 border-gray-300 text-brand-primary focus:ring-brand-primary"
-                    />
-                    <label
-                      htmlFor={`capacity-${range}`}
-                      className="text-sm text-gray-700"
-                    >
-                      {range} Kişi
-                    </label>
-                  </div>
-                  <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
-                    {
-                      allBoats.filter((boat) => {
-                        const cap = boat.capacity;
-                        if (!cap) return false;
-                        if (range === "1-6") return cap >= 1 && cap <= 6;
-                        if (range === "7-12") return cap >= 7 && cap <= 12;
-                        if (range === "13-20") return cap >= 13 && cap <= 20;
-                        if (range === "20+") return cap > 20;
-                        if (range === "50+") return cap > 50;
-                        if (range === "100+") return cap > 100;
-                        return false;
-                      }).length
-                    }
-                  </span>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+        {/* Kapasite */}
+        <Collapsible
+          open={openSections.capacity}
+          onOpenChange={() => toggleSection("capacity")}
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
+            <span className="font-medium">{t.pages.boats.filters.capacity}</span>
+            {openSections.capacity ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {availableCapacityRanges.map((range) => (
+              <div key={range} className="flex items-center justify-between">
+                <Label
+                  className="flex items-center space-x-2 cursor-pointer"
+                  onClick={() => setCapacity(range)}
+                >
+                  <input
+                    type="radio"
+                    name="capacity"
+                    checked={capacity === range}
+                    onChange={() => setCapacity(range)}
+                    className="rounded-full"
+                  />
+                  <span>{getCapacityDisplayName(range)}</span>
+                </Label>
+                <span className="text-sm text-gray-500">
+                  {
+                    allBoats.filter((boat) => {
+                      const cap = boat.capacity;
+                      if (!cap) return false;
+                      if (range === "1-6") return cap >= 1 && cap <= 6;
+                      if (range === "7-12") return cap >= 7 && cap <= 12;
+                      if (range === "13-20") return cap >= 13 && cap <= 20;
+                      if (range === "20+") return cap > 20;
+                      if (range === "50+") return cap > 50;
+                      if (range === "100+") return cap > 100;
+                      return false;
+                    }).length
+                  }
+                </span>
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
 
-          <Collapsible
-            open={openSections.features}
-            onOpenChange={() => toggleSection("features")}
-            className="mb-6"
-          >
-            <CollapsibleTrigger className="flex items-center w-full font-semibold text-brand-secondary mb-3">
-              <span>Özellikler</span>
-              {openSections.features ? (
-                <ChevronUp className="ml-auto h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-auto h-4 w-4" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              {availableFeatures.map((feature, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`feature-${index}`}
-                      checked={selectedFeatures.includes(feature.value)}
-                      onChange={() => toggleFeature(feature.value)}
-                      className="mr-2 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                    />
-                    <label
-                      htmlFor={`feature-${index}`}
-                      className="text-sm text-gray-700"
-                    >
-                      {feature.label}
-                    </label>
-                  </div>
-                  <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
-                    {feature.count}
-                  </span>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+        {/* Özellikler */}
+        <Collapsible
+          open={openSections.features}
+          onOpenChange={() => toggleSection("features")}
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
+            <span className="font-medium">{t.pages.boats.filters.features}</span>
+            {openSections.features ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {availableFeatures.map((feature, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <Label
+                  className="flex items-center space-x-2 cursor-pointer"
+                  onClick={() => toggleFeature(feature.value)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedFeatures.includes(feature.value)}
+                    onChange={() => toggleFeature(feature.value)}
+                    className="rounded border-gray-300"
+                  />
+                  <span>{feature.label}</span>
+                </Label>
+                <span className="text-sm text-gray-500">
+                  {feature.count}
+                </span>
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
 
-          <Collapsible
-            open={openSections.location}
-            onOpenChange={() => toggleSection("location")}
-            className="mb-6"
-          >
-            <CollapsibleTrigger className="flex items-center w-full font-semibold text-brand-secondary mb-3">
-              <span>Lokasyon</span>
-              {openSections.location ? (
-                <ChevronUp className="ml-auto h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-auto h-4 w-4" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              {availableLocations.map((location, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`location-${index}`}
-                      checked={selectedLocations.includes(location.value)}
-                      onChange={() => toggleLocation(location.value)}
-                      className="mr-2 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-                    />
-                    <label
-                      htmlFor={`location-${index}`}
-                      className="text-sm text-gray-700"
-                    >
-                      {location.label}
-                    </label>
-                  </div>
-                  <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-                    {location.count}
-                  </span>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <div className="flex flex-col gap-2">
-            <Button
-              className="w-full bg-brand-primary hover:bg-brand-secondary text-white"
-              onClick={applyFilters}
-            >
-              Filtreleri Uygula ({filteredCount} Sonuç)
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full border-brand-primary text-brand-primary hover:bg-brand-primary/10"
-              onClick={resetFilters}
-            >
-              Filtreleri Temizle
-            </Button>
-          </div>
-        </div>
+        {/* Lokasyon */}
+        <Collapsible
+          open={openSections.location}
+          onOpenChange={() => toggleSection("location")}
+        >
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
+            <span className="font-medium">{t.pages.boats.filters.location}</span>
+            {openSections.location ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2">
+            {availableLocations.map((location, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <Label
+                  className="flex items-center space-x-2 cursor-pointer"
+                  onClick={() => toggleLocation(location.value)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedLocations.includes(location.value)}
+                    onChange={() => toggleLocation(location.value)}
+                    className="rounded border-gray-300"
+                  />
+                  <span>{location.label}</span>
+                </Label>
+                <span className="text-sm text-gray-500">
+                  {location.count}
+                </span>
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
-    </>
+
+      {/* Alt Butonlar */}
+      <div className="mt-8 space-y-3">
+        <Button
+          onClick={applyFilters}
+          className="w-full bg-primary hover:bg-primary-dark text-white"
+        >
+          {t.pages.boats.filters.applyWithResults.replace('{count}', filteredCount.toString())}
+        </Button>
+        <Button
+          onClick={resetFilters}
+          variant="outline"
+          className="w-full"
+        >
+          {t.pages.boats.filters.clearFilters}
+        </Button>
+      </div>
+    </div>
   );
 };
 

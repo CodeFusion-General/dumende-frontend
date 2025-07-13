@@ -2,28 +2,33 @@
 import React from 'react';
 import { Anchor, Users, Phone, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 const FeatureBox = () => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   const features = [
     {
       icon: <Anchor className="w-10 h-10 text-accent" />,
-      title: "Geniş Tekne Filosu",
-      description: "Her ihtiyaca uygun 100'den fazla tekne seçeneği sunuyoruz. Romantik bir gün batımı turu, aile tatili veya kurumsal etkinlikler için ideal teknelerimiz mevcut. Farklı bütçelere uygun seçeneklerimiz ile deniz keyfini herkes için erişilebilir kılıyoruz.",
+      title: t.home.features.fleet.title,
+      description: t.home.features.fleet.description,
     },
     {
       icon: <Users className="w-10 h-10 text-accent" />,
-      title: "Profesyonel Kaptan ve Mürettebat",
-      description: "Deneyimli ve sertifikalı kaptanlarımız ve mürettebatımız, denizde güvenliğinizi ve konforunuzu en üst düzeyde sağlar. Tüm ekibimiz, misafirperverliği ve profesyonelliği ile seyahatinizi unutulmaz kılmak için özenle seçilmiştir.",
+      title: t.home.features.crew.title,
+      description: t.home.features.crew.description,
     },
     {
       icon: <Phone className="w-10 h-10 text-accent" />,
-      title: "7/24 Müşteri Desteği",
-      description: "Rezervasyon sürecinizden seyahatinizin sonuna kadar, 7/24 müşteri destek ekibimiz yanınızda. Her türlü sorunuzda anında destek alabilir, kişiselleştirilmiş hizmet anlayışımızla kendinizi özel hissedebilirsiniz.",
+      title: t.home.features.support.title,
+      description: t.home.features.support.description,
     },
     {
       icon: <CreditCard className="w-10 h-10 text-accent" />,
-      title: "Güvenli Ödeme",
-      description: "En son teknoloji güvenlik sistemleri ile korunan ödeme altyapımız sayesinde, kredi kartı veya banka havalesi ile güvenle ödeme yapabilirsiniz. Şeffaf fiyatlandırma politikamız ile ekstra ücretlerle karşılaşmazsınız.",
+      title: t.home.features.payment.title,
+      description: t.home.features.payment.description,
     },
   ];
 
@@ -32,10 +37,10 @@ const FeatureBox = () => {
       <div className="container-custom">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Neden Bizi Tercih Etmelisiniz?
+            {t.home.features.title}
           </h2>
           <p className="text-gray-600 max-w-3xl mx-auto">
-            dümende.com ile deniz keyfi bambaşka. Sektör liderliğimizin arkasındaki nedenler:
+            {t.home.features.subtitle}
           </p>
         </div>
         
@@ -60,7 +65,7 @@ const FeatureBox = () => {
         
         <div className="text-center mt-12">
           <Link to="/about" className="btn-outline">
-            Hakkımızda Daha Fazla Bilgi
+            {t.home.features.cta}
           </Link>
         </div>
       </div>

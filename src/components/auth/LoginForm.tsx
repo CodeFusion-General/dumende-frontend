@@ -8,15 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 import { LoginRequest } from '@/types/auth.types';
 
-const loginSchema = z.object({
-  emailOrUsername: z.string().min(1, 'E-posta veya kullanıcı adı zorunludur'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
+const createLoginSchema = (t: any) => z.object({
+  emailOrUsername: z.string().min(1, t.auth.login.errors.emailOrUsernameRequired),
+  password: z.string().min(6, t.auth.login.errors.passwordMinLength),
   rememberMe: z.boolean().optional(),
 });
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -30,6 +30,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
+
+  const loginSchema = createLoginSchema(t);
+  type LoginFormData = z.infer<typeof loginSchema>;
 
   const {
     register,
@@ -59,7 +64,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       setError(
         err.response?.data?.message || 
         err.message || 
-        'Giriş yapılırken bir hata oluştu'
+        t.auth.login.errors.loginFailed
       );
     }
   };
@@ -68,10 +73,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     <div className="space-y-6">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Giriş Yap
+          {t.auth.login.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Hesabınıza giriş yapın
+          {t.auth.login.subtitle}
         </p>
       </div>
 

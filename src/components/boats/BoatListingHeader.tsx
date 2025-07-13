@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 interface BoatListingHeaderProps {
   viewMode: 'grid' | 'list';
@@ -34,38 +36,42 @@ const BoatListingHeader: React.FC<BoatListingHeaderProps> = ({
   isHourlyMode,
   setIsHourlyMode
 }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center space-x-4">
         <h2 className="text-xl font-semibold">
-          {totalBoats} Tekne Bulundu
+          {totalBoats} {t.pages.boats.boatsFound}
         </h2>
       </div>
 
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2">
-          <span className="text-sm">Saatlik</span>
+          <span className="text-sm">{t.pages.boats.hourly}</span>
           <Switch
             checked={!isHourlyMode}               // knob right => Günlük
             onCheckedChange={(checked) => setIsHourlyMode(!checked)}
-            className="bg-[#0e637a] data-[state=unchecked]:bg-[#0e637a] data-[state=checked]:bg-[#0e637a]"
+            className="data-[state=checked]:bg-blue-600"
           />
-          <span className="text-sm">Günlük</span>
+          <span className="text-sm">{t.pages.boats.daily}</span>
         </div>
 
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sıralama" />
+            <SelectValue placeholder={t.pages.boats.popularity} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="popular">Popülerlik</SelectItem>
-            <SelectItem value="price-asc">Fiyat (Artan)</SelectItem>
-            <SelectItem value="price-desc">Fiyat (Azalan)</SelectItem>
-            <SelectItem value="newest">En Yeni</SelectItem>
+            <SelectItem value="popular">{t.pages.boats.sorting.popular}</SelectItem>
+            <SelectItem value="price-low">{t.pages.boats.sorting.priceLow}</SelectItem>
+            <SelectItem value="price-high">{t.pages.boats.sorting.priceHigh}</SelectItem>
+            <SelectItem value="capacity">{t.pages.boats.sorting.capacity}</SelectItem>
+            <SelectItem value="rating">{t.pages.boats.sorting.rating}</SelectItem>
           </SelectContent>
         </Select>
 
-        <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(mode) => mode && setViewMode(mode as 'grid' | 'list')}>
           <ToggleGroupItem value="grid" aria-label="Grid view">
             <Grid2X2 className="h-4 w-4" />
           </ToggleGroupItem>
@@ -77,10 +83,10 @@ const BoatListingHeader: React.FC<BoatListingHeaderProps> = ({
         <Button
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center space-x-2"
+          className="md:hidden"
         >
           <SlidersHorizontal className="h-4 w-4 mr-2" />
-          <span>{showFilters ? 'Filtreleri Gizle' : 'Filtreleri Göster'}</span>
+          {t.pages.boats.showFilters}
         </Button>
       </div>
     </div>

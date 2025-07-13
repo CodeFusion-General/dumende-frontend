@@ -1,30 +1,34 @@
 
 import React, { useState, useEffect } from 'react';
 import SearchWidget from './SearchWidget';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { language } = useLanguage();
+  const t = translations[language];
   
   const slides = [
     {
       image: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?q=80&w=1920&auto=format&fit=crop',
-      title: 'Lüks Yat Kiralama'
+      title: t.hero.slides.luxuryYacht
     },
     {
       image: 'https://images.unsplash.com/photo-1520645521318-f03a712f0e67?q=80&w=1920&auto=format&fit=crop',
-      title: 'Özel Tur Organizasyonları'
+      title: t.hero.slides.privateTours
     },
     {
       image: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?q=80&w=1920&auto=format&fit=crop',
-      title: 'Günlük Tekne Turları'
+      title: t.hero.slides.dailyBoatTrips
     },
     {
       image: 'https://images.unsplash.com/photo-1586456074778-f3825fde4a70?q=80&w=1920&auto=format&fit=crop',
-      title: 'Kurumsal Etkinlikler'
+      title: t.hero.slides.corporateEvents
     },
     {
       image: 'https://images.unsplash.com/photo-1595351475754-8a520df0c350?q=80&w=1920&auto=format&fit=crop',
-      title: 'Özel Gün Kutlamaları'
+      title: t.hero.slides.specialCelebrations
     }
   ];
   
@@ -66,10 +70,10 @@ const Hero = () => {
           {slides[currentSlide].title}
         </h1>
         <p className="emphasized-text text-xl md:text-2xl text-white mb-8">
-          Denizde özgürlüğün adresi
+          {t.hero.subtitle}
         </p>
         <button className="btn-accent text-lg mb-12">
-          Hemen Rezervasyon Yapın
+          {t.hero.cta}
         </button>
         
         {/* Dots Navigation */}

@@ -6,6 +6,8 @@ import { Calendar, DollarSign, Users, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { bookingService } from '@/services/bookingService';
 import { authService } from '@/services/authService';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 interface Booking {
   id: string;
@@ -142,6 +144,8 @@ const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -165,9 +169,9 @@ const MyBookings: React.FC = () => {
         setBookings(mapped);
       } catch (err: any) {
         if (err?.message?.includes('token')) {
-          setError('Kullanıcı bulunamadı veya oturum süresi doldu. Lütfen tekrar giriş yapın.');
+          setError(t.myBookings.errors.userNotFound);
         } else {
-          setError('Rezervasyonlar yüklenirken bir hata oluştu.');
+          setError(t.myBookings.errors.loadFailed);
         }
         setBookings([]);
       } finally {

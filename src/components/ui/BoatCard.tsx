@@ -3,6 +3,8 @@ import { Star, Users, Anchor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BoatDTO } from "@/types/boat.types";
 import { getImageUrl, getPrimaryImageUrl } from "@/lib/imageUtils";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 // Eski format için backward compatibility interface
 interface LegacyBoat {
@@ -53,142 +55,161 @@ const BoatCard: React.FC<BoatCardProps> = ({
   priceUnit = "day",
   rating,
 }) => {
-  // Legacy mode - if boat prop is not provided but individual props are
-  const isLegacyMode = !boat && (id || name);
+  const { language } = useLanguage();
+  const t = translations[language];
 
-  // Normalize data for both formats
-  const normalizedBoat = isLegacyMode
-    ? {
-        id: id || "",
-        name: name || "İsimsiz Tekne",
-        type: type || "Tekne",
-        location: location || "Konum belirtilmemiş",
-        capacity: capacity || 0,
-        dailyPrice: price || 0,
-        rating: rating || 0,
-        images: imageUrl ? [{ imageData: imageUrl, isPrimary: true }] : [],
-      }
-    : boat;
-
-  // Null/undefined kontrolü
-  if (!normalizedBoat) {
-    return (
-      <div className="group bg-white rounded-xl shadow-md overflow-hidden p-4">
-        <div className="text-gray-500 text-center">Tekne verisi bulunamadı</div>
-      </div>
-    );
-  }
-
-  const handleType = (type: string) => {
-    switch (type) {
-      case "SAILBOAT":
-        return "Yelkenli Tekne";
-      case "MOTORBOAT":
-        return "Motorlu Tekne";
-      case "SPEEDBOAT":
-        return "Hız Teknesi";
-      case "YACHT":
-        return "Yat";
-      default:
-        return "Tekne";
-    }
+  // Determine data source and normalize
+  const boatData = {
+    id: boat?.id || id || "",
+    name: boat?.name || name || "Unknown Boat",
+    type: boat?.type || type || "Unknown",
+    location: boat?.location || location || "Unknown Location",
+    capacity: boat?.capacity || capacity || 0,
+    rating: boat?.rating || rating || 0,
+    price: boat?.dailyPrice || boat?.price || price || 0,
+    hourlyPrice: boat?.hourlyPrice || (boat?.dailyPrice || boat?.price || price || 0) / 8,
   };
 
-  // Determine which price and unit to show
-  const isHourly = isLegacyMode ? priceUnit === "hour" : isHourlyMode;
-  const displayPrice = isLegacyMode
-    ? price || 0
-    : isHourly
-      ? normalizedBoat.hourlyPrice ?? normalizedBoat.dailyPrice
-      : normalizedBoat.dailyPrice;
-  const displayUnit = isHourly ? "saat" : "gün";
+  const handleType = (type: string) => {
+    const typeMap: { [key: string]: string } = {
+      "Yelkenli": "SAILBOAT",
+      "Motor Bot": "MOTORBOAT", 
+      "Motorlu Tekne": "MOTORBOAT",
+      "Yat": "YACHT",
+      "Hız Teknesi": "SPEEDBOAT",
+      "Katamaran": "CATAMARAN",
+    };
+    
+    // Type mapping için önce çeviri tablosunu kullan
+    return t.pages.boats.filters.types[type as keyof typeof t.pages.boats.filters.types] || 
+           t.pages.boats.filters.types[typeMap[type] as keyof typeof t.pages.boats.filters.types] || 
+           type;
+  };
 
-  // Get primary image URL or fallback
+  const displayPrice = isHourlyMode ? boatData.hourlyPrice : boatData.price;
+  const priceLabel = isHourlyMode ? t.pages.boats.card.hourlyPrice : t.pages.boats.card.dailyPrice;
+
   const getImageUrl_component = () => {
-    if (isLegacyMode && imageUrl) return imageUrl;
-    if (normalizedBoat.images && normalizedBoat.images.length > 0) {
-      // Geçerli fotoğrafları filtrele
-      const validImages = normalizedBoat.images.filter((img) => img && img.id);
-      if (validImages.length === 0) return "/placeholder-boat.jpg";
-
-      const primaryImage = validImages.find((img) => img.isPrimary);
-      if (primaryImage) {
-        return getImageUrl(primaryImage.id);
-      }
-      // Fallback to first valid image
-      return getImageUrl(validImages[0].id);
+    if (boat?.images?.length > 0) {
+      return getPrimaryImageUrl(boat.images);
+    }
+    if (boat?.imageUrl || imageUrl) {
+      return boat?.imageUrl || imageUrl;
     }
     return "/placeholder-boat.jpg";
   };
 
-  const imageUrl_final = getImageUrl_component();
+  if (viewMode === "list") {
+    return (
+      <div className="bg-white rounded-lg shadow-md overflow-hidden flex">
+        <div className="w-1/3">
+          <img
+            src={getImageUrl_component()}
+            alt={boatData.name}
+            className="w-full h-48 object-cover"
+          />
+        </div>
+        <div className="w-2/3 p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-semibold text-gray-800">{boatData.name}</h3>
+              <div className="flex items-center">
+                <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                <span className="text-sm text-gray-600">{boatData.rating}</span>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-2">{boatData.location}</p>
+            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+              <div className="flex items-center">
+                <Users className="w-4 h-4 mr-1" />
+                <span>{boatData.capacity} {t.pages.boats.card.person}</span>
+              </div>
+              <div className="flex items-center">
+                <Anchor className="w-4 h-4 mr-1" />
+                <span>{handleType(boatData.type)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="text-right">
+              <span className="text-2xl font-bold text-primary">
+                {displayPrice.toLocaleString()} {priceLabel}
+              </span>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => onCompareToggle(boatData.id.toString())}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isCompared
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {t.pages.boats.card.compare}
+              </button>
+              <Link
+                to={`/boats/${boatData.id}`}
+                className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+              >
+                {t.pages.boats.card.viewDetails}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div className="relative overflow-hidden h-48">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="relative">
         <img
-          src={imageUrl_final}
-          alt={normalizedBoat.name || "Tekne"}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          src={getImageUrl_component()}
+          alt={boatData.name}
+          className="w-full h-48 object-cover"
         />
-       {/* <div className="absolute top-3 right-3 bg-accent text-accent-foreground rounded-full px-2 py-1 text-xs font-bold">
-          {normalizedBoat.type || "Tekne"}
-        </div> */}
       </div>
-
       <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-lg text-gray-800">
-            {normalizedBoat.name || "İsimsiz Tekne"}
-          </h3>
-          <div className="flex items-center space-x-1">
-            <Star className="w-4 h-4 text-accent" fill="#F8CB2E" />
-            <span className="text-gray-700 font-medium">
-              {(normalizedBoat.rating || 0).toFixed(1)}
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="text-lg font-semibold text-gray-800">{boatData.name}</h3>
+          <div className="flex items-center">
+            <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+            <span className="text-sm text-gray-600">{boatData.rating}</span>
+          </div>
+        </div>
+        <p className="text-gray-600 mb-3">{boatData.location}</p>
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+          <div className="flex items-center">
+            <Users className="w-4 h-4 mr-1" />
+            <span>{boatData.capacity} {t.pages.boats.card.person}</span>
+          </div>
+          <div className="flex items-center">
+            <Anchor className="w-4 h-4 mr-1" />
+            <span>{handleType(boatData.type)}</span>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <div className="text-right">
+            <span className="text-xl font-bold text-primary">
+              {displayPrice.toLocaleString()} {priceLabel}
             </span>
           </div>
-        </div>
-
-        <p className="text-gray-500 text-sm mb-3">
-          {normalizedBoat.location || "Konum belirtilmemiş"}
-        </p>
-
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="flex items-center text-gray-600">
-            <Users size={16} className="mr-1" />
-            <span className="text-sm">{normalizedBoat.capacity || 0} kişi</span>
-          </div>
-          <div className="flex items-center text-gray-600">
-            <Anchor size={16} className="mr-1" />
-            <span className="text-sm">{handleType(normalizedBoat.type)}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="font-bold text-primary">
-            {displayPrice} ₺
-            <span className="text-gray-400 text-sm font-normal">/{displayUnit}</span>
-          </div>
-
           <div className="flex space-x-2">
             <button
-              onClick={() =>
-                onCompareToggle((normalizedBoat.id || 0).toString())
-              }
-              className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+              onClick={() => onCompareToggle(boatData.id.toString())}
+              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                 isCompared
-                  ? "bg-accent text-accent-foreground"
-                  : "border border-gray-300 hover:border-accent hover:text-accent"
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {isCompared ? "Karşılaştırılıyor" : "Karşılaştır"}
+              {t.pages.boats.card.compare}
             </button>
-
             <Link
-              to={`/boats/${normalizedBoat.id || 0}`}
-              className="text-primary border border-primary hover:bg-primary hover:text-white rounded-lg px-4 py-1.5 transition-all duration-300 text-sm font-medium"
+              to={`/boats/${boatData.id}`}
+              className="px-3 py-1 bg-primary text-white rounded text-xs font-medium hover:bg-primary-dark transition-colors"
             >
-              İncele
+              {t.pages.boats.card.viewDetails}
             </Link>
           </div>
         </div>

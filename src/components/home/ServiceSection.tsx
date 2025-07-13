@@ -3,6 +3,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/locales/translations';
 
 interface ServiceItem {
   id: string;
@@ -40,6 +42,8 @@ const services: ServiceItem[] = [
 
 const ServiceSection = () => {
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
   
   const handleServiceClick = (serviceId: string) => {
     navigate(`/boats?service=${serviceId}`);
@@ -50,16 +54,16 @@ const ServiceSection = () => {
       <div className="container-custom">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl font-bold mb-2">Ne İçin Tekne Kiralamak İstiyorsun?</h2>
+            <h2 className="text-3xl font-bold mb-2">{t.home.services.title}</h2>
             <p className="text-muted-foreground">
-              Saatlik tekne kiralayarak yapabileceğiniz organizasyonlar
+              {t.home.services.subtitle}
             </p>
           </div>
           <Link 
             to="/services" 
             className="text-primary hover:text-primary/80 font-medium"
           >
-            Tümünü Gör ›
+            {t.home.services.viewAll}
           </Link>
         </div>
 

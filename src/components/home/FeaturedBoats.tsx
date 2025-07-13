@@ -4,11 +4,15 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { boatService } from "@/services/boatService";
 import { BoatDTO } from "@/types/boat.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const FeaturedBoats = () => {
   const [boats, setBoats] = useState<BoatDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     fetchFeaturedBoats();
@@ -29,7 +33,7 @@ const FeaturedBoats = () => {
       setError(null);
     } catch (err) {
       console.error("FeaturedBoats API Hatası:", err);
-      setError("Tekneleri yüklerken bir hata oluştu.");
+      setError(t.errors.somethingWentWrong);
       setBoats([]);
     } finally {
       setLoading(false);
@@ -44,17 +48,17 @@ const FeaturedBoats = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                Popüler Teknelerimiz
+                {t.home.featuredBoats.title}
               </h2>
               <p className="text-gray-600">
-                En çok tercih edilen lüks ve konforlu teknelerimizi keşfedin
+                {t.home.featuredBoats.subtitle}
               </p>
             </div>
             <Link
               to="/boats"
               className="flex items-center space-x-2 text-primary font-medium mt-4 md:mt-0 group"
             >
-              <span>Tüm Tekneleri Görüntüle</span>
+              <span>{t.home.featuredBoats.viewAll}</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
