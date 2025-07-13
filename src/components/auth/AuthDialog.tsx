@@ -1,79 +1,69 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { LogIn, UserPlus } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoginForm } from './LoginForm';
+import { RegisterForm } from './RegisterForm';
 
 interface AuthDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'login' | 'register';
 }
 
-export const AuthDialog = ({ isOpen, onClose }: AuthDialogProps) => {
-  const navigate = useNavigate();
-  const { language } = useLanguage();
-  
-  const translations = {
-    tr: {
-      login: "Giriş Yap",
-      register: "Kayıt Ol",
-      email: "E-posta",
-      password: "Şifre",
-      noAccount: "Hesabınız yok mu? Kayıt olun",
-    },
-    en: {
-      login: "Login",
-      register: "Register",
-      email: "Email",
-      password: "Password",
-      noAccount: "Don't have an account? Register",
-    }
+export const AuthDialog: React.FC<AuthDialogProps> = ({ 
+  isOpen, 
+  onClose, 
+  initialTab = 'login' 
+}) => {
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
+
+  const handleSuccess = () => {
+    onClose();
   };
 
-  const t = translations[language];
+  const handleSwitchToRegister = () => {
+    setActiveTab('register');
+  };
 
-  const handleRegisterClick = () => {
-    onClose();
-    navigate('/register');
+  const handleSwitchToLogin = () => {
+    setActiveTab('login');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t.login}</DialogTitle>
+          <DialogTitle className="text-center">
+            {activeTab === 'login' ? 'Giriş Yap' : 'Hesap Oluştur'}
+          </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4 py-4">
-          <Input
-            type="email"
-            placeholder={t.email}
-            className="w-full"
-          />
-          <Input
-            type="password"
-            placeholder={t.password}
-            className="w-full"
-          />
-          <Button className="w-full" size="lg">
-            <LogIn className="mr-2" size={18} />
-            {t.login}
-          </Button>
-          <Button
-            variant="link"
-            className="mt-2"
-            onClick={handleRegisterClick}
-          >
-            {t.noAccount}
-          </Button>
-        </div>
+        
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'register')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Giriş Yap</TabsTrigger>
+            <TabsTrigger value="register">Hesap Oluştur</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login" className="space-y-4">
+            <LoginForm
+              onSuccess={handleSuccess}
+              onSwitchToRegister={handleSwitchToRegister}
+            />
+          </TabsContent>
+          
+          <TabsContent value="register" className="space-y-4">
+            <RegisterForm
+              onSuccess={handleSuccess}
+              onSwitchToLogin={handleSwitchToLogin}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

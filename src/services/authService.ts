@@ -1,89 +1,353 @@
 import { BaseService } from "./base/BaseService";
 import {
-  AuthResponse,
   LoginRequest,
+  LoginResponse,
   RegisterRequest,
+  AuthUser,
   AccountDTO,
   CreateAccountRequest,
   UpdateAccountRequest,
   UpdatePasswordRequest,
+  UserType,
 } from "@/types/auth.types";
-
-// Cookie yardımcı fonksiyonları
-function setCookie(name: string, value: string, days = 7) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-}
-
-function getCookie(name: string): string | null {
-  return document.cookie.split('; ').reduce((r, v) => {
-    const parts = v.split('=');
-    return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-  }, null as string | null);
-}
-
-function deleteCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-}
+import { tokenUtils } from "@/lib/utils";
+import axios, { AxiosInstance } from "axios";
 
 class AuthService extends BaseService {
+  protected authApi: AxiosInstance;
+
   constructor() {
     super("/auth");
+    // Auth için tamamen ayrı axios instance - /api prefix kullanarak
+    this.authApi = axios.create({
+      baseURL: "/api", // /api prefix ile backend'e yönlendirme
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+
+    // Auth API için ayrı interceptors
+    this.setupAuthInterceptors();
   }
 
-  public async register(data: RegisterRequest): Promise<AuthResponse> {
-    return this.post<AuthResponse>("/register", data);
+  private setupAuthInterceptors(): void {
+    // Request interceptor - JWT token'ı otomatik header'a ekle
+    this.authApi.interceptors.request.use(
+      (config) => {
+        const token = tokenUtils.getAuthToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor - Token expiry ve error handling
+    this.authApi.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          // Token expired veya invalid - auth verilerini temizle
+          tokenUtils.clearAllAuthData();
+          // Login sayfasına yönlendir
+          window.location.href = "/";
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
-  public async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await this.post<AuthResponse>("/login", data);
-    if (response.token) {
-      setCookie("token", response.token);
-      setCookie("account", JSON.stringify(response.account));
+  // Override base methods to use direct auth endpoints
+  protected async authGet<T>(url: string, params?: any): Promise<T> {
+    try {
+      const response = await this.authApi.get(`/auth${url}`, { params });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
     }
+  }
+
+  protected async authPost<T>(url: string, data?: any): Promise<T> {
+    try {
+      const response = await this.authApi.post(`/auth${url}`, data);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  protected async authPut<T>(url: string, data?: any): Promise<T> {
+    try {
+      const response = await this.authApi.put(`/auth${url}`, data);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  protected async authDelete<T>(url: string): Promise<T> {
+    try {
+      const response = await this.authApi.delete(`/auth${url}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // Yeni backend API'sine uygun register
+  public async register(data: RegisterRequest): Promise<LoginResponse> {
+    const response = await this.authPost<LoginResponse>("/register", data);
+    
+    // Token ve user bilgilerini cookie'ye kaydet
+    if (response.token) {
+      tokenUtils.setAuthToken(response.token, response.expiresIn);
+      tokenUtils.setUserData({
+        id: response.userId,
+        email: response.email,
+        username: response.username,
+        role: response.role,
+      });
+    }
+    
     return response;
   }
 
-  public async logout(): Promise<void> {
-    await this.post<void>("/logout");
-    deleteCookie("token");
-    deleteCookie("account");
+  // Yeni backend API'sine uygun login
+  public async login(data: LoginRequest): Promise<LoginResponse> {
+    const response = await this.authPost<LoginResponse>("/login", data);
+    
+    // Token ve user bilgilerini cookie'ye kaydet
+    if (response.token) {
+      tokenUtils.setAuthToken(response.token, response.expiresIn);
+      tokenUtils.setUserData({
+        id: response.userId,
+        email: response.email,
+        username: response.username,
+        role: response.role,
+      });
+    }
+    
+    return response;
   }
 
+  // Logout
+  public logout(): void {
+    // Backend'de logout endpoint'i yoksa sadece client-side temizlik
+    tokenUtils.clearAllAuthData();
+    window.location.href = "/";
+  }
+
+  // Current user bilgilerini getir
+  public getCurrentUser(): AuthUser | null {
+    const userData = tokenUtils.getUserData();
+    return userData ? {
+      id: userData.id,
+      email: userData.email,
+      username: userData.username,
+      role: userData.role,
+      fullName: userData.fullName,
+      phoneNumber: userData.phoneNumber,
+    } : null;
+  }
+
+  // Token kontrolü
+  public getToken(): string | null {
+    return tokenUtils.getAuthToken();
+  }
+
+  // Authentication durumu
+  public isAuthenticated(): boolean {
+    return tokenUtils.hasAuthToken();
+  }
+
+  // User role kontrolü
+  public hasRole(role: UserType): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === role;
+  }
+
+  // Admin kontrolü
+  public isAdmin(): boolean {
+    return this.hasRole(UserType.ADMIN);
+  }
+
+  // Boat owner kontrolü
+  public isBoatOwner(): boolean {
+    return this.hasRole(UserType.BOAT_OWNER);
+  }
+
+  // Customer kontrolü
+  public isCustomer(): boolean {
+    return this.hasRole(UserType.CUSTOMER);
+  }
+
+  // Account yönetimi (backend'deki diğer endpoints için)
   public async getCurrentAccount(): Promise<AccountDTO> {
-    return this.get<AccountDTO>("/account");
+    return this.authGet<AccountDTO>("/account");
   }
 
   public async createAccount(data: CreateAccountRequest): Promise<AccountDTO> {
-    return this.post<AccountDTO>("/account", data);
+    return this.authPost<AccountDTO>("/account", data);
   }
 
   public async updateAccount(data: UpdateAccountRequest): Promise<AccountDTO> {
-    return this.put<AccountDTO>("/account", data);
+    return this.authPut<AccountDTO>("/account", data);
   }
 
   public async updatePassword(data: UpdatePasswordRequest): Promise<void> {
-    return this.put<void>("/account/password", data);
+    return this.authPut<void>("/account/password", data);
   }
 
   public async deleteAccount(): Promise<void> {
-    await this.delete<void>("/account");
-    deleteCookie("token");
-    deleteCookie("account");
+    await this.authDelete<void>("/account");
+    this.logout();
   }
 
-  // Token management
-  public getToken(): string | null {
-    return getCookie("token");
+  // Token refresh (eğer backend'de varsa)
+  public async refreshToken(): Promise<LoginResponse> {
+    const response = await this.authPost<LoginResponse>("/refresh");
+    
+    if (response.token) {
+      tokenUtils.setAuthToken(response.token, response.expiresIn);
+      tokenUtils.setUserData({
+        id: response.userId,
+        email: response.email,
+        username: response.username,
+        role: response.role,
+      });
+    }
+    
+    return response;
   }
 
-  public getStoredAccount(): AccountDTO | null {
-    const accountStr = getCookie("account");
-    return accountStr ? JSON.parse(accountStr) : null;
+  // **ADMİN PANELİ FONKSİYONLARI**
+  
+  // Tüm kullanıcıları getir (Admin only)
+  public async getAllUsers(): Promise<AuthUser[]> {
+    return this.authGet<AuthUser[]>("/admin/users");
   }
 
-  public isAuthenticated(): boolean {
-    return !!this.getToken();
+  // Kullanıcı rolünü güncelle (Admin only)
+  public async updateUserRole(userId: number, newRole: UserType): Promise<void> {
+    return this.authPut<void>(`/admin/users/${userId}/role`, { role: newRole });
+  }
+
+  // Kullanıcıyı aktif/pasif et (Admin only)
+  public async toggleUserStatus(userId: number, isActive: boolean): Promise<void> {
+    return this.authPut<void>(`/admin/users/${userId}/status`, { isActive });
+  }
+
+  // Boat owner başvurularını getir (Admin only)
+  public async getBoatOwnerApplications(): Promise<{
+    id: number;
+    userId: number;
+    username: string;
+    email: string;
+    fullName: string;
+    phoneNumber: string;
+    applicationDate: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  }[]> {
+    return this.authGet<any[]>("/admin/boat-owner-applications");
+  }
+
+  // Boat owner başvurusunu onayla (Admin only)
+  public async approveBoatOwnerApplication(applicationId: number): Promise<void> {
+    return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
+  }
+
+  // Boat owner başvurusunu reddet (Admin only)
+  public async rejectBoatOwnerApplication(applicationId: number, reason?: string): Promise<void> {
+    return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
+  }
+
+  // Kullanıcıyı ID ile getir (Admin only)
+  public async getUserById(userId: number): Promise<AuthUser> {
+    return this.authGet<AuthUser>(`/admin/users/${userId}`);
+  }
+
+  // Kullanıcı arama (Admin only)
+  public async searchUsers(query: string): Promise<AuthUser[]> {
+    return this.authGet<AuthUser[]>(`/admin/users/search?q=${encodeURIComponent(query)}`);
+  }
+
+  // Role göre kullanıcıları filtrele (Admin only)
+  public async getUsersByRole(role: UserType): Promise<AuthUser[]> {
+    return this.authGet<AuthUser[]>(`/admin/users?role=${role}`);
+  }
+
+  // **BOAT OWNER BAŞVURU FONKSİYONLARI**
+  
+  // Boat owner başvurusu yap
+  public async submitBoatOwnerApplication(applicationData: {
+    companyName?: string;
+    taxNumber?: string;
+    address?: string;
+    description?: string;
+    documents?: File[];
+  }): Promise<void> {
+    const formData = new FormData();
+    
+    if (applicationData.companyName) {
+      formData.append('companyName', applicationData.companyName);
+    }
+    if (applicationData.taxNumber) {
+      formData.append('taxNumber', applicationData.taxNumber);
+    }
+    if (applicationData.address) {
+      formData.append('address', applicationData.address);
+    }
+    if (applicationData.description) {
+      formData.append('description', applicationData.description);
+    }
+    
+    // Belgeler varsa ekle
+    if (applicationData.documents) {
+      Array.from(applicationData.documents).forEach((file, index) => {
+        formData.append(`documents`, file);
+      });
+    }
+
+    try {
+      const response = await this.authApi.post("/auth/boat-owner-application", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // Kullanıcının boat owner başvuru durumunu kontrol et
+  public async getMyBoatOwnerApplication(): Promise<{
+    id: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    applicationDate: string;
+    reviewDate?: string;
+    rejectionReason?: string;
+  } | null> {
+    try {
+      return await this.authGet<any>("/boat-owner-application/my");
+    } catch (error) {
+      // Başvuru yoksa null döner
+      return null;
+    }
+  }
+
+  // Boat owner başvurusu iptal et
+  public async cancelBoatOwnerApplication(): Promise<void> {
+    return this.authDelete<void>("/boat-owner-application/my");
   }
 }
 

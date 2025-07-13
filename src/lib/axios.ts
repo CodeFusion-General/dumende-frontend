@@ -3,19 +3,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
-
-// Cookie'den token okuma fonksiyonu
-function getCookie(name: string): string | null {
-  return document.cookie.split('; ').reduce((r, v) => {
-    const parts = v.split('=');
-    return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-  }, null as string | null);
-}
-
-// Cookie silme fonksiyonu
-function deleteCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-}
+import { tokenUtils } from "./utils";
 
 class HttpClient {
   private static instance: HttpClient;
@@ -27,6 +15,7 @@ class HttpClient {
       headers: {
         "Content-Type": "application/json",
       },
+      withCredentials: true, // Cookie'leri otomatik gönder
     });
 
     this.setupInterceptors();
@@ -40,10 +29,10 @@ class HttpClient {
   }
 
   private setupInterceptors(): void {
-    // Request interceptor
+    // Request interceptor - JWT token'ı otomatik header'a ekle
     this.api.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        const token = getCookie("token");
+        const token = tokenUtils.getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -54,14 +43,16 @@ class HttpClient {
       }
     );
 
-    // Response interceptor
+    // Response interceptor - Token expiry ve error handling
     this.api.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
         if (error.response?.status === 401) {
-          deleteCookie("token");
-          deleteCookie("account");
-          window.location.href = "/login";
+          // Token expired veya invalid - auth verilerini temizle
+          tokenUtils.clearAllAuthData();
+          
+          // Login sayfasına yönlendir
+          window.location.href = "/";
         }
         return Promise.reject(error);
       }
