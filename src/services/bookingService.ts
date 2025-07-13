@@ -13,6 +13,19 @@ import {
   BookingStatistics,
 } from "@/types/booking.types";
 
+// Token'dan userId decode eden yardımcı fonksiyon
+function getUserIdFromToken(): number | null {
+  const token = (typeof window !== 'undefined') ? document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] : null;
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    return decoded.userId || decoded.id || decoded.sub || null;
+  } catch {
+    return null;
+  }
+}
+
 class BookingService extends BaseService {
   constructor() {
     super("/bookings");
@@ -51,14 +64,16 @@ class BookingService extends BaseService {
   }
 
   // Customer based queries
-  public async getCustomerBookings(customerId: number): Promise<BookingDTO[]> {
-    return this.get<BookingDTO[]>(`/customer/${customerId}`);
+  public async getCustomerBookings(): Promise<BookingDTO[]> {
+    const userId = getUserIdFromToken();
+    if (!userId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
+    return this.get<BookingDTO[]>(`/customer/${userId}`);
   }
 
-  public async getCustomerActiveBookings(
-    customerId: number
-  ): Promise<BookingDTO[]> {
-    return this.get<BookingDTO[]>(`/customer/${customerId}/active`);
+  public async getCustomerActiveBookings(): Promise<BookingDTO[]> {
+    const userId = getUserIdFromToken();
+    if (!userId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
+    return this.get<BookingDTO[]>(`/customer/${userId}/active`);
   }
 
   // Boat based queries
@@ -262,7 +277,7 @@ export const bookingQueryService = {
   findBookingsByCustomerId: async (
     customerId: number
   ): Promise<BookingDTO[]> => {
-    return bookingService.getCustomerBookings(customerId);
+    return bookingService.getCustomerBookings();
   },
 
   // Get bookings by boat ID
@@ -335,16 +350,16 @@ export const bookingCommandService = {
 // Helper functions for owner/captain specific data - BaseService kullanarak
 export const bookingHelperService = {
   // Get all bookings for owner's boats
-  getBookingsForOwnerBoats: async (ownerId: number): Promise<BookingDTO[]> => {
+  getBookingsForOwnerBoats: async (): Promise<BookingDTO[]> => {
     try {
+      const ownerId = getUserIdFromToken();
+      if (!ownerId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
       // First get owner's boats
       const boats = await bookingService.getBoatsByOwnerId(ownerId);
-
       // Get bookings for each boat
       const bookingsPromises = boats.map((boat: any) =>
         bookingService.getBoatBookings(boat.id)
       );
-
       const bookingsArrays = await Promise.all(bookingsPromises);
       return bookingsArrays.flat();
     } catch (error) {
@@ -354,21 +369,19 @@ export const bookingHelperService = {
   },
 
   // Get all bookings for owner's tours
-  getBookingsForOwnerTours: async (ownerId: number): Promise<BookingDTO[]> => {
+  getBookingsForOwnerTours: async (): Promise<BookingDTO[]> => {
     try {
+      const ownerId = getUserIdFromToken();
+      if (!ownerId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
       // First get owner's boats, then tours for those boats
       const boats = await bookingService.getBoatsByOwnerId(ownerId);
-
       const bookingsPromises: Promise<BookingDTO[]>[] = [];
-
       for (const boat of boats) {
         const tours = await bookingService.getToursByBoatId(boat.id);
-
         tours.forEach((tour: any) => {
           bookingsPromises.push(bookingService.getTourBookings(tour.id));
         });
       }
-
       const bookingsArrays = await Promise.all(bookingsPromises);
       return bookingsArrays.flat();
     } catch (error) {
@@ -378,20 +391,18 @@ export const bookingHelperService = {
   },
 
   // Get all bookings for an owner (boats + tours)
-  getAllBookingsForOwner: async (ownerId: number): Promise<BookingDTO[]> => {
+  getAllBookingsForOwner: async (): Promise<BookingDTO[]> => {
     try {
       const [boatBookings, tourBookings] = await Promise.all([
-        bookingHelperService.getBookingsForOwnerBoats(ownerId),
-        bookingHelperService.getBookingsForOwnerTours(ownerId),
+        bookingHelperService.getBookingsForOwnerBoats(),
+        bookingHelperService.getBookingsForOwnerTours(),
       ]);
-
       // Combine and deduplicate bookings
       const allBookings = [...boatBookings, ...tourBookings];
       const uniqueBookings = allBookings.filter(
         (booking, index, self) =>
           index === self.findIndex((b) => b.id === booking.id)
       );
-
       return uniqueBookings;
     } catch (error) {
       console.error("Error fetching all bookings for owner:", error);
@@ -459,9 +470,7 @@ export const bookingHelperService = {
     ownerId: number
   ): Promise<BookingStatistics> => {
     try {
-      const bookings = await bookingHelperService.getAllBookingsForOwner(
-        ownerId
-      );
+      const bookings = await bookingHelperService.getAllBookingsForOwner();
 
       const stats: BookingStatistics = {
         totalBookings: bookings.length,
