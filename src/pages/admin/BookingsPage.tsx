@@ -6,6 +6,8 @@ import { Calendar, User, Users, Clock, Ship } from 'lucide-react';
 import { format } from 'date-fns';
 import { bookingHelperService } from '@/services/bookingService';
 import { authService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 interface Booking {
   id: string;
@@ -127,6 +129,7 @@ const BookingCard: React.FC<{ booking: Booking }> = ({ booking }) => {
 };
 
 const BookingsPage: React.FC = () => {
+  const { user, isAuthenticated, isBoatOwner, isAdmin } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -134,11 +137,38 @@ const BookingsPage: React.FC = () => {
 
   useEffect(() => {
     const fetchBookings = async () => {
+      // Authentication kontrolü
+      if (!isAuthenticated || !user?.id) {
+        setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        setLoading(false);
+        toast({
+          title: "Kimlik Doğrulama Hatası",
+          description: "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Role kontrolü  
+      if (!isBoatOwner() && !isAdmin()) {
+        setError('Bu sayfaya erişim yetkiniz bulunmamaktadır.');
+        setLoading(false);
+        toast({
+          title: "Yetki Hatası",
+          description: "Rezervasyonlar sayfasına erişim için kaptan yetkisi gereklidir.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setLoading(true);
       setError(null);
+      
       try {
-        // ownerId token'dan otomatik alınacak, account/id kontrolü gereksiz
-        const data = await bookingHelperService.getAllBookingsForOwner();
+        console.log('Fetching bookings for user ID:', user.id);
+        // AuthContext'ten gelen user.id'yi bookingHelperService'e geç
+        const data = await bookingHelperService.getAllBookingsForOwner(user.id);
+        
         // BookingDTO/BookingWithDetails[] -> Booking[] map
         const mapped = (data as any[]).map((b) => ({
           id: b.id.toString(),
@@ -152,20 +182,43 @@ const BookingsPage: React.FC = () => {
           notes: b.notes,
           createdAt: b.createdAt,
         }));
+        
+        console.log('Bookings fetched successfully:', mapped.length);
         setBookings(mapped);
       } catch (err: any) {
-        if (err?.message?.includes('token')) {
-          setError('Kullanıcı bulunamadı veya oturum süresi doldu. Lütfen tekrar giriş yapın.');
+        console.error('Bookings yükleme hatası:', err);
+        
+        // Daha detaylı error handling
+        if (err?.message?.includes('token') || err?.message?.includes('401')) {
+          setError('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+          toast({
+            title: "Oturum Süresi Doldu",
+            description: "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+            variant: "destructive",
+          });
+        } else if (err?.message?.includes('403')) {
+          setError('Bu işlem için yetkiniz bulunmamaktadır.');
+          toast({
+            title: "Yetki Hatası",
+            description: "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
+            variant: "destructive",
+          });
         } else {
           setError('Rezervasyonlar yüklenirken bir hata oluştu.');
+          toast({
+            title: "Yükleme Hatası", 
+            description: "Rezervasyonlar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
         }
         setBookings([]);
       } finally {
         setLoading(false);
       }
     };
+    
     fetchBookings();
-  }, []);
+  }, [user, isAuthenticated, isBoatOwner, isAdmin]);
 
   const filteredBookings = bookings.filter(booking => 
     statusFilter === 'all' || booking.status === statusFilter

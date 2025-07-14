@@ -1,5 +1,7 @@
 import { BaseService } from "./base/BaseService";
 import { tokenUtils } from "@/lib/utils";
+import { boatService } from "./boatService"; // boatService import ediyoruz
+import { tourService } from "./tourService"; // tourService import ediyoruz
 import {
   BookingDTO,
   CreateBookingDTO,
@@ -14,18 +16,7 @@ import {
   BookingStatistics,
 } from "@/types/booking.types";
 
-// Token'dan userId decode eden yardımcı fonksiyon
-function getUserIdFromToken(): number | null {
-  const token = tokenUtils.getAuthToken();
-  if (!token) return null;
-  try {
-    const payload = token.split('.')[1];
-    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-    return decoded.userId || null;
-  } catch {
-    return null;
-  }
-}
+// getUserIdFromToken fonksiyonunu kaldırıyoruz - AuthContext kullanacağız
 
 class BookingService extends BaseService {
   constructor() {
@@ -66,14 +57,14 @@ class BookingService extends BaseService {
 
   // Customer based queries
   public async getCustomerBookings(): Promise<BookingDTO[]> {
-    const userId = getUserIdFromToken();
-    if (!userId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
+    const userId = tokenUtils.getUserId();
+    if (!userId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
     return this.get<BookingDTO[]>(`/customer/${userId}`);
   }
 
   public async getCustomerActiveBookings(): Promise<BookingDTO[]> {
-    const userId = getUserIdFromToken();
-    if (!userId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
+    const userId = tokenUtils.getUserId();
+    if (!userId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
     return this.get<BookingDTO[]>(`/customer/${userId}/active`);
   }
 
@@ -348,15 +339,18 @@ export const bookingCommandService = {
   },
 };
 
-// Helper functions for owner/captain specific data - BaseService kullanarak
+// Helper functions for owner/captain specific data - AuthContext'ten gelen userId kullanır
 export const bookingHelperService = {
   // Get all bookings for owner's boats
-  getBookingsForOwnerBoats: async (): Promise<BookingDTO[]> => {
+  getBookingsForOwnerBoats: async (userId?: number): Promise<BookingDTO[]> => {
     try {
-      const ownerId = getUserIdFromToken();
-      if (!ownerId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
-      // First get owner's boats
-      const boats = await bookingService.getBoatsByOwnerId(ownerId);
+      // AuthContext'ten gelen userId'yi kullan, yoksa cookie'den al
+      const ownerId = userId || tokenUtils.getUserId();
+      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
+      
+      console.log('Getting boats for owner ID:', ownerId);
+      // boatService'i kullanarak doğru endpoint'e git
+      const boats = await boatService.getBoatsByOwner(ownerId);
       // Get bookings for each boat
       const bookingsPromises = boats.map((boat: any) =>
         bookingService.getBoatBookings(boat.id)
@@ -365,20 +359,24 @@ export const bookingHelperService = {
       return bookingsArrays.flat();
     } catch (error) {
       console.error("Error fetching bookings for owner boats:", error);
-      return [];
+      throw error; // Error'ı yukarı fırlat ki BookingsPage'de yakalansın
     }
   },
 
   // Get all bookings for owner's tours
-  getBookingsForOwnerTours: async (): Promise<BookingDTO[]> => {
+  getBookingsForOwnerTours: async (userId?: number): Promise<BookingDTO[]> => {
     try {
-      const ownerId = getUserIdFromToken();
-      if (!ownerId) throw new Error('Kullanıcı bulunamadı (token geçersiz)');
-      // First get owner's boats, then tours for those boats
-      const boats = await bookingService.getBoatsByOwnerId(ownerId);
+      // AuthContext'ten gelen userId'yi kullan, yoksa cookie'den al
+      const ownerId = userId || tokenUtils.getUserId();
+      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
+      
+      console.log('Getting tours for owner ID:', ownerId);
+      // boatService'i kullanarak doğru endpoint'e git
+      const boats = await boatService.getBoatsByOwner(ownerId);
       const bookingsPromises: Promise<BookingDTO[]>[] = [];
       for (const boat of boats) {
-        const tours = await bookingService.getToursByBoatId(boat.id);
+        // tourService'i kullanarak doğru endpoint'e git
+        const tours = await tourService.getToursByBoatId(boat.id);
         tours.forEach((tour: any) => {
           bookingsPromises.push(bookingService.getTourBookings(tour.id));
         });
@@ -387,16 +385,21 @@ export const bookingHelperService = {
       return bookingsArrays.flat();
     } catch (error) {
       console.error("Error fetching bookings for owner tours:", error);
-      return [];
+      throw error; // Error'ı yukarı fırlat ki BookingsPage'de yakalansın
     }
   },
 
   // Get all bookings for an owner (boats + tours)
-  getAllBookingsForOwner: async (): Promise<BookingDTO[]> => {
+  getAllBookingsForOwner: async (userId?: number): Promise<BookingDTO[]> => {
     try {
+      // AuthContext'ten gelen userId'yi kullan
+      const ownerId = userId || tokenUtils.getUserId();
+      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
+      
+      console.log('Getting all bookings for owner ID:', ownerId);
       const [boatBookings, tourBookings] = await Promise.all([
-        bookingHelperService.getBookingsForOwnerBoats(),
-        bookingHelperService.getBookingsForOwnerTours(),
+        bookingHelperService.getBookingsForOwnerBoats(ownerId),
+        bookingHelperService.getBookingsForOwnerTours(ownerId),
       ]);
       // Combine and deduplicate bookings
       const allBookings = [...boatBookings, ...tourBookings];
@@ -407,7 +410,7 @@ export const bookingHelperService = {
       return uniqueBookings;
     } catch (error) {
       console.error("Error fetching all bookings for owner:", error);
-      return [];
+      throw error; // Error'ı yukarı fırlat ki BookingsPage'de yakalansın
     }
   },
 

@@ -51,8 +51,16 @@ class HttpClient {
           // Token expired veya invalid - auth verilerini temizle
           tokenUtils.clearAllAuthData();
           
-          // Login sayfasına yönlendir
-          window.location.href = "/";
+          // Captain panelindeyse captain login'e, normal sayfadaysa ana sayfaya yönlendir
+          const currentPath = window.location.pathname;
+          if (currentPath.startsWith('/captain')) {
+            window.location.href = "/?auth=true"; // Auth modal'ı açmak için
+          } else if (currentPath.startsWith('/admin')) {
+            window.location.href = "/?auth=true"; // Auth modal'ı açmak için  
+          } else {
+            // Normal sayfalarda auth modal'ı aç
+            window.location.href = "/?auth=true";
+          }
         }
         return Promise.reject(error);
       }

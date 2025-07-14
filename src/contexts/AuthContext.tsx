@@ -35,9 +35,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedToken = tokenUtils.getAuthToken();
         const storedUser = tokenUtils.getUserData();
 
+        // Token ve user bilgilerinin ikisi de varsa ve tutarlıysa state'i güncelle
         if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(storedUser);
+          // Token'ın geçerli olup olmadığını kontrol et (basit format kontrolü)
+          if (storedToken.includes('.') && storedUser.id && storedUser.role) {
+            setToken(storedToken);
+            setUser(storedUser);
+            console.log('Auth state initialized from cookies:', { 
+              hasToken: !!storedToken, 
+              userId: storedUser.id, 
+              role: storedUser.role 
+            });
+          } else {
+            // Geçersiz data varsa temizle
+            console.warn('Invalid auth data found in cookies, clearing...');
+            tokenUtils.clearAllAuthData();
+          }
+        } else if (storedToken || storedUser) {
+          // Eksik data varsa (sadece token veya sadece user) temizle
+          console.warn('Incomplete auth data found in cookies, clearing...');
+          tokenUtils.clearAllAuthData();
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -57,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await authService.login(credentials);
       
-      // State'i güncelle
+      // AuthService zaten token'ı cookie'ye kaydediyor, burada state'i güncelle
       setToken(response.token);
       setUser({
         id: response.userId,
@@ -65,8 +82,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: response.username,
         role: response.role,
       });
+      
+      // Çifte kayıt problemini önlemek için tokenUtils'i tekrar çağırmıyoruz
     } catch (error) {
       console.error('Login error:', error);
+      // Hata durumunda auth verilerini temizle
+      tokenUtils.clearAllAuthData();
+      setToken(null);
+      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);
@@ -79,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await authService.register(data);
       
-      // State'i güncelle
+      // AuthService zaten token'ı cookie'ye kaydediyor, burada state'i güncelle
       setToken(response.token);
       setUser({
         id: response.userId,
@@ -87,8 +110,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: response.username,
         role: response.role,
       });
+      
+      // Çifte kayıt problemini önlemek için tokenUtils'i tekrar çağırmıyoruz
     } catch (error) {
       console.error('Register error:', error);
+      // Hata durumunda auth verilerini temizle
+      tokenUtils.clearAllAuthData();
+      setToken(null);
+      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);
@@ -107,6 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.refreshToken();
       
+      // AuthService zaten token'ı cookie'ye kaydediyor, burada state'i güncelle
       setToken(response.token);
       setUser({
         id: response.userId,
@@ -116,6 +146,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error) {
       console.error('Token refresh error:', error);
+      // Refresh token başarısız olursa tüm auth verilerini temizle
+      tokenUtils.clearAllAuthData();
+      setToken(null);
+      setUser(null);
       logout();
       throw error;
     }

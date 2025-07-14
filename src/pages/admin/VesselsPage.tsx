@@ -35,6 +35,7 @@ import {
   validateImageFile,
   getImageUrl,
 } from "@/lib/imageUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Form data interface
 interface VesselFormData {
@@ -90,6 +91,7 @@ interface VesselFormData {
 }
 
 const VesselsPage = () => {
+  const { user, isAuthenticated, isBoatOwner, isAdmin } = useAuth(); // Auth context'i kullan
   const [activeTab, setActiveTab] = useState("list");
   const [editingVesselId, setEditingVesselId] = useState<number | null>(null);
   const [formTab, setFormTab] = useState("details");
@@ -154,24 +156,75 @@ const VesselsPage = () => {
 
   // API Calls
   const fetchVessels = async () => {
+    // AuthContext'ten user ve authentication durumunu kontrol et
+    if (!user?.id) {
+      console.error("User ID bulunamadı:", { user, isAuthenticated });
+      setError("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.");
+      toast({
+        title: "Kimlik Doğrulama Hatası",
+        description: "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Kullanıcının BOAT_OWNER veya ADMIN rolü olup olmadığını kontrol et
+    if (!isBoatOwner() && !isAdmin()) {
+      setError("Bu sayfaya erişim yetkiniz bulunmamaktadır.");
+      toast({
+        title: "Yetki Hatası",
+        description: "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      // Mock owner ID - gerçek uygulamada auth'dan gelecek
-      const ownerId = 1;
+      console.log("Fetching vessels for user ID:", user.id);
+      const ownerId = user.id; // Giriş yapmış kullanıcının ID'sini kullan
       const data = await boatService.getVesselsByOwner(ownerId);
+      
+      console.log("Vessels fetched successfully:", data.length);
       setVessels(data);
 
     } catch (err) {
       console.error("Vessels yükleme hatası:", err);
-      setError("Tekneler yüklenirken bir hata oluştu.");
-      toast({
-        title: "Hata",
-        description:
-          "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        variant: "destructive",
-      });
+      
+      // Daha detaylı error handling
+      if (err instanceof Error) {
+        if (err.message.includes('401') || err.message.includes('token')) {
+          setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
+          toast({
+            title: "Oturum Süresi Doldu",
+            description: "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+            variant: "destructive",
+          });
+        } else if (err.message.includes('403')) {
+          setError("Bu işlem için yetkiniz bulunmamaktadır.");
+          toast({
+            title: "Yetki Hatası", 
+            description: "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
+            variant: "destructive",
+          });
+        } else {
+          setError(`Tekneler yüklenirken hata: ${err.message}`);
+          toast({
+            title: "Yükleme Hatası",
+            description: "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        setError("Tekneler yüklenirken bilinmeyen bir hata oluştu.");
+        toast({
+          title: "Hata",
+          description: "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyin.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -318,7 +371,7 @@ const VesselsPage = () => {
     const imagesDTOs = await Promise.all(imagePromises);
 
     return {
-      ownerId: 1, // Mock - gerçek uygulamada auth'dan gelecek
+      ownerId: user?.id || 1, // Giriş yapmış kullanıcının ID'sini kullan
       name: data.name.trim(),
       description: data.detailedDescription || data.shortDescription || "",
       model: data.brandModel,

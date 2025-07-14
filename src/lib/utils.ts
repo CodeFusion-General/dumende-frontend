@@ -75,6 +75,12 @@ export const tokenUtils = {
     return userData ? JSON.parse(userData) : null;
   },
 
+  // User ID'sini okuma
+  getUserId: (): number | null => {
+    const userData = tokenUtils.getUserData();
+    return userData?.id || null;
+  },
+
   // User bilgilerini silme
   clearUserData: () => {
     cookieUtils.remove('userData');

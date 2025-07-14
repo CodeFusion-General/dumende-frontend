@@ -190,10 +190,9 @@ export abstract class BaseService {
       // Handle specific error codes
       switch (error.response.status) {
         case 401:
-          // Unauthorized - redirect to login
-          localStorage.removeItem("token");
-          localStorage.removeItem("account");
-          window.location.href = "/login";
+          // Unauthorized - bu durumda axios interceptor zaten çalışır
+          // Burada sadece log yapalım, yönlendirme interceptor'da yapılıyor
+          console.error("Unauthorized - Token invalid or expired");
           break;
         case 403:
           console.error("Forbidden: Insufficient permissions");
