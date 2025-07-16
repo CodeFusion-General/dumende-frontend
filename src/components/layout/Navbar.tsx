@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, Globe, Anchor, LogOut, Ship, Shield } from 'lucide-react';
+import { NavbarNotification } from '@/components/notification/NavbarNotification';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { translations } from '@/locales/translations';
@@ -124,7 +125,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
+            {isAuthenticated && <NavbarNotification userId={user!.id} />}
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger 
