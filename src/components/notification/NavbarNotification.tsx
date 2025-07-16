@@ -58,7 +58,7 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
         className="text-white hover:text-accent p-2 rounded-full transition-colors relative"
       >
         <Bell size={24} />
-        {unreadCount > 0 && (
+        {unreadCount > 1 && (
           <Badge 
             variant="destructive" 
             className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0 min-w-[1.25rem]"
