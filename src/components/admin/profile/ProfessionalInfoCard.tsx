@@ -22,7 +22,6 @@ import {
   Certification,
 } from "@/types/profile.types";
 import { professionalInfoFormSchema } from "@/lib/validation/profile.schemas";
-import { useProfileFormValidation } from "@/hooks/useFormValidation";
 import { useProfessionalInfoState } from "@/hooks/useProfileState";
 import {
   Edit2,
@@ -35,7 +34,6 @@ import {
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 import { ProfessionalInfoCardSkeleton } from "./ProfileLoadingSkeletons";
 import { ProfileCardErrorBoundary } from "./ProfileErrorBoundary";
 
@@ -76,11 +74,8 @@ const ProfessionalInfoCard: React.FC<ProfessionalInfoCardProps> = ({
     reValidateMode: "onChange",
   });
 
-  // Use enhanced validation hook
-  const [validationState, validationActions] = useProfileFormValidation(
-    form,
-    "professional"
-  );
+  // Simple validation state
+  const [showErrorSummary, setShowErrorSummary] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -189,15 +184,13 @@ const ProfessionalInfoCard: React.FC<ProfessionalInfoCardProps> = ({
                 className="space-y-6"
               >
                 {/* Error Summary */}
-                {validationState.hasErrors &&
-                  validationState.submitCount > 0 && (
+                {showErrorSummary &&
+                  Object.keys(form.formState.errors).length > 0 && (
                     <FormErrorSummary
                       errors={form.formState.errors}
                       title="Lütfen aşağıdaki hataları düzeltin:"
                       dismissible
-                      onDismiss={() =>
-                        validationActions.toggleErrorSummary(false)
-                      }
+                      onDismiss={() => setShowErrorSummary(false)}
                     />
                   )}
 

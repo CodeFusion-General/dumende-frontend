@@ -16,10 +16,8 @@ import {
 import { FormErrorSummary } from "@/components/ui/form-error";
 import { PersonalInfo, PersonalInfoFormData } from "@/types/profile.types";
 import { personalInfoFormSchema } from "@/lib/validation/profile.schemas";
-import { useProfileFormValidation } from "@/hooks/useFormValidation";
 import { usePersonalInfoState } from "@/hooks/useProfileState";
 import { Edit2, Save, X, Mail, Phone, MapPin, Calendar } from "lucide-react";
-import { toast } from "sonner";
 import { PersonalInfoCardSkeleton } from "./ProfileLoadingSkeletons";
 import { ProfileCardErrorBoundary } from "./ProfileErrorBoundary";
 
@@ -65,11 +63,8 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
     reValidateMode: "onChange",
   });
 
-  // Use enhanced validation hook
-  const [validationState, validationActions] = useProfileFormValidation(
-    form,
-    "personal"
-  );
+  // Simple validation state
+  const [showErrorSummary, setShowErrorSummary] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -140,15 +135,13 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
                 className="space-y-6"
               >
                 {/* Error Summary */}
-                {validationState.hasErrors &&
-                  validationState.submitCount > 0 && (
+                {showErrorSummary &&
+                  Object.keys(form.formState.errors).length > 0 && (
                     <FormErrorSummary
                       errors={form.formState.errors}
                       title="Lütfen aşağıdaki hataları düzeltin:"
                       dismissible
-                      onDismiss={() =>
-                        validationActions.toggleErrorSummary(false)
-                      }
+                      onDismiss={() => setShowErrorSummary(false)}
                     />
                   )}
 

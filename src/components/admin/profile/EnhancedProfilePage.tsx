@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { ProfileErrorWrapper } from "./ProfileErrorBoundary";
 import { useProfileState } from "@/hooks/useProfileState";
 import { useRetry } from "@/hooks/useRetry";
@@ -195,24 +194,21 @@ const EnhancedProfilePage: React.FC = () => {
   // Show error state if initial loading failed
   if (state.hasError && state.isInitialLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-800 mb-2">
-              Profil Yüklenemedi
-            </h2>
-            <p className="text-red-600 mb-4">
-              Profil bilgileri yüklenirken bir hata oluştu. Lütfen tekrar
-              deneyin.
-            </p>
-            <button
-              onClick={handleRetryLoadProfile}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              disabled={state.isLoading}
-            >
-              {state.isLoading ? "Yükleniyor..." : "Tekrar Dene"}
-            </button>
-          </div>
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">
+            Profil Yüklenemedi
+          </h2>
+          <p className="text-red-600 mb-4">
+            Profil bilgileri yüklenirken bir hata oluştu. Lütfen tekrar deneyin.
+          </p>
+          <button
+            onClick={handleRetryLoadProfile}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            disabled={state.isLoading}
+          >
+            {state.isLoading ? "Yükleniyor..." : "Tekrar Dene"}
+          </button>
         </div>
       </div>
     );
@@ -220,72 +216,70 @@ const EnhancedProfilePage: React.FC = () => {
 
   return (
     <ProfileErrorWrapper componentName="Enhanced Profile Page">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#2c3e50] mb-2">
-              Profil Bilgileri
-            </h1>
-            <p className="text-gray-600">
-              Kişisel ve mesleki bilgilerinizi görüntüleyin ve düzenleyin.
-            </p>
-          </div>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#2c3e50] mb-2">
+            Profil Bilgileri
+          </h1>
+          <p className="text-gray-600">
+            Kişisel ve mesleki bilgilerinizi görüntüleyin ve düzenleyin.
+          </p>
+        </div>
 
-          {/* Profile Header */}
-          <ProfileHeader
+        {/* Profile Header */}
+        <ProfileHeader
+          personalInfo={personalInfo || undefined}
+          statistics={statistics || undefined}
+          isLoading={state.isInitialLoading}
+          onRetry={handleRetryLoadProfile}
+        />
+
+        {/* Profile Cards Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Personal Information Card */}
+          <PersonalInfoCard
             personalInfo={personalInfo || undefined}
-            statistics={statistics || undefined}
+            onSave={handleSavePersonalInfo}
             isLoading={state.isInitialLoading}
             onRetry={handleRetryLoadProfile}
           />
 
-          {/* Profile Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Personal Information Card */}
-            <PersonalInfoCard
-              personalInfo={personalInfo || undefined}
-              onSave={handleSavePersonalInfo}
-              isLoading={state.isInitialLoading}
-              onRetry={handleRetryLoadProfile}
-            />
-
-            {/* Professional Information Card */}
-            <ProfessionalInfoCard
-              professionalInfo={professionalInfo || undefined}
-              onSave={handleSaveProfessionalInfo}
-              isLoading={state.isInitialLoading}
-              onRetry={handleRetryLoadProfile}
-            />
-          </div>
-
-          {/* Statistics Card */}
-          <StatisticsCard
-            statistics={statistics || undefined}
+          {/* Professional Information Card */}
+          <ProfessionalInfoCard
+            professionalInfo={professionalInfo || undefined}
+            onSave={handleSaveProfessionalInfo}
             isLoading={state.isInitialLoading}
-            onRetry={handleRetryStatistics}
+            onRetry={handleRetryLoadProfile}
           />
-
-          {/* Loading Indicator */}
-          {(state.isLoading ||
-            state.isSaving ||
-            state.isUploading ||
-            state.isRetrying) && (
-            <div className="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 flex items-center gap-3">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3498db]"></div>
-              <span className="text-sm text-gray-600">
-                {state.isSaving && "Kaydediliyor..."}
-                {state.isUploading && "Yükleniyor..."}
-                {state.isRetrying && "Tekrar deneniyor..."}
-                {state.isLoading &&
-                  !state.isSaving &&
-                  !state.isUploading &&
-                  !state.isRetrying &&
-                  "Yükleniyor..."}
-              </span>
-            </div>
-          )}
         </div>
+
+        {/* Statistics Card */}
+        <StatisticsCard
+          statistics={statistics || undefined}
+          isLoading={state.isInitialLoading}
+          onRetry={handleRetryStatistics}
+        />
+
+        {/* Loading Indicator */}
+        {(state.isLoading ||
+          state.isSaving ||
+          state.isUploading ||
+          state.isRetrying) && (
+          <div className="fixed bottom-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 flex items-center gap-3">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3498db]"></div>
+            <span className="text-sm text-gray-600">
+              {state.isSaving && "Kaydediliyor..."}
+              {state.isUploading && "Yükleniyor..."}
+              {state.isRetrying && "Tekrar deneniyor..."}
+              {state.isLoading &&
+                !state.isSaving &&
+                !state.isUploading &&
+                !state.isRetrying &&
+                "Yükleniyor..."}
+            </span>
+          </div>
+        )}
       </div>
     </ProfileErrorWrapper>
   );

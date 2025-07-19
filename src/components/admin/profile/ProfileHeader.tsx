@@ -25,9 +25,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   }
 
   const fullName = `${personalInfo.firstName} ${personalInfo.lastName}`;
-  const initials = `${personalInfo.firstName.charAt(
-    0
-  )}${personalInfo.lastName.charAt(0)}`;
   const location = personalInfo.address
     ? `${personalInfo.address.city}, ${personalInfo.address.country}`
     : "";
@@ -53,7 +50,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex flex-col gap-4">
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#2c3e50] text-center lg:text-left">
+                <h1
+                  className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#2c3e50] text-center lg:text-left"
+                  aria-label={`Kaptan ${fullName} profil başlığı`}
+                >
                   {fullName}
                 </h1>
 
@@ -113,15 +113,27 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
 
         {/* Statistics Row - Mobile Responsive */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+        <div
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100"
+          role="region"
+          aria-label="Kaptan istatistikleri"
+        >
           <div className="text-center bg-blue-50 p-3 rounded-lg lg:bg-transparent lg:p-0">
-            <div className="text-lg sm:text-2xl font-bold text-[#2c3e50]">
+            <div
+              className="text-lg sm:text-2xl font-bold text-[#2c3e50]"
+              aria-label={`${statistics.totalTours} toplam tur`}
+            >
               {statistics.totalTours}
             </div>
             <div className="text-xs sm:text-sm text-gray-600">Toplam Tur</div>
           </div>
           <div className="text-center bg-yellow-50 p-3 rounded-lg lg:bg-transparent lg:p-0">
-            <div className="text-lg sm:text-2xl font-bold text-[#2c3e50]">
+            <div
+              className="text-lg sm:text-2xl font-bold text-[#2c3e50]"
+              aria-label={`${statistics.averageRating.toFixed(
+                1
+              )} ortalama puan`}
+            >
               {statistics.averageRating.toFixed(1)}
             </div>
             <div className="text-xs sm:text-sm text-gray-600">
@@ -129,7 +141,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </div>
           </div>
           <div className="text-center bg-green-50 p-3 rounded-lg lg:bg-transparent lg:p-0">
-            <div className="text-lg sm:text-2xl font-bold text-[#2c3e50]">
+            <div
+              className="text-lg sm:text-2xl font-bold text-[#2c3e50]"
+              aria-label={`${statistics.completionRate.toFixed(
+                1
+              )} yüzde tamamlama oranı`}
+            >
               {statistics.completionRate.toFixed(1)}%
             </div>
             <div className="text-xs sm:text-sm text-gray-600">
@@ -137,7 +154,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </div>
           </div>
           <div className="text-center bg-purple-50 p-3 rounded-lg lg:bg-transparent lg:p-0">
-            <div className="text-lg sm:text-2xl font-bold text-[#2c3e50]">
+            <div
+              className="text-lg sm:text-2xl font-bold text-[#2c3e50]"
+              aria-label={`${statistics.yearsActive} yıl deneyim`}
+            >
               {statistics.yearsActive}
             </div>
             <div className="text-xs sm:text-sm text-gray-600">Yıl Deneyim</div>

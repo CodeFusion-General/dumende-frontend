@@ -60,15 +60,15 @@ export const useFormValidation = <T extends FieldValues>(
   // Update form state based on validation
   useEffect(() => {
     setHasErrors(!validationState.isValid);
+  }, [validationState.isValid, setHasErrors]);
+
+  useEffect(() => {
     formActions.setDirty(isDirty);
+  }, [isDirty, formActions.setDirty]);
+
+  useEffect(() => {
     formActions.setSubmitting(isSubmitting);
-  }, [
-    validationState.isValid,
-    isDirty,
-    isSubmitting,
-    setHasErrors,
-    formActions,
-  ]);
+  }, [isSubmitting, formActions.setSubmitting]);
 
   // Validate individual field
   const validateField = useCallback(
