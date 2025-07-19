@@ -6,6 +6,7 @@ import ProfileHeader from "./ProfileHeader";
 import PersonalInfoCard from "./PersonalInfoCard";
 import ProfessionalInfoCard from "./ProfessionalInfoCard";
 import StatisticsCard from "./StatisticsCard";
+import { captainProfileService } from "@/services/captainProfile.service";
 import {
   PersonalInfo,
   ProfessionalInfo,
@@ -13,93 +14,6 @@ import {
   PersonalInfoFormData,
   ProfessionalInfoFormData,
 } from "@/types/profile.types";
-
-// Mock data service - replace with actual API calls
-const mockProfileService = {
-  async loadProfile(): Promise<{
-    personalInfo: PersonalInfo;
-    professionalInfo: ProfessionalInfo;
-    statistics: CaptainStatistics;
-  }> {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Simulate occasional failures for testing
-    if (Math.random() < 0.2) {
-      throw new Error("Network error: Failed to load profile data");
-    }
-
-    return {
-      personalInfo: {
-        firstName: "Ahmet",
-        lastName: "Yılmaz",
-        email: "ahmet.yilmaz@dumende.com",
-        phone: "+90 532 123 4567",
-        profilePhoto: "/images/captain-avatar.jpg",
-        dateOfBirth: "1985-03-15",
-        address: {
-          street: "Barbaros Bulvarı No: 123",
-          city: "İstanbul",
-          district: "Beşiktaş",
-          postalCode: "34353",
-          country: "Turkey",
-        },
-      },
-      professionalInfo: {
-        licenseNumber: "TR-CAP-2019-001234",
-        licenseExpiry: "2025-12-31",
-        yearsOfExperience: 8,
-        certifications: [
-          {
-            id: "1",
-            name: "Yacht Master",
-            issuer: "RYA",
-            issueDate: "2019-06-15",
-            expiryDate: "2024-06-15",
-            certificateNumber: "YM-2019-001234",
-          },
-          {
-            id: "2",
-            name: "First Aid",
-            issuer: "Red Cross",
-            issueDate: "2023-01-20",
-            expiryDate: "2025-01-20",
-            certificateNumber: "FA-2023-005678",
-          },
-        ],
-        specializations: ["Luxury Yachts", "Sailing", "Deep Sea Fishing"],
-        bio: "Deneyimli kaptan olarak 8 yıldır İstanbul Boğazı ve Ege Denizi'nde tur hizmeti vermekteyim. Müşteri memnuniyeti ve güvenlik önceliğimdir.",
-      },
-      statistics: {
-        totalTours: 156,
-        averageRating: 4.8,
-        totalReviews: 142,
-        completionRate: 98.5,
-        yearsActive: 5,
-        totalRevenue: 125000,
-        repeatCustomers: 45,
-      },
-    };
-  },
-
-  async savePersonalInfo(data: PersonalInfoFormData): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Simulate occasional failures
-    if (Math.random() < 0.15) {
-      throw new Error("Failed to save personal information");
-    }
-  },
-
-  async saveProfessionalInfo(data: ProfessionalInfoFormData): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Simulate occasional failures
-    if (Math.random() < 0.15) {
-      throw new Error("Failed to save professional information");
-    }
-  },
-};
 
 const EnhancedProfilePage: React.FC = () => {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
@@ -121,11 +35,11 @@ const EnhancedProfilePage: React.FC = () => {
 
   const loadProfileData = async () => {
     const result = await operations.loadProfile(async () => {
-      const data = await mockProfileService.loadProfile();
-      setPersonalInfo(data.personalInfo);
-      setProfessionalInfo(data.professionalInfo);
-      setStatistics(data.statistics);
-      return data;
+      const profile = await captainProfileService.getCaptainProfile();
+      setPersonalInfo(profile.personalInfo);
+      setProfessionalInfo(profile.professionalInfo);
+      setStatistics(profile.statistics);
+      return profile;
     });
 
     if (result) {
@@ -141,53 +55,22 @@ const EnhancedProfilePage: React.FC = () => {
 
   const handleSavePersonalInfo = async (data: PersonalInfoFormData) => {
     await operations.saveProfile(async () => {
-      await mockProfileService.savePersonalInfo(data);
-
-      // Update local state with new data
-      if (personalInfo) {
-        const updatedInfo: PersonalInfo = {
-          ...personalInfo,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone,
-          dateOfBirth: data.dateOfBirth || undefined,
-          address: {
-            street: data.street || "",
-            city: data.city,
-            district: data.district || "",
-            postalCode: data.postalCode || "",
-            country: data.country,
-          },
-        };
-        setPersonalInfo(updatedInfo);
-      }
+      const updatedInfo = await captainProfileService.updatePersonalInfo(data);
+      setPersonalInfo(updatedInfo);
     }, "Kişisel bilgiler başarıyla güncellendi");
   };
 
   const handleSaveProfessionalInfo = async (data: ProfessionalInfoFormData) => {
     await operations.saveProfile(async () => {
-      await mockProfileService.saveProfessionalInfo(data);
-
-      // Update local state with new data
-      if (professionalInfo) {
-        const updatedInfo: ProfessionalInfo = {
-          ...professionalInfo,
-          licenseNumber: data.licenseNumber,
-          licenseExpiry: data.licenseExpiry,
-          yearsOfExperience: data.yearsOfExperience,
-          specializations: data.specializations,
-          bio: data.bio || undefined,
-        };
-        setProfessionalInfo(updatedInfo);
-      }
+      const updatedInfo = await captainProfileService.updateProfessionalInfo(data);
+      setProfessionalInfo(updatedInfo);
     }, "Mesleki bilgiler başarıyla güncellendi");
   };
 
   const handleRetryStatistics = async () => {
     await executeWithRetry(async () => {
-      const data = await mockProfileService.loadProfile();
-      setStatistics(data.statistics);
+      const statisticsData = await captainProfileService.getStatistics();
+      setStatistics(statisticsData);
     });
   };
 

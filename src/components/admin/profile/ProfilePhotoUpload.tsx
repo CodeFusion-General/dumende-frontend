@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { User, Camera, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { captainProfileService } from "@/services/captainProfile.service";
 
 interface ProfilePhotoUploadProps {
   currentPhoto?: string;
@@ -63,7 +64,7 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
     return null;
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -80,32 +81,42 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
 
     setIsUploading(true);
 
-    // Create preview URL
+    // Create preview URL for immediate feedback
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setPreviewUrl(result);
-      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
 
-      // Call parent callback
-      onPhotoChange?.(file, result);
+    // Upload to backend
+    await uploadPhotoToBackend(file);
+  };
+
+  const uploadPhotoToBackend = async (file: File) => {
+    try {
+      const response = await captainProfileService.uploadProfilePhoto(file);
+
+      // Call parent callback with backend URL
+      onPhotoChange?.(file, response.photoUrl);
 
       toast({
         title: "Fotoğraf Yüklendi",
         description: "Profil fotoğrafınız başarıyla güncellendi.",
       });
-    };
+    } catch (error) {
+      // Reset preview on error
+      setPreviewUrl(null);
 
-    reader.onerror = () => {
-      setIsUploading(false);
       toast({
         title: "Hata",
-        description: "Fotoğraf yüklenirken bir hata oluştu.",
+        description:
+          error instanceof Error ? error.message : "Fotoğraf yüklenirken bir hata oluştu.",
         variant: "destructive",
       });
-    };
-
-    reader.readAsDataURL(file);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleUploadClick = () => {
@@ -113,21 +124,31 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
     fileInputRef.current?.click();
   };
 
-  const handleRemovePhoto = () => {
+  const handleRemovePhoto = async () => {
     if (disabled) return;
 
-    setPreviewUrl(null);
-    onPhotoChange?.(null, null);
+    try {
+      await captainProfileService.removeProfilePhoto();
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      setPreviewUrl(null);
+      onPhotoChange?.(null, null);
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      toast({
+        title: "Fotoğraf Kaldırıldı",
+        description: "Profil fotoğrafınız kaldırıldı.",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Fotoğraf kaldırılırken bir hata oluştu.",
+        variant: "destructive",
+      });
     }
-
-    toast({
-      title: "Fotoğraf Kaldırıldı",
-      description: "Profil fotoğrafınız kaldırıldı.",
-    });
   };
 
   const displayPhoto = previewUrl || currentPhoto;
