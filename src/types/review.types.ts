@@ -10,13 +10,13 @@ export interface CustomerDTO {
 
 // Review Types
 export interface ReviewDTO {
-  id: Long;
+  id: number;
   customer: CustomerDTO;
-  boatId?: Long;
+  boatId?: number;
   boatName?: string;
-  tourId?: Long;
+  tourId?: number;
   tourName?: string;
-  bookingId?: Long;
+  bookingId?: number;
   rating: number;
   comment: string;
   reviewDate: string; // LocalDateTime string format
@@ -26,25 +26,25 @@ export interface ReviewDTO {
 }
 
 export interface CreateReviewCommand {
-  customerId: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
   rating: number;
   comment: string;
 }
 
 export interface UpdateReviewCommand {
-  reviewId: Long;
+  reviewId: number;
   rating?: number;
   comment?: string;
 }
 
 export interface ReviewQuery {
-  customerId?: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId?: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
   minRating?: number;
   maxRating?: number;
   startDate?: string;
@@ -71,8 +71,8 @@ export interface ReviewFilters {
   threeStars: boolean;
   twoStars: boolean;
   oneStars: boolean;
-  boatId?: Long;
-  tourId?: Long;
+  boatId?: number;
+  tourId?: number;
   dateRange?: {
     start: string;
     end: string;
@@ -102,11 +102,9 @@ export interface Review {
   comment: string;
   tourName?: string;
   boatName?: string;
-  customerId?: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId?: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
 }
 
-// Helper type for Long (Java Long to TypeScript)
-type Long = number;

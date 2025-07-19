@@ -94,25 +94,22 @@ export interface BoatDTO {
 }
 
 export interface CreateBoatDTO {
-  ownerId: number;
   name: string;
-  description: string;
-  model: string;
-  year: number;
-  length: number; // Double -> number
+  description?: string;
+  model?: string;
+  year?: number;
+  length?: number; // Double -> number
   capacity: number;
   dailyPrice: number; // BigDecimal -> number
   hourlyPrice: number; // BigDecimal -> number
   location: string;
   type: string;
-  status: string;
-  brandModel: string;
-  buildYear: number;
-  pricePerHour: number; // BigDecimal -> number
-  pricePerDay: number; // BigDecimal -> number
-  captainIncluded: boolean;
-  images: CreateBoatImageDTO[];
-  features: CreateBoatFeatureDTO[];
+  status?: string;
+  brandModel?: string;
+  buildYear?: number;
+  captainIncluded?: boolean;
+  images?: CreateBoatImageDTO[];
+  features?: CreateBoatFeatureDTO[];
 }
 
 export interface UpdateBoatDTO {
@@ -130,8 +127,6 @@ export interface UpdateBoatDTO {
   status?: string;
   brandModel?: string;
   buildYear?: number;
-  pricePerHour?: number; // BigDecimal -> number
-  pricePerDay?: number; // BigDecimal -> number
   captainIncluded?: boolean;
   imagesToAdd?: UpdateBoatImageDTO[];
   imageIdsToRemove?: number[]; // List<Long> -> number[]
