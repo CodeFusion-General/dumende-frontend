@@ -39,6 +39,10 @@ import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 import BookingsPage from "./pages/admin/BookingsPage";
 import ProfilePage from "./pages/admin/ProfilePage";
+import {
+  RatingTrendsChartDemo,
+  RatingTrendsChartExample,
+} from "./components/admin/ratings";
 
 const queryClient = new QueryClient();
 
@@ -316,6 +320,16 @@ const App = () => (
                       <BookingsPage />
                     </RoleGuard>
                   }
+                />
+
+                {/* Demo Routes for Development */}
+                <Route
+                  path="/demo/rating-trends"
+                  element={<RatingTrendsChartDemo />}
+                />
+                <Route
+                  path="/demo/rating-trends-example"
+                  element={<RatingTrendsChartExample />}
                 />
 
                 <Route path="*" element={<NotFound />} />

@@ -13,5 +13,6 @@ export * from "./company.types";
 export * from "./contact.types";
 export * from "./message.types";
 export * from "./notification.types";
+export * from "./ratings.types";
 export * from "./review.types";
 export * from "./tour.types";
