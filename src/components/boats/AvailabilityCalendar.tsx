@@ -86,85 +86,53 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
     return map;
   }, [availabilityData]);
 
-  // Custom day renderer with availability styling
-  const renderDay = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const availability = availabilityMap.get(dateStr);
-    const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-    const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
-    
-    let dayClasses = "relative w-full h-full flex items-center justify-center text-sm font-medium transition-all duration-200";
-    let bgClasses = "";
-    let textClasses = "";
-    let indicator = "";
+  // Custom day modifier to style dates based on availability
+  const getDayModifiers = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (isPast) {
-      bgClasses = "bg-gray-100 border-gray-200";
-      textClasses = "text-gray-400";
-      indicator = "—";
-    } else if (availability) {
-      if (availability.isAvailable) {
-        if (availability.isOverride && availability.price) {
-          bgClasses = "bg-blue-100 border-blue-300 hover:bg-blue-200";
-          textClasses = "text-blue-800";
-          indicator = "$";
+    const modifiers = {
+      available: [] as Date[],
+      unavailable: [] as Date[],
+      specialPrice: [] as Date[],
+      hasBookings: [] as Date[],
+      past: [] as Date[]
+    };
+
+    availabilityData.forEach(item => {
+      const date = new Date(item.date);
+      const isPast = date < today;
+
+      if (isPast) {
+        modifiers.past.push(date);
+      } else if (item.isAvailable && !item.hasBookings) {
+        if (item.isOverride && item.price) {
+          modifiers.specialPrice.push(date);
         } else {
-          bgClasses = "bg-green-100 border-green-300 hover:bg-green-200";
-          textClasses = "text-green-800";
-          indicator = "✓";
+          modifiers.available.push(date);
         }
       } else {
-        bgClasses = "bg-red-100 border-red-300";
-        textClasses = "text-red-800";
-        indicator = "✗";
+        modifiers.unavailable.push(date);
       }
-    } else {
-      // No availability data - assume unavailable
-      bgClasses = "bg-gray-100 border-gray-200";
-      textClasses = "text-gray-500";
-      indicator = "?";
-    }
+    });
 
-    if (isToday) {
-      bgClasses += " ring-2 ring-blue-500 ring-opacity-50";
-    }
+    return modifiers;
+  }, [availabilityData]);
 
-    return (
-      <div className={cn(dayClasses, bgClasses, textClasses, "border rounded-md")}>
-        <span className="relative z-10">{day.getDate()}</span>
-        <div className="absolute top-0 right-0 w-3 h-3 flex items-center justify-center text-xs font-bold">
-          {indicator}
-        </div>
-        {availability?.price && (
-          <div className="absolute bottom-0 left-0 right-0 text-xs font-semibold bg-white bg-opacity-80 px-1 rounded-b-md">
-            ${availability.price}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Disable dates that are unavailable or in the past
+  // Disable dates that are unavailable, have bookings, or are in the past
   const disabledDates = React.useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     const disabled: Date[] = [];
     
-    // Add past dates
-    for (let i = 1; i <= 30; i++) {
-      const pastDate = new Date(today);
-      pastDate.setDate(today.getDate() - i);
-      disabled.push(pastDate);
-    }
-    
-    // Add unavailable future dates
     availabilityData.forEach(item => {
-      if (!item.isAvailable) {
-        const date = new Date(item.date);
-        if (date >= today) {
-          disabled.push(date);
-        }
+      const date = new Date(item.date);
+      const isPast = date < today;
+
+      // Disable if: past date, not available, or has existing bookings
+      if (isPast || !item.isAvailable || item.hasBookings) {
+        disabled.push(date);
       }
     });
     
@@ -199,8 +167,33 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           disabled={disabledDates}
           locale={language === 'tr' ? tr : undefined}
           className="w-full"
-          components={{
-            Day: ({ date }) => renderDay(date)
+          modifiers={getDayModifiers}
+          modifiersStyles={{
+            available: {
+              backgroundColor: 'rgb(220 252 231)', // bg-green-100
+              borderColor: 'rgb(134 239 172)', // border-green-300
+              color: 'rgb(22 101 52)' // text-green-800
+            },
+            unavailable: {
+              backgroundColor: 'rgb(254 226 226)', // bg-red-100
+              borderColor: 'rgb(252 165 165)', // border-red-300
+              color: 'rgb(153 27 27)' // text-red-800
+            },
+            specialPrice: {
+              backgroundColor: 'rgb(219 234 254)', // bg-blue-100
+              borderColor: 'rgb(147 197 253)', // border-blue-300
+              color: 'rgb(30 64 175)' // text-blue-800
+            },
+            hasBookings: {
+              backgroundColor: 'rgb(254 226 226)', // bg-red-100
+              borderColor: 'rgb(252 165 165)', // border-red-300
+              color: 'rgb(153 27 27)' // text-red-800
+            },
+            past: {
+              backgroundColor: 'rgb(243 244 246)', // bg-gray-100
+              borderColor: 'rgb(209 213 219)', // border-gray-300
+              color: 'rgb(156 163 175)' // text-gray-400
+            }
           }}
           classNames={{
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -216,12 +209,12 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
             row: "flex w-full mt-2",
             cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 border rounded-md cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors",
             day_range_end: "day-range-end",
             day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-            day_today: "bg-accent text-accent-foreground",
+            day_today: "bg-accent text-accent-foreground ring-2 ring-blue-500 ring-opacity-50",
             day_outside: "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-            day_disabled: "text-muted-foreground opacity-50",
+            day_disabled: "text-muted-foreground opacity-50 cursor-not-allowed",
             day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
             day_hidden: "invisible",
           }}
@@ -240,3 +233,4 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
 };
 
 export default AvailabilityCalendar;
+

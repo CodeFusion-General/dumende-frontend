@@ -1,336 +1,176 @@
 import { BaseService } from "./base/BaseService";
-import {
-  AvailabilityDTO,
-  CreateAvailabilityDTO,
-  UpdateAvailabilityDTO,
-  CreateAvailabilityPeriodCommand,
-  UpdateAvailabilityPeriodCommand,
-  AvailabilityStats,
-  CalendarAvailability,
-} from "@/types/availability.types";
+import { CalendarAvailability, AvailabilityData } from '@/types/availability.types';
 
 class AvailabilityService extends BaseService {
   constructor() {
-    super("");
+    super("/availabilities");
   }
 
-  // ======= Query Operations (GET) =======
-
-  // Belirli bir availability getirme
-  public async getAvailabilityById(id: number): Promise<AvailabilityDTO> {
-    return this.get<AvailabilityDTO>(`/availabilities/${id}`);
-  }
-
-  // Boat'a ait tüm availability'leri getirme
-  public async getAvailabilitiesByBoatId(
-    boatId: number
-  ): Promise<AvailabilityDTO[]> {
-    return this.get<AvailabilityDTO[]>(`/availabilities/boat/${boatId}`);
-  }
-
-  // Tarih aralığında availability'leri getirme
-  public async getAvailabilitiesByBoatIdAndDateRange(
-    boatId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<AvailabilityDTO[]> {
-    // DateTime formatındaki tarihleri LocalDate formatına çevir (sadece tarih kısmını al)
-    const formatDateForBackend = (dateString: string): string => {
-      // Eğer T içeriyorsa, sadece tarih kısmını al
-      return dateString.includes("T") ? dateString.split("T")[0] : dateString;
-    };
-
-    const formattedStartDate = formatDateForBackend(startDate);
-    const formattedEndDate = formatDateForBackend(endDate);
-
-    return this.get<AvailabilityDTO[]>(
-      `/availabilities/boat/${boatId}/range?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-    );
-  }
-
-  // Belirli tarihte availability getirme
-  public async getAvailabilityByBoatIdAndDate(
-    boatId: number,
-    date: string
-  ): Promise<AvailabilityDTO> {
-    const formatDateForBackend = (dateString: string): string => {
-      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
-    };
-
-    const formattedDate = formatDateForBackend(date);
-    return this.get<AvailabilityDTO>(
-      `/availabilities/boat/${boatId}/date?date=${formattedDate}`
-    );
-  }
-
-  // Belirli tarihte boat müsait mi kontrolü
-  public async isBoatAvailableOnDate(
-    boatId: number,
-    date: string
-  ): Promise<boolean> {
-    const formatDateForBackend = (dateString: string): string => {
-      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
-    };
-
-    const formattedDate = formatDateForBackend(date);
-    return this.get<boolean>(
-      `/availabilities/boat/${boatId}/available?date=${formattedDate}`
-    );
-  }
-
-  // Tarih aralığında boat müsait mi kontrolü
-  public async isBoatAvailableBetweenDates(
-    boatId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<boolean> {
-    const formatDateForBackend = (dateString: string): string => {
-      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
-    };
-
-    const formattedStartDate = formatDateForBackend(startDate);
-    const formattedEndDate = formatDateForBackend(endDate);
-
-    return this.get<boolean>(
-      `/availabilities/boat/${boatId}/available-range?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-    );
-  }
-
-  // Availability var mı kontrolü
-  public async existsAvailabilityById(id: number): Promise<boolean> {
-    return this.get<boolean>(`/availabilities/exists/${id}`);
-  }
-
-  // ======= Command Operations (POST/PUT/DELETE) =======
-
-  // Yeni availability oluşturma
-  public async createAvailability(
-    command: CreateAvailabilityDTO
-  ): Promise<AvailabilityDTO> {
-    return this.post<AvailabilityDTO>("/availabilities", command);
-  }
-
-  // Toplu availability oluşturma
-  public async createAvailabilities(
-    commands: CreateAvailabilityDTO[]
-  ): Promise<AvailabilityDTO[]> {
-    return this.post<AvailabilityDTO[]>("/availabilities/batch", commands);
-  }
-
-  // Availability güncelleme
-  public async updateAvailability(
-    command: UpdateAvailabilityDTO
-  ): Promise<AvailabilityDTO> {
-    return this.put<AvailabilityDTO>("/availabilities", command);
-  }
-
-  // Availability silme (soft delete)
-  public async deleteAvailability(id: number): Promise<void> {
-    return this.delete<void>(`/availabilities/${id}`);
-  }
-
-  // Boat'a ait tüm availability'leri silme
-  public async deleteAvailabilitiesByBoatId(boatId: number): Promise<void> {
-    return this.delete<void>(`/availabilities/boat/${boatId}`);
-  }
-
-  // Availability durumunu değiştirme
-  public async setAvailabilityStatus(
-    id: number,
-    isAvailable: boolean
-  ): Promise<void> {
-    return this.patch<void>(
-      `/availabilities/${id}/status?isAvailable=${isAvailable}`,
-      null // PATCH isteği için body yok, queryParam kullanıyoruz
-    );
-  }
-
-  // Fiyat override set etme
-  public async setAvailabilityPriceOverride(
-    id: number,
-    priceOverride: number
-  ): Promise<void> {
-    return this.patch<void>(
-      `/availabilities/${id}/price-override?priceOverride=${priceOverride}`,
-      null // PATCH isteği için body yok, queryParam kullanıyoruz
-    );
-  }
-
-  // Dönem için availability oluşturma
-  public async createAvailabilityPeriod(
-    command: CreateAvailabilityPeriodCommand
-  ): Promise<void> {
-    const params = new URLSearchParams({
-      boatId: command.boatId.toString(),
-      startDate: command.startDate,
-      endDate: command.endDate,
-      isAvailable: command.isAvailable.toString(),
-    });
-
-    if (command.priceOverride !== undefined) {
-      params.append("priceOverride", command.priceOverride.toString());
-    }
-
-    return this.post<void>(`/availabilities/period?${params.toString()}`, null);
-  }
-
-  // Dönem availability güncelleme
-  public async updateAvailabilityPeriod(
-    command: UpdateAvailabilityPeriodCommand
-  ): Promise<void> {
-    const params = new URLSearchParams({
-      boatId: command.boatId.toString(),
-      startDate: command.startDate,
-      endDate: command.endDate,
-    });
-
-    if (command.isAvailable !== undefined) {
-      params.append("isAvailable", command.isAvailable.toString());
-    }
-
-    if (command.priceOverride !== undefined) {
-      params.append("priceOverride", command.priceOverride.toString());
-    }
-
-    return this.put<void>(`/availabilities/period?${params.toString()}`, null);
-  }
-
-  // ======= Helper Methods =======
-
-  // Calendar için availability verilerini formatlama
-  public async getCalendarAvailability(
-    boatId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<CalendarAvailability[]> {
+  // Get calendar availability data including booking conflicts
+  public async getCalendarAvailability(boatId: number, startDate: string, endDate: string): Promise<CalendarAvailability[]> {
     try {
-      const availabilities = await this.getAvailabilitiesByBoatIdAndDateRange(
-        boatId,
+      const response = await this.get<CalendarAvailability[]>(`/boat/${boatId}/calendar-availability`, {
         startDate,
         endDate
-      );
-
-      return availabilities.map((availability) => ({
-        date: availability.date,
-        isAvailable: availability.isAvailable,
-        price: availability.priceOverride,
-        isOverride: !!availability.priceOverride,
-        availabilityId: availability.id,
-      }));
+      });
+      return response;
     } catch (error) {
-      console.error("Error fetching calendar availability:", error);
-      return [];
-    }
-  }
-
-  // Availability istatistikleri
-  public async getAvailabilityStats(
-    boatId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<AvailabilityStats> {
-    try {
-      const availabilities = await this.getAvailabilitiesByBoatIdAndDateRange(
-        boatId,
-        startDate,
-        endDate
-      );
-
-      const totalDays = availabilities.length;
-      const availableDays = availabilities.filter((a) => a.isAvailable).length;
-      const unavailableDays = totalDays - availableDays;
-
-      const pricesWithOverride = availabilities
-        .filter((a) => a.priceOverride)
-        .map((a) => a.priceOverride!);
-
-      const averagePrice =
-        pricesWithOverride.length > 0
-          ? pricesWithOverride.reduce((sum, price) => sum + price, 0) /
-            pricesWithOverride.length
-          : undefined;
-
-      return {
-        totalDays,
-        availableDays,
-        unavailableDays,
-        averagePrice,
-        boatId,
-        dateRange: {
-          startDate,
-          endDate,
-        },
-      };
-    } catch (error) {
-      console.error("Error fetching availability stats:", error);
+      console.error('Failed to fetch calendar availability:', error);
       throw error;
     }
   }
 
-  // Günlük availability toggle
-  public async toggleDayAvailability(
-    boatId: number,
-    date: string
-  ): Promise<AvailabilityDTO> {
+  // Check if boat is available on a specific date (including booking conflicts)
+  public async isBoatAvailableOnDateWithBookings(boatId: number, date: string): Promise<boolean> {
     try {
-      // Önce o tarihte availability var mı kontrol et
-      const existingAvailability = await this.getAvailabilityByBoatIdAndDate(
-        boatId,
+      const response = await this.get<boolean>(`/boat/${boatId}/available-with-bookings`, {
         date
-      );
-
-      if (existingAvailability) {
-        // Var ise durumunu toggle et
-        const updateCommand: UpdateAvailabilityDTO = {
-          id: existingAvailability.id,
-          isAvailable: !existingAvailability.isAvailable,
-        };
-        return this.updateAvailability(updateCommand);
-      } else {
-        // Yok ise yeni availability oluştur (default: available)
-        const createCommand: CreateAvailabilityDTO = {
-          boatId,
-          date,
-          isAvailable: true,
-        };
-        return this.createAvailability(createCommand);
-      }
+      });
+      return response;
     } catch (error) {
-      console.error("Error toggling day availability:", error);
+      console.error('Failed to check availability with bookings:', error);
       throw error;
     }
   }
 
-  // Tarih range'ini kontrol et ve eksik günler için availability oluştur
-  public async ensureAvailabilityForPeriod(
-    boatId: number,
-    startDate: string,
-    endDate: string,
-    defaultAvailable: boolean = true,
-    defaultPrice?: number
-  ): Promise<AvailabilityDTO[]> {
+  // Legacy method - check availability without booking conflicts
+  public async isBoatAvailableOnDate(boatId: number, date: string): Promise<boolean> {
     try {
-      const command: CreateAvailabilityPeriodCommand = {
-        boatId,
-        startDate,
-        endDate,
-        isAvailable: defaultAvailable,
-        priceOverride: defaultPrice,
-      };
-
-      await this.createAvailabilityPeriod(command);
-
-      // Oluşturulan availability'leri geri döndür
-      return this.getAvailabilitiesByBoatIdAndDateRange(
-        boatId,
-        startDate,
-        endDate
-      );
+      const response = await this.get<boolean>(`/boat/${boatId}/available`, {
+        date
+      });
+      return response;
     } catch (error) {
-      console.error("Error ensuring availability for period:", error);
+      console.error('Failed to check availability:', error);
       throw error;
     }
+  }
+
+  // Get availability data for a specific date
+  public async getAvailabilityByBoatIdAndDate(boatId: number, date: string): Promise<AvailabilityData> {
+    try {
+      const response = await this.get<AvailabilityData>(`/boat/${boatId}/date`, {
+        date
+      });
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch availability for date:', error);
+      throw error;
+    }
+  }
+
+  // Get availability data for a date range
+  public async getAvailabilitiesByBoatIdAndDateRange(boatId: number, startDate: string, endDate: string): Promise<AvailabilityData[]> {
+    try {
+      const response = await this.get<AvailabilityData[]>(`/boat/${boatId}/range`, {
+        startDate,
+        endDate
+      });
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch availability range:', error);
+      throw error;
+    }
+  }
+
+  // Check if boat is available between dates
+  public async isBoatAvailableBetweenDates(boatId: number, startDate: string, endDate: string): Promise<boolean> {
+    try {
+      const response = await this.get<boolean>(`/boat/${boatId}/available-range`, {
+        startDate,
+        endDate
+      });
+      return response;
+    } catch (error) {
+      console.error('Failed to check availability range:', error);
+      throw error;
+    }
+  }
+
+  // Get availability by ID
+  public async getAvailabilityById(id: number): Promise<AvailabilityData> {
+    return this.get<AvailabilityData>(`/${id}`);
+  }
+
+  // Get all availabilities for a boat
+  public async getAvailabilitiesByBoatId(boatId: number): Promise<AvailabilityData[]> {
+    return this.get<AvailabilityData[]>(`/boat/${boatId}`);
+  }
+
+  // Check if availability exists
+  public async existsAvailabilityById(id: number): Promise<boolean> {
+    return this.get<boolean>(`/exists/${id}`);
   }
 }
 
 export const availabilityService = new AvailabilityService();
+
+// Availability Query Service - BaseService kullanarak
+export const availabilityQueryService = {
+  // Get availability by ID
+  findAvailabilityById: async (id: number): Promise<AvailabilityData> => {
+    return availabilityService.getAvailabilityById(id);
+  },
+
+  // Get all availabilities for a boat
+  findAvailabilitiesByBoatId: async (boatId: number): Promise<AvailabilityData[]> => {
+    return availabilityService.getAvailabilitiesByBoatId(boatId);
+  },
+
+  // Get availabilities by boat ID and date range
+  findAvailabilitiesByBoatIdAndDateRange: async (
+    boatId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<AvailabilityData[]> => {
+    return availabilityService.getAvailabilitiesByBoatIdAndDateRange(boatId, startDate, endDate);
+  },
+
+  // Get availability by boat ID and date
+  findAvailabilityByBoatIdAndDate: async (
+    boatId: number,
+    date: string
+  ): Promise<AvailabilityData> => {
+    return availabilityService.getAvailabilityByBoatIdAndDate(boatId, date);
+  },
+
+  // Check if boat is available on date
+  isBoatAvailableOnDate: async (boatId: number, date: string): Promise<boolean> => {
+    return availabilityService.isBoatAvailableOnDate(boatId, date);
+  },
+
+  // Check if boat is available between dates
+  isBoatAvailableBetweenDates: async (
+    boatId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<boolean> => {
+    return availabilityService.isBoatAvailableBetweenDates(boatId, startDate, endDate);
+  },
+
+  // Check if availability exists
+  existsAvailabilityById: async (id: number): Promise<boolean> => {
+    return availabilityService.existsAvailabilityById(id);
+  },
+
+  // Check availability with booking conflicts
+  isBoatAvailableOnDateWithBookings: async (
+    boatId: number,
+    date: string
+  ): Promise<boolean> => {
+    return availabilityService.isBoatAvailableOnDateWithBookings(boatId, date);
+  },
+
+  // Get calendar availability with booking conflicts
+  getCalendarAvailability: async (
+    boatId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<CalendarAvailability[]> => {
+    return availabilityService.getCalendarAvailability(boatId, startDate, endDate);
+  },
+};
+
+export default {
+  query: availabilityQueryService,
+};
