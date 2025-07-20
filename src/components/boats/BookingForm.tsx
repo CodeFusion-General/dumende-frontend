@@ -267,8 +267,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
       });
 
-      // Redirect to the booking page
-      navigate(`/bookings/${response.id}`);
+      navigate('/my-bookings');
     } catch (error) {
       console.error('Booking failed:', error);
       toast({
