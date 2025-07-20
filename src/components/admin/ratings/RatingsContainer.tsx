@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { reviewService, reviewQueryService, reviewCommandService } from "@/services/reviewService";
+import { boatService } from "@/services/boatService";
 import { useAuth } from "@/contexts/AuthContext";
 import { ReviewData, RatingStats, FilterOptions, SortOption } from "@/types/ratings.types";
 import RatingsHeader from "./RatingsHeader";
@@ -119,8 +120,89 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
             sortDirection: "desc"
           })
         );
+      } else if (ownerId) {
+        // Fetch owner-specific data - SECURITY FIX: Only show reviews for owner's boats
+        console.log("Fetching reviews for owner ID:", ownerId);
+        
+        // First, get all boats owned by this owner
+        const ownerBoats = await boatService.getBoatsByOwner(ownerId);
+        console.log("Owner boats found:", ownerBoats.length);
+        
+        if (ownerBoats.length === 0) {
+          // Owner has no boats, return empty data
+          setReviews([]);
+          setRecentReviews([]);
+          setSummaryStats({
+            totalReviews: 0,
+            averageRating: 0,
+            ratingDistribution: {},
+            recentTrend: "stable"
+          });
+          setRatingDistribution({});
+          setRatingTrends([]);
+          setTotalPages(0);
+          setTotalReviews(0);
+          return;
+        }
+        
+        // Fetch reviews for all owner's boats
+        const allOwnerReviews: ReviewData[] = [];
+        const allRecentReviews: ReviewData[] = [];
+        
+        for (const boat of ownerBoats) {
+          try {
+            // Get reviews for this boat
+            const boatReviews = await reviewQueryService.findByBoatId(boat.id);
+            const recentBoatReviews = await reviewQueryService.getRecentReviewsByBoatId(boat.id, 5);
+            
+            allOwnerReviews.push(...boatReviews);
+            allRecentReviews.push(...recentBoatReviews);
+          } catch (error) {
+            console.warn(`Failed to fetch reviews for boat ${boat.id}:`, error);
+          }
+        }
+        
+        // Sort by creation date (most recent first)
+        allOwnerReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        allRecentReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        // Apply pagination to owner reviews
+        const startIndex = currentPage * 12;
+        const paginatedOwnerReviews = allOwnerReviews.slice(startIndex, startIndex + 12);
+        
+        // Fetch replies for reviews
+        const reviewsWithReplies = await fetchRepliesForReviews(paginatedOwnerReviews);
+        const recentWithReplies = await fetchRepliesForReviews(allRecentReviews.slice(0, 10));
+        
+        setReviews(reviewsWithReplies);
+        setRecentReviews(recentWithReplies);
+        setTotalPages(Math.ceil(allOwnerReviews.length / 12));
+        setTotalReviews(allOwnerReviews.length);
+        
+        // Calculate summary stats
+        const totalReviews = allOwnerReviews.length;
+        const averageRating = totalReviews > 0 
+          ? allOwnerReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews 
+          : 0;
+        
+        // Calculate rating distribution
+        const distribution: Record<number, number> = {};
+        for (let i = 1; i <= 5; i++) {
+          distribution[i] = allOwnerReviews.filter(review => review.rating === i).length;
+        }
+        
+        setSummaryStats({
+          totalReviews,
+          averageRating,
+          ratingDistribution: distribution,
+          recentTrend: "stable" // Could be calculated based on recent vs older reviews
+        });
+        setRatingDistribution(distribution);
+        setRatingTrends([]); // Could implement trend calculation if needed
+        
+        return; // Exit early for owner-specific data
       } else {
-        // Fetch all reviews data
+        // Fetch all reviews data - ONLY for admin users
         promises.push(
           // For overall stats, we'll need to aggregate or use a general endpoint
           reviewQueryService.getRecentReviews(10),
@@ -175,7 +257,7 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [boatId, tourId, currentPage]);
+  }, [boatId, tourId, ownerId, currentPage, fetchRepliesForReviews]);
 
   // Initial data fetch
   useEffect(() => {
@@ -458,7 +540,17 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
           </div>
           
           {chartView === "card" ? (
-            <RatingDistributionCard distribution={ratingDistribution} />
+            <RatingDistributionCard 
+              distribution={Object.entries(ratingDistribution).map(([stars, count]) => {
+                const totalReviews = Object.values(ratingDistribution).reduce((sum, c) => sum + c, 0);
+                return {
+                  stars: Number(stars),
+                  count: Number(count),
+                  percentage: totalReviews > 0 ? Math.round((Number(count) / totalReviews) * 100) : 0
+                };
+              })}
+              totalReviews={Object.values(ratingDistribution).reduce((sum, count) => sum + count, 0)}
+            />
           ) : (
             <RatingDistributionChart
               distribution={Object.entries(ratingDistribution).map(([stars, count]) => ({
