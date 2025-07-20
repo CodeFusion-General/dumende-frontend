@@ -41,65 +41,9 @@ const Testimonials = () => {
         err.message ||
         "Yorumlar yüklenirken bir hata oluştu.";
 
-      // Geçici mock data - backend düzelene kadar
-      const mockReviews: ReviewDTO[] = [
-        {
-          id: 1,
-          rating: 5,
-          comment:
-            "Mükemmel bir tekne kiralama deneyimi yaşadık. Personel çok yardımsever ve tekneler temizdi.",
-          customer: {
-            id: 1,
-            fullName: "Ahmet Yılmaz",
-            phoneNumber: "+90 555 123 4567",
-            profileImage: null,
-          },
-          boatId: 1,
-          reviewDate: "2024-05-15T10:00:00",
-          isActive: true,
-          createdAt: "2024-05-15T10:00:00",
-          updatedAt: "2024-05-15T10:00:00",
-          bookingId: 1,
-        },
-        {
-          id: 2,
-          rating: 5,
-          comment:
-            "Ailece unutulmaz bir gün geçirdik. Tekne çok konforlu ve personel deneyimli.",
-          customer: {
-            id: 2,
-            fullName: "Fatma Demir",
-            phoneNumber: "+90 555 987 6543",
-            profileImage: null,
-          },
-          boatId: 2,
-          reviewDate: "2024-05-10T14:30:00",
-          isActive: true,
-          createdAt: "2024-05-10T14:30:00",
-          updatedAt: "2024-05-10T14:30:00",
-          bookingId: 2,
-        },
-        {
-          id: 3,
-          rating: 4,
-          comment: "Çok güzel bir deneyimdi. Kesinlikle tekrar kiralayacağız.",
-          customer: {
-            id: 3,
-            fullName: "Mehmet Kaya",
-            phoneNumber: "+90 555 456 7890",
-            profileImage: null,
-          },
-          boatId: 3,
-          reviewDate: "2024-05-05T16:45:00",
-          isActive: true,
-          createdAt: "2024-05-05T16:45:00",
-          updatedAt: "2024-05-05T16:45:00",
-          bookingId: 3,
-        },
-      ];
-
-      setReviews(mockReviews);
-      setError(null); // Mock data kullanıldığında error'u temizle
+      // Set error state instead of using mock data
+      setError(errorMessage);
+      setReviews([]);
     } finally {
       setLoading(false);
     }

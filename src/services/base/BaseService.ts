@@ -190,12 +190,14 @@ export abstract class BaseService {
       // Handle specific error codes
       switch (error.response.status) {
         case 401:
-          // Unauthorized - bu durumda axios interceptor zaten çalışır
-          // Burada sadece log yapalım, yönlendirme interceptor'da yapılıyor
           console.error("Unauthorized - Token invalid or expired");
+          this.clearAuthToken();
           break;
         case 403:
           console.error("Forbidden: Insufficient permissions");
+          break;
+        case 404:
+          console.error("API endpoint not found:", error.config?.url);
           break;
         case 500:
           console.error("Internal Server Error");
@@ -209,10 +211,19 @@ export abstract class BaseService {
     } else if (error.request) {
       // Request was made but no response received
       console.error("Network Error:", error.request);
+      // Network hatası için token temizleme!
     } else {
       // Something else happened
       console.error("Request Error:", error.message);
     }
+  }
+
+  // Token temizleme method'u ekle
+  private clearAuthToken(): void {
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    
+    window.location.href = '/';
   }
 
   // Utility method for building query strings

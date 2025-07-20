@@ -1,0 +1,2 @@
+// This demo component has been removed as it contained mock data generation.
+// Use the real RatingTrendsChart component with data from reviewService.getRatingTrendsByBoatId() or reviewService.getRatingTrendsByTourId() instead.

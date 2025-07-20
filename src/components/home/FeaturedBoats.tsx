@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import BoatCard from "../ui/BoatCard";
+import { BoatCard } from "../boats/BoatCard"; // Düzeltilen import path
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { boatService } from "@/services/boatService";
@@ -29,10 +29,10 @@ const FeaturedBoats = () => {
         : (response as any)?.content || [];
       const featuredBoats = allBoats.slice(0, 6);
 
+
       setBoats(featuredBoats);
       setError(null);
     } catch (err) {
-      console.error("FeaturedBoats API Hatası:", err);
       setError(t.errors.somethingWentWrong);
       setBoats([]);
     } finally {
@@ -137,6 +137,7 @@ const FeaturedBoats = () => {
                 key={boat.id}
                 boat={boat}
                 viewMode="grid"
+                isHourlyMode={false} // Ana sayfada daily price göster
                 isCompared={false}
                 onCompareToggle={() => {}} // Ana sayfada karşılaştırma yok
               />

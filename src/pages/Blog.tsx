@@ -48,33 +48,8 @@ const Blog = () => {
 
   const t = translations[language];
 
-  // Mock veri - Backend hazır olduğunda kaldırılacak
-  const posts = [
-    {
-      id: "1",
-      title: "Türkiye'nin En Güzel 10 Koyu",
-      excerpt: "Mavi yolculuğunuzda keşfedebileceğiniz, Türkiye'nin en güzel ve el değmemiş koyları hakkında detaylı bilgiler ve öneriler.",
-      imageUrl: "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?q=80&w=800&auto=format&fit=crop",
-      readingTime: 8,
-      date: "15 Mayıs 2023"
-    },
-    {
-      id: "2",
-      title: "Tekne Kiralama Rehberi: Nelere Dikkat Etmelisiniz?",
-      excerpt: "İlk kez tekne kiralayacaklar için kapsamlı bir rehber: Bütçe planlaması, tekne türleri, sezon seçimi ve daha fazlası.",
-      imageUrl: "https://images.unsplash.com/photo-1586456248323-49e8f620d6c3?q=80&w=800&auto=format&fit=crop",
-      readingTime: 12,
-      date: "3 Haziran 2023"
-    },
-    {
-      id: "3",
-      title: "Denizde Sürdürülebilirlik: Çevre Dostu Yatçılık",
-      excerpt: "Denizlerimizi korumak için yat sahiplerinin ve tekne kiralayanların uygulayabileceği çevre dostu yöntemler ve öneriler.",
-      imageUrl: "https://images.unsplash.com/photo-1484544808355-8ec84e534d75?q=80&w=800&auto=format&fit=crop",
-      readingTime: 10,
-      date: "22 Temmuz 2023"
-    },
-  ];
+  // No mock data - use real API when backend is ready
+  const posts: any[] = [];
 
   return (
     <Layout>

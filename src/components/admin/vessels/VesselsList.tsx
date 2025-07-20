@@ -7,42 +7,7 @@ import { Plus } from "lucide-react";
 import { BoatDTO } from "@/types/boat.types";
 import { getImageUrl } from "@/lib/imageUtils";
 
-// Mock data for vessel items
-const mockVessels = [
-  {
-    id: "1",
-    name: "Blue Horizon",
-    type: "Yat",
-    brandModel: "Azimut 55",
-    capacity: 12,
-    buildYear: 2019,
-    status: "active" as const,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1527679124583-9208be990bb5?q=80&w=1000",
-  },
-  {
-    id: "2",
-    name: "Sea Paradise",
-    type: "Gulet",
-    brandModel: "Custom Wooden 24m",
-    capacity: 18,
-    buildYear: 2015,
-    status: "draft" as const,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1599054802207-91d346adc120?q=80&w=1000",
-  },
-  {
-    id: "3",
-    name: "Swift Wave",
-    type: "Sürat Teknesi",
-    brandModel: "Sunseeker Predator 68",
-    capacity: 8,
-    buildYear: 2021,
-    status: "inactive" as const,
-    thumbnailUrl:
-      "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?q=80&w=1000",
-  },
-];
+// Mock data removed - component uses real data from props
 
 interface VesselsListProps {
   onAddVessel: () => void;

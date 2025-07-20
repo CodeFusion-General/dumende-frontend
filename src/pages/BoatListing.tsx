@@ -17,6 +17,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getImageUrl } from "@/lib/imageUtils";
 
+// Default image helper function for boat detail page
+const getBoatImageUrl = async (imageId?: number): Promise<string> => {
+  try {
+    if (imageId) {
+      // Önce gerçek image'ı dene
+      const imageUrl = getImageUrl(imageId);
+      const response = await fetch(imageUrl);
+      if (response.ok) {
+        return imageUrl;
+      }
+    }
+
+    // Eğer image yoksa default image API'sinden al
+    const response = await fetch("http://localhost:8080/api/boats/default-image");
+    if (response.ok) {
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    }
+  } catch (error) {
+    console.error("Error loading boat image:", error);
+  }
+
+  // Fallback placeholder
+  return "/placeholder-boat.jpg";
+};
+
 const BoatListing = () => {
   const { id } = useParams();
 
@@ -42,12 +68,42 @@ const BoatListing = () => {
     enabled: !!boatData?.type, // Only run when we have boat type
   });
 
-  // Geçerli fotoğrafları filtrele - sadece boatData varsa
-  const validImages = boatData?.images
-    ? boatData.images
-        .filter((img) => img && img.id) // null/undefined kontrolü
-        .map((img) => getImageUrl(img.id))
-    : [];
+  // Geçerli fotoğrafları filtrele ve default image sistemi ekle
+  const [validImages, setValidImages] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    const loadImages = async () => {
+      if (boatData?.images && boatData.images.length > 0) {
+        // Gerçek fotoğrafları yükle
+        const imagePromises = boatData.images
+          .filter((img) => img && img.id)
+          .map(async (img) => {
+            try {
+              const imageUrl = getImageUrl(img.id);
+              const response = await fetch(imageUrl);
+              if (response.ok) {
+                return imageUrl;
+              }
+              // Eğer image yüklenemezse default image kullan
+              return await getBoatImageUrl();
+            } catch {
+              return await getBoatImageUrl();
+            }
+          });
+
+        const images = await Promise.all(imagePromises);
+        setValidImages(images);
+      } else {
+        // Hiç fotoğraf yoksa default image kullan
+        const defaultImage = await getBoatImageUrl();
+        setValidImages([defaultImage]);
+      }
+    };
+
+    if (boatData) {
+      loadImages();
+    }
+  }, [boatData]);
 
   if (isLoading) {
     return (

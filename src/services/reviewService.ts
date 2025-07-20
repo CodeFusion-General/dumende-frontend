@@ -5,6 +5,7 @@ import {
   UpdateReviewCommand,
   ReviewQuery,
   ReviewFilters,
+  ReplyDTO,
 } from "@/types/review.types";
 
 class ReviewService extends BaseService {
@@ -51,12 +52,8 @@ class ReviewService extends BaseService {
     return this.get<ReviewDTO[]>(`/tour/${tourId}`);
   }
 
-  public async getTourRating(tourId: number): Promise<{
-    averageRating: number;
-    totalReviews: number;
-    ratingDistribution: Record<number, number>;
-  }> {
-    return this.get(`/tour/${tourId}/rating`);
+  public async getTourRating(tourId: number): Promise<number> {
+    return this.get(`/tour/${tourId}/average-rating`);
   }
 
   // Customer Reviews
@@ -85,24 +82,8 @@ class ReviewService extends BaseService {
     return this.getPaginated<ReviewDTO>("/paginated", filters);
   }
 
-  // Statistics
-  public async getReviewStatistics(): Promise<{
-    totalReviews: number;
-    averageRating: number;
-    reviewsThisMonth: number;
-    topRatedBoats: Array<{
-      boatId: number;
-      rating: number;
-      reviewCount: number;
-    }>;
-    topRatedTours: Array<{
-      tourId: number;
-      rating: number;
-      reviewCount: number;
-    }>;
-  }> {
-    return this.get("/statistics");
-  }
+  // Statistics - Removed non-existent endpoint
+  // Use individual methods like getAverageRatingByBoatId, getReviewCountByBoatId etc. instead
 
   // Public methods for helper services access
   public async getAverageRatingByBoatId(boatId: number): Promise<number> {
@@ -133,13 +114,145 @@ class ReviewService extends BaseService {
     return this.delete<void>(`/tour/${tourId}`);
   }
 
-  public async getBoatsByOwnerId(ownerId: number): Promise<any[]> {
-    return this.get<any[]>(`/boats/owner/${ownerId}`);
+  // PAGINATION ENDPOINTS
+  public async getBoatReviewsPaginated(
+    boatId: number,
+    params?: {
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) {
+    const queryString = params ? this.buildQueryString(params) : "";
+    return this.getPaginated<ReviewDTO>(`/boat/${boatId}/paginated?${queryString}`);
   }
 
-  public async getToursByBoatId(boatId: number): Promise<any[]> {
-    return this.get<any[]>(`/tours/boat/${boatId}`);
+  public async getTourReviewsPaginated(
+    tourId: number,
+    params?: {
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) {
+    const queryString = params ? this.buildQueryString(params) : "";
+    return this.getPaginated<ReviewDTO>(`/tour/${tourId}/paginated?${queryString}`);
   }
+
+  // RATING DISTRIBUTION ENDPOINTS
+  public async getBoatRatingDistribution(boatId: number): Promise<Record<number, number>> {
+    return this.get<Record<number, number>>(`/boat/${boatId}/rating-distribution`);
+  }
+
+  public async getTourRatingDistribution(tourId: number): Promise<Record<number, number>> {
+    return this.get<Record<number, number>>(`/tour/${tourId}/rating-distribution`);
+  }
+
+  // TREND ANALYSIS ENDPOINTS
+  public async getBoatRatingTrends(
+    boatId: number,
+    period: string = "monthly"
+  ): Promise<Array<{
+    period: string;
+    averageRating: number;
+    reviewCount: number;
+    periodStart: string;
+    periodEnd: string;
+  }>> {
+    return this.get(`/boat/${boatId}/trends?period=${period}`);
+  }
+
+  public async getTourRatingTrends(
+    tourId: number,
+    period: string = "monthly"
+  ): Promise<Array<{
+    period: string;
+    averageRating: number;
+    reviewCount: number;
+    periodStart: string;
+    periodEnd: string;
+  }>> {
+    return this.get(`/tour/${tourId}/trends?period=${period}`);
+  }
+
+  // SUMMARY STATISTICS ENDPOINTS
+  public async getBoatReviewSummary(boatId: number): Promise<{
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: Record<number, number>;
+    recentTrend: string;
+    lastReviewDate?: string;
+    previousMonthAverage?: number;
+    previousMonthCount?: number;
+  }> {
+    return this.get(`/boat/${boatId}/summary`);
+  }
+
+  public async getTourReviewSummary(tourId: number): Promise<{
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: Record<number, number>;
+    recentTrend: string;
+    lastReviewDate?: string;
+    previousMonthAverage?: number;
+    previousMonthCount?: number;
+  }> {
+    return this.get(`/tour/${tourId}/summary`);
+  }
+
+  // RECENT ACTIVITIES ENDPOINTS
+  public async getRecentReviews(limit: number = 10): Promise<ReviewDTO[]> {
+    return this.get<ReviewDTO[]>(`/recent?limit=${limit}`);
+  }
+
+  public async getRecentBoatReviews(boatId: number, limit: number = 5): Promise<ReviewDTO[]> {
+    return this.get<ReviewDTO[]>(`/boat/${boatId}/recent?limit=${limit}`);
+  }
+
+  public async getRecentTourReviews(tourId: number, limit: number = 5): Promise<ReviewDTO[]> {
+    return this.get<ReviewDTO[]>(`/tour/${tourId}/recent?limit=${limit}`);
+  }
+
+  // ADVANCED FILTERING ENDPOINTS
+  public async getFilteredBoatReviews(
+    boatId: number,
+    filters?: {
+      minRating?: number;
+      maxRating?: number;
+      dateFrom?: string;
+      dateTo?: string;
+      keyword?: string;
+      sortBy?: string;
+      sortDirection?: string;
+      page?: number;
+      size?: number;
+    }
+  ) {
+    const queryString = filters ? this.buildQueryString(filters) : "";
+    return this.getPaginated<ReviewDTO>(`/boat/${boatId}/filtered?${queryString}`);
+  }
+
+  public async searchReviews(
+    keyword: string,
+    filters?: {
+      ratings?: number[];
+      boatId?: number;
+      tourId?: number;
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) {
+    const params = { keyword, ...filters };
+    const queryString = this.buildQueryString(params);
+    return this.getPaginated<ReviewDTO>(`/search?${queryString}`);
+  }
+
+  // Note: getBoatsByOwnerId and getToursByBoatId should be called from boat/tour services
+  // These methods are removed as they don't belong to review service endpoints
 }
 
 export const reviewService = new ReviewService();
@@ -214,6 +327,137 @@ export const reviewQueryService = {
   ): Promise<ReviewDTO[]> => {
     return reviewService.getReviewsByMinRating(minRating);
   },
+
+  // PAGINATION METHODS
+  findByBoatIdWithPagination: async (
+    boatId: number,
+    params?: {
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) => {
+    return reviewService.getBoatReviewsPaginated(boatId, params);
+  },
+
+  findByTourIdWithPagination: async (
+    tourId: number,
+    params?: {
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) => {
+    return reviewService.getTourReviewsPaginated(tourId, params);
+  },
+
+  findAllWithPagination: async (
+    filters?: {
+      page?: number;
+      size?: number;
+      sort?: string;
+    }
+  ) => {
+    return reviewService.getReviewsPaginated(filters);
+  },
+
+  // RATING DISTRIBUTION METHODS
+  getRatingDistributionByBoatId: async (boatId: number): Promise<Record<number, number>> => {
+    return reviewService.getBoatRatingDistribution(boatId);
+  },
+
+  getRatingDistributionByTourId: async (tourId: number): Promise<Record<number, number>> => {
+    return reviewService.getTourRatingDistribution(tourId);
+  },
+
+  // TREND ANALYSIS METHODS
+  getRatingTrendsByBoatId: async (
+    boatId: number,
+    period: string = "monthly"
+  ) => {
+    return reviewService.getBoatRatingTrends(boatId, period);
+  },
+
+  getRatingTrendsByTourId: async (
+    tourId: number,
+    period: string = "monthly"
+  ) => {
+    return reviewService.getTourRatingTrends(tourId, period);
+  },
+
+  // SUMMARY STATISTICS METHODS
+  getReviewSummaryByBoatId: async (boatId: number) => {
+    return reviewService.getBoatReviewSummary(boatId);
+  },
+
+  getReviewSummaryByTourId: async (tourId: number) => {
+    return reviewService.getTourReviewSummary(tourId);
+  },
+
+  // RECENT ACTIVITIES METHODS
+  getRecentReviews: async (limit: number = 10): Promise<ReviewDTO[]> => {
+    return reviewService.getRecentReviews(limit);
+  },
+
+  getRecentReviewsByBoatId: async (boatId: number, limit: number = 5): Promise<ReviewDTO[]> => {
+    return reviewService.getRecentBoatReviews(boatId, limit);
+  },
+
+  getRecentReviewsByTourId: async (tourId: number, limit: number = 5): Promise<ReviewDTO[]> => {
+    return reviewService.getRecentTourReviews(tourId, limit);
+  },
+
+  // ADVANCED FILTERING METHODS
+  findByBoatIdWithFilters: async (
+    boatId: number,
+    filters?: {
+      minRating?: number;
+      maxRating?: number;
+      dateFrom?: string;
+      dateTo?: string;
+      keyword?: string;
+      sortBy?: string;
+      sortDirection?: string;
+      page?: number;
+      size?: number;
+    }
+  ) => {
+    return reviewService.getFilteredBoatReviews(boatId, filters);
+  },
+
+  searchReviews: async (
+    keyword: string,
+    filters?: {
+      ratings?: number[];
+      boatId?: number;
+      tourId?: number;
+      page?: number;
+      size?: number;
+      sortBy?: string;
+      sortDirection?: string;
+    }
+  ) => {
+    return reviewService.searchReviews(keyword, filters);
+  },
+
+  // REPLY QUERY METHODS
+  getRepliesByReviewId: async (reviewId: number): Promise<ReplyDTO[]> => {
+    return reviewService.get<ReplyDTO[]>(`/${reviewId}/replies`);
+  },
+
+  getRepliesByUserId: async (userId: number): Promise<ReplyDTO[]> => {
+    return reviewService.get<ReplyDTO[]>(`/replies/user/${userId}`);
+  },
+
+  getReplyById: async (replyId: number): Promise<ReplyDTO> => {
+    return reviewService.get<ReplyDTO>(`/replies/${replyId}`);
+  },
+
+  countRepliesByReviewId: async (reviewId: number): Promise<number> => {
+    return reviewService.get<number>(`/${reviewId}/replies/count`);
+  },
 };
 
 // Review Command Service - BaseService kullanarak
@@ -246,17 +490,41 @@ export const reviewCommandService = {
   deleteReviewsByTourId: async (tourId: number): Promise<void> => {
     return reviewService.deleteReviewsByTourId(tourId);
   },
+
+  // Reply to review
+  replyToReview: async (reviewId: number, replyMessage: string): Promise<string> => {
+    const requestBody = {
+      message: replyMessage,
+      isOfficial: true
+    };
+    return reviewService.post(`/${reviewId}/reply`, requestBody);
+  },
+
+  // Flag review
+  flagReview: async (reviewId: number): Promise<string> => {
+    return reviewService.post(`/${reviewId}/flag`, {});
+  },
 };
 
-// Helper functions for owner/captain specific data - BaseService kullanarak
+// Helper functions for owner/captain specific data
+// Note: These methods require boat and tour service dependencies
 export const reviewHelperService = {
   // Get reviews for owner's boats
-  getReviewsForOwnerBoats: async (ownerId: number): Promise<ReviewDTO[]> => {
+  // NOTE: This method requires boatService.getBoatsByOwnerId() to be implemented
+  getReviewsForOwnerBoats: async (
+    ownerId: number,
+    boatService?: { getBoatsByOwnerId: (ownerId: number) => Promise<any[]> }
+  ): Promise<ReviewDTO[]> => {
     try {
-      // Boat service kullanarak owner'ın teknelerini al
-      const boats = await reviewService.getBoatsByOwnerId(ownerId);
+      if (!boatService) {
+        console.warn("boatService dependency required for getReviewsForOwnerBoats");
+        return [];
+      }
 
-      // Her tekne için review'ları getir
+      // Get owner's boats from boat service
+      const boats = await boatService.getBoatsByOwnerId(ownerId);
+
+      // Get reviews for each boat
       const reviewsPromises = boats.map((boat: any) =>
         reviewService.getBoatReviews(boat.id)
       );
@@ -270,15 +538,25 @@ export const reviewHelperService = {
   },
 
   // Get reviews for owner's tours
-  getReviewsForOwnerTours: async (ownerId: number): Promise<ReviewDTO[]> => {
+  // NOTE: This method requires boatService and tourService to be implemented
+  getReviewsForOwnerTours: async (
+    ownerId: number,
+    boatService?: { getBoatsByOwnerId: (ownerId: number) => Promise<any[]> },
+    tourService?: { getToursByBoatId: (boatId: number) => Promise<any[]> }
+  ): Promise<ReviewDTO[]> => {
     try {
-      // Önce owner'ın teknelerini, sonra bu teknelerin turlarını al
-      const boats = await reviewService.getBoatsByOwnerId(ownerId);
+      if (!boatService || !tourService) {
+        console.warn("boatService and tourService dependencies required for getReviewsForOwnerTours");
+        return [];
+      }
+
+      // Get owner's boats first
+      const boats = await boatService.getBoatsByOwnerId(ownerId);
 
       const reviewsPromises: Promise<ReviewDTO[]>[] = [];
 
       for (const boat of boats) {
-        const tours = await reviewService.getToursByBoatId(boat.id);
+        const tours = await tourService.getToursByBoatId(boat.id);
 
         tours.forEach((tour: any) => {
           reviewsPromises.push(reviewService.getTourReviews(tour.id));
@@ -294,11 +572,16 @@ export const reviewHelperService = {
   },
 
   // Get all reviews for an owner (boats + tours)
-  getAllReviewsForOwner: async (ownerId: number): Promise<ReviewDTO[]> => {
+  // NOTE: This method requires boat and tour service dependencies
+  getAllReviewsForOwner: async (
+    ownerId: number,
+    boatService?: { getBoatsByOwnerId: (ownerId: number) => Promise<any[]> },
+    tourService?: { getToursByBoatId: (boatId: number) => Promise<any[]> }
+  ): Promise<ReviewDTO[]> => {
     try {
       const [boatReviews, tourReviews] = await Promise.all([
-        reviewHelperService.getReviewsForOwnerBoats(ownerId),
-        reviewHelperService.getReviewsForOwnerTours(ownerId),
+        reviewHelperService.getReviewsForOwnerBoats(ownerId, boatService),
+        reviewHelperService.getReviewsForOwnerTours(ownerId, boatService, tourService),
       ]);
 
       // Combine and deduplicate reviews

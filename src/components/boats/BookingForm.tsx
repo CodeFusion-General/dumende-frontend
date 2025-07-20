@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { format } from "date-fns";
+import { useState, useEffect } from "react";
+import { format, addHours, addDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { bookingService } from "@/services/bookingService";
+import { availabilityService } from "@/services/availabilityService";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -34,25 +37,88 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
   const [guests, setGuests] = useState<number>(2);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Toggle between hourly and daily pricing
   const [isHourlyMode, setIsHourlyMode] = useState<boolean>(defaultIsHourly);
   
-  /* Backend hazır olduğunda kullanılacak state:
-  const [loading, setLoading] = useState(false);
+  // State for available dates and time slots
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
-
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
+  const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
+  
+  // Fetch available dates for the next 3 months
+  useEffect(() => {
+    const fetchAvailableDates = async () => {
+      setIsDateLoading(true);
+      try {
+        // Get current date and date 3 months from now
+        const today = new Date();
+        const threeMonthsLater = new Date();
+        threeMonthsLater.setMonth(today.getMonth() + 3);
+        
+        // Format dates for API
+        const startDate = format(today, 'yyyy-MM-dd');
+        const endDate = format(threeMonthsLater, 'yyyy-MM-dd');
+        
+        // Get calendar availability for the date range
+        const calendarData = await availabilityService.getCalendarAvailability(
+          Number(boatId),
+          startDate,
+          endDate
+        );
+        
+        // Filter for available dates and convert to Date objects
+        const availableDays = calendarData
+          .filter(day => day.isAvailable)
+          .map(day => new Date(day.date));
+        
+        setAvailableDates(availableDays);
+      } catch (error) {
+        console.error('Failed to fetch available dates:', error);
+        toast({
+          title: "Müsait tarihler yüklenemedi",
+          description: "Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDateLoading(false);
+      }
+    };
+    
+    fetchAvailableDates();
+  }, [boatId]);
+  
+  // Fetch available time slots when date changes
   useEffect(() => {
     const fetchAvailableTimeSlots = async () => {
       if (date) {
+        setIsTimeSlotLoading(true);
         try {
-          const slots = await bookingService.getAvailableTimeSlots(boatId, format(date, 'yyyy-MM-dd'));
-          setAvailableTimeSlots(slots);
+          const slots = await bookingService.getAvailableTimeSlots(
+            Number(boatId), 
+            format(date, 'yyyy-MM-dd')
+          );
+          
+          // Convert 24-hour format to 12-hour format with AM/PM
+          const formattedSlots = slots.map(slot => {
+            const hour = parseInt(slot.split(':')[0]);
+            return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+          });
+          
+          setAvailableTimeSlots(formattedSlots);
+          
+          // If current selected time is not available, reset it
+          if (formattedSlots.length > 0 && !formattedSlots.includes(startTime)) {
+            setStartTime(formattedSlots[0]);
+          }
         } catch (error) {
           console.error('Failed to fetch available time slots:', error);
           toast({
@@ -60,19 +126,66 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
             description: "Lütfen daha sonra tekrar deneyin.",
             variant: "destructive",
           });
+          setAvailableTimeSlots([]);
+        } finally {
+          setIsTimeSlotLoading(false);
         }
+      } else {
+        setAvailableTimeSlots([]);
       }
     };
 
     fetchAvailableTimeSlots();
   }, [date, boatId]);
-  */
   
-  // Generate available time slots
-  const timeSlots = Array.from({ length: 11 }, (_, i) => {
+  // Fallback time slots if API fails
+  const fallbackTimeSlots = Array.from({ length: 11 }, (_, i) => {
     const hour = i + 8; // Start at 8 AM
     return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
   });
+  
+  // Use available time slots if we have them, otherwise use fallback
+  const timeSlots = availableTimeSlots.length > 0 ? availableTimeSlots : fallbackTimeSlots;
+  
+  // Helper function to determine if the current selection is valid for booking
+  const isBookingValid = () => {
+    // Check if date is selected and is in availableDates
+    if (!date) return false;
+    
+    const isDateAvailable = availableDates.some(
+      availableDate => 
+        availableDate.getDate() === date.getDate() &&
+        availableDate.getMonth() === date.getMonth() &&
+        availableDate.getFullYear() === date.getFullYear()
+    );
+    
+    // Check if time slot is available
+    const isTimeSlotAvailable = availableTimeSlots.length > 0;
+    
+    return isDateAvailable && isTimeSlotAvailable;
+  };
+  
+  // Helper function to disable dates that are not available
+  const disabledDates = {
+    before: new Date(), // Disable past dates
+    dayOfWeek: [], // Don't disable specific days of the week
+    dates: isDateLoading ? [] : Array.from({ length: 90 }).map((_, i) => {
+      // Create a date for each day in the next 90 days
+      const day = new Date();
+      day.setDate(day.getDate() + i);
+      
+      // Check if this date is in the availableDates array
+      const isAvailable = availableDates.some(
+        availableDate => 
+          availableDate.getDate() === day.getDate() &&
+          availableDate.getMonth() === day.getMonth() &&
+          availableDate.getFullYear() === day.getFullYear()
+      );
+      
+      // Return the date if it's not available (to be disabled)
+      return isAvailable ? null : day;
+    }).filter(Boolean) // Remove null values
+  };
 
   // Dynamic duration options based on mode
   const durationOptions = isHourlyMode ? [2, 4, 6, 8] : [1, 2, 3, 4];
@@ -83,7 +196,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
 
-  /* Backend hazır olduğunda kullanılacak rezervasyon fonksiyonu:
+  // Booking function
   const handleBooking = async () => {
     if (!date || !startTime) {
       toast({
@@ -93,16 +206,58 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       });
       return;
     }
+    
+    // Check if the selected date and time are available
+    if (!isBookingValid()) {
+      toast({
+        title: "Müsait değil",
+        description: "Seçilen tarih veya saat için tekne müsait değil. Lütfen başka bir tarih veya saat seçin.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setLoading(true);
+      
+      // Parse the start time
+      const [hourStr, minuteStr] = startTime.split(':');
+      const hour = parseInt(hourStr);
+      const minute = parseInt(minuteStr);
+      
+      // Create start date with the selected time
+      const startDate = new Date(date);
+      startDate.setHours(hour, minute, 0, 0);
+      
+      // Calculate end date based on duration and mode (hourly or daily)
+      let endDate;
+      if (isHourlyMode) {
+        endDate = addHours(startDate, duration);
+      } else {
+        endDate = addDays(startDate, duration);
+      }
+      
+      // Check availability with the backend before proceeding
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const isAvailable = await availabilityService.isBoatAvailableOnDate(Number(boatId), formattedDate);
+      
+      if (!isAvailable) {
+        toast({
+          title: "Müsait değil",
+          description: "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
       const bookingData = {
-        boatId,
-        date: format(date, 'yyyy-MM-dd'),
-        startTime,
-        duration,
-        guests,
-        totalPrice: total
+        boatId: Number(boatId),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        passengerCount: guests,
+        totalPrice: total,
+        notes: `Booking created on ${new Date().toISOString()}`
       };
 
       const response = await bookingService.createBooking(bookingData);
@@ -112,8 +267,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
       });
 
-      // Rezervasyon sayfasına yönlendir
-      navigate(`/bookings/${response.id}`);
+      navigate('/my-bookings');
     } catch (error) {
       console.error('Booking failed:', error);
       toast({
@@ -125,7 +279,6 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       setLoading(false);
     }
   };
-  */
 
   // Mobile booking button sticky footer
   const MobileBookingFooter = () => (
@@ -285,7 +438,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           </div>
         </div>
         
-        <Button className="w-full">Request to Book</Button>
+        <Button 
+          className="w-full" 
+          onClick={handleBooking}
+          disabled={loading || !isBookingValid()}
+        >
+          {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+        </Button>
         
         <p className="text-center text-sm text-gray-500 mt-4">
           You won't be charged yet
@@ -414,7 +573,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
             </Select>
           </div>
 
-          <Button className="w-full">Request to Book</Button>
+          <Button 
+            className="w-full"
+            onClick={handleBooking}
+            disabled={loading || !isBookingValid()}
+          >
+            {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+          </Button>
 
           <p className="text-center text-sm text-gray-500">
             You won't be charged yet

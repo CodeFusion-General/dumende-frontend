@@ -5,7 +5,7 @@ import BoatListingHeader from "@/components/boats/BoatListingHeader";
 import FilterSidebar from "@/components/boats/FilterSidebar";
 import { boatListingData } from "@/data/boats";
 import NoResults from "@/components/boats/NoResults";
-import BoatCard from "@/components/ui/BoatCard";
+import { BoatCard } from "@/components/boats/BoatCard"; // Düzeltilen import path
 import CompareBar from "@/components/boats/CompareBar";
 import ServiceFilterBadge from "@/components/boats/ServiceFilterBadge";
 import { toast } from "@/components/ui/use-toast";

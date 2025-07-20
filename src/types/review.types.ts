@@ -8,43 +8,56 @@ export interface CustomerDTO {
   profileImage?: string; // Base64 encoded string veya URL
 }
 
+// ReplyDTO tanımı (backend ReplyDTO ile uyumlu)
+export interface ReplyDTO {
+  id: number;
+  reviewId: number;
+  userId: number;
+  userFullName: string;
+  message: string;
+  isOfficial: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Review Types
 export interface ReviewDTO {
-  id: Long;
+  id: number;
   customer: CustomerDTO;
-  boatId?: Long;
+  boatId?: number;
   boatName?: string;
-  tourId?: Long;
+  tourId?: number;
   tourName?: string;
-  bookingId?: Long;
+  bookingId?: number;
   rating: number;
   comment: string;
   reviewDate: string; // LocalDateTime string format
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  replies?: ReplyDTO[]; // Optional replies array
 }
 
 export interface CreateReviewCommand {
-  customerId: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
   rating: number;
   comment: string;
 }
 
 export interface UpdateReviewCommand {
-  reviewId: Long;
+  reviewId: number;
   rating?: number;
   comment?: string;
 }
 
 export interface ReviewQuery {
-  customerId?: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId?: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
   minRating?: number;
   maxRating?: number;
   startDate?: string;
@@ -71,8 +84,8 @@ export interface ReviewFilters {
   threeStars: boolean;
   twoStars: boolean;
   oneStars: boolean;
-  boatId?: Long;
-  tourId?: Long;
+  boatId?: number;
+  tourId?: number;
   dateRange?: {
     start: string;
     end: string;
@@ -102,11 +115,9 @@ export interface Review {
   comment: string;
   tourName?: string;
   boatName?: string;
-  customerId?: Long;
-  boatId?: Long;
-  tourId?: Long;
-  bookingId?: Long;
+  customerId?: number;
+  boatId?: number;
+  tourId?: number;
+  bookingId?: number;
 }
 
-// Helper type for Long (Java Long to TypeScript)
-type Long = number;

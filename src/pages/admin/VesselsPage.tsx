@@ -371,7 +371,6 @@ const VesselsPage = () => {
     const imagesDTOs = await Promise.all(imagePromises);
 
     return {
-      ownerId: user?.id || 1, // Giriş yapmış kullanıcının ID'sini kullan
       name: data.name.trim(),
       description: data.detailedDescription || data.shortDescription || "",
       model: data.brandModel,
@@ -385,8 +384,6 @@ const VesselsPage = () => {
       status: "INACTIVE", // Yeni tekneler inactive olarak başlar
       brandModel: data.brandModel,
       buildYear: parseInt(data.buildYear) || new Date().getFullYear(),
-      pricePerHour: parseFloat(data.hourlyPrice) || 0,
-      pricePerDay: parseFloat(data.dailyPrice) || 0,
       captainIncluded: false, // Default false
       images: imagesDTOs, // Base64 formatında fotoğraflar (prefix'siz)
       features: data.features.map((name) => ({ featureName: name })),

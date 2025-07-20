@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { Star, ChevronDown, ChevronUp, User } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, User, MessageCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { ExpandableText } from "@/components/ui/ExpandableText";
-import { reviewService } from "@/services/reviewService";
+import { reviewService, reviewQueryService } from "@/services/reviewService";
+import { ReplyDTO } from "@/types/review.types";
 interface Review {
   id: number;
   userName: string;
@@ -12,6 +15,7 @@ interface Review {
   rating: number;
   date: string;
   comment: string;
+  replies?: ReplyDTO[];
 }
 
 interface ReviewsProps {
@@ -28,15 +32,36 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
       if (!boatId) return;
       try {
         const reviewDtos = await reviewService.getBoatReviews(boatId);
-        const reviews: Review[] = reviewDtos.map((review) => ({
-          id: review.id,
-          userName: review.customer.fullName,
-          rating: review.rating,
-          date: new Date(review.createdAt).toLocaleDateString(),
-          comment: review.comment,
-        }));
-        setReviews(reviews);
-        setReviewCount(reviews.length);
+        
+        // Fetch replies for each review
+        const reviewsWithReplies = await Promise.all(
+          reviewDtos.map(async (review) => {
+            try {
+              const replies = await reviewQueryService.getRepliesByReviewId(review.id);
+              return {
+                id: review.id,
+                userName: review.customer.fullName,
+                rating: review.rating,
+                date: new Date(review.createdAt).toLocaleDateString(),
+                comment: review.comment,
+                replies: replies,
+              };
+            } catch (error) {
+              console.warn(`Failed to fetch replies for review ${review.id}:`, error);
+              return {
+                id: review.id,
+                userName: review.customer.fullName,
+                rating: review.rating,
+                date: new Date(review.createdAt).toLocaleDateString(),
+                comment: review.comment,
+                replies: [],
+              };
+            }
+          })
+        );
+        
+        setReviews(reviewsWithReplies);
+        setReviewCount(reviewsWithReplies.length);
       } catch (error) {
         console.error("Error fetching reviews:", error);
       }
@@ -109,6 +134,59 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
                   </div>
                 </div>
                 <p className="mt-3 text-gray-700">{review.comment}</p>
+
+                {/* Captain Replies Section */}
+                {review.replies && review.replies.length > 0 && (
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Kaptan Yanıtları ({review.replies.length})</span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {review.replies.map((reply) => (
+                        <div
+                          key={reply.id}
+                          className="bg-blue-50 border-l-4 border-blue-300 rounded-r-lg p-4 ml-4"
+                        >
+                          <div className="flex items-start space-x-3">
+                            <Avatar className="h-8 w-8 bg-blue-100 border-2 border-blue-300 flex-shrink-0">
+                              <AvatarFallback className="bg-blue-600 text-white font-semibold text-xs">
+                                {reply.userFullName.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <h5 className="font-semibold text-blue-900 text-sm">
+                                    {reply.userFullName}
+                                  </h5>
+                                  {reply.isOfficial && (
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Resmi Yanıt
+                                    </Badge>
+                                  )}
+                                </div>
+                                <time
+                                  dateTime={reply.createdAt}
+                                  className="text-xs text-blue-600"
+                                >
+                                  {new Date(reply.createdAt).toLocaleDateString()}
+                                </time>
+                              </div>
+                              
+                              <p className="text-blue-800 text-sm leading-relaxed">
+                                {reply.message}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Card>
             ))}
           </div>

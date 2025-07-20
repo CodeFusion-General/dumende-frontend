@@ -16,29 +16,52 @@ export function NotificationDropdown({
   onShowAll 
 }: NotificationDropdownProps) {
   return (
-    <div className="absolute right-0 top-full mt-3 w-96 bg-background border border-border/10 shadow-2xl rounded-2xl z-50 overflow-hidden backdrop-blur-xl bg-background/95">
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 p-4 border-b border-border/10">
+    <div className="absolute right-0 top-full mt-4 w-96 bg-white/95 border-0 shadow-2xl rounded-2xl z-50 overflow-hidden backdrop-blur-xl">
+      {/* Enhanced gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80" />
+      
+      {/* Header with enhanced styling */}
+      <div className="relative bg-gradient-to-r from-[#3498db]/10 via-[#2c3e50]/5 to-[#3498db]/10 p-6 border-b border-white/20">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-foreground text-lg">Notifications</h3>
-          <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full bg-white/30 backdrop-blur-sm">
+              <Bell className="w-5 h-5 text-[#2c3e50]" />
+            </div>
+            <h3 className="font-montserrat font-bold text-lg text-[#2c3e50]">Notifications</h3>
+          </div>
+          {unreadNotifications.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-red-400 to-pink-400 animate-pulse shadow-sm"></div>
+              <span className="text-xs font-roboto font-medium text-gray-600">
+                {unreadNotifications.length} new
+              </span>
+            </div>
+          )}
         </div>
       </div>
       
-      <div className="max-h-96 overflow-y-auto custom-scrollbar">
+      <div className="relative max-h-96 overflow-y-auto custom-scrollbar">
         {unreadNotifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/20 flex items-center justify-center">
-              <Bell className="w-8 h-8 text-muted-foreground/50" />
+          <div className="p-10 text-center">
+            <div className="relative mb-6">
+              <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center shadow-lg">
+                <div className="w-16 h-16 bg-gradient-to-br from-[#3498db]/20 to-[#2c3e50]/10 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Bell className="w-8 h-8 text-[#3498db]" />
+                </div>
+              </div>
+              {/* Floating accent circles */}
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full opacity-70 animate-pulse"></div>
+              <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full opacity-60 animate-pulse delay-300"></div>
             </div>
-            <p className="text-sm text-muted-foreground">No new notifications</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">You're all caught up!</p>
+            <h4 className="font-montserrat font-bold text-lg text-[#2c3e50] mb-2">All caught up!</h4>
+            <p className="text-sm text-gray-600 font-roboto">No new notifications to show</p>
+            <div className="mt-4 w-16 h-0.5 bg-gradient-to-r from-[#3498db] to-[#2c3e50] rounded-full mx-auto"></div>
           </div>
         ) : (
-          <div className="divide-y divide-border/5">
+          <div className="divide-y divide-white/20">
             {unreadNotifications.slice(0, 3).map((notification, index) => (
               <div key={notification.id} className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                 <NotificationItem
                   notification={notification}
                   onMarkRead={onMarkRead}
@@ -49,15 +72,15 @@ export function NotificationDropdown({
         )}
       </div>
       
-      {/* Footer */}
-      <div className="p-4 bg-muted/5 border-t border-border/10">
+      {/* Enhanced Footer */}
+      <div className="relative p-4 bg-gradient-to-r from-white/40 to-white/20 border-t border-white/20 backdrop-blur-sm">
         <Button
           variant="ghost"
-          className="w-full text-primary hover:bg-primary/10 hover:text-primary font-medium transition-all duration-200 rounded-xl"
+          className="group w-full text-[#3498db] hover:bg-[#3498db]/10 hover:text-[#2c3e50] font-montserrat font-semibold transition-all duration-300 rounded-xl py-3 backdrop-blur-sm border border-transparent hover:border-[#3498db]/20 hover:shadow-lg transform hover:scale-105"
           onClick={onShowAll}
         >
-          View All Notifications
-          <ChevronRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+          <span>View All Notifications</span>
+          <ChevronRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
         </Button>
       </div>
     </div>

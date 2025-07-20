@@ -34,44 +34,7 @@ const BoatTypes = () => {
       console.error("BoatTypes istatistik hatası:", error);
       setError("Veriler yüklenirken bir hata oluştu");
 
-      // Mock data with basic boat types
-      const mockBoatTypes = [
-        {
-          type: "SAILBOAT",
-          count: 25,
-          averagePrice: 2500,
-          minPrice: 1200,
-          maxPrice: 4000,
-        },
-        {
-          type: "MOTORBOAT",
-          count: 35,
-          averagePrice: 1800,
-          minPrice: 800,
-          maxPrice: 3500,
-        },
-        {
-          type: "YACHT",
-          count: 15,
-          averagePrice: 8500,
-          minPrice: 5000,
-          maxPrice: 15000,
-        },
-        {
-          type: "SPEEDBOAT",
-          count: 20,
-          averagePrice: 1200,
-          minPrice: 600,
-          maxPrice: 2000,
-        },
-        {
-          type: "CATAMARAN",
-          count: 12,
-          averagePrice: 3200,
-          minPrice: 2000,
-          maxPrice: 5000,
-        },
-      ];
+      // Error occurred - no fallback data used
     } finally {
       setLoading(false);
     }

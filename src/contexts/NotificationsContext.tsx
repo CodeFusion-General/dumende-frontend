@@ -27,10 +27,12 @@ export function NotificationsProvider({ children, userId }: NotificationsProvide
 
   const refreshUnreadCount = async () => {
     try {
+      console.log('[DEBUG_LOG] NotificationsContext: Fetching unread count for userId:', userId);
       const count = await notificationService.fetchUnreadCount(userId);
+      console.log('[DEBUG_LOG] NotificationsContext: Received unread count:', count);
       setUnreadCount(count);
     } catch (error) {
-      console.error('Failed to fetch unread count:', error);
+      console.error('[DEBUG_LOG] NotificationsContext: Failed to fetch unread count:', error);
     }
   };
 

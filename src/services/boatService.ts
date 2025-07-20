@@ -11,6 +11,7 @@ import {
   UpdateVesselDTO,
 } from "@/types/boat.types";
 import { compressImage, validateImageFile } from "@/lib/imageUtils";
+import { availabilityService } from "./availabilityService";
 
 // Yeni tip tanımları
 export interface LocationStatistic {
@@ -76,32 +77,29 @@ class BoatService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<boolean> {
-    return this.get<boolean>(`/availabilities/boat/${id}/available-range`, {
-      startDate,
-      endDate,
-    });
+    return availabilityService.isBoatAvailableBetweenDates(id, startDate, endDate);
   }
 
   public async getBoatAvailabilities(
     boatId: number
   ): Promise<AvailabilityDTO[]> {
-    return this.get<AvailabilityDTO[]>(`/availabilities/boat/${boatId}`);
+    return availabilityService.getAvailabilitiesByBoatId(boatId);
   }
 
   public async createAvailability(
     data: CreateAvailabilityDTO
   ): Promise<AvailabilityDTO> {
-    return this.post<AvailabilityDTO>("/availabilities", data);
+    return availabilityService.createAvailability(data);
   }
 
   public async updateAvailability(
     data: UpdateAvailabilityDTO
   ): Promise<AvailabilityDTO> {
-    return this.put<AvailabilityDTO>(`/availabilities`, data);
+    return availabilityService.updateAvailability(data);
   }
 
   public async deleteAvailability(id: number): Promise<void> {
-    return this.delete<void>(`/availabilities/${id}`);
+    return availabilityService.deleteAvailability(id);
   }
 
   // Owner/User based queries

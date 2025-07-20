@@ -34,8 +34,17 @@ class AvailabilityService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<AvailabilityDTO[]> {
+    // DateTime formatındaki tarihleri LocalDate formatına çevir (sadece tarih kısmını al)
+    const formatDateForBackend = (dateString: string): string => {
+      // Eğer T içeriyorsa, sadece tarih kısmını al
+      return dateString.includes("T") ? dateString.split("T")[0] : dateString;
+    };
+
+    const formattedStartDate = formatDateForBackend(startDate);
+    const formattedEndDate = formatDateForBackend(endDate);
+
     return this.get<AvailabilityDTO[]>(
-      `/availabilities/boat/${boatId}/range?startDate=${startDate}&endDate=${endDate}`
+      `/availabilities/boat/${boatId}/range?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
     );
   }
 
@@ -44,8 +53,13 @@ class AvailabilityService extends BaseService {
     boatId: number,
     date: string
   ): Promise<AvailabilityDTO> {
+    const formatDateForBackend = (dateString: string): string => {
+      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    };
+
+    const formattedDate = formatDateForBackend(date);
     return this.get<AvailabilityDTO>(
-      `/availabilities/boat/${boatId}/date?date=${date}`
+      `/availabilities/boat/${boatId}/date?date=${formattedDate}`
     );
   }
 
@@ -54,8 +68,13 @@ class AvailabilityService extends BaseService {
     boatId: number,
     date: string
   ): Promise<boolean> {
+    const formatDateForBackend = (dateString: string): string => {
+      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    };
+
+    const formattedDate = formatDateForBackend(date);
     return this.get<boolean>(
-      `/availabilities/boat/${boatId}/available?date=${date}`
+      `/availabilities/boat/${boatId}/available?date=${formattedDate}`
     );
   }
 
@@ -65,8 +84,15 @@ class AvailabilityService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<boolean> {
+    const formatDateForBackend = (dateString: string): string => {
+      return dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    };
+
+    const formattedStartDate = formatDateForBackend(startDate);
+    const formattedEndDate = formatDateForBackend(endDate);
+
     return this.get<boolean>(
-      `/availabilities/boat/${boatId}/available-range?startDate=${startDate}&endDate=${endDate}`
+      `/availabilities/boat/${boatId}/available-range?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
     );
   }
 

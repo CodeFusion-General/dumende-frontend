@@ -20,9 +20,9 @@ export interface Review {
 // Convert ReviewDTO to Review for compatibility with existing components
 const convertReviewDTOToReview = (dto: ReviewDTO): Review => {
   return {
-    id: dto.reviewId.toString(),
-    userName: dto.customerName || `Müşteri ${dto.customerId}`,
-    date: new Date(dto.reviewDate).toLocaleDateString("tr-TR", {
+    id: dto.id.toString(),
+    userName: dto.customer?.fullName || `Müşteri ${dto.customer?.id}`,
+    date: new Date(dto.createdAt).toLocaleDateString("tr-TR", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -31,7 +31,7 @@ const convertReviewDTOToReview = (dto: ReviewDTO): Review => {
     comment: dto.comment,
     tourName: dto.tourName,
     boatName: dto.boatName,
-    customerId: dto.customerId,
+    customerId: dto.customer?.id,
     boatId: dto.boatId,
     tourId: dto.tourId,
     bookingId: dto.bookingId,

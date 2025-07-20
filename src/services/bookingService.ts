@@ -2,6 +2,7 @@ import { BaseService } from "./base/BaseService";
 import { tokenUtils } from "@/lib/utils";
 import { boatService } from "./boatService"; // boatService import ediyoruz
 import { tourService } from "./tourService"; // tourService import ediyoruz
+import { availabilityService } from "./availabilityService"; // availabilityService import ediyoruz
 import {
   BookingDTO,
   CreateBookingDTO,
@@ -26,6 +27,50 @@ class BookingService extends BaseService {
   public async getBookings(filters?: BookingFilters): Promise<BookingDTO[]> {
     const queryString = filters ? this.buildQueryString(filters) : "";
     return this.get<BookingDTO[]>(`?${queryString}`);
+  }
+  
+  // Get available time slots for a specific date
+  public async getAvailableTimeSlots(boatId: number, date: string): Promise<string[]> {
+    try {
+      // First check if the boat has availability defined for this date using availabilityService
+      const isAvailable = await availabilityService.isBoatAvailableOnDate(boatId, date);
+      
+      if (!isAvailable) {
+        return []; // No availability defined for this date
+      }
+      
+      // Get existing availability for this specific date
+      // DateTime formatını LocalDate formatına çevir (sadece tarih kısmını al)
+      const formatDateForBackend = (dateString: string): string => {
+        return dateString.includes('T') ? dateString.split('T')[0] : dateString;
+      };
+
+      const formattedDate = formatDateForBackend(date);
+      const startOfDay = formattedDate;
+      const endOfDay = formattedDate;
+
+      // availabilityService'den range sorgusu yapıyoruz, bookingService'den değil
+      const availabilities = await availabilityService.getAvailabilitiesByBoatIdAndDateRange(boatId, startOfDay, endOfDay);
+
+      // Generate all possible time slots (hourly from 8 AM to 6 PM)
+      const allTimeSlots = Array.from({ length: 11 }, (_, i) => {
+        const hour = i + 8; // Start at 8 AM
+        return `${hour}:00`;
+      });
+      
+      // Filter time slots based on availability data
+      // AvailabilityDTO'da date alanı var, startDate/endDate yok
+      const hasAvailability = availabilities.some(availability => {
+        const availDate = availability.date;
+        return availDate === formattedDate && availability.isAvailable;
+      });
+      
+      // Eğer tarih için availability varsa ve müsaitse tüm time slot'ları döndür
+      return hasAvailability ? allTimeSlots : [];
+    } catch (error) {
+      console.error('Failed to fetch available time slots:', error);
+      return [];
+    }
   }
 
   public async getBookingById(id: number): Promise<BookingDTO> {
@@ -73,15 +118,36 @@ class BookingService extends BaseService {
     return this.get<BookingDTO[]>(`/boat/${boatId}`);
   }
 
+  // Bu method artık availability kontrolü için availabilityService kullanıyor
   public async getBoatBookingsInRange(
     boatId: number,
     startDate: string,
     endDate: string
   ): Promise<BookingDTO[]> {
-    return this.get<BookingDTO[]>(`/boat/${boatId}/range`, {
-      startDate,
-      endDate,
-    });
+    // Availability verilerini almak için availabilityService kullanıyoruz
+    try {
+      const availabilities = await availabilityService.getAvailabilitiesByBoatIdAndDateRange(boatId, startDate, endDate);
+
+      // Eğer availability verileri mevcut değilse, boş array döndür
+      if (!availabilities || availabilities.length === 0) {
+        return [];
+      }
+
+      // Booking verilerini de almak istiyorsak, ayrı bir endpoint kullanmalıyız
+      // Şimdilik availability verilerini booking formatına çevirebiliriz
+      // Veya gerçek booking verilerini almak için farklı bir method kullanmalıyız
+      return this.get<BookingDTO[]>(`/boat/${boatId}/bookings-range`, {
+        startDate,
+        endDate,
+      });
+    } catch (error) {
+      console.error('Error fetching boat bookings in range:', error);
+      // Fallback olarak eski endpoint'i kullan
+      return this.get<BookingDTO[]>(`/boat/${boatId}/range`, {
+        startDate,
+        endDate,
+      });
+    }
   }
 
   // Tour based queries
@@ -228,14 +294,6 @@ class BookingService extends BaseService {
     status: string
   ): Promise<void> {
     return this.patch<void>(`/${id}/status?status=${status}`, null);
-  }
-
-  public async getBoatsByOwnerId(ownerId: number): Promise<any[]> {
-    return this.get<any[]>(`/boats/owner/${ownerId}`);
-  }
-
-  public async getToursByBoatId(boatId: number): Promise<any[]> {
-    return this.get<any[]>(`/tours/boat/${boatId}`);
   }
 
   public async getUserById(userId: number): Promise<any> {
