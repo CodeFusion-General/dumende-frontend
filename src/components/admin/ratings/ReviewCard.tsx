@@ -4,10 +4,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExpandableText } from "@/components/ui/ExpandableText";
-import { Star, Reply, Flag, Trash2, CheckCircle } from "lucide-react";
+import { Star, Reply, Flag, Trash2, CheckCircle, MessageCircle } from "lucide-react";
 import { HoverAnimation } from "./animations/AnimationUtils";
 
 import { ReviewData } from "@/types/ratings.types";
+import { ReplyDTO } from "@/types/review.types";
 
 interface ReviewCardProps {
   review: ReviewData;
@@ -174,6 +175,59 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             className="text-gray-700 font-roboto leading-relaxed"
           />
         </div>
+
+        {/* Replies Section */}
+        {review.replies && review.replies.length > 0 && (
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600 font-medium">
+              <MessageCircle className="h-4 w-4" />
+              <span>Kaptan Yanıtları ({review.replies.length})</span>
+            </div>
+            
+            <div className="space-y-3">
+              {review.replies.map((reply) => (
+                <div
+                  key={reply.id}
+                  className="bg-blue-50 border-l-4 border-blue-200 rounded-r-lg p-4 ml-4"
+                >
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="h-8 w-8 bg-blue-100 border-2 border-blue-200 flex-shrink-0">
+                      <AvatarFallback className="bg-blue-500 text-white font-montserrat font-semibold text-xs">
+                        {reply.userFullName.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-montserrat font-semibold text-blue-900 text-sm">
+                            {reply.userFullName}
+                          </h5>
+                          {reply.isOfficial && (
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Resmi Yanıt
+                            </Badge>
+                          )}
+                        </div>
+                        <time
+                          dateTime={reply.createdAt}
+                          className="text-xs text-blue-600 font-roboto"
+                        >
+                          {formatDate(reply.createdAt)}
+                        </time>
+                      </div>
+                      
+                      <p className="text-blue-800 font-roboto text-sm leading-relaxed">
+                        {reply.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Footer Section */}
         <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-0 pt-4 border-t border-gray-100">

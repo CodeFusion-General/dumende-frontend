@@ -8,6 +8,18 @@ export interface CustomerDTO {
   profileImage?: string; // Base64 encoded string veya URL
 }
 
+// ReplyDTO tanımı (backend ReplyDTO ile uyumlu)
+export interface ReplyDTO {
+  id: number;
+  reviewId: number;
+  userId: number;
+  userFullName: string;
+  message: string;
+  isOfficial: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Review Types
 export interface ReviewDTO {
   id: number;
@@ -23,6 +35,7 @@ export interface ReviewDTO {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  replies?: ReplyDTO[]; // Optional replies array
 }
 
 export interface CreateReviewCommand {

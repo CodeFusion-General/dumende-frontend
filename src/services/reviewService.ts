@@ -5,6 +5,7 @@ import {
   UpdateReviewCommand,
   ReviewQuery,
   ReviewFilters,
+  ReplyDTO,
 } from "@/types/review.types";
 
 class ReviewService extends BaseService {
@@ -439,6 +440,23 @@ export const reviewQueryService = {
     }
   ) => {
     return reviewService.searchReviews(keyword, filters);
+  },
+
+  // REPLY QUERY METHODS
+  getRepliesByReviewId: async (reviewId: number): Promise<ReplyDTO[]> => {
+    return reviewService.get<ReplyDTO[]>(`/${reviewId}/replies`);
+  },
+
+  getRepliesByUserId: async (userId: number): Promise<ReplyDTO[]> => {
+    return reviewService.get<ReplyDTO[]>(`/replies/user/${userId}`);
+  },
+
+  getReplyById: async (replyId: number): Promise<ReplyDTO> => {
+    return reviewService.get<ReplyDTO>(`/replies/${replyId}`);
+  },
+
+  countRepliesByReviewId: async (reviewId: number): Promise<number> => {
+    return reviewService.get<number>(`/${reviewId}/replies/count`);
   },
 };
 

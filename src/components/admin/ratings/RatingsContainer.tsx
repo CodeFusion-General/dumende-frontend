@@ -12,6 +12,7 @@ import CategoryBreakdownChart from "./CategoryBreakdownChart";
 import RecentActivityCard from "./RecentActivityCard";
 import ReviewsGrid from "./ReviewsGrid";
 import ReviewsFilterBar from "./ReviewsFilterBar";
+import ReplyModal from "./ReplyModal";
 import { RatingsSummaryCardSkeleton, RatingsPageSkeleton } from "./skeletons/SkeletonLoaders";
 import { Star, TrendingUp, Users, MessageSquare, BarChart3, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,31 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
   
   // UI state
   const [chartView, setChartView] = useState<"card" | "chart">("card");
+  
+  // Reply modal state
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<ReviewData | null>(null);
+
+  // Helper function to fetch replies for reviews
+  const fetchRepliesForReviews = useCallback(async (reviewsToUpdate: ReviewData[]) => {
+    try {
+      const reviewsWithReplies = await Promise.all(
+        reviewsToUpdate.map(async (review) => {
+          try {
+            const replies = await reviewQueryService.getRepliesByReviewId(parseInt(review.id));
+            return { ...review, replies };
+          } catch (error) {
+            console.warn(`Failed to fetch replies for review ${review.id}:`, error);
+            return { ...review, replies: [] };
+          }
+        })
+      );
+      return reviewsWithReplies;
+    } catch (error) {
+      console.error("Error fetching replies for reviews:", error);
+      return reviewsToUpdate.map(review => ({ ...review, replies: [] }));
+    }
+  }, []);
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -114,21 +140,30 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
         setSummaryStats(summary);
         setRatingDistribution(distribution);
         setRatingTrends(trends);
-        setRecentReviews(recent);
+        
+        // Fetch replies for recent reviews
+        const recentWithReplies = await fetchRepliesForReviews(recent);
+        setRecentReviews(recentWithReplies);
         
         // Handle paginated reviews
         if (paginatedReviews?.content) {
-          setReviews(paginatedReviews.content);
+          // Fetch replies for the reviews
+          const reviewsWithReplies = await fetchRepliesForReviews(paginatedReviews.content);
+          setReviews(reviewsWithReplies);
           setTotalPages(paginatedReviews.totalPages);
           setTotalReviews(paginatedReviews.totalElements);
         }
       } else {
         const [recent, paginatedReviews] = results;
         
-        setRecentReviews(recent);
+        // Fetch replies for recent reviews
+        const recentWithReplies = await fetchRepliesForReviews(recent);
+        setRecentReviews(recentWithReplies);
         
         if (paginatedReviews?.content) {
-          setReviews(paginatedReviews.content);
+          // Fetch replies for the reviews
+          const reviewsWithReplies = await fetchRepliesForReviews(paginatedReviews.content);
+          setReviews(reviewsWithReplies);
           setTotalPages(paginatedReviews.totalPages);
           setTotalReviews(paginatedReviews.totalElements);
         }
@@ -221,18 +256,37 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
   // Handle review actions
   const handleReply = useCallback(async (reviewId: string) => {
     try {
-      // For now, we'll use a simple prompt for the reply message
-      // In a real implementation, you'd want a proper modal/form
-      const replyMessage = prompt("Değerlendirmeye yanıtınızı yazın:");
-      if (replyMessage && replyMessage.trim()) {
-        await reviewCommandService.replyToReview(parseInt(reviewId), replyMessage.trim());
-        console.log("Reply sent successfully");
-        // You might want to show a success message to the user
+      // Find the review to reply to
+      const review = reviews.find(r => r.id === reviewId) || filteredReviews.find(r => r.id === reviewId);
+      if (review) {
+        setSelectedReview(review);
+        setReplyModalOpen(true);
       }
     } catch (err) {
       console.error("Reply error:", err);
-      // You might want to show an error message to the user
     }
+  }, [reviews, filteredReviews]);
+
+  // Handle reply submission
+  const handleReplySubmit = useCallback(async (message: string) => {
+    if (!selectedReview) return;
+    
+    try {
+      await reviewCommandService.replyToReview(parseInt(selectedReview.id), message);
+      console.log("Reply sent successfully");
+      // Refresh data to show the new reply
+      await fetchData();
+      // You might want to show a success message to the user
+    } catch (err) {
+      console.error("Reply submission error:", err);
+      throw err; // Re-throw to let the modal handle the error
+    }
+  }, [selectedReview, fetchData]);
+
+  // Handle reply modal close
+  const handleReplyModalClose = useCallback(() => {
+    setReplyModalOpen(false);
+    setSelectedReview(null);
   }, []);
 
   const handleFlag = useCallback(async (reviewId: string) => {
@@ -442,6 +496,15 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
         onDelete={handleDelete}
         onRefresh={handleRefresh}
         showDeleteButton={isAdmin} // Only show delete button for admin users
+      />
+
+      {/* Reply Modal */}
+      <ReplyModal
+        isOpen={replyModalOpen}
+        onClose={handleReplyModalClose}
+        onSubmit={handleReplySubmit}
+        review={selectedReview}
+        loading={loading}
       />
     </div>
   );

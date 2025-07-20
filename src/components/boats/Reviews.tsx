@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { Star, ChevronDown, ChevronUp, User } from "lucide-react";
+import { Star, ChevronDown, ChevronUp, User, MessageCircle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { ExpandableText } from "@/components/ui/ExpandableText";
-import { reviewService } from "@/services/reviewService";
+import { reviewService, reviewQueryService } from "@/services/reviewService";
+import { ReplyDTO } from "@/types/review.types";
 interface Review {
   id: number;
   userName: string;
@@ -12,6 +15,7 @@ interface Review {
   rating: number;
   date: string;
   comment: string;
+  replies?: ReplyDTO[];
 }
 
 interface ReviewsProps {
@@ -28,15 +32,36 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
       if (!boatId) return;
       try {
         const reviewDtos = await reviewService.getBoatReviews(boatId);
-        const reviews: Review[] = reviewDtos.map((review) => ({
-          id: review.id,
-          userName: review.customer.fullName,
-          rating: review.rating,
-          date: new Date(review.createdAt).toLocaleDateString(),
-          comment: review.comment,
-        }));
-        setReviews(reviews);
-        setReviewCount(reviews.length);
+        
+        // Fetch replies for each review
+        const reviewsWithReplies = await Promise.all(
+          reviewDtos.map(async (review) => {
+            try {
+              const replies = await reviewQueryService.getRepliesByReviewId(review.id);
+              return {
+                id: review.id,
+                userName: review.customer.fullName,
+                rating: review.rating,
+                date: new Date(review.createdAt).toLocaleDateString(),
+                comment: review.comment,
+                replies: replies,
+              };
+            } catch (error) {
+              console.warn(`Failed to fetch replies for review ${review.id}:`, error);
+              return {
+                id: review.id,
+                userName: review.customer.fullName,
+                rating: review.rating,
+                date: new Date(review.createdAt).toLocaleDateString(),
+                comment: review.comment,
+                replies: [],
+              };
+            }
+          })
+        );
+        
+        setReviews(reviewsWithReplies);
+        setReviewCount(reviewsWithReplies.length);
       } catch (error) {
         console.error("Error fetching reviews:", error);
       }
