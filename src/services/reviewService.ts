@@ -472,6 +472,20 @@ export const reviewCommandService = {
   deleteReviewsByTourId: async (tourId: number): Promise<void> => {
     return reviewService.deleteReviewsByTourId(tourId);
   },
+
+  // Reply to review
+  replyToReview: async (reviewId: number, replyMessage: string): Promise<string> => {
+    return reviewService.post(`/${reviewId}/reply`, replyMessage, {
+      headers: {
+        'Content-Type': 'text/plain'
+      }
+    });
+  },
+
+  // Flag review
+  flagReview: async (reviewId: number): Promise<string> => {
+    return reviewService.post(`/${reviewId}/flag`, {});
+  },
 };
 
 // Helper functions for owner/captain specific data

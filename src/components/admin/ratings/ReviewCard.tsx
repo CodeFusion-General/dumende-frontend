@@ -7,22 +7,14 @@ import { ExpandableText } from "@/components/ui/ExpandableText";
 import { Star, Reply, Flag, Trash2, CheckCircle } from "lucide-react";
 import { HoverAnimation } from "./animations/AnimationUtils";
 
+import { ReviewData } from "@/types/ratings.types";
+
 interface ReviewCardProps {
-  review: {
-    id: string;
-    userName: string;
-    userInitials: string;
-    date: string;
-    rating: number;
-    comment: string;
-    category: "boat" | "tour";
-    entityName: string;
-    isVerified: boolean;
-    helpfulCount: number;
-  };
+  review: ReviewData;
   onReply: (reviewId: string) => void;
   onFlag: (reviewId: string) => void;
   onDelete: (reviewId: string) => void;
+  showDeleteButton?: boolean; // Controls whether delete button is visible
 }
 
 const ReviewCard: React.FC<ReviewCardProps> = ({
@@ -30,6 +22,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   onReply,
   onFlag,
   onDelete,
+  showDeleteButton = true, // Default to true for backward compatibility
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [actionStates, setActionStates] = useState({
@@ -37,6 +30,30 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     flag: false,
     delete: false,
   });
+
+  // Helper functions for ReviewDTO
+  const getUserName = () => {
+    return review.customer?.fullName || `Müşteri ${review.customer?.id || review.id}`;
+  };
+
+  const getUserInitials = () => {
+    const fullName = review.customer?.fullName;
+    if (!fullName) return "M";
+    
+    const names = fullName.trim().split(" ");
+    if (names.length === 1) {
+      return names[0].charAt(0).toUpperCase();
+    }
+    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+  };
+
+  const getCategory = (): "boat" | "tour" => {
+    return review.boatId ? "boat" : "tour";
+  };
+
+  const getEntityName = () => {
+    return review.boatName || review.tourName || "Bilinmeyen";
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -71,7 +88,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
       <Card
         className="group shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-0 bg-white focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2 hover:border-primary/20"
         role="listitem"
-        aria-label={`${review.userName} tarafından ${review.entityName} için yapılan ${review.rating} yıldızlı değerlendirme`}
+        aria-label={`${getUserName()} tarafından ${getEntityName()} için yapılan ${review.rating} yıldızlı değerlendirme`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -83,7 +100,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             <HoverAnimation scale={1.1}>
               <Avatar className="h-10 w-10 xs:h-12 xs:w-12 bg-primary/10 border-2 border-primary/20 flex-shrink-0 transition-all duration-300 group-hover:border-primary/40 group-hover:shadow-md">
                 <AvatarFallback className="bg-primary text-primary-foreground font-montserrat font-semibold text-xs xs:text-sm">
-                  {review.userInitials}
+                  {getUserInitials()}
                 </AvatarFallback>
               </Avatar>
             </HoverAnimation>
@@ -92,23 +109,18 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-1">
                 <h4 className="font-montserrat font-semibold text-gray-900 text-sm xs:text-base truncate">
-                  {review.userName}
+                  {getUserName()}
                 </h4>
-                {review.isVerified && (
-                  <CheckCircle
-                    className="h-4 w-4 text-green-500 flex-shrink-0"
-                    aria-label="Doğrulanmış kullanıcı"
-                  />
-                )}
+                {/* Verification status - can be added to ReviewDTO later if needed */}
               </div>
               <p className="text-xs xs:text-sm text-gray-500 font-roboto">
                 <time
-                  dateTime={review.date}
+                  dateTime={review.createdAt}
                   aria-label={`Değerlendirme tarihi: ${formatDate(
-                    review.date
+                    review.createdAt
                   )}`}
                 >
-                  {formatDate(review.date)}
+                  {formatDate(review.createdAt)}
                 </time>
               </p>
             </div>
@@ -141,22 +153,17 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
         {/* Category and Entity Tags */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <Badge
-            variant={getCategoryColor(review.category)}
+            variant={getCategoryColor(getCategory())}
             className="font-montserrat font-medium text-xs xs:text-sm"
           >
-            {getCategoryLabel(review.category)}
+            {getCategoryLabel(getCategory())}
           </Badge>
           <Badge
             variant="outline"
             className="font-roboto text-xs xs:text-sm truncate max-w-32 xs:max-w-none"
           >
-            {review.entityName}
+            {getEntityName()}
           </Badge>
-          {review.isVerified && (
-            <Badge variant="success" size="sm" className="font-roboto text-xs">
-              Doğrulanmış
-            </Badge>
-          )}
         </div>
 
         {/* Review Comment */}
@@ -170,16 +177,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 
         {/* Footer Section */}
         <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3 xs:gap-0 pt-4 border-t border-gray-100">
-          {/* Helpful Count */}
+          {/* Helpful Count - Not available in ReviewDTO */}
           <div className="text-xs xs:text-sm text-gray-500 font-roboto">
-            {review.helpfulCount > 0 && (
-              <span
-                role="status"
-                aria-label={`${review.helpfulCount} kişi bu değerlendirmeyi faydalı buldu`}
-              >
-                {review.helpfulCount} kişi faydalı buldu
-              </span>
-            )}
+            {/* Helpful count feature can be added later if needed */}
           </div>
 
           {/* Admin Action Buttons */}
@@ -206,24 +206,26 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
               size="sm"
               onClick={() => onFlag(review.id)}
               className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors focus:ring-2 focus:ring-amber-500/20 focus:ring-offset-2 text-xs xs:text-sm px-2 xs:px-3"
-              aria-label={`${review.userName} kullanıcısının değerlendirmesini bayrakla`}
+              aria-label={`${getUserName()} kullanıcısının değerlendirmesini bayrakla`}
             >
               <Flag className="h-3 w-3 xs:h-4 xs:w-4 mr-1" aria-hidden="true" />
               <span className="hidden xs:inline">Bayrakla</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete(review.id)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors focus:ring-2 focus:ring-red-500/20 focus:ring-offset-2 text-xs xs:text-sm px-2 xs:px-3"
-              aria-label={`${review.userName} kullanıcısının değerlendirmesini sil`}
-            >
-              <Trash2
-                className="h-3 w-3 xs:h-4 xs:w-4 mr-1"
-                aria-hidden="true"
-              />
-              <span className="hidden xs:inline">Sil</span>
-            </Button>
+            {showDeleteButton && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(review.id)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors focus:ring-2 focus:ring-red-500/20 focus:ring-offset-2 text-xs xs:text-sm px-2 xs:px-3"
+                aria-label={`${getUserName()} kullanıcısının değerlendirmesini sil`}
+              >
+                <Trash2
+                  className="h-3 w-3 xs:h-4 xs:w-4 mr-1"
+                  aria-hidden="true"
+                />
+                <span className="hidden xs:inline">Sil</span>
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

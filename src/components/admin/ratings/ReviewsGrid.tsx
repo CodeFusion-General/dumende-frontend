@@ -22,6 +22,7 @@ interface ReviewsGridProps {
   onDelete: (reviewId: string) => void;
   onRefresh?: () => void;
   itemsPerPage?: number;
+  showDeleteButton?: boolean; // Controls whether delete button is visible in ReviewCard
 }
 
 const ReviewsGrid: React.FC<ReviewsGridProps> = ({
@@ -32,6 +33,7 @@ const ReviewsGrid: React.FC<ReviewsGridProps> = ({
   onDelete,
   onRefresh,
   itemsPerPage = 12,
+  showDeleteButton = true, // Default to true for backward compatibility
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -215,6 +217,7 @@ const ReviewsGrid: React.FC<ReviewsGridProps> = ({
               onReply={onReply}
               onFlag={onFlag}
               onDelete={onDelete}
+              showDeleteButton={showDeleteButton}
             />
           ))
         )}

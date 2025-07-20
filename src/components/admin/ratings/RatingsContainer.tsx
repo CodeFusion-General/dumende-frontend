@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { reviewService, reviewQueryService } from "@/services/reviewService";
+import { reviewService, reviewQueryService, reviewCommandService } from "@/services/reviewService";
+import { useAuth } from "@/contexts/AuthContext";
 import { ReviewData, RatingStats, FilterOptions, SortOption } from "@/types/ratings.types";
 import RatingsHeader from "./RatingsHeader";
 import RatingsSummaryCard from "./RatingsSummaryCard";
@@ -27,6 +28,9 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
   tourId,
   ownerId,
 }) => {
+  // Auth context
+  const { user, isAdmin } = useAuth();
+  
   // State management
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -215,14 +219,31 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
   }, [reviews, filters, sortBy]);
 
   // Handle review actions
-  const handleReply = useCallback((reviewId: string) => {
-    console.log("Reply to review:", reviewId);
-    // Implement reply functionality
+  const handleReply = useCallback(async (reviewId: string) => {
+    try {
+      // For now, we'll use a simple prompt for the reply message
+      // In a real implementation, you'd want a proper modal/form
+      const replyMessage = prompt("Değerlendirmeye yanıtınızı yazın:");
+      if (replyMessage && replyMessage.trim()) {
+        await reviewCommandService.replyToReview(parseInt(reviewId), replyMessage.trim());
+        console.log("Reply sent successfully");
+        // You might want to show a success message to the user
+      }
+    } catch (err) {
+      console.error("Reply error:", err);
+      // You might want to show an error message to the user
+    }
   }, []);
 
-  const handleFlag = useCallback((reviewId: string) => {
-    console.log("Flag review:", reviewId);
-    // Implement flag functionality
+  const handleFlag = useCallback(async (reviewId: string) => {
+    try {
+      await reviewCommandService.flagReview(parseInt(reviewId));
+      console.log("Review flagged successfully");
+      // You might want to show a success message to the user
+    } catch (err) {
+      console.error("Flag error:", err);
+      // You might want to show an error message to the user
+    }
   }, []);
 
   const handleDelete = useCallback(async (reviewId: string) => {
@@ -420,6 +441,7 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
         onFlag={handleFlag}
         onDelete={handleDelete}
         onRefresh={handleRefresh}
+        showDeleteButton={isAdmin} // Only show delete button for admin users
       />
     </div>
   );
