@@ -2,6 +2,7 @@ import { BaseService } from "./base/BaseService";
 import { tokenUtils } from "@/lib/utils";
 import { boatService } from "./boatService"; // boatService import ediyoruz
 import { tourService } from "./tourService"; // tourService import ediyoruz
+import { availabilityService } from "./availabilityService"; // availabilityService import ediyoruz
 import {
   BookingDTO,
   CreateBookingDTO,
@@ -26,6 +27,50 @@ class BookingService extends BaseService {
   public async getBookings(filters?: BookingFilters): Promise<BookingDTO[]> {
     const queryString = filters ? this.buildQueryString(filters) : "";
     return this.get<BookingDTO[]>(`?${queryString}`);
+  }
+  
+  // Get available time slots for a specific date
+  public async getAvailableTimeSlots(boatId: number, date: string): Promise<string[]> {
+    try {
+      // First check if the boat has availability defined for this date using availabilityService
+      const isAvailable = await availabilityService.isBoatAvailableOnDate(boatId, date);
+      
+      if (!isAvailable) {
+        return []; // No availability defined for this date
+      }
+      
+      // Get existing bookings for this date to determine which time slots are already taken
+      const startOfDay = `${date}T00:00:00`;
+      const endOfDay = `${date}T23:59:59`;
+      
+      const bookings = await this.getBoatBookingsInRange(boatId, startOfDay, endOfDay);
+      
+      // Generate all possible time slots (hourly from 8 AM to 6 PM)
+      const allTimeSlots = Array.from({ length: 11 }, (_, i) => {
+        const hour = i + 8; // Start at 8 AM
+        return `${hour}:00`;
+      });
+      
+      // Filter out time slots that overlap with existing bookings
+      const availableTimeSlots = allTimeSlots.filter(timeSlot => {
+        const [hour] = timeSlot.split(':').map(Number);
+        const slotStart = new Date(`${date}T${hour}:00:00`);
+        
+        // Check if this time slot overlaps with any existing booking
+        return !bookings.some(booking => {
+          const bookingStart = new Date(booking.startDate);
+          const bookingEnd = new Date(booking.endDate);
+          
+          // Simple overlap check: slot starts before booking ends AND slot ends after booking starts
+          return slotStart < bookingEnd && new Date(slotStart.getTime() + 3600000) > bookingStart;
+        });
+      });
+      
+      return availableTimeSlots;
+    } catch (error) {
+      console.error('Failed to fetch available time slots:', error);
+      return [];
+    }
   }
 
   public async getBookingById(id: number): Promise<BookingDTO> {
