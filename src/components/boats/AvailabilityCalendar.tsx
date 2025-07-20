@@ -27,16 +27,22 @@ const AvailabilityLegend: React.FC<AvailabilityLegendProps> = ({ language = 'tr'
       icon: '✓'
     },
     {
+      color: 'bg-blue-100 border-blue-300',
+      textColor: 'text-blue-800',
+      label: language === 'tr' ? 'Anında Onay' : 'Instant Confirmation',
+      icon: '⚡'
+    },
+    {
+      color: 'bg-purple-100 border-purple-300',
+      textColor: 'text-purple-800',
+      label: language === 'tr' ? 'Özel Fiyat' : 'Special Price',
+      icon: '$'
+    },
+    {
       color: 'bg-red-100 border-red-300',
       textColor: 'text-red-800',
       label: language === 'tr' ? 'Müsait Değil' : 'Unavailable',
       icon: '✗'
-    },
-    {
-      color: 'bg-blue-100 border-blue-300',
-      textColor: 'text-blue-800',
-      label: language === 'tr' ? 'Özel Fiyat' : 'Special Price',
-      icon: '$'
     },
     {
       color: 'bg-gray-100 border-gray-300',
@@ -95,6 +101,7 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       available: [] as Date[],
       unavailable: [] as Date[],
       specialPrice: [] as Date[],
+      instantConfirmation: [] as Date[],
       hasBookings: [] as Date[],
       past: [] as Date[]
     };
@@ -106,7 +113,9 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       if (isPast) {
         modifiers.past.push(date);
       } else if (item.isAvailable && !item.hasBookings) {
-        if (item.isOverride && item.price) {
+        if (item.isInstantConfirmation) {
+          modifiers.instantConfirmation.push(date);
+        } else if (item.isOverride && item.price) {
           modifiers.specialPrice.push(date);
         } else {
           modifiers.available.push(date);
@@ -179,10 +188,15 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
               borderColor: 'rgb(252 165 165)', // border-red-300
               color: 'rgb(153 27 27)' // text-red-800
             },
-            specialPrice: {
+            instantConfirmation: {
               backgroundColor: 'rgb(219 234 254)', // bg-blue-100
               borderColor: 'rgb(147 197 253)', // border-blue-300
               color: 'rgb(30 64 175)' // text-blue-800
+            },
+            specialPrice: {
+              backgroundColor: 'rgb(243 232 255)', // bg-purple-100
+              borderColor: 'rgb(196 181 253)', // border-purple-300
+              color: 'rgb(107 33 168)' // text-purple-800
             },
             hasBookings: {
               backgroundColor: 'rgb(254 226 226)', // bg-red-100

@@ -5,6 +5,7 @@ export interface CalendarAvailability {
   price?: number;
   hasBookings?: boolean;
   bookingCount?: number;
+  isInstantConfirmation?: boolean;
 }
 i
 export interface AvailabilityData {
@@ -13,6 +14,7 @@ export interface AvailabilityData {
   date: string;
   isAvailable: boolean;
   priceOverride?: number;
+  isInstantConfirmation?: boolean;
   createdAt: string;
   updatedAt: string;
 }
