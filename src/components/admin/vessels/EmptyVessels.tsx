@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Sailboat, Plus } from "lucide-react";
+import { Sailboat, Plus, Anchor, ArrowRight } from "lucide-react";
 
 interface EmptyVesselsProps {
   onAddClick: () => void;
@@ -9,18 +9,71 @@ interface EmptyVesselsProps {
 
 const EmptyVessels: React.FC<EmptyVesselsProps> = ({ onAddClick }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-10 bg-white rounded-lg border border-dashed border-gray-300 text-center">
-      <Sailboat size={64} className="text-gray-400 mb-4" />
-      <h3 className="text-xl font-medium text-gray-700 mb-2">Henüz taşıt eklemediniz</h3>
-      <p className="text-gray-500 mb-6 max-w-md">
-        Teknelerinizi ekleyerek müşterilerinizin hemen rezervasyon yapmasına olanak sağlayabilirsiniz.
-      </p>
-      <Button 
-        onClick={onAddClick}
-        className="bg-[#15847c] hover:bg-[#0e5c56] text-white"
-      >
-        <Plus size={16} className="mr-1" /> Taşıt Ekle
-      </Button>
+    <div className="relative">
+      {/* Main Empty State Container */}
+      <div className="flex flex-col items-center justify-center p-12 lg:p-16 bg-gradient-to-br from-primary/5 via-white to-primary/3 rounded-3xl border border-primary/10 text-center shadow-lg hover:shadow-xl transition-all duration-500">
+        
+        {/* Animated Icon Container */}
+        <div className="relative mb-8">
+          <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-500 hover:scale-110 group">
+            <Sailboat size={48} className="text-primary group-hover:text-primary/80 transition-colors duration-300" />
+          </div>
+          
+          {/* Floating Icons */}
+          <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center shadow-md animate-bounce">
+            <Anchor size={16} className="text-blue-600" />
+          </div>
+          <div className="absolute -bottom-1 -left-3 w-6 h-6 bg-gradient-to-br from-green-100 to-green-50 rounded-full flex items-center justify-center shadow-sm animate-pulse">
+            <Plus size={12} className="text-green-600" />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-4 mb-8 max-w-lg">
+          <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+            İlk Taşıtınızı Ekleyin
+          </h3>
+          <p className="text-gray-600 leading-relaxed text-lg">
+            Teknelerinizi ekleyerek müşterilerinizin kolayca rezervasyon yapmasını sağlayın ve işinizi büyütün.
+          </p>
+          
+          {/* Feature List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-sm">
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>Kolay rezervasyon sistemi</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>Otomatik fiyatlandırma</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>Müşteri yönetimi</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-600">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span>Gelir takibi</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <Button 
+          onClick={onAddClick}
+          className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 px-8 py-3 text-lg font-semibold group"
+        >
+          <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" /> 
+          İlk Taşıtımı Ekle
+          <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+        </Button>
+      </div>
+
+      {/* Decorative Elements */}
+      <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl" />
+      <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg" />
+      <div className="absolute top-1/2 -left-2 w-12 h-12 bg-gradient-to-br from-blue-100/50 to-transparent rounded-full blur-md" />
+      <div className="absolute top-1/4 -right-2 w-8 h-8 bg-gradient-to-bl from-green-100/50 to-transparent rounded-full blur-sm" />
     </div>
   );
 };
