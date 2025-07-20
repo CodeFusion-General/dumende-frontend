@@ -155,15 +155,27 @@ const VesselsList: React.FC<VesselsListProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Taşıtlarım</h1>
-        <Button
-          onClick={onAddVessel}
-          className="bg-[#15847c] hover:bg-[#0e5c56] text-white"
-        >
-          <Plus size={16} className="mr-1" /> Taşıt Ekle
-        </Button>
+    <div className="space-y-8">
+      {/* Modern Header Section */}
+      <div className="relative">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-6 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl border border-primary/10">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Taşıtlarım</h1>
+            <p className="text-gray-600 text-sm">
+              Teknelerinizi yönetin ve müşterilerinizin rezervasyon yapmasını sağlayın
+            </p>
+          </div>
+          <Button
+            onClick={onAddVessel}
+            className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 px-6 py-2.5"
+          >
+            <Plus size={18} className="mr-2" /> Yeni Taşıt Ekle
+          </Button>
+        </div>
+        
+        {/* Decorative Elements */}
+        <div className="absolute -top-1 -right-1 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl" />
+        <div className="absolute -bottom-1 -left-1 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg" />
       </div>
 
       {isEmpty ? (
@@ -180,23 +192,30 @@ const VesselsList: React.FC<VesselsListProps> = ({
           />
 
           {filteredVessels.length === 0 ? (
-            <div className="bg-white p-6 rounded-lg text-center">
-              <p className="text-gray-500">
-                Arama kriterlerinize uygun taşıt bulunamadı.
-              </p>
+            <div className="relative">
+              <div className="bg-gradient-to-br from-gray-50 to-white p-12 rounded-2xl border border-gray-100 text-center shadow-sm">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full flex items-center justify-center">
+                  <Plus className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Sonuç Bulunamadı</h3>
+                <p className="text-gray-500 max-w-md mx-auto leading-relaxed">
+                  Arama kriterlerinize uygun taşıt bulunamadı. Farklı filtreler deneyebilir veya yeni bir taşıt ekleyebilirsiniz.
+                </p>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredVessels.map((vessel) => {
                 const adaptedVessel = adaptBoatToVesselCard(vessel);
                 return (
-                  <VesselCard
-                    key={vessel.id}
-                    {...adaptedVessel}
-                    onEdit={onEditVessel}
-                    onDelete={handleDelete}
-                    onPreview={handlePreview}
-                  />
+                  <div key={vessel.id} className="transform transition-all duration-300 hover:scale-[1.02]">
+                    <VesselCard
+                      {...adaptedVessel}
+                      onEdit={onEditVessel}
+                      onDelete={handleDelete}
+                      onPreview={handlePreview}
+                    />
+                  </div>
                 );
               })}
             </div>

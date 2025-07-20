@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/components/ui/use-toast";
 import {
   Popover,
@@ -27,6 +26,9 @@ import {
 } from "@/components/ui/card";
 import { bookingService } from "@/services/bookingService";
 import { availabilityService } from "@/services/availabilityService";
+import AvailabilityCalendar from "./AvailabilityCalendar";
+import { CalendarAvailability } from "@/types/availability.types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -38,6 +40,7 @@ interface BookingFormProps {
 
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
@@ -51,22 +54,23 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   // State for available dates and time slots
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [calendarAvailability, setCalendarAvailability] = useState<CalendarAvailability[]>([]);
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
   
-  // Fetch available dates for the next 3 months
+  // Fetch available dates for the next 6 months (180 days)
   useEffect(() => {
     const fetchAvailableDates = async () => {
       setIsDateLoading(true);
       try {
-        // Get current date and date 3 months from now
+        // Get current date and date 6 months from now (180 days)
         const today = new Date();
-        const threeMonthsLater = new Date();
-        threeMonthsLater.setMonth(today.getMonth() + 3);
+        const sixMonthsLater = new Date();
+        sixMonthsLater.setMonth(today.getMonth() + 6);
         
         // Format dates for API
         const startDate = format(today, 'yyyy-MM-dd');
-        const endDate = format(threeMonthsLater, 'yyyy-MM-dd');
+        const endDate = format(sixMonthsLater, 'yyyy-MM-dd');
         
         // Get calendar availability for the date range
         const calendarData = await availabilityService.getCalendarAvailability(
@@ -81,6 +85,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           .map(day => new Date(day.date));
         
         setAvailableDates(availableDays);
+        setCalendarAvailability(calendarData);
       } catch (error) {
         console.error('Failed to fetch available dates:', error);
         toast({
@@ -169,12 +174,17 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   const disabledDates = {
     before: new Date(), // Disable past dates
     dayOfWeek: [], // Don't disable specific days of the week
-    dates: isDateLoading ? [] : Array.from({ length: 90 }).map((_, i) => {
-      // Create a date for each day in the next 90 days
+    dates: isDateLoading ? [] : Array.from({ length: 365 }).map((_, i) => {
+      // Create a date for each day in the next year
       const day = new Date();
       day.setDate(day.getDate() + i);
       
-      // Check if this date is in the availableDates array
+      // Disable dates beyond 180 days (make them red and non-selectable)
+      if (i >= 180) {
+        return day;
+      }
+      
+      // For dates within 180 days, check if they are in the availableDates array
       const isAvailable = availableDates.some(
         availableDate => 
           availableDate.getDate() === day.getDate() &&
@@ -351,12 +361,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
+                <AvailabilityCalendar
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  availabilityData={calendarAvailability}
+                  isLoading={isDateLoading}
+                  language={language}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -503,12 +514,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
+                <AvailabilityCalendar
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  availabilityData={calendarAvailability}
+                  isLoading={isDateLoading}
+                  language={language}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>

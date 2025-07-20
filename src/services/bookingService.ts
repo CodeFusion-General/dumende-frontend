@@ -32,44 +32,33 @@ class BookingService extends BaseService {
   // Get available time slots for a specific date
   public async getAvailableTimeSlots(boatId: number, date: string): Promise<string[]> {
     try {
-      // First check if the boat has availability defined for this date using availabilityService
-      const isAvailable = await availabilityService.isBoatAvailableOnDate(boatId, date);
-      
-      if (!isAvailable) {
-        return []; // No availability defined for this date
-      }
-      
-      // Get existing availability for this specific date
-      // DateTime formatını LocalDate formatına çevir (sadece tarih kısmını al)
-      const formatDateForBackend = (dateString: string): string => {
-        return dateString.includes('T') ? dateString.split('T')[0] : dateString;
-      };
-
-      const formattedDate = formatDateForBackend(date);
-      const startOfDay = formattedDate;
-      const endOfDay = formattedDate;
-
-      // availabilityService'den range sorgusu yapıyoruz, bookingService'den değil
-      const availabilities = await availabilityService.getAvailabilitiesByBoatIdAndDateRange(boatId, startOfDay, endOfDay);
-
-      // Generate all possible time slots (hourly from 8 AM to 6 PM)
-      const allTimeSlots = Array.from({ length: 11 }, (_, i) => {
-        const hour = i + 8; // Start at 8 AM
-        return `${hour}:00`;
+      // Use the new backend endpoint for available time slots
+      const response = await this.get<string[]>(`/boat/${boatId}/available-time-slots`, {
+        date
       });
-      
-      // Filter time slots based on availability data
-      // AvailabilityDTO'da date alanı var, startDate/endDate yok
-      const hasAvailability = availabilities.some(availability => {
-        const availDate = availability.date;
-        return availDate === formattedDate && availability.isAvailable;
-      });
-      
-      // Eğer tarih için availability varsa ve müsaitse tüm time slot'ları döndür
-      return hasAvailability ? allTimeSlots : [];
+      return response;
     } catch (error) {
-      console.error('Failed to fetch available time slots:', error);
-      return [];
+      console.error('Failed to fetch available time slots from backend:', error);
+
+      // Fallback: Check availability using availabilityService
+      try {
+        const isAvailable = await availabilityService.isBoatAvailableOnDate(boatId, date);
+
+        if (!isAvailable) {
+          return []; // No availability defined for this date
+        }
+
+        // Generate fallback time slots (hourly from 8 AM to 6 PM)
+        const allTimeSlots = Array.from({ length: 11 }, (_, i) => {
+          const hour = i + 8; // Start at 8 AM
+          return `${hour.toString().padStart(2, '0')}:00`;
+        });
+
+        return allTimeSlots;
+      } catch (fallbackError) {
+        console.error('Fallback availability check also failed:', fallbackError);
+        return [];
+      }
     }
   }
 
@@ -134,8 +123,7 @@ class BookingService extends BaseService {
       }
 
       // Booking verilerini de almak istiyorsak, ayrı bir endpoint kullanmalıyız
-      // Şimdilik availability verilerini booking formatına çevirebiliriz
-      // Veya gerçek booking verilerini almak için farklı bir method kullanmalıyız
+      // Şimdilik availability verilerini booking formatına çevirerek döndürüyoruz
       return this.get<BookingDTO[]>(`/boat/${boatId}/bookings-range`, {
         startDate,
         endDate,

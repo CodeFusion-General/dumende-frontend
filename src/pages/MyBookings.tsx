@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, DollarSign, Users, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Users, Clock, Ship } from 'lucide-react';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { bookingService } from '@/services/bookingService';
@@ -12,6 +13,10 @@ import { translations } from '@/locales/translations';
 
 interface Booking {
   id: string;
+  boatId: number;
+  boatName?: string;
+  boatType?: string;
+  boatLocation?: string;
   startDate: string;
   endDate: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW';
@@ -57,6 +62,13 @@ const getStatusBadgeColor = (status: Booking['status']) => {
 };
 
 const BookingCard: React.FC<{ booking: Booking; language: string; t: any }> = ({ booking, language, t }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    if (booking.boatId) {
+      navigate(`/boats/${booking.boatId}`);
+    }
+  };
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -107,7 +119,10 @@ const BookingCard: React.FC<{ booking: Booking; language: string; t: any }> = ({
   };
 
   return (
-    <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1 mb-4 focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2">
+    <Card 
+      className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1 mb-4 focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2 cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Gradient Background */}
       <div
         className={`absolute inset-0 bg-gradient-to-br ${getStatusGradient(booking.status)} opacity-50 group-hover:opacity-70 transition-opacity duration-300`}
@@ -133,6 +148,14 @@ const BookingCard: React.FC<{ booking: Booking; language: string; t: any }> = ({
               <span className="font-montserrat font-semibold text-lg text-[#2c3e50] block">
                 {formatDateRange(booking.startDate, booking.endDate)}
               </span>
+              {booking.boatName && (
+                <div className="flex items-center space-x-2 mt-1">
+                  <Ship className="h-4 w-4 text-[#3498db]" />
+                  <span className="font-roboto text-sm text-[#2c3e50] font-medium">
+                    {booking.boatName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <Badge 
@@ -245,9 +268,13 @@ const MyBookings: React.FC = () => {
       try {
         // Yeni: userId token'dan otomatik çekiliyor, account/id kontrolü gereksiz
         const data = await bookingService.getCustomerBookings();
-        // BookingDTO[] -> Booking[] map
+        // BookingWithDetailsDTO[] -> Booking[] map
         const mapped = (data as any[]).map((b) => ({
           id: b.id.toString(),
+          boatId: b.boatId,
+          boatName: b.boatName,
+          boatType: b.boatType,
+          boatLocation: b.boatLocation,
           startDate: b.startDate,
           endDate: b.endDate,
           status: b.status as Booking['status'],

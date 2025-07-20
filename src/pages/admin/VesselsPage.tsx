@@ -755,86 +755,116 @@ const VesselsPage = () => {
           </TabsContent>
 
           <TabsContent value="form" className="mt-0">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold flex items-center">
-                  <Ship className="mr-2" />
-                  {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
-                  {loading && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      Yükleniyor...
-                    </span>
-                  )}
-                </h1>
+            <div className="space-y-8">
+              {/* Modern Header Section */}
+              <div className="relative">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-6 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl border border-primary/10">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center">
+                      <Ship className="mr-3 text-primary" size={32} />
+                      {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
+                    </h1>
+                    <p className="text-gray-600 text-sm">
+                      {editingVesselId 
+                        ? "Mevcut teknenizin bilgilerini güncelleyin" 
+                        : "Yeni bir tekne ekleyerek müşterilerinize hizmet vermeye başlayın"
+                      }
+                      {loading && (
+                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                          Yükleniyor...
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Decorative Elements */}
+                <div className="absolute -top-1 -right-1 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl" />
+                <div className="absolute -bottom-1 -left-1 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg" />
               </div>
 
               <form
                 onSubmit={handleSubmit}
-                className="bg-white rounded-lg shadow"
+                className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
               >
                 <Tabs
                   defaultValue={formTab}
                   className="w-full"
                   onValueChange={setFormTab}
                 >
-                  <TabsList className="w-full justify-start border-b rounded-none">
-                    <TabsTrigger
-                      value="details"
-                      className="flex items-center gap-1"
-                    >
-                      <FileText size={16} />
-                      Taşıt Detayları
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="terms"
-                      className="flex items-center gap-1"
-                    >
-                      <Shield size={16} />
-                      Şartlar
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="services"
-                      className="flex items-center gap-1"
-                    >
-                      <Utensils size={16} />
-                      Servisler
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="location"
-                      className="flex items-center gap-1"
-                    >
-                      <MapPin size={16} />
-                      Lokasyon
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="photos"
-                      className="flex items-center gap-1"
-                    >
-                      <Image size={16} />
-                      Fotoğraflar
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="descriptions"
-                      className="flex items-center gap-1"
-                    >
-                      <FileText size={16} />
-                      Açıklamalar
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="organizations"
-                      className="flex items-center gap-1"
-                    >
-                      <Calendar size={16} />
-                      Organizasyonlar
-                    </TabsTrigger>
-                  </TabsList>
+                  {/* Modern Tab Navigation */}
+                  <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                    <TabsList className="w-full justify-start bg-transparent border-0 rounded-none p-0 h-auto">
+                      <div className="flex flex-wrap gap-1 p-4">
+                        <TabsTrigger
+                          value="details"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <FileText size={18} />
+                          <span className="font-medium">Taşıt Detayları</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="terms"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <Shield size={18} />
+                          <span className="font-medium">Şartlar</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="services"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <Utensils size={18} />
+                          <span className="font-medium">Servisler</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="location"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <MapPin size={18} />
+                          <span className="font-medium">Lokasyon</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="photos"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <Image size={18} />
+                          <span className="font-medium">Fotoğraflar</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="descriptions"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <FileText size={18} />
+                          <span className="font-medium">Açıklamalar</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="organizations"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <Calendar size={18} />
+                          <span className="font-medium">Organizasyonlar</span>
+                        </TabsTrigger>
+                      </div>
+                    </TabsList>
+                  </div>
 
-                  <TabsContent value="details" className="p-6">
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                  <TabsContent value="details" className="p-8">
+                    <div className="space-y-8">
+                      {/* Section Header */}
+                      <div className="border-b border-gray-200 pb-4">
+                        <h2 className="text-2xl font-semibold text-gray-900 flex items-center">
+                          <FileText className="mr-3 text-primary" size={24} />
+                          Temel Bilgiler
+                        </h2>
+                        <p className="text-gray-600 mt-1">Teknenizin temel özelliklerini ve detaylarını girin</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-2">
                           <label
-                            className="block text-sm font-medium mb-1"
+                            className="block text-sm font-semibold text-gray-700 mb-2"
                             htmlFor="vesselType"
                           >
                             Taşıt Tipi *
@@ -843,8 +873,8 @@ const VesselsPage = () => {
                             value={formData.type}
                             onValueChange={handleSelectChange("type")}
                           >
-                            <SelectTrigger id="vesselType">
-                              <SelectValue placeholder="Seçiniz" />
+                            <SelectTrigger id="vesselType" className="h-12 border-gray-300 focus:border-primary focus:ring-primary">
+                              <SelectValue placeholder="Tekne tipini seçiniz" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="SAILBOAT">Yelkenli</SelectItem>
@@ -860,6 +890,7 @@ const VesselsPage = () => {
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-gray-500">Teknenizin kategorisini belirleyin</p>
                         </div>
 
                         <div>
@@ -877,9 +908,9 @@ const VesselsPage = () => {
                           />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                           <label
-                            className="block text-sm font-medium mb-1"
+                            className="block text-sm font-semibold text-gray-700 mb-2"
                             htmlFor="vesselName"
                           >
                             Tekne İsmi *
@@ -890,7 +921,9 @@ const VesselsPage = () => {
                             value={formData.name}
                             onChange={handleInputChange("name")}
                             required
+                            className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
                           />
+                          <p className="text-xs text-gray-500">Müşterilerinizin göreceği tekne ismi</p>
                         </div>
 
                         <div>
@@ -947,9 +980,9 @@ const VesselsPage = () => {
                           />
                         </div>
 
-                        <div>
+                        <div className="space-y-2">
                           <label
-                            className="block text-sm font-medium mb-1"
+                            className="block text-sm font-semibold text-gray-700 mb-2"
                             htmlFor="dailyPrice"
                           >
                             Günlük Fiyat (₺) *
@@ -963,7 +996,9 @@ const VesselsPage = () => {
                             onChange={handleInputChange("dailyPrice")}
                             min="0"
                             required
+                            className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
                           />
+                          <p className="text-xs text-gray-500">Günlük kiralama ücreti</p>
                         </div>
 
                         <div>
@@ -1011,33 +1046,54 @@ const VesselsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                        <Button
-                          type="submit"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                        >
-                          {loading
-                            ? "Kaydediliyor..."
-                            : editingVesselId
-                            ? "Güncelle"
-                            : "Kaydet"}
-                        </Button>
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t border-gray-200">
+                        <div className="text-sm text-gray-500">
+                          <div>* işaretli alanlar zorunludur</div>
+                          <div className="mt-1 text-xs text-blue-600">
+                            💡 Bu kaydet butonu tüm sekmelerdeki bilgileri kaydeder
+                          </div>
+                        </div>
+                        <div className="flex space-x-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleBackToList}
+                            className="px-6 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 rounded-xl font-medium"
+                            disabled={loading}
+                          >
+                            Geri Dön
+                          </Button>
+                          <Button
+                            type="submit"
+                            className="px-8 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 rounded-xl font-medium"
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <span className="flex items-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Kaydediliyor...
+                              </span>
+                            ) : editingVesselId ? (
+                              "Tüm Bilgileri Güncelle"
+                            ) : (
+                              "Tüm Bilgileri Kaydet"
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="terms" className="p-6">
                     <div className="space-y-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center">
+                          <div className="text-blue-600 mr-2">ℹ️</div>
+                          <p className="text-sm text-blue-800">
+                            Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          </p>
+                        </div>
+                      </div>
                       <h2 className="text-xl font-medium mb-4">
                         Şartlar ve Koşullar
                       </h2>
@@ -1141,25 +1197,19 @@ const VesselsPage = () => {
                         >
                           Geri Dön
                         </Button>
-                        <Button
-                          type="button"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                          onClick={() => {
-                            toast({
-                              title: "Bilgi",
-                              description:
-                                "Şartlar kaydedildi. Ana kaydetme için 'Taşıt Detayları' sekmesine gidin.",
-                            });
-                          }}
-                        >
-                          Şartları Kaydet
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="services" className="p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center">
+                        <div className="text-blue-600 mr-2">ℹ️</div>
+                        <p className="text-sm text-blue-800">
+                          Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                        </p>
+                      </div>
+                    </div>
                     <h2 className="text-xl font-medium mb-4">Servisler</h2>
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1239,25 +1289,19 @@ const VesselsPage = () => {
                         >
                           Geri Dön
                         </Button>
-                        <Button
-                          type="button"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                          onClick={() => {
-                            toast({
-                              title: "Bilgi",
-                              description:
-                                "Servisler kaydedildi. Ana kaydetme için 'Taşıt Detayları' sekmesine gidin.",
-                            });
-                          }}
-                        >
-                          Servisleri Kaydet
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="location" className="p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center">
+                        <div className="text-blue-600 mr-2">ℹ️</div>
+                        <p className="text-sm text-blue-800">
+                          Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                        </p>
+                      </div>
+                    </div>
                     <h2 className="text-xl font-medium mb-4">Lokasyon</h2>
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1334,25 +1378,19 @@ const VesselsPage = () => {
                         >
                           Geri Dön
                         </Button>
-                        <Button
-                          type="button"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                          onClick={() => {
-                            toast({
-                              title: "Bilgi",
-                              description:
-                                "Lokasyon kaydedildi. Ana kaydetme için 'Taşıt Detayları' sekmesine gidin.",
-                            });
-                          }}
-                        >
-                          Lokasyonu Kaydet
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="photos" className="p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center">
+                        <div className="text-blue-600 mr-2">ℹ️</div>
+                        <p className="text-sm text-blue-800">
+                          Bu sekmedeki fotoğrafları ekledikten sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                        </p>
+                      </div>
+                    </div>
                     <h2 className="text-xl font-medium mb-4">Fotoğraflar</h2>
                     <div className="space-y-6">
                       {/* Mevcut Fotoğraflar - Düzenleme modunda göster */}
@@ -1480,22 +1518,19 @@ const VesselsPage = () => {
                         >
                           Geri Dön
                         </Button>
-                        <Button
-                          type="submit"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                        >
-                          {loading
-                            ? "Kaydediliyor..."
-                            : editingVesselId
-                            ? "Güncelle"
-                            : "Kaydet"}
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="descriptions" className="p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center">
+                        <div className="text-blue-600 mr-2">ℹ️</div>
+                        <p className="text-sm text-blue-800">
+                          Bu sekmedeki açıklamaları yazdıktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                        </p>
+                      </div>
+                    </div>
                     <h2 className="text-xl font-medium mb-4">Açıklamalar</h2>
                     <div className="space-y-6">
                       <div>
@@ -1540,25 +1575,19 @@ const VesselsPage = () => {
                         >
                           Geri Dön
                         </Button>
-                        <Button
-                          type="button"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                          onClick={() => {
-                            toast({
-                              title: "Bilgi",
-                              description:
-                                "Açıklamalar kaydedildi. Ana kaydetme için 'Taşıt Detayları' sekmesine gidin.",
-                            });
-                          }}
-                        >
-                          Açıklamaları Kaydet
-                        </Button>
                       </div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="organizations" className="p-6">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-center">
+                        <div className="text-blue-600 mr-2">ℹ️</div>
+                        <p className="text-sm text-blue-800">
+                          Bu sekmedeki organizasyon bilgilerini seçtikten sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                        </p>
+                      </div>
+                    </div>
                     <h2 className="text-xl font-medium mb-4">
                       Organizasyonlar
                     </h2>
@@ -1625,20 +1654,6 @@ const VesselsPage = () => {
                           disabled={loading}
                         >
                           Geri Dön
-                        </Button>
-                        <Button
-                          type="button"
-                          className="bg-[#2ecc71] hover:bg-[#25a25a]"
-                          disabled={loading}
-                          onClick={() => {
-                            toast({
-                              title: "Bilgi",
-                              description:
-                                "Organizasyon bilgileri kaydedildi. Ana kaydetme için 'Taşıt Detayları' sekmesine gidin.",
-                            });
-                          }}
-                        >
-                          Organizasyonları Kaydet
                         </Button>
                       </div>
                     </div>
