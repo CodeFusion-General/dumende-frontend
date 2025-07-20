@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/components/ui/use-toast";
 import {
   Popover,
@@ -27,6 +26,9 @@ import {
 } from "@/components/ui/card";
 import { bookingService } from "@/services/bookingService";
 import { availabilityService } from "@/services/availabilityService";
+import AvailabilityCalendar from "./AvailabilityCalendar";
+import { CalendarAvailability } from "@/types/availability.types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -38,6 +40,7 @@ interface BookingFormProps {
 
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
@@ -51,6 +54,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   // State for available dates and time slots
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [calendarAvailability, setCalendarAvailability] = useState<CalendarAvailability[]>([]);
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
   
@@ -81,6 +85,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           .map(day => new Date(day.date));
         
         setAvailableDates(availableDays);
+        setCalendarAvailability(calendarData);
       } catch (error) {
         console.error('Failed to fetch available dates:', error);
         toast({
@@ -351,12 +356,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
+                <AvailabilityCalendar
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  availabilityData={calendarAvailability}
+                  isLoading={isDateLoading}
+                  language={language}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -503,12 +509,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
+                <AvailabilityCalendar
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  availabilityData={calendarAvailability}
+                  isLoading={isDateLoading}
+                  language={language}
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
