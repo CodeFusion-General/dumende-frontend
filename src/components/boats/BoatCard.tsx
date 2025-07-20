@@ -85,7 +85,7 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-brand-accent text-brand-secondary font-medium text-sm py-1 px-3 rounded-full">
+        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
           {boat.type}
         </div>
         <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
@@ -95,7 +95,7 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared ? 'bg-brand-primary text-white' : 'bg-white/80 text-brand-primary'
+              isCompared ? 'bg-blue-600 text-white' : 'bg-white/80 text-blue-600'
             }`}
           >
             {isCompared ? 'Karşılaştırıldı' : 'Karşılaştır'}
@@ -105,11 +105,11 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
 
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-brand-secondary">
+          <h3 className="font-bold text-lg text-gray-800">
             {boat.name}
           </h3>
           <div className="flex items-center">
-            <Star className="h-4 w-4 text-brand-accent fill-brand-accent" />
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
           </div>
         </div>
@@ -131,13 +131,13 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           {boat.features?.slice(0, 3).map((feature, index) => (
             <span
               key={index}
-              className="text-xs bg-brand-grey px-2 py-1 rounded text-gray-700"
+              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
             >
               {feature.featureName}
             </span>
           ))}
           {boat.features && boat.features.length > 3 && (
-            <span className="text-xs bg-brand-grey px-2 py-1 rounded text-gray-700">
+            <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
               +{boat.features.length - 3}
             </span>
           )}
@@ -145,13 +145,13 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
 
         <div className="flex justify-between items-center">
           <div>
-            <span className="font-bold text-lg text-brand-primary">
+            <span className="font-bold text-lg text-blue-600">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
             <span className="text-sm text-gray-500">/{priceUnit}</span>
           </div>
-          <Link to={`/tekne-detay/${boat.id}`}>
-            <Button className="bg-brand-primary hover:bg-brand-secondary text-white">
+          <Link to={`/boats/${boat.id}`}>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
               İncele
             </Button>
           </Link>
@@ -186,7 +186,7 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-brand-accent text-brand-secondary font-medium text-sm py-1 px-3 rounded-full">
+        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
           {boat.type}
         </div>
         <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
@@ -196,7 +196,7 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared ? 'bg-brand-primary text-white' : 'bg-white/80 text-brand-primary'
+              isCompared ? 'bg-blue-600 text-white' : 'bg-white/80 text-blue-600'
             }`}
           >
             {isCompared ? 'Karşılaştırıldı' : 'Karşılaştır'}
@@ -207,24 +207,24 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
       <div className="p-4 md:p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-bold text-xl text-brand-secondary">
+            <h3 className="font-bold text-xl text-gray-800">
               {boat.name}
             </h3>
             <div className="text-sm text-gray-500 mb-2">{boat.location}</div>
           </div>
           <div className="flex items-center">
-            <Star className="h-4 w-4 text-brand-accent fill-brand-accent" />
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-2 text-brand-primary" />
+            <Users className="h-4 w-4 mr-2 text-blue-600" />
             <span>{boat.capacity} Kişi</span>
           </div>
           <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2 text-brand-primary" />
+            <Calendar className="h-4 w-4 mr-2 text-blue-600" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
         </div>
@@ -233,7 +233,7 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className="text-xs bg-brand-grey px-2 py-1 rounded text-gray-700"
+              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
             >
               {feature.featureName}
             </span>
@@ -242,22 +242,22 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
 
         <div className="flex justify-between items-center mt-2">
           <div>
-            <span className="font-bold text-xl text-brand-primary">
+            <span className="font-bold text-xl text-blue-600">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
             <span className="text-sm text-gray-500">/{priceUnit}</span>
           </div>
           <div className="flex space-x-2">
-            <Link to={`/tekne-detay/${boat.id}`}>
+            <Link to={`/boats/${boat.id}`}>
               <Button
                 variant="outline"
-                className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
               >
                 Detaylar
               </Button>
             </Link>
             <Link to={`/rezervasyon/${boat.id}`}>
-              <Button className="bg-brand-primary hover:bg-brand-secondary text-white">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                 Rezervasyon <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>

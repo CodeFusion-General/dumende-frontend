@@ -475,11 +475,11 @@ export const reviewCommandService = {
 
   // Reply to review
   replyToReview: async (reviewId: number, replyMessage: string): Promise<string> => {
-    return reviewService.post(`/${reviewId}/reply`, replyMessage, {
-      headers: {
-        'Content-Type': 'text/plain'
-      }
-    });
+    const requestBody = {
+      message: replyMessage,
+      isOfficial: true
+    };
+    return reviewService.post(`/${reviewId}/reply`, requestBody);
   },
 
   // Flag review
