@@ -55,24 +55,61 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
     <div className="relative">
       <button
         onClick={handleToggle}
-        className="text-white hover:text-accent p-2 rounded-full transition-colors relative"
+        className="group relative p-3 rounded-full transition-all duration-300 ease-out transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-transparent"
+        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
       >
-        <Bell size={24} />
-        {unreadCount > 1 && (
-          <Badge 
-            variant="destructive" 
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0 min-w-[1.25rem]"
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
+        {/* Background with glassmorphism effect */}
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Bell icon with enhanced styling */}
+        <div className="relative">
+          <Bell 
+            size={24} 
+            className={`text-white transition-all duration-300 ${
+              unreadCount > 0 
+                ? 'drop-shadow-lg group-hover:text-yellow-200' 
+                : 'group-hover:text-blue-200'
+            }`}
+          />
+          
+          {/* Notification pulse effect for unread notifications */}
+          {unreadCount > 0 && (
+            <div className="absolute inset-0 rounded-full bg-yellow-400/30 animate-ping" />
+          )}
+        </div>
+
+        {/* Enhanced badge with modern styling */}
+        {unreadCount > 0 && (
+          <div className="absolute -top-1 -right-1">
+            <div className="relative">
+              {/* Badge glow effect */}
+              <div className="absolute inset-0 bg-red-500/50 rounded-full blur-sm animate-pulse" />
+              
+              {/* Main badge */}
+              <Badge 
+                variant="destructive" 
+                className="relative h-6 w-6 flex items-center justify-center text-xs p-0 min-w-[1.5rem] bg-gradient-to-br from-red-500 to-red-600 border-2 border-white shadow-lg font-bold font-montserrat"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        {/* Subtle ring indicator for active state */}
+        {isOpen && (
+          <div className="absolute inset-0 rounded-full ring-2 ring-white/30 ring-offset-2 ring-offset-transparent" />
         )}
       </button>
 
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Enhanced backdrop with blur */}
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" 
             onClick={() => setIsOpen(false)}
           />
           
