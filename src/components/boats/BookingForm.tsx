@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, addHours, addDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import { bookingService } from "@/services/bookingService";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -34,17 +36,18 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
   const [guests, setGuests] = useState<number>(2);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Toggle between hourly and daily pricing
   const [isHourlyMode, setIsHourlyMode] = useState<boolean>(defaultIsHourly);
   
   /* Backend hazır olduğunda kullanılacak state:
-  const [loading, setLoading] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
 
   useEffect(() => {
@@ -83,7 +86,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
 
-  /* Backend hazır olduğunda kullanılacak rezervasyon fonksiyonu:
+  // Booking function
   const handleBooking = async () => {
     if (!date || !startTime) {
       toast({
@@ -96,13 +99,31 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
 
     try {
       setLoading(true);
+      
+      // Parse the start time
+      const [hourStr, minuteStr] = startTime.split(':');
+      const hour = parseInt(hourStr);
+      const minute = parseInt(minuteStr);
+      
+      // Create start date with the selected time
+      const startDate = new Date(date);
+      startDate.setHours(hour, minute, 0, 0);
+      
+      // Calculate end date based on duration and mode (hourly or daily)
+      let endDate;
+      if (isHourlyMode) {
+        endDate = addHours(startDate, duration);
+      } else {
+        endDate = addDays(startDate, duration);
+      }
+      
       const bookingData = {
-        boatId,
-        date: format(date, 'yyyy-MM-dd'),
-        startTime,
-        duration,
-        guests,
-        totalPrice: total
+        boatId: Number(boatId),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        passengerCount: guests,
+        totalPrice: total,
+        notes: `Booking created on ${new Date().toISOString()}`
       };
 
       const response = await bookingService.createBooking(bookingData);
@@ -112,7 +133,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
       });
 
-      // Rezervasyon sayfasına yönlendir
+      // Redirect to the booking page
       navigate(`/bookings/${response.id}`);
     } catch (error) {
       console.error('Booking failed:', error);
@@ -125,7 +146,6 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       setLoading(false);
     }
   };
-  */
 
   // Mobile booking button sticky footer
   const MobileBookingFooter = () => (
@@ -285,7 +305,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           </div>
         </div>
         
-        <Button className="w-full">Request to Book</Button>
+        <Button 
+          className="w-full" 
+          onClick={handleBooking}
+          disabled={loading}
+        >
+          {loading ? "Processing..." : "Request to Book"}
+        </Button>
         
         <p className="text-center text-sm text-gray-500 mt-4">
           You won't be charged yet
@@ -414,7 +440,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
             </Select>
           </div>
 
-          <Button className="w-full">Request to Book</Button>
+          <Button 
+            className="w-full"
+            onClick={handleBooking}
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Request to Book"}
+          </Button>
 
           <p className="text-center text-sm text-gray-500">
             You won't be charged yet
