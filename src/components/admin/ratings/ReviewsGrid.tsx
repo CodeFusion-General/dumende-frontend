@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { MockReviewData } from "@/types/ratings.types";
+import { ReviewData } from "@/types/ratings.types";
 import ReviewCard from "./ReviewCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, MessageSquare, Star } from "lucide-react";
 
 interface ReviewsGridProps {
-  reviews: MockReviewData[];
+  reviews: ReviewData[];
   loading?: boolean;
   onReply: (reviewId: string) => void;
   onFlag: (reviewId: string) => void;

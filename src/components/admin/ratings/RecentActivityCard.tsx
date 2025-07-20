@@ -5,10 +5,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Star, Clock, TrendingUp, Activity } from "lucide-react";
 import { ComponentErrorWrapper } from "@/components/admin/ratings/errors/ErrorStates";
 import { RecentActivityEmpty } from "@/components/admin/ratings/empty/EmptyStates";
-import { MockReviewData } from "@/types/ratings.types";
+import { ReviewData } from "@/types/ratings.types";
 
 interface RecentActivityCardProps {
-  recentReviews: MockReviewData[];
+  recentReviews: ReviewData[];
   totalRecentCount: number;
   averageRecentRating: number;
   trend?: {

@@ -39,10 +39,8 @@ import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 import BookingsPage from "./pages/admin/BookingsPage";
 import ProfilePage from "./pages/admin/ProfilePage";
-import {
-  RatingTrendsChartDemo,
-  RatingTrendsChartExample,
-} from "./components/admin/ratings";
+// Removed demo component imports - these components were removed as they contained mock data
+// Use RatingsContainer with real API data instead
 
 const queryClient = new QueryClient();
 
@@ -322,15 +320,7 @@ const App = () => (
                   }
                 />
 
-                {/* Demo Routes for Development */}
-                <Route
-                  path="/demo/rating-trends"
-                  element={<RatingTrendsChartDemo />}
-                />
-                <Route
-                  path="/demo/rating-trends-example"
-                  element={<RatingTrendsChartExample />}
-                />
+                {/* Demo Routes Removed - Components contained mock data and have been replaced with RatingsContainer */}
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

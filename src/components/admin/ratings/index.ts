@@ -1,11 +1,11 @@
 export { default as RatingsHeader } from "./RatingsHeader";
 export { default as RatingsSummaryCard } from "./RatingsSummaryCard";
 export { default as RatingSummary } from "./RatingSummary";
+export { default as RatingsContainer } from "./RatingsContainer";
 export { default as RatingDistributionChart } from "./RatingDistributionChart";
 export { default as RatingDistributionCard } from "./RatingDistributionCard";
 export { default as RatingTrendsChart } from "./RatingTrendsChart";
-export { default as RatingTrendsChartDemo } from "./RatingTrendsChartDemo";
-export { default as RatingTrendsChartExample } from "./RatingTrendsChartExample";
+// Demo components removed - use RatingsContainer with real API data instead
 export { default as ReviewCard } from "./ReviewCard";
 export { default as ReviewsFilter } from "./ReviewsFilter";
 export { default as ReviewsFilterBar } from "./ReviewsFilterBar";

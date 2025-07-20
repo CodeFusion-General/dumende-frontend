@@ -1,35 +1,18 @@
-export interface MockReviewData {
-  id: string;
-  userName: string;
-  userInitials: string;
-  rating: number;
-  comment: string;
-  date: string;
-  category: "boat" | "tour";
-  entityName: string;
-  entityId: string;
-  isVerified: boolean;
-  helpfulCount: number;
-  location: string;
-}
+// Import ReviewDTO from the backend service types
+import { ReviewDTO } from "@/services/reviewService";
 
-export interface MockRatingStats {
-  averageRating: number;
+// Use ReviewDTO from backend instead of MockReviewData
+export type ReviewData = ReviewDTO;
+
+// Real API response types for rating statistics
+export interface RatingStats {
   totalReviews: number;
-  recentReviews: number;
-  distribution: Array<{
-    stars: number;
-    count: number;
-  }>;
-  trends: Array<{
-    date: string;
-    rating: number;
-    count: number;
-  }>;
-  categoryBreakdown: {
-    boats: number;
-    tours: number;
-  };
+  averageRating: number;
+  ratingDistribution: Record<number, number>;
+  recentTrend: string;
+  lastReviewDate?: string;
+  previousMonthAverage?: number;
+  previousMonthCount?: number;
 }
 
 export interface FilterOptions {
