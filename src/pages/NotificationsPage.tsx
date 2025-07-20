@@ -14,7 +14,7 @@ export default function NotificationsPage() {
     const { user, isAuthenticated } = useAuth();
     const userId = user?.id;
     const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
     const [totalNotifications, setTotalNotifications] = useState(0);
     const [loading, setLoading] = useState(true);
     
@@ -33,6 +33,7 @@ export default function NotificationsPage() {
     const loadNotifications = async () => {
         try {
             setLoading(true);
+            console.log('[DEBUG_LOG] Loading notifications for userId:', userId, 'currentPage:', currentPage);
 
             const pageData = await notificationService.fetchNotificationsPage(
                 userId!,
@@ -40,10 +41,14 @@ export default function NotificationsPage() {
                 NOTIFICATIONS_PER_PAGE
             );
 
+            console.log('[DEBUG_LOG] Received pageData:', pageData);
+            console.log('[DEBUG_LOG] Notifications content:', pageData.content);
+            console.log('[DEBUG_LOG] Total elements:', pageData.totalElements);
+
             setNotifications(pageData.content);
             setTotalNotifications(pageData.totalElements);
         } catch (error) {
-            console.error('Failed to fetch notifications:', error);
+            console.error('[DEBUG_LOG] Failed to fetch notifications:', error);
         } finally {
             setLoading(false);
         }

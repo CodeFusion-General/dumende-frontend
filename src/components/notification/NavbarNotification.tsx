@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { NotificationDropdown } from './NotificationDropdown';
@@ -16,6 +16,43 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
   const [unreadNotifications, setUnreadNotifications] = useState<NotificationDTO[]>([]);
   const { unreadCount, refreshUnreadCount } = useNotifications();
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Handle escape key to close dropdown
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const loadUnreadNotifications = async () => {
@@ -52,7 +89,7 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
         className="group relative p-3 rounded-full transition-all duration-300 ease-out transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-transparent"
@@ -106,20 +143,11 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
       </button>
 
       {isOpen && (
-        <>
-          {/* Enhanced backdrop with blur */}
-          <div 
-            className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm" 
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Dropdown */}
-          <NotificationDropdown
-            unreadNotifications={unreadNotifications}
-            onMarkRead={handleMarkRead}
-            onShowAll={handleShowAll}
-          />
-        </>
+        <NotificationDropdown
+          unreadNotifications={unreadNotifications}
+          onMarkRead={handleMarkRead}
+          onShowAll={handleShowAll}
+        />
       )}
     </div>
   );
