@@ -89,26 +89,26 @@ const StatisticsCard: React.FC<StatisticsCardProps> = ({
 
   // Prepare chart data for tours over time (mock data for visualization)
   const chartData = [
-    { month: "Oca", tours: Math.floor((statistics.totalTours || 0) * 0.08) },
-    { month: "Şub", tours: Math.floor((statistics.totalTours || 0) * 0.06) },
-    { month: "Mar", tours: Math.floor((statistics.totalTours || 0) * 0.09) },
-    { month: "Nis", tours: Math.floor((statistics.totalTours || 0) * 0.12) },
-    { month: "May", tours: Math.floor((statistics.totalTours || 0) * 0.15) },
-    { month: "Haz", tours: Math.floor((statistics.totalTours || 0) * 0.18) },
-    { month: "Tem", tours: Math.floor((statistics.totalTours || 0) * 0.2) },
-    { month: "Ağu", tours: Math.floor((statistics.totalTours || 0) * 0.12) },
+    { month: "Oca", tours: Math.floor((statistics?.totalTours || 0) * 0.08) },
+    { month: "Şub", tours: Math.floor((statistics?.totalTours || 0) * 0.06) },
+    { month: "Mar", tours: Math.floor((statistics?.totalTours || 0) * 0.09) },
+    { month: "Nis", tours: Math.floor((statistics?.totalTours || 0) * 0.12) },
+    { month: "May", tours: Math.floor((statistics?.totalTours || 0) * 0.15) },
+    { month: "Haz", tours: Math.floor((statistics?.totalTours || 0) * 0.18) },
+    { month: "Tem", tours: Math.floor((statistics?.totalTours || 0) * 0.2) },
+    { month: "Ağu", tours: Math.floor((statistics?.totalTours || 0) * 0.12) },
   ];
 
   // Prepare pie chart data for customer distribution
   const customerData = [
     {
       name: "Tekrar Eden",
-      value: statistics.repeatCustomers || 0,
+      value: statistics?.repeatCustomers || 0,
       color: "#3498db",
     },
     {
       name: "Yeni Müşteri",
-      value: (statistics.totalTours || 0) - (statistics.repeatCustomers || 0),
+      value: (statistics?.totalTours || 0) - (statistics?.repeatCustomers || 0),
       color: "#95a5a6",
     },
   ];
