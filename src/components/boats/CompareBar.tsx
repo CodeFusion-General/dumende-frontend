@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BoatDTO } from "@/types/boat.types";
-import { getImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl } from "@/lib/imageUtils";
 
 interface CompareBarProps {
   comparedBoats: string[];
@@ -30,11 +30,9 @@ const CompareBar: React.FC<CompareBarProps> = ({
               <div key={id} className="flex items-center space-x-2">
                 <img
                   src={
-                    boat.images?.find((img) => img && img.id)
-                      ? getImageUrl(
-                          boat.images.find((img) => img && img.id)!.id
-                        )
-                      : "/placeholder-boat.jpg"
+                    boat.images?.find((img) => img && img.imageUrl)
+                      ? boat.images.find((img) => img && img.imageUrl)!.imageUrl
+                      : getDefaultImageUrl()
                   }
                   alt={boat.name}
                   className="w-12 h-12 object-cover rounded"

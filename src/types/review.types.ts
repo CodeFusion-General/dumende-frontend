@@ -5,7 +5,7 @@ export interface CustomerDTO {
   id: number;
   fullName: string;
   phoneNumber: string;
-  profileImage?: string; // Base64 encoded string veya URL
+  profileImage?: string; // URL olarak tutuluyor
 }
 
 // ReplyDTO tanımı (backend ReplyDTO ile uyumlu)
@@ -70,7 +70,7 @@ export interface UserDTO {
   id: number;
   fullName: string;
   phoneNumber: string;
-  profileImage?: string; // byte[] -> string (base64 veya URL)
+  profileImage?: string; // URL olarak tutuluyor
 }
 
 // Alias'lar for backward compatibility
@@ -120,4 +120,3 @@ export interface Review {
   tourId?: number;
   bookingId?: number;
 }
-

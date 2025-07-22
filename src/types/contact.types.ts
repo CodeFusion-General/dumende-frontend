@@ -8,7 +8,7 @@ export interface UserDTO {
   id: number;
   fullName: string;
   phoneNumber: string;
-  profileImage?: string; // byte[] -> string (base64 veya URL)
+  profileImage?: string; // URL olarak tutuluyor
   account: AccountDTO;
   bookings: BookingDTO[];
   reviews: ReviewDTO[];

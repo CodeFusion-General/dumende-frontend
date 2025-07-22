@@ -5,7 +5,7 @@ import VesselFilters from "./VesselFilters";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { BoatDTO } from "@/types/boat.types";
-import { getImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl } from "@/lib/imageUtils";
 
 // Mock data removed - component uses real data from props
 
@@ -78,11 +78,11 @@ const VesselsList: React.FC<VesselsListProps> = ({
       // Primary image varsa onu kullan
       const primaryImage = validImages.find((img) => img.isPrimary);
       if (primaryImage) {
-        return getImageUrl(primaryImage.id);
+        return primaryImage.imageUrl || getDefaultImageUrl();
       }
 
       // Yoksa ilk geçerli resmi kullan
-      return getImageUrl(validImages[0].id);
+      return validImages[0].imageUrl || getDefaultImageUrl();
     };
 
     return {

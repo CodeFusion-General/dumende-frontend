@@ -33,7 +33,7 @@ export interface UpdateTourDateDTO {
 export interface TourImageDTO {
   id: number;
   tourId: number;
-  imageData: string; // byte[] -> string (base64 veya URL)
+  imageUrl: string; // URL olarak tutuluyor artık
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -41,14 +41,14 @@ export interface TourImageDTO {
 
 export interface CreateTourImageDTO {
   tourId: number;
-  imageData: string; // Backend'te byte[] bekliyor, frontend base64 string gönderiyor
+  imageUrl: string; // URL olarak gönderiliyor
   displayOrder: number;
 }
 
 export interface UpdateTourImageDTO {
   id: number;
   tourId?: number;
-  imageData?: string; // byte[] -> string (base64 veya URL)
+  imageUrl?: string; // URL olarak güncelleniyor
   displayOrder?: number;
 }
 

@@ -90,20 +90,17 @@ export const validateImageFile = (
   return { isValid: true };
 };
 
-export const getImageUrl = (imageId: number): string => {
-  return `/api/boat-images/${imageId}/image`;
-};
-
-export const getPrimaryImageUrl = (boatId: number): string => {
-  return `/api/boat-images/boat/${boatId}/primary/image`;
-};
-
-// Base64 verisini data URL formatına çeviren yardımcı fonksiyon
-export const formatBase64ImageData = (base64Data: string): string => {
-  // Eğer zaten data: ile başlıyorsa, olduğu gibi döndür
-  if (base64Data.startsWith("data:")) {
-    return base64Data;
+// URL validation helper function
+export const isValidImageUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
   }
-  // Değilse, uygun format olarak çevir
-  return `data:image/jpeg;base64,${base64Data}`;
+};
+
+// Default image URL for fallback
+export const getDefaultImageUrl = (): string => {
+  return "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
 };

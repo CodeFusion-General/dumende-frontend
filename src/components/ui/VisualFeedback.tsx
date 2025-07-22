@@ -11,6 +11,7 @@ interface RippleProps {
 interface VisualFeedbackProps {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
   variant?: "hover" | "press" | "focus" | "ripple" | "glow" | "lift" | "scale";
   intensity?: "sm" | "md" | "lg";
   disabled?: boolean;
@@ -22,6 +23,7 @@ interface VisualFeedbackProps {
 export const VisualFeedback: React.FC<VisualFeedbackProps> = ({
   children,
   className,
+  style,
   variant = "hover",
   intensity = "md",
   disabled = false,
@@ -140,6 +142,7 @@ export const VisualFeedback: React.FC<VisualFeedbackProps> = ({
         },
         className
       )}
+      style={style}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}

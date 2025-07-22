@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BoatDTO } from "@/types/boat.types";
-import { getImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl } from "@/lib/imageUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { SimilarBoatsError } from "@/components/ui/ErrorStates";
@@ -98,9 +98,9 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
     if (boat.images?.length > 0) {
       const primaryImage =
         boat.images.find((img) => img.isPrimary) || boat.images[0];
-      return getImageUrl(primaryImage.id);
+      return primaryImage.imageUrl || getDefaultImageUrl();
     }
-    return "/placeholder-boat.jpg";
+    return getDefaultImageUrl();
   };
 
   const renderStars = (rating: number) => {
@@ -216,7 +216,7 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
 
       {/* Boats Grid */}
       <div
-        ref={similarBoatsRef}
+        ref={similarBoatsRef as React.RefObject<HTMLDivElement>}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
       >
         {filteredBoats.map((boat, index) => (

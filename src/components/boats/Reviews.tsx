@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Star,
   ChevronDown,
@@ -21,6 +21,7 @@ import {
   useScrollAnimation,
 } from "@/hooks/useMicroInteractions";
 import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
+
 interface Review {
   id: number;
   userName: string;
@@ -135,103 +136,103 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
   const { elementRef: reviewsRef, isVisible } = useScrollAnimation(0.3);
   const reviewCardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Retry mechanism for fetching reviews
-  const { execute: retryFetchReviews, isLoading: isRetrying } = useRetry(
-    async () => {
-      if (!boatId) return;
+  // Memoize boatId to prevent unnecessary re-renders
+  const memoizedBoatId = useMemo(() => boatId, [boatId]);
 
-      const reviewDtos = await reviewService.getBoatReviews(boatId);
+  // Stable fetch functions using useCallback to prevent infinite loops
+  const fetchReviews = useCallback(async () => {
+    if (!memoizedBoatId) return [];
 
-      // Fetch replies for each review with individual error handling
-      const reviewsWithReplies = await Promise.all(
-        reviewDtos.map(async (review) => {
-          try {
-            const replies = await reviewQueryService.getRepliesByReviewId(
-              review.id
-            );
-            return {
-              id: review.id,
-              userName: review.customer.fullName,
-              userImage: review.customer.profileImage,
-              rating: review.rating,
-              date: new Date(review.createdAt).toLocaleDateString(),
-              comment: review.comment,
-              replies: replies,
-            };
-          } catch (error) {
-            console.warn(
-              `Failed to fetch replies for review ${review.id}:`,
-              error
-            );
-            return {
-              id: review.id,
-              userName: review.customer.fullName,
-              userImage: review.customer.profileImage,
-              rating: review.rating,
-              date: new Date(review.createdAt).toLocaleDateString(),
-              comment: review.comment,
-              replies: [],
-            };
-          }
-        })
-      );
+    const reviewDtos = await reviewService.getBoatReviews(memoizedBoatId);
 
-      setReviews(reviewsWithReplies);
-      setReviewCount(reviewsWithReplies.length);
-      setError(null);
+    // Fetch replies for each review with individual error handling
+    const reviewsWithReplies = await Promise.all(
+      reviewDtos.map(async (review) => {
+        try {
+          const replies = await reviewQueryService.getRepliesByReviewId(
+            review.id
+          );
+          return {
+            id: review.id,
+            userName: review.customer.fullName,
+            userImage: review.customer.profileImage,
+            rating: review.rating,
+            date: new Date(review.createdAt).toLocaleDateString(),
+            comment: review.comment,
+            replies: replies,
+          };
+        } catch (error) {
+          console.warn(
+            `Failed to fetch replies for review ${review.id}:`,
+            error
+          );
+          return {
+            id: review.id,
+            userName: review.customer.fullName,
+            userImage: review.customer.profileImage,
+            rating: review.rating,
+            date: new Date(review.createdAt).toLocaleDateString(),
+            comment: review.comment,
+            replies: [],
+          };
+        }
+      })
+    );
 
-      return reviewsWithReplies;
-    },
-    {
-      maxAttempts: 3,
-      onError: (error, attempt) => {
-        console.error(`Reviews loading attempt ${attempt} failed:`, error);
-        setError(`Failed to load reviews (attempt ${attempt}/3)`);
-      },
-    }
-  );
+    return reviewsWithReplies;
+  }, [memoizedBoatId]);
 
-  // Retry mechanism for fetching average rating
-  const { execute: retryFetchRating } = useRetry(
-    async () => {
-      if (!boatId) return 0;
+  const fetchAverageRating = useCallback(async () => {
+    if (!memoizedBoatId) return 0;
 
-      const average = await reviewService.getBoatRating(boatId);
-      if (average === null || average === undefined) {
-        setAverageRating(0);
-        return 0;
-      }
-      setAverageRating(average);
-      return average;
-    },
-    {
-      maxAttempts: 3,
-      onError: (error, attempt) => {
-        console.error(`Rating loading attempt ${attempt} failed:`, error);
-      },
-    }
-  );
+    const average = await reviewService.getBoatRating(memoizedBoatId);
+    return average === null || average === undefined ? 0 : average;
+  }, [memoizedBoatId]);
 
+  // Single useEffect with proper cleanup and dependency management
   useEffect(() => {
+    let isMounted = true;
+    let abortController = new AbortController();
+
     const fetchData = async () => {
-      if (!boatId) return;
+      if (!memoizedBoatId) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        // Fetch both reviews and rating in parallel
-        await Promise.all([retryFetchReviews(), retryFetchRating()]);
+        // Fetch both reviews and rating in parallel with abort signal
+        const [reviewsData, ratingData] = await Promise.all([
+          fetchReviews(),
+          fetchAverageRating(),
+        ]);
+
+        if (isMounted && !abortController.signal.aborted) {
+          setReviews(reviewsData);
+          setReviewCount(reviewsData.length);
+          setAverageRating(ratingData);
+          setError(null);
+        }
       } catch (error) {
-        console.error("Error fetching review data:", error);
-        setError("Unable to load reviews. Please try again.");
+        if (isMounted && !abortController.signal.aborted) {
+          console.error("Error fetching review data:", error);
+          setError("Unable to load reviews. Please try again.");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [boatId, retryFetchReviews, retryFetchRating]);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+  }, [memoizedBoatId, fetchReviews, fetchAverageRating]);
 
   // Animate reviews when they come into view
   useEffect(() => {
@@ -245,10 +246,31 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
     }
   }, [isVisible, staggerAnimation, prefersReducedMotion, reviews.length]);
 
+  // Retry function for manual retries
+  const handleRetry = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const [reviewsData, ratingData] = await Promise.all([
+        fetchReviews(),
+        fetchAverageRating(),
+      ]);
+      setReviews(reviewsData);
+      setReviewCount(reviewsData.length);
+      setAverageRating(ratingData);
+      setError(null);
+    } catch (err) {
+      console.error("Retry failed:", err);
+      setError("Unable to load reviews. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchReviews, fetchAverageRating]);
+
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
 
   // Show loading state
-  if (isLoading || isRetrying) {
+  if (isLoading) {
     return (
       <div className="mt-12">
         <div className="mb-8">
@@ -267,17 +289,7 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Yorumlar</h2>
         </div>
         <ReviewsError
-          onRetry={async () => {
-            setError(null);
-            setIsLoading(true);
-            try {
-              await Promise.all([retryFetchReviews(), retryFetchRating()]);
-            } catch (err) {
-              setError("Unable to load reviews. Please try again.");
-            } finally {
-              setIsLoading(false);
-            }
-          }}
+          onRetry={handleRetry}
         />
       </div>
     );

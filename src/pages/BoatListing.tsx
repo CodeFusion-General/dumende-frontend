@@ -31,7 +31,7 @@ import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getImageUrl } from "@/lib/imageUtils";
+import { isValidImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import {
   ImageGallerySkeleton,
@@ -55,31 +55,8 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
 
 // Default image helper function for boat detail page
-const getBoatImageUrl = async (imageId?: number): Promise<string> => {
-  try {
-    if (imageId) {
-      // Önce gerçek image'ı dene
-      const imageUrl = getImageUrl(imageId);
-      const response = await fetch(imageUrl);
-      if (response.ok) {
-        return imageUrl;
-      }
-    }
-
-    // Eğer image yoksa default image API'sinden al
-    const response = await fetch(
-      "http://localhost:8080/api/boats/default-image"
-    );
-    if (response.ok) {
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    }
-  } catch (error) {
-    console.error("Error loading boat image:", error);
-  }
-
-  // Fallback placeholder
-  return "/placeholder-boat.jpg";
+const getBoatImageUrl = (): string => {
+  return getDefaultImageUrl();
 };
 
 const BoatListing = () => {
@@ -155,38 +132,23 @@ const BoatListing = () => {
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
 
   React.useEffect(() => {
-    const loadImages = async () => {
-      if (boatData?.images && boatData.images.length > 0) {
-        // Gerçek fotoğrafları yükle
-        const imagePromises = boatData.images
-          .filter((img) => img && img.id)
-          .map(async (img) => {
-            try {
-              const imageUrl = getImageUrl(img.id);
-              const response = await fetch(imageUrl);
-              if (response.ok) {
-                return imageUrl;
-              }
-              // Eğer image yüklenemezse default image kullan
-              return await getBoatImageUrl();
-            } catch {
-              return await getBoatImageUrl();
-            }
-          });
+    if (boatData?.images && boatData.images.length > 0) {
+      // Backend'den gelen URL'leri direkt kullan
+      const validImageUrls = boatData.images
+        .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
+        .map((img) => img.imageUrl);
 
-        const images = await Promise.all(imagePromises);
-        setValidImages(images);
-        setCurrentImageIndex(0); // Reset index when images change
+      if (validImageUrls.length > 0) {
+        setValidImages(validImageUrls);
       } else {
-        // Hiç fotoğraf yoksa default image kullan
-        const defaultImage = await getBoatImageUrl();
-        setValidImages([defaultImage]);
-        setCurrentImageIndex(0);
+        // Geçerli URL yoksa default image kullan
+        setValidImages([getBoatImageUrl()]);
       }
-    };
-
-    if (boatData) {
-      loadImages();
+      setCurrentImageIndex(0);
+    } else {
+      // Hiç fotoğraf yoksa default image kullan
+      setValidImages([getBoatImageUrl()]);
+      setCurrentImageIndex(0);
     }
   }, [boatData]);
 

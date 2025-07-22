@@ -47,7 +47,7 @@ export interface UpdateBoatFeatureDTO {
 export interface BoatImageDTO {
   id: number;
   boatId: number;
-  imageData: string; // byte[] -> string (base64 veya URL)
+  imageUrl: string; // URL olarak tutuluyor artık
   isPrimary: boolean;
   displayOrder: number;
   createdAt: string;
@@ -55,14 +55,14 @@ export interface BoatImageDTO {
 }
 
 export interface CreateBoatImageDTO {
-  imageData: string; // byte[] -> string (base64 veya URL)
+  imageUrl: string; // URL olarak gönderiliyor
   isPrimary: boolean;
   displayOrder: number;
 }
 
 export interface UpdateBoatImageDTO {
   id: number;
-  imageData?: string; // byte[] -> string (base64 veya URL)
+  imageUrl?: string; // URL olarak güncelleniyor
   isPrimary?: boolean;
   displayOrder?: number;
 }

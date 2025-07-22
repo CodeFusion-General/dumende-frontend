@@ -51,7 +51,7 @@ const convertToBoatDTO = (mockData: any): BoatDTO => ({
   images: mockData.images.map((url: string) => ({
     id: 0,
     boatId: mockData.id,
-    imageData: url,
+    imageUrl: url,
     isPrimary: false,
     displayOrder: 0,
     createdAt: new Date().toISOString(),
@@ -213,7 +213,6 @@ const BoatsPage = () => {
     const typeFilter = searchParams.get("type");
     const filterType = searchParams.get("filter");
 
-
     // Lokasyon filtresi varsa uygula
     if (locationFilter && filterType === "location") {
       setSelectedLocations([locationFilter]);
@@ -277,7 +276,9 @@ const BoatsPage = () => {
       <Layout>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">{t.common.error}</h2>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">
+              {t.common.error}
+            </h2>
             <p className="text-gray-600">{error}</p>
           </div>
         </div>

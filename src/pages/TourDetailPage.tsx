@@ -83,7 +83,7 @@ const TourDetailPage: React.FC = () => {
 
   const tourImage =
     tour.tourImages && tour.tourImages.length > 0
-      ? `data:image/jpeg;base64,${tour.tourImages[0].imageData}`
+      ? tour.tourImages[0].imageUrl
       : "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
 
   return (
@@ -175,7 +175,7 @@ const TourDetailPage: React.FC = () => {
                         className="aspect-square rounded-lg overflow-hidden"
                       >
                         <img
-                          src={`data:image/jpeg;base64,${image.imageData}`}
+                          src={image.imageUrl}
                           alt={`${tour.name} - ${index + 2}`}
                           className="w-full h-full object-cover hover:scale-105 transition-transform"
                         />

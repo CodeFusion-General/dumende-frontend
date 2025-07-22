@@ -3,7 +3,7 @@ import { X, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { BoatDTO } from "@/types/boat.types";
-import { getImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl } from "@/lib/imageUtils";
 
 interface ComparisonTableProps {
   boats: BoatDTO[];
@@ -46,11 +46,10 @@ const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   <div className="h-48 overflow-hidden">
                     <img
                       src={
-                        boat.images?.find((img) => img && img.id)
-                          ? getImageUrl(
-                              boat.images.find((img) => img && img.id)!.id
-                            )
-                          : "/placeholder-boat.jpg"
+                        boat.images?.find((img) => img && img.imageUrl)
+                          ? boat.images.find((img) => img && img.imageUrl)!
+                              .imageUrl
+                          : getDefaultImageUrl()
                       }
                       alt={boat.name}
                       className="w-full h-full object-cover"
