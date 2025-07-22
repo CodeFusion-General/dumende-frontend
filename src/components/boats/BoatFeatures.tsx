@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Tv,
   Wifi,
@@ -22,6 +22,11 @@ import {
   Heart,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import {
+  useMicroInteractions,
+  useScrollAnimation,
+} from "@/hooks/useMicroInteractions";
+import { VisualFeedback } from "@/components/ui/VisualFeedback";
 
 interface Feature {
   id: number;
@@ -172,6 +177,11 @@ const CATEGORY_NAMES: Record<FeatureCategory, string> = {
 };
 
 const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
+  const { staggerAnimation, fadeIn, prefersReducedMotion } =
+    useMicroInteractions();
+  const { elementRef: featuresRef, isVisible } = useScrollAnimation(0.3);
+  const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   // Group features by category
   const groupedFeatures = features.reduce((acc, feature) => {
     const config = FEATURE_CONFIG[feature.featureName];
@@ -200,6 +210,18 @@ const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
   };
 
   const allFeatures = getAllFeatures();
+
+  // Animate features when they come into view
+  useEffect(() => {
+    if (isVisible && !prefersReducedMotion) {
+      const validRefs = featureRefs.current.filter(
+        (ref) => ref !== null
+      ) as HTMLElement[];
+      if (validRefs.length > 0) {
+        staggerAnimation(validRefs, "fadeIn", 100);
+      }
+    }
+  }, [isVisible, staggerAnimation, prefersReducedMotion]);
 
   return (
     <div className="mt-8">
@@ -231,26 +253,35 @@ const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
                     };
 
                     return (
-                      <Card
+                      <VisualFeedback
                         key={feature.id}
-                        className="group p-4 flex items-center space-x-3 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                        variant="lift"
+                        intensity="sm"
+                        className="opacity-0 animate-fade-in"
+                        style={{
+                          animationDelay: `${
+                            groupedFeatures[category].indexOf(feature) * 50
+                          }ms`,
+                        }}
                       >
-                        <div
-                          className={`flex-shrink-0 p-2 rounded-lg ${CATEGORY_BACKGROUNDS[category]} ${CATEGORY_COLORS[category]} group-hover:scale-110 transition-transform duration-300`}
-                        >
-                          {config.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-gray-900 text-sm leading-tight">
-                            {config.name}
-                          </span>
-                          {config.description && (
-                            <p className="text-xs text-gray-500 mt-1 truncate">
-                              {config.description}
-                            </p>
-                          )}
-                        </div>
-                      </Card>
+                        <Card className="group p-4 flex items-center space-x-3 bg-white border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer">
+                          <div
+                            className={`flex-shrink-0 p-2 rounded-lg ${CATEGORY_BACKGROUNDS[category]} ${CATEGORY_COLORS[category]} group-hover:scale-110 transition-transform duration-300`}
+                          >
+                            {config.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-gray-900 text-sm leading-tight">
+                              {config.name}
+                            </span>
+                            {config.description && (
+                              <p className="text-xs text-gray-500 mt-1 truncate">
+                                {config.description}
+                              </p>
+                            )}
+                          </div>
+                        </Card>
+                      </VisualFeedback>
                     );
                   })}
                 </div>
@@ -261,31 +292,36 @@ const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
       ) : (
         /* Show all features in a single grid if only one category or mixed */
         <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {allFeatures.map((feature) => (
-            <Card
+          {allFeatures.map((feature, index) => (
+            <VisualFeedback
               key={feature.id}
-              className="group p-4 flex items-center space-x-3 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+              variant="lift"
+              intensity="sm"
+              className="opacity-0 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div
-                className={`flex-shrink-0 p-2 rounded-lg ${
-                  CATEGORY_BACKGROUNDS[feature.config.category]
-                } ${
-                  CATEGORY_COLORS[feature.config.category]
-                } group-hover:scale-110 transition-transform duration-300`}
-              >
-                {feature.config.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-gray-900 text-sm leading-tight">
-                  {feature.config.name}
-                </span>
-                {feature.config.description && (
-                  <p className="text-xs text-gray-500 mt-1 truncate">
-                    {feature.config.description}
-                  </p>
-                )}
-              </div>
-            </Card>
+              <Card className="group p-4 flex items-center space-x-3 bg-white border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer">
+                <div
+                  className={`flex-shrink-0 p-2 rounded-lg ${
+                    CATEGORY_BACKGROUNDS[feature.config.category]
+                  } ${
+                    CATEGORY_COLORS[feature.config.category]
+                  } group-hover:scale-110 transition-transform duration-300`}
+                >
+                  {feature.config.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-gray-900 text-sm leading-tight">
+                    {feature.config.name}
+                  </span>
+                  {feature.config.description && (
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {feature.config.description}
+                    </p>
+                  )}
+                </div>
+              </Card>
+            </VisualFeedback>
           ))}
         </div>
       )}

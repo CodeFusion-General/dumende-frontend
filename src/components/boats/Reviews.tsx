@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Star,
   ChevronDown,
   ChevronUp,
-  User,
   MessageCircle,
   CheckCircle,
-  StarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -15,6 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { ExpandableText } from "@/components/ui/ExpandableText";
 import { reviewService, reviewQueryService } from "@/services/reviewService";
 import { ReplyDTO } from "@/types/review.types";
+import { ReviewsSkeleton } from "@/components/ui/LoadingStates";
+import { ReviewsError } from "@/components/ui/ErrorStates";
+import { useRetry } from "@/hooks/useRetry";
+import {
+  useMicroInteractions,
+  useScrollAnimation,
+} from "@/hooks/useMicroInteractions";
+import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 interface Review {
   id: number;
   userName: string;
@@ -120,73 +126,162 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Micro-interactions
+  const { staggerAnimation, fadeIn, prefersReducedMotion } =
+    useMicroInteractions();
+  const { elementRef: reviewsRef, isVisible } = useScrollAnimation(0.3);
+  const reviewCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Retry mechanism for fetching reviews
+  const { execute: retryFetchReviews, isLoading: isRetrying } = useRetry(
+    async () => {
+      if (!boatId) return;
+
+      const reviewDtos = await reviewService.getBoatReviews(boatId);
+
+      // Fetch replies for each review with individual error handling
+      const reviewsWithReplies = await Promise.all(
+        reviewDtos.map(async (review) => {
+          try {
+            const replies = await reviewQueryService.getRepliesByReviewId(
+              review.id
+            );
+            return {
+              id: review.id,
+              userName: review.customer.fullName,
+              userImage: review.customer.profileImage,
+              rating: review.rating,
+              date: new Date(review.createdAt).toLocaleDateString(),
+              comment: review.comment,
+              replies: replies,
+            };
+          } catch (error) {
+            console.warn(
+              `Failed to fetch replies for review ${review.id}:`,
+              error
+            );
+            return {
+              id: review.id,
+              userName: review.customer.fullName,
+              userImage: review.customer.profileImage,
+              rating: review.rating,
+              date: new Date(review.createdAt).toLocaleDateString(),
+              comment: review.comment,
+              replies: [],
+            };
+          }
+        })
+      );
+
+      setReviews(reviewsWithReplies);
+      setReviewCount(reviewsWithReplies.length);
+      setError(null);
+
+      return reviewsWithReplies;
+    },
+    {
+      maxAttempts: 3,
+      onError: (error, attempt) => {
+        console.error(`Reviews loading attempt ${attempt} failed:`, error);
+        setError(`Failed to load reviews (attempt ${attempt}/3)`);
+      },
+    }
+  );
+
+  // Retry mechanism for fetching average rating
+  const { execute: retryFetchRating } = useRetry(
+    async () => {
+      if (!boatId) return 0;
+
+      const average = await reviewService.getBoatRating(boatId);
+      if (average === null || average === undefined) {
+        setAverageRating(0);
+        return 0;
+      }
+      setAverageRating(average);
+      return average;
+    },
+    {
+      maxAttempts: 3,
+      onError: (error, attempt) => {
+        console.error(`Rating loading attempt ${attempt} failed:`, error);
+      },
+    }
+  );
 
   useEffect(() => {
-    const fetchReviews = async () => {
+    const fetchData = async () => {
       if (!boatId) return;
+
+      setIsLoading(true);
+      setError(null);
+
       try {
-        const reviewDtos = await reviewService.getBoatReviews(boatId);
-
-        // Fetch replies for each review
-        const reviewsWithReplies = await Promise.all(
-          reviewDtos.map(async (review) => {
-            try {
-              const replies = await reviewQueryService.getRepliesByReviewId(
-                review.id
-              );
-              return {
-                id: review.id,
-                userName: review.customer.fullName,
-                userImage: review.customer.profileImage,
-                rating: review.rating,
-                date: new Date(review.createdAt).toLocaleDateString(),
-                comment: review.comment,
-                replies: replies,
-              };
-            } catch (error) {
-              console.warn(
-                `Failed to fetch replies for review ${review.id}:`,
-                error
-              );
-              return {
-                id: review.id,
-                userName: review.customer.fullName,
-                userImage: review.customer.profileImage,
-                rating: review.rating,
-                date: new Date(review.createdAt).toLocaleDateString(),
-                comment: review.comment,
-                replies: [],
-              };
-            }
-          })
-        );
-
-        setReviews(reviewsWithReplies);
-        setReviewCount(reviewsWithReplies.length);
+        // Fetch both reviews and rating in parallel
+        await Promise.all([retryFetchReviews(), retryFetchRating()]);
       } catch (error) {
-        console.error("Error fetching reviews:", error);
+        console.error("Error fetching review data:", error);
+        setError("Unable to load reviews. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    const fetchAverageRating = async () => {
-      if (!boatId) return;
-      try {
-        const average = await reviewService.getBoatRating(boatId);
-        if (average === null || average === undefined) {
-          setAverageRating(0);
-          return;
-        }
-        setAverageRating(average);
-      } catch (error) {
-        console.error("Error fetching average rating:", error);
-      }
-    };
+    fetchData();
+  }, [boatId, retryFetchReviews, retryFetchRating]);
 
-    fetchReviews();
-    fetchAverageRating();
-  }, [boatId]);
+  // Animate reviews when they come into view
+  useEffect(() => {
+    if (isVisible && !prefersReducedMotion && reviews.length > 0) {
+      const validRefs = reviewCardRefs.current.filter(
+        (ref) => ref !== null
+      ) as HTMLElement[];
+      if (validRefs.length > 0) {
+        staggerAnimation(validRefs, "slideInUp", 200);
+      }
+    }
+  }, [isVisible, staggerAnimation, prefersReducedMotion, reviews.length]);
 
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+
+  // Show loading state
+  if (isLoading || isRetrying) {
+    return (
+      <div className="mt-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Yorumlar</h2>
+        </div>
+        <ReviewsSkeleton />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="mt-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Yorumlar</h2>
+        </div>
+        <ReviewsError
+          onRetry={async () => {
+            setError(null);
+            setIsLoading(true);
+            try {
+              await Promise.all([retryFetchReviews(), retryFetchRating()]);
+            } catch (err) {
+              setError("Unable to load reviews. Please try again.");
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="mt-12">
@@ -241,116 +336,124 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
       ) : (
         <>
           {/* Individual Review Cards */}
-          <div className="space-y-4 sm:space-y-6">
+          <div ref={reviewsRef} className="space-y-4 sm:space-y-6">
             {displayedReviews.map((review, index) => (
-              <Card
+              <VisualFeedback
                 key={review.id ?? index}
-                className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl"
+                variant="lift"
+                intensity="sm"
+                className="opacity-0 animate-slide-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                {/* Review Header */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
-                  <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                    <UserAvatar
-                      name={review.userName}
-                      image={review.userImage}
-                      size="md"
+                <Card
+                  ref={(el) => (reviewCardRefs.current[index] = el)}
+                  className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm transition-all duration-300 rounded-xl"
+                >
+                  {/* Review Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                      <UserAvatar
+                        name={review.userName}
+                        image={review.userImage}
+                        size="md"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1">
+                          <h4 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
+                            {review.userName}
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-green-50 text-green-700 border-green-200 w-fit"
+                          >
+                            Doğrulanmış
+                          </Badge>
+                        </div>
+                        <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-3">
+                          <StarRating rating={review.rating} size="sm" />
+                          <span className="text-sm text-gray-500">
+                            {review.date}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rating Badge */}
+                    <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200 w-fit sm:flex-shrink-0">
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-semibold text-yellow-700">
+                        {review.rating}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Review Content with Expandable Text */}
+                  <div className="mb-4">
+                    <ExpandableText
+                      text={review.comment}
+                      maxLength={200}
+                      className="text-gray-700 leading-relaxed"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1">
-                        <h4 className="font-semibold text-gray-900 text-base sm:text-lg truncate">
-                          {review.userName}
-                        </h4>
-                        <Badge
-                          variant="outline"
-                          className="text-xs bg-green-50 text-green-700 border-green-200 w-fit"
-                        >
-                          Doğrulanmış
-                        </Badge>
-                      </div>
-                      <div className="flex flex-col xs:flex-row xs:items-center gap-2 xs:gap-3">
-                        <StarRating rating={review.rating} size="sm" />
-                        <span className="text-sm text-gray-500">
-                          {review.date}
-                        </span>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Rating Badge */}
-                  <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200 w-fit sm:flex-shrink-0">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span className="font-semibold text-yellow-700">
-                      {review.rating}
-                    </span>
-                  </div>
-                </div>
+                  {/* Enhanced Captain Replies Section */}
+                  {review.replies && review.replies.length > 0 && (
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center gap-2 text-sm font-medium text-blue-700 bg-blue-50 px-3 py-2 rounded-lg w-fit">
+                        <MessageCircle className="h-4 w-4" />
+                        <span>Kaptan Yanıtları ({review.replies.length})</span>
+                      </div>
 
-                {/* Review Content with Expandable Text */}
-                <div className="mb-4">
-                  <ExpandableText
-                    text={review.comment}
-                    maxLength={200}
-                    className="text-gray-700 leading-relaxed"
-                  />
-                </div>
-
-                {/* Enhanced Captain Replies Section */}
-                {review.replies && review.replies.length > 0 && (
-                  <div className="mt-6 space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-blue-700 bg-blue-50 px-3 py-2 rounded-lg w-fit">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>Kaptan Yanıtları ({review.replies.length})</span>
-                    </div>
-
-                    <div className="space-y-4 pl-4 border-l-2 border-blue-100">
-                      {review.replies.map((reply) => (
-                        <div
-                          key={reply.id}
-                          className="bg-gradient-to-r from-blue-50 to-blue-50/50 rounded-xl p-4 border border-blue-100 shadow-sm"
-                        >
-                          <div className="flex items-start gap-3">
-                            <UserAvatar
-                              name={reply.userFullName}
-                              size="sm"
-                              className="bg-blue-100 border-blue-200"
-                            />
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <h5 className="font-semibold text-blue-900">
-                                    {reply.userFullName}
-                                  </h5>
-                                  {reply.isOfficial && (
-                                    <Badge className="text-xs bg-blue-600 text-white border-0 hover:bg-blue-700">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Resmi Yanıt
-                                    </Badge>
-                                  )}
-                                </div>
-                                <time
-                                  dateTime={reply.createdAt}
-                                  className="text-xs text-blue-600 font-medium"
-                                >
-                                  {new Date(
-                                    reply.createdAt
-                                  ).toLocaleDateString()}
-                                </time>
-                              </div>
-
-                              <ExpandableText
-                                text={reply.message}
-                                maxLength={150}
-                                className="text-blue-800 leading-relaxed"
+                      <div className="space-y-4 pl-4 border-l-2 border-blue-100">
+                        {review.replies.map((reply) => (
+                          <div
+                            key={reply.id}
+                            className="bg-gradient-to-r from-blue-50 to-blue-50/50 rounded-xl p-4 border border-blue-100 shadow-sm"
+                          >
+                            <div className="flex items-start gap-3">
+                              <UserAvatar
+                                name={reply.userFullName}
+                                size="sm"
+                                className="bg-blue-100 border-blue-200"
                               />
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <h5 className="font-semibold text-blue-900">
+                                      {reply.userFullName}
+                                    </h5>
+                                    {reply.isOfficial && (
+                                      <Badge className="text-xs bg-blue-600 text-white border-0 hover:bg-blue-700">
+                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                        Resmi Yanıt
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <time
+                                    dateTime={reply.createdAt}
+                                    className="text-xs text-blue-600 font-medium"
+                                  >
+                                    {new Date(
+                                      reply.createdAt
+                                    ).toLocaleDateString()}
+                                  </time>
+                                </div>
+
+                                <ExpandableText
+                                  text={reply.message}
+                                  maxLength={150}
+                                  className="text-blue-800 leading-relaxed"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Card>
+                  )}
+                </Card>
+              </VisualFeedback>
             ))}
           </div>
 

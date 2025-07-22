@@ -1,7 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ArrowLeft, ArrowRight, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ImageError } from "@/components/ui/ErrorStates";
+import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
+import {
+  useMicroInteractions,
+  useScrollAnimation,
+} from "@/hooks/useMicroInteractions";
+import { VisualFeedback } from "@/components/ui/VisualFeedback";
 
 interface ImageGalleryProps {
   images: string[];
@@ -19,15 +26,59 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   transitionDuration = 700,
 }) => {
   const [currentImage, setCurrentImage] = useState(0);
-  const [imageError, setImageError] = useState<number[]>([]);
-  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [loadingImages, setLoadingImages] = useState<Set<number>>(new Set());
+  const [retryCount, setRetryCount] = useState<Map<number, number>>(new Map());
 
   // Touch/swipe handling for mobile
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Micro-interactions hooks
+  const { fadeIn, slideIn, scaleAnimation, prefersReducedMotion } =
+    useMicroInteractions();
+  const { elementRef: galleryRef, isVisible } = useScrollAnimation(0.2);
+  const mainImageRef = useRef<HTMLImageElement>(null);
+  const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Progressive loading for thumbnails
+  const { shouldLoad: shouldLoadThumbnails } = useProgressiveLoading({
+    delay: 500,
+    priority: "medium",
+  });
+
+  // Animate gallery on scroll into view
+  useEffect(() => {
+    if (isVisible && galleryRef.current && !prefersReducedMotion) {
+      fadeIn(galleryRef.current, 800);
+    }
+  }, [isVisible, fadeIn, prefersReducedMotion]);
+
+  // Animate image transitions
+  useEffect(() => {
+    if (mainImageRef.current && !prefersReducedMotion) {
+      scaleAnimation(mainImageRef.current, 1.02, 200);
+    }
+  }, [currentImage, scaleAnimation, prefersReducedMotion]);
+
   // Filter valid images (remove empty strings and undefined)
   const validImages = images.filter((img) => img && img.trim() !== "");
+
+  // Retry mechanism for failed images
+  const retryImage = (index: number) => {
+    const currentRetries = retryCount.get(index) || 0;
+    if (currentRetries < 3) {
+      setImageErrors((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+      setRetryCount((prev) => new Map(prev).set(index, currentRetries + 1));
+      // Force image reload by adding timestamp
+      const img = new Image();
+      img.src = validImages[index] + "?retry=" + Date.now();
+    }
+  };
 
   // If no valid images, show fallback
   if (!validImages || validImages.length === 0) {
@@ -66,15 +117,29 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   };
 
   const handleImageError = (index: number) => {
-    setImageError((prev) => [...prev, index]);
+    setImageErrors((prev) => new Set(prev).add(index));
+    setLoadingImages((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
   };
 
-  const handleImageLoad = () => {
-    setIsImageLoading(false);
+  const handleImageLoad = (index: number) => {
+    setLoadingImages((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+    setImageErrors((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
   };
 
-  const handleImageLoadStart = () => {
-    setIsImageLoading(true);
+  const handleImageLoadStart = (index: number) => {
+    setLoadingImages((prev) => new Set(prev).add(index));
   };
 
   // Minimum swipe distance (in px)
@@ -119,27 +184,38 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <img
-            src={validImages[safeCurrentImage]}
-            alt={`Gallery image ${safeCurrentImage + 1}`}
-            className={cn(
-              "w-full h-full object-cover transition-all ease-out cursor-pointer",
-              "hover:scale-110 group-hover:scale-105",
-              "select-none" // Prevent text selection during swipe
-            )}
-            style={{ transitionDuration: `${transitionDuration}ms` }}
-            onError={() => handleImageError(safeCurrentImage)}
-            onLoad={handleImageLoad}
-            onLoadStart={handleImageLoadStart}
-            loading="eager"
-            draggable={false} // Prevent image dragging
-          />
+          {/* Show error state if current image failed to load */}
+          {imageErrors.has(safeCurrentImage) ? (
+            <ImageError
+              onRetry={() => retryImage(safeCurrentImage)}
+              alt="gallery image"
+              className="w-full h-full"
+            />
+          ) : (
+            <>
+              <img
+                src={validImages[safeCurrentImage]}
+                alt={`Gallery image ${safeCurrentImage + 1}`}
+                className={cn(
+                  "w-full h-full object-cover transition-all ease-out cursor-pointer",
+                  "hover:scale-110 group-hover:scale-105",
+                  "select-none" // Prevent text selection during swipe
+                )}
+                style={{ transitionDuration: `${transitionDuration}ms` }}
+                onError={() => handleImageError(safeCurrentImage)}
+                onLoad={() => handleImageLoad(safeCurrentImage)}
+                onLoadStart={() => handleImageLoadStart(safeCurrentImage)}
+                loading="eager"
+                draggable={false} // Prevent image dragging
+              />
 
-          {/* Loading Overlay */}
-          {isImageLoading && (
-            <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
+              {/* Loading Overlay */}
+              {loadingImages.has(safeCurrentImage) && (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Enhanced Gradient Overlay */}
@@ -204,7 +280,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
       </div>
 
       {/* Professional Thumbnail Strip with Active State Indicators */}
-      {showThumbnails && validImages.length > 1 && (
+      {showThumbnails && validImages.length > 1 && shouldLoadThumbnails && (
         <div className="p-3 sm:p-4 bg-gradient-to-r from-gray-50/50 via-white to-gray-50/50">
           <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {validImages.slice(0, 8).map((image, index) => (
@@ -213,7 +289,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                 onClick={() => goToImage(index)}
                 className={cn(
                   "flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300",
-                  "border-2 hover:scale-105 focus:scale-105 shadow-md hover:shadow-lg touch-manipulation",
+                  "border-2 hover:scale-105 focus:scale-105 shadow-md hover:shadow-lg touch-manipulation relative",
                   "min-w-[48px] min-h-[48px]", // Ensure minimum touch target size
                   currentImage === index
                     ? "border-primary ring-2 sm:ring-4 ring-primary/20 shadow-lg scale-105"
@@ -221,17 +297,33 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                 )}
                 aria-label={`Go to image ${index + 1}`}
               >
-                <img
-                  src={image}
-                  alt={`Thumbnail ${index + 1}`}
-                  className={cn(
-                    "w-full h-full object-cover transition-all duration-300",
-                    currentImage === index
-                      ? "opacity-100"
-                      : "opacity-70 hover:opacity-100"
-                  )}
-                  onError={() => handleImageError(index)}
-                />
+                {imageErrors.has(index) ? (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <Camera className="h-4 w-4 text-gray-400" />
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className={cn(
+                        "w-full h-full object-cover transition-all duration-300",
+                        currentImage === index
+                          ? "opacity-100"
+                          : "opacity-70 hover:opacity-100"
+                      )}
+                      onError={() => handleImageError(index)}
+                      onLoad={() => handleImageLoad(index)}
+                      onLoadStart={() => handleImageLoadStart(index)}
+                      loading="lazy"
+                    />
+                    {loadingImages.has(index) && (
+                      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                        <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </>
+                )}
               </button>
             ))}
 

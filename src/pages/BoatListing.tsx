@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -26,11 +26,33 @@ import {
 } from "lucide-react";
 import { boatService } from "@/services/boatService";
 import { useQuery } from "@tanstack/react-query";
+import { useMicroInteractions } from "@/hooks/useMicroInteractions";
+import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getImageUrl } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
+import {
+  ImageGallerySkeleton,
+  BoatInfoSkeleton,
+  BoatFeaturesSkeleton,
+  HostInfoSkeleton,
+  ReviewsSkeleton,
+  SimilarBoatsSkeleton,
+  BookingFormSkeleton,
+  ProgressiveLoader,
+} from "@/components/ui/LoadingStates";
+import {
+  ErrorState,
+  NetworkError,
+  BoatNotFoundError,
+  ErrorBoundaryFallback,
+} from "@/components/ui/ErrorStates";
+import { useRetry } from "@/hooks/useRetry";
+import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { notificationService } from "@/services/notificationService";
 
 // Default image helper function for boat detail page
 const getBoatImageUrl = async (imageId?: number): Promise<string> => {
@@ -63,18 +85,60 @@ const getBoatImageUrl = async (imageId?: number): Promise<string> => {
 const BoatListing = () => {
   const { id } = useParams();
 
+  // Micro-interactions
+  const { fadeIn, slideIn, staggerAnimation, prefersReducedMotion } =
+    useMicroInteractions();
+  const heroRef = useRef<HTMLDivElement>(null);
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  const quickInfoRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Progressive loading for different sections
+  const { shouldLoad: shouldLoadFeatures } = useProgressiveLoading({
+    delay: 300,
+    priority: "medium",
+  });
+
+  const { shouldLoad: shouldLoadReviews } = useProgressiveLoading({
+    delay: 600,
+    priority: "low",
+  });
+
+  const { shouldLoad: shouldLoadSimilarBoats } = useProgressiveLoading({
+    delay: 900,
+    priority: "low",
+  });
+
+  // Retry mechanism for boat data
+  const { execute: retryBoatData, isLoading: isRetrying } = useRetry(
+    () => boatService.getBoatById(Number(id)),
+    {
+      maxAttempts: 3,
+      onError: (error, attempt) => {
+        console.error(`Boat loading attempt ${attempt} failed:`, error);
+      },
+    }
+  );
+
   const {
     data: boatData,
     isLoading,
     error,
+    refetch: refetchBoat,
   } = useQuery({
     queryKey: ["boat", id],
     queryFn: () => boatService.getBoatById(Number(id)),
     enabled: !!id,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Find similar boats based on type and price range
-  const { data: similarBoatsData } = useQuery({
+  const {
+    data: similarBoatsData,
+    isLoading: isSimilarBoatsLoading,
+    error: similarBoatsError,
+    refetch: refetchSimilarBoats,
+  } = useQuery({
     queryKey: ["similar-boats", boatData?.type],
     queryFn: () =>
       boatService.searchBoats({
@@ -82,7 +146,8 @@ const BoatListing = () => {
       }),
     select: (data) =>
       data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
-    enabled: !!boatData?.type, // Only run when we have boat type
+    enabled: !!boatData?.type && shouldLoadSimilarBoats,
+    retry: 2,
   });
 
   // Geçerli fotoğrafları filtrele ve default image sistemi ekle
@@ -140,21 +205,28 @@ const BoatListing = () => {
     setCurrentImageIndex(index);
   };
 
-  if (isLoading) {
+  if (isLoading || isRetrying) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
-            <div className="w-full h-96 bg-gray-200 rounded-lg animate-pulse mb-8" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <Skeleton className="h-48" />
-                <Skeleton className="h-32" />
-                <Skeleton className="h-64" />
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+            {/* Hero Image Skeleton */}
+            <div className="relative pt-16 sm:pt-20 pb-8 sm:pb-12">
+              <ImageGallerySkeleton className="mb-8" />
+            </div>
+
+            {/* Main Content Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12">
+              <div className="lg:col-span-8 space-y-6 sm:space-y-8 lg:space-y-12">
+                <BoatInfoSkeleton />
+                <BoatFeaturesSkeleton />
+                <HostInfoSkeleton />
+                <ReviewsSkeleton />
+                <SimilarBoatsSkeleton />
               </div>
-              <div className="lg:col-span-1">
-                <Skeleton className="h-96" />
+              <div className="lg:col-span-4">
+                <BookingFormSkeleton className="sticky top-8" />
               </div>
             </div>
           </div>
@@ -165,19 +237,25 @@ const BoatListing = () => {
   }
 
   if (error) {
+    // Check if it's a network error
+    const isNetworkError =
+      error.message?.includes("fetch") || error.message?.includes("network");
+
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Hata</AlertTitle>
-              <AlertDescription>
-                Tekne detayları yüklenirken bir hata oluştu. Lütfen daha sonra
-                tekrar deneyin.
-              </AlertDescription>
-            </Alert>
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+            {isNetworkError ? (
+              <NetworkError onRetry={() => refetchBoat()} />
+            ) : (
+              <ErrorState
+                title="Boat Loading Failed"
+                message="We couldn't load the boat details. Please try again."
+                onRetry={() => refetchBoat()}
+                variant="error"
+              />
+            )}
           </div>
         </main>
         <Footer />
@@ -187,16 +265,11 @@ const BoatListing = () => {
 
   if (!boatData) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-8">
-            <Alert>
-              <AlertTitle>Tekne Bulunamadı</AlertTitle>
-              <AlertDescription>
-                Aradığınız tekne bulunamadı. Lütfen geçerli bir tekne seçin.
-              </AlertDescription>
-            </Alert>
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+            <BoatNotFoundError onGoBack={() => window.history.back()} />
           </div>
         </main>
         <Footer />
@@ -207,10 +280,17 @@ const BoatListing = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
       <Navbar />
-      <main className="flex-grow pb-20 md:pb-0">
+      <main
+        className="flex-grow pb-20 md:pb-0"
+        role="main"
+        aria-label="Boat listing details"
+      >
         {/* Add bottom padding for mobile booking footer */}
         {/* Enhanced Hero Section with Corporate Design */}
-        <div className="relative pt-16 sm:pt-20 pb-8 sm:pb-12 overflow-hidden">
+        <section
+          className="relative pt-16 sm:pt-20 pb-8 sm:pb-12 overflow-hidden"
+          aria-label="Boat image gallery"
+        >
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(26,95,122,0.1),transparent_50%)]" />
@@ -260,16 +340,18 @@ const BoatListing = () => {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110"
+                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-[44px] min-w-[44px] touch-manipulation"
                             onClick={previousImage}
+                            aria-label="Previous image"
                           >
                             <ArrowLeft className="h-5 w-5" />
                           </Button>
                           <Button
                             variant="outline"
                             size="icon"
-                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-[44px] min-w-[44px] touch-manipulation"
                             onClick={nextImage}
+                            aria-label="Next image"
                           >
                             <ArrowRight className="h-5 w-5" />
                           </Button>
@@ -333,7 +415,7 @@ const BoatListing = () => {
               )}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Enhanced Main Content Area with Corporate Design */}
         <div className="relative">
@@ -423,41 +505,71 @@ const BoatListing = () => {
 
                   {/* Enhanced Quick Info Cards */}
                   <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                    <div className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 text-center border border-blue-200/50 transition-all duration-300 hover:shadow-lg hover:scale-105">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <Users className="h-6 w-6 text-white" />
+                    <VisualFeedback
+                      variant="lift"
+                      intensity="sm"
+                      className="opacity-0 animate-slide-in-up"
+                      style={{ animationDelay: "0.1s" }}
+                    >
+                      <div
+                        ref={(el) => (quickInfoRefs.current[0] = el)}
+                        className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 text-center border border-blue-200/50"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                          <Users className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-sm text-blue-700 font-medium mb-1">
+                          Kapasite
+                        </div>
+                        <div className="text-xl font-bold text-blue-900">
+                          {boatData.capacity} kişi
+                        </div>
                       </div>
-                      <div className="text-sm text-blue-700 font-medium mb-1">
-                        Kapasite
-                      </div>
-                      <div className="text-xl font-bold text-blue-900">
-                        {boatData.capacity} kişi
-                      </div>
-                    </div>
+                    </VisualFeedback>
 
-                    <div className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 text-center border border-primary/20 transition-all duration-300 hover:shadow-lg hover:scale-105">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <Anchor className="h-6 w-6 text-white" />
+                    <VisualFeedback
+                      variant="lift"
+                      intensity="sm"
+                      className="opacity-0 animate-slide-in-up"
+                      style={{ animationDelay: "0.2s" }}
+                    >
+                      <div
+                        ref={(el) => (quickInfoRefs.current[1] = el)}
+                        className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 text-center border border-primary/20"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                          <Anchor className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-sm text-primary font-medium mb-1">
+                          Uzunluk
+                        </div>
+                        <div className="text-xl font-bold text-primary-dark">
+                          {boatData.length}m
+                        </div>
                       </div>
-                      <div className="text-sm text-primary font-medium mb-1">
-                        Uzunluk
-                      </div>
-                      <div className="text-xl font-bold text-primary-dark">
-                        {boatData.length}m
-                      </div>
-                    </div>
+                    </VisualFeedback>
 
-                    <div className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-6 text-center border border-green-200/50 transition-all duration-300 hover:shadow-lg hover:scale-105">
-                      <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <Shield className="h-6 w-6 text-white" />
+                    <VisualFeedback
+                      variant="lift"
+                      intensity="sm"
+                      className="opacity-0 animate-slide-in-up"
+                      style={{ animationDelay: "0.3s" }}
+                    >
+                      <div
+                        ref={(el) => (quickInfoRefs.current[2] = el)}
+                        className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-6 text-center border border-green-200/50"
+                      >
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                          <Shield className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-sm text-green-700 font-medium mb-1">
+                          Kaptan
+                        </div>
+                        <div className="text-xl font-bold text-green-900">
+                          {boatData.captainIncluded ? "Dahil" : "Opsiyonel"}
+                        </div>
                       </div>
-                      <div className="text-sm text-green-700 font-medium mb-1">
-                        Kaptan
-                      </div>
-                      <div className="text-xl font-bold text-green-900">
-                        {boatData.captainIncluded ? "Dahil" : "Opsiyonel"}
-                      </div>
-                    </div>
+                    </VisualFeedback>
                   </div>
 
                   {/* Enhanced Description */}
@@ -515,11 +627,22 @@ const BoatListing = () => {
 
                 {/* Enhanced Similar Boats Section */}
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100/50 transition-all duration-500 hover:shadow-2xl overflow-hidden">
-                  <SimilarBoats
-                    boats={similarBoatsData || []}
-                    isLoading={!similarBoatsData && !!boatData?.type}
-                    currentBoatId={boatData?.id}
-                  />
+                  <ProgressiveLoader
+                    isLoading={isSimilarBoatsLoading}
+                    skeleton={<SimilarBoatsSkeleton className="p-8 lg:p-10" />}
+                  >
+                    <SimilarBoats
+                      boats={similarBoatsData || []}
+                      isLoading={isSimilarBoatsLoading}
+                      currentBoatId={boatData?.id}
+                      error={
+                        similarBoatsError
+                          ? "Failed to load similar boats"
+                          : null
+                      }
+                      onRetry={() => refetchSimilarBoats()}
+                    />
+                  </ProgressiveLoader>
                 </div>
               </div>
 
@@ -564,4 +687,25 @@ const BoatListing = () => {
   );
 };
 
-export default BoatListing;
+// Wrap the component with ErrorBoundary for comprehensive error handling
+const BoatListingWithErrorBoundary = () => (
+  <ErrorBoundary
+    onError={(error, errorInfo) => {
+      console.error("BoatListing Error:", error, errorInfo);
+      notificationService.error(
+        "An unexpected error occurred while loading the boat details.",
+        {
+          title: "Application Error",
+          action: {
+            label: "Reload Page",
+            onClick: () => window.location.reload(),
+          },
+        }
+      );
+    }}
+  >
+    <BoatListing />
+  </ErrorBoundary>
+);
+
+export default BoatListingWithErrorBoundary;

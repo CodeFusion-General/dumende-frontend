@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield,
@@ -10,6 +10,11 @@ import {
   CheckCircle,
   User,
 } from "lucide-react";
+import {
+  useMicroInteractions,
+  useScrollAnimation,
+} from "@/hooks/useMicroInteractions";
+import { VisualFeedback, AnimatedCard } from "@/components/ui/VisualFeedback";
 
 // Host data interface for future backend integration
 export interface HostData {
@@ -67,6 +72,11 @@ const HostInfo: React.FC<HostInfoProps> = ({
   className = "",
   hostData,
 }) => {
+  const { staggerAnimation, fadeIn, prefersReducedMotion } =
+    useMicroInteractions();
+  const { elementRef: hostRef, isVisible } = useScrollAnimation(0.3);
+  const trustIndicatorRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   // Use hostData if provided, otherwise use individual props
   const data = hostData || {
     name: hostName,
@@ -83,6 +93,18 @@ const HostInfo: React.FC<HostInfoProps> = ({
     certifications,
     languages,
   };
+
+  // Animate host info when it comes into view
+  useEffect(() => {
+    if (isVisible && !prefersReducedMotion) {
+      const validRefs = trustIndicatorRefs.current.filter(
+        (ref) => ref !== null
+      ) as HTMLElement[];
+      if (validRefs.length > 0) {
+        staggerAnimation(validRefs, "slideInUp", 150);
+      }
+    }
+  }, [isVisible, staggerAnimation, prefersReducedMotion]);
   // Generate initials from host name
   const getInitials = (name: string) => {
     return name
@@ -218,69 +240,102 @@ const HostInfo: React.FC<HostInfoProps> = ({
       </div>
 
       {/* Trust Indicators Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div
+        ref={hostRef}
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+      >
         {/* Response Rate */}
-        <div className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-6 border border-green-200/50 transition-all duration-300 hover:shadow-lg hover:scale-105">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <MessageCircle className="h-6 w-6 text-white" />
+        <VisualFeedback
+          variant="lift"
+          intensity="sm"
+          className="opacity-0 animate-slide-in-up"
+          style={{ animationDelay: "0.1s" }}
+        >
+          <div
+            ref={(el) => (trustIndicatorRefs.current[0] = el)}
+            className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-6 border border-green-200/50"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <MessageCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-green-700 mb-1">
+                  Yanıt Oranı
+                </div>
+                <div className="text-2xl font-bold text-green-900">
+                  {data.responseRate}%
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-medium text-green-700 mb-1">
-                Yanıt Oranı
-              </div>
-              <div className="text-2xl font-bold text-green-900">
-                {data.responseRate}%
-              </div>
+            <div className="w-full bg-green-200 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-500 progress-bar"
+                style={{ width: `${data.responseRate}%` }}
+              />
             </div>
           </div>
-          <div className="w-full bg-green-200 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${data.responseRate}%` }}
-            />
-          </div>
-        </div>
+        </VisualFeedback>
 
         {/* Response Time */}
-        <div className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200/50 transition-all duration-300 hover:shadow-lg hover:scale-105">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Clock className="h-6 w-6 text-white" />
+        <VisualFeedback
+          variant="lift"
+          intensity="sm"
+          className="opacity-0 animate-slide-in-up"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <div
+            ref={(el) => (trustIndicatorRefs.current[1] = el)}
+            className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200/50"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-blue-700 mb-1">
+                  Yanıt Süresi
+                </div>
+                <div className="text-2xl font-bold text-blue-900">
+                  {data.responseTime}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-medium text-blue-700 mb-1">
-                Yanıt Süresi
-              </div>
-              <div className="text-2xl font-bold text-blue-900">
-                {data.responseTime}
-              </div>
+            <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full inline-block">
+              Genellikle hızlı yanıt verir
             </div>
           </div>
-          <div className="text-xs text-blue-600 bg-blue-100 px-3 py-1 rounded-full inline-block">
-            Genellikle hızlı yanıt verir
-          </div>
-        </div>
+        </VisualFeedback>
 
         {/* Certification Status */}
-        <div className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border border-primary/20 transition-all duration-300 hover:shadow-lg hover:scale-105">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <Shield className="h-6 w-6 text-white" />
+        <VisualFeedback
+          variant="lift"
+          intensity="sm"
+          className="opacity-0 animate-slide-in-up"
+          style={{ animationDelay: "0.3s" }}
+        >
+          <div
+            ref={(el) => (trustIndicatorRefs.current[2] = el)}
+            className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border border-primary/20"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-primary mb-1">
+                  Sertifika
+                </div>
+                <div className="text-2xl font-bold text-primary-dark">
+                  {data.isCertified ? "Onaylı" : "Beklemede"}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-medium text-primary mb-1">
-                Sertifika
-              </div>
-              <div className="text-2xl font-bold text-primary-dark">
-                {data.isCertified ? "Onaylı" : "Beklemede"}
-              </div>
+            <div className="text-xs text-primary bg-primary/10 px-3 py-1 rounded-full inline-block">
+              Türk Denizcilik Kurumu
             </div>
           </div>
-          <div className="text-xs text-primary bg-primary/10 px-3 py-1 rounded-full inline-block">
-            Türk Denizcilik Kurumu
-          </div>
-        </div>
+        </VisualFeedback>
       </div>
 
       {/* Host Description */}

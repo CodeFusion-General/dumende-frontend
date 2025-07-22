@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Star,
@@ -18,17 +18,27 @@ import { BoatDTO } from "@/types/boat.types";
 import { getImageUrl } from "@/lib/imageUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
+import { SimilarBoatsError } from "@/components/ui/ErrorStates";
+import {
+  useMicroInteractions,
+  useScrollAnimation,
+} from "@/hooks/useMicroInteractions";
+import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 interface SimilarBoatsProps {
   boats: BoatDTO[];
   isLoading?: boolean;
   currentBoatId?: number;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 const SimilarBoats: React.FC<SimilarBoatsProps> = ({
   boats,
   isLoading = false,
   currentBoatId,
+  error,
+  onRetry,
 }) => {
   const [comparedBoats, setComparedBoats] = useState<number[]>([]);
   const [favoriteBoats, setFavoriteBoats] = useState<number[]>([]);
@@ -38,8 +48,26 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
   const { language } = useLanguage();
   const t = translations[language];
 
+  // Micro-interactions
+  const { staggerAnimation, bounceAnimation, prefersReducedMotion } =
+    useMicroInteractions();
+  const { elementRef: similarBoatsRef, isVisible } = useScrollAnimation(0.3);
+  const boatCardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
   // Filter out current boat from similar boats
   const filteredBoats = boats.filter((boat) => boat.id !== currentBoatId);
+
+  // Animate boat cards when they come into view
+  useEffect(() => {
+    if (isVisible && !prefersReducedMotion && filteredBoats.length > 0) {
+      const validRefs = boatCardRefs.current.filter(
+        (ref) => ref !== null
+      ) as HTMLElement[];
+      if (validRefs.length > 0) {
+        staggerAnimation(validRefs, "slideInUp", 150);
+      }
+    }
+  }, [isVisible, staggerAnimation, prefersReducedMotion, filteredBoats.length]);
 
   const handleCompareToggle = (boatId: number) => {
     setComparedBoats(
@@ -144,6 +172,17 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
     );
   }
 
+  if (error) {
+    return (
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold text-gray-900 font-montserrat mb-6">
+          {t.pages.boats.similarBoats || "Benzer Tekneler"}
+        </h2>
+        <SimilarBoatsError onRetry={onRetry} />
+      </div>
+    );
+  }
+
   if (!filteredBoats.length) {
     return (
       <div className="mt-16">
@@ -176,142 +215,153 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
       </div>
 
       {/* Boats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {filteredBoats.map((boat) => (
-          <Card
+      <div
+        ref={similarBoatsRef}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+      >
+        {filteredBoats.map((boat, index) => (
+          <VisualFeedback
             key={boat.id}
-            className="bg-white shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+            variant="lift"
+            intensity="sm"
+            className="opacity-0 animate-slide-in-up"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
-            {/* Image Section */}
-            <div className="relative overflow-hidden">
-              {imageLoadingStates[boat.id] && (
-                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                </div>
-              )}
-              <img
-                src={getBoatImageUrl(boat)}
-                alt={boat.name}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                onLoadStart={() => handleImageLoadStart(boat.id)}
-                onLoad={() => handleImageLoad(boat.id)}
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder-boat.jpg";
-                  handleImageLoad(boat.id);
-                }}
-              />
-
-              {/* Floating Action Buttons */}
-              <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-8 h-8 sm:w-9 sm:h-9 p-0 bg-white/90 hover:bg-white shadow-md touch-manipulation"
-                  onClick={() => handleFavoriteToggle(boat.id)}
-                >
-                  <Heart
-                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                      favoriteBoats.includes(boat.id)
-                        ? "text-red-500 fill-red-500"
-                        : "text-gray-600"
-                    }`}
-                  />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="w-8 h-8 sm:w-9 sm:h-9 p-0 bg-white/90 hover:bg-white shadow-md touch-manipulation"
-                  onClick={() => handleCompareToggle(boat.id)}
-                >
-                  <BarChart3
-                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                      comparedBoats.includes(boat.id)
-                        ? "text-primary fill-primary"
-                        : "text-gray-600"
-                    }`}
-                  />
-                </Button>
-              </div>
-
-              {/* Price Badge */}
-              <div className="absolute bottom-3 left-3">
-                <Badge className="bg-white/95 text-gray-900 hover:bg-white font-semibold">
-                  ₺{boat.dailyPrice.toLocaleString()}/gün
-                </Badge>
-              </div>
-            </div>
-
-            {/* Content Section */}
-            <CardContent className="p-4 space-y-3">
-              {/* Title and Rating */}
-              <div className="flex justify-between items-start">
-                <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-1 font-montserrat">
-                  {boat.name}
-                </h3>
-                {boat.rating && (
-                  <div className="flex items-center gap-1 ml-2">
-                    <div className="flex">{renderStars(boat.rating)}</div>
-                    <span className="text-xs text-gray-600 ml-1">
-                      {boat.rating.toFixed(1)}
-                    </span>
+            <Card
+              ref={(el) => (boatCardRefs.current[index] = el)}
+              className="bg-white shadow-sm border border-gray-100 overflow-hidden transition-all duration-300 group"
+            >
+              {/* Image Section */}
+              <div className="relative overflow-hidden">
+                {imageLoadingStates[boat.id] && (
+                  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center z-10">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   </div>
                 )}
-              </div>
+                <img
+                  src={getBoatImageUrl(boat)}
+                  alt={boat.name}
+                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                  onLoadStart={() => handleImageLoadStart(boat.id)}
+                  onLoad={() => handleImageLoad(boat.id)}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder-boat.jpg";
+                    handleImageLoad(boat.id);
+                  }}
+                />
 
-              {/* Location */}
-              <div className="flex items-center text-gray-600">
-                <MapPin className="w-4 h-4 mr-1 text-primary" />
-                <span className="text-sm line-clamp-1">{boat.location}</span>
-              </div>
-
-              {/* Boat Details */}
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 mr-1" />
-                  <span>{boat.capacity} kişi</span>
+                {/* Floating Action Buttons */}
+                <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 sm:w-9 sm:h-9 p-0 bg-white/90 hover:bg-white shadow-md touch-manipulation"
+                    onClick={() => handleFavoriteToggle(boat.id)}
+                  >
+                    <Heart
+                      className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                        favoriteBoats.includes(boat.id)
+                          ? "text-red-500 fill-red-500"
+                          : "text-gray-600"
+                      }`}
+                    />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 sm:w-9 sm:h-9 p-0 bg-white/90 hover:bg-white shadow-md touch-manipulation"
+                    onClick={() => handleCompareToggle(boat.id)}
+                  >
+                    <BarChart3
+                      className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                        comparedBoats.includes(boat.id)
+                          ? "text-primary fill-primary"
+                          : "text-gray-600"
+                      }`}
+                    />
+                  </Button>
                 </div>
-                <div className="flex items-center">
-                  <Anchor className="w-4 h-4 mr-1" />
-                  <span className="line-clamp-1">{boat.type}</span>
+
+                {/* Price Badge */}
+                <div className="absolute bottom-3 left-3">
+                  <Badge className="bg-white/95 text-gray-900 hover:bg-white font-semibold">
+                    ₺{boat.dailyPrice.toLocaleString()}/gün
+                  </Badge>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={`flex-1 text-xs h-9 sm:h-10 transition-colors touch-manipulation ${
-                    comparedBoats.includes(boat.id)
-                      ? "bg-primary text-white border-primary hover:bg-primary/90"
-                      : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleCompareToggle(boat.id)}
-                >
-                  <BarChart3 className="w-3 h-3 mr-1" />
-                  <span className="hidden xs:inline">
-                    {comparedBoats.includes(boat.id)
-                      ? "Karşılaştırıldı"
-                      : "Karşılaştır"}
-                  </span>
-                  <span className="xs:hidden">
-                    {comparedBoats.includes(boat.id) ? "✓" : "Compare"}
-                  </span>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className="flex-1 text-xs h-9 sm:h-10 bg-primary hover:bg-primary/90 touch-manipulation"
-                >
-                  <Link to={`/boats/${boat.id}`}>
-                    <span className="hidden xs:inline">Detayları Gör</span>
-                    <span className="xs:hidden">View</span>
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Content Section */}
+              <CardContent className="p-4 space-y-3">
+                {/* Title and Rating */}
+                <div className="flex justify-between items-start">
+                  <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-1 font-montserrat">
+                    {boat.name}
+                  </h3>
+                  {boat.rating && (
+                    <div className="flex items-center gap-1 ml-2">
+                      <div className="flex">{renderStars(boat.rating)}</div>
+                      <span className="text-xs text-gray-600 ml-1">
+                        {boat.rating.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center text-gray-600">
+                  <MapPin className="w-4 h-4 mr-1 text-primary" />
+                  <span className="text-sm line-clamp-1">{boat.location}</span>
+                </div>
+
+                {/* Boat Details */}
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center">
+                    <Users className="w-4 h-4 mr-1" />
+                    <span>{boat.capacity} kişi</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Anchor className="w-4 h-4 mr-1" />
+                    <span className="line-clamp-1">{boat.type}</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex-1 text-xs h-9 sm:h-10 transition-colors touch-manipulation ${
+                      comparedBoats.includes(boat.id)
+                        ? "bg-primary text-white border-primary hover:bg-primary/90"
+                        : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => handleCompareToggle(boat.id)}
+                  >
+                    <BarChart3 className="w-3 h-3 mr-1" />
+                    <span className="hidden xs:inline">
+                      {comparedBoats.includes(boat.id)
+                        ? "Karşılaştırıldı"
+                        : "Karşılaştır"}
+                    </span>
+                    <span className="xs:hidden">
+                      {comparedBoats.includes(boat.id) ? "✓" : "Compare"}
+                    </span>
+                  </Button>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="flex-1 text-xs h-9 sm:h-10 bg-primary hover:bg-primary/90 touch-manipulation"
+                  >
+                    <Link to={`/boats/${boat.id}`}>
+                      <span className="hidden xs:inline">Detayları Gör</span>
+                      <span className="xs:hidden">View</span>
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </VisualFeedback>
         ))}
       </div>
 

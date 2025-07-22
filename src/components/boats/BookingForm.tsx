@@ -1,13 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format, addHours, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
   Clock,
   Users,
-  ChevronUp,
-  ChevronDown,
-  Star,
   X,
   Loader2,
   CheckCircle,
@@ -15,6 +12,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { useRetry } from "@/hooks/useRetry";
+import { useMicroInteractions } from "@/hooks/useMicroInteractions";
+import { AnimatedButton, VisualFeedback } from "@/components/ui/VisualFeedback";
 import {
   Popover,
   PopoverContent,
@@ -65,6 +65,16 @@ export function BookingForm({
   const [loading, setLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  // Micro-interactions
+  const {
+    scaleAnimation,
+    bounceAnimation,
+    pulseAnimation,
+    prefersReducedMotion,
+  } = useMicroInteractions();
+  const formRef = useRef<HTMLDivElement>(null);
+  const ctaButtonRef = useRef<HTMLButtonElement>(null);
+
   // Toggle between hourly and daily pricing
   const [isHourlyMode, setIsHourlyMode] = useState<boolean>(defaultIsHourly);
 
@@ -76,40 +86,59 @@ export function BookingForm({
   >([]);
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [timeSlotError, setTimeSlotError] = useState<string | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+
+  // Retry mechanism for fetching available dates
+  const { execute: retryFetchDates, isLoading: isRetryingDates } = useRetry(
+    async () => {
+      const today = new Date();
+      const sixMonthsLater = new Date();
+      sixMonthsLater.setMonth(today.getMonth() + 6);
+
+      const startDate = format(today, "yyyy-MM-dd");
+      const endDate = format(sixMonthsLater, "yyyy-MM-dd");
+
+      const calendarData = await availabilityService.getCalendarAvailability(
+        Number(boatId),
+        startDate,
+        endDate
+      );
+
+      const availableDays = calendarData
+        .filter((day) => day.isAvailable)
+        .map((day) => new Date(day.date));
+
+      setAvailableDates(availableDays);
+      setCalendarAvailability(calendarData);
+      setDateError(null);
+
+      return calendarData;
+    },
+    {
+      maxAttempts: 3,
+      onError: (error, attempt) => {
+        console.error(`Date loading attempt ${attempt} failed:`, error);
+        setDateError(`Failed to load available dates (attempt ${attempt}/3)`);
+      },
+    }
+  );
 
   // Fetch available dates for the next 6 months (180 days)
   useEffect(() => {
     const fetchAvailableDates = async () => {
       setIsDateLoading(true);
+      setDateError(null);
+
       try {
-        // Get current date and date 6 months from now (180 days)
-        const today = new Date();
-        const sixMonthsLater = new Date();
-        sixMonthsLater.setMonth(today.getMonth() + 6);
-
-        // Format dates for API
-        const startDate = format(today, "yyyy-MM-dd");
-        const endDate = format(sixMonthsLater, "yyyy-MM-dd");
-
-        // Get calendar availability for the date range
-        const calendarData = await availabilityService.getCalendarAvailability(
-          Number(boatId),
-          startDate,
-          endDate
-        );
-
-        // Filter for available dates and convert to Date objects
-        const availableDays = calendarData
-          .filter((day) => day.isAvailable)
-          .map((day) => new Date(day.date));
-
-        setAvailableDates(availableDays);
-        setCalendarAvailability(calendarData);
+        await retryFetchDates();
       } catch (error) {
         console.error("Failed to fetch available dates:", error);
+        setDateError("Unable to load available dates. Please try again.");
         toast({
-          title: "Müsait tarihler yüklenemedi",
-          description: "Lütfen daha sonra tekrar deneyin.",
+          title: "Available dates unavailable",
+          description: "Please try again or contact support.",
           variant: "destructive",
         });
       } finally {
@@ -118,52 +147,77 @@ export function BookingForm({
     };
 
     fetchAvailableDates();
-  }, [boatId]);
+  }, [boatId, retryFetchDates]);
+
+  // Retry mechanism for fetching time slots
+  const { execute: retryFetchTimeSlots, isLoading: isRetryingTimeSlots } =
+    useRetry(
+      async () => {
+        if (!date) return [];
+
+        const slots = await bookingService.getAvailableTimeSlots(
+          Number(boatId),
+          format(date, "yyyy-MM-dd")
+        );
+
+        // Convert 24-hour format to 12-hour format with AM/PM
+        const formattedSlots = slots.map((slot) => {
+          const hour = parseInt(slot.split(":")[0]);
+          return `${hour % 12 || 12}:00 ${hour < 12 ? "AM" : "PM"}`;
+        });
+
+        setAvailableTimeSlots(formattedSlots);
+        setTimeSlotError(null);
+
+        // If current selected time is not available, reset it
+        if (formattedSlots.length > 0 && !formattedSlots.includes(startTime)) {
+          setStartTime(formattedSlots[0]);
+        }
+
+        return formattedSlots;
+      },
+      {
+        maxAttempts: 3,
+        onError: (error, attempt) => {
+          console.error(`Time slot loading attempt ${attempt} failed:`, error);
+          setTimeSlotError(
+            `Failed to load available times (attempt ${attempt}/3)`
+          );
+        },
+      }
+    );
 
   // Fetch available time slots when date changes
   useEffect(() => {
     const fetchAvailableTimeSlots = async () => {
       if (date) {
         setIsTimeSlotLoading(true);
+        setTimeSlotError(null);
+
         try {
-          const slots = await bookingService.getAvailableTimeSlots(
-            Number(boatId),
-            format(date, "yyyy-MM-dd")
-          );
-
-          // Convert 24-hour format to 12-hour format with AM/PM
-          const formattedSlots = slots.map((slot) => {
-            const hour = parseInt(slot.split(":")[0]);
-            return `${hour % 12 || 12}:00 ${hour < 12 ? "AM" : "PM"}`;
-          });
-
-          setAvailableTimeSlots(formattedSlots);
-
-          // If current selected time is not available, reset it
-          if (
-            formattedSlots.length > 0 &&
-            !formattedSlots.includes(startTime)
-          ) {
-            setStartTime(formattedSlots[0]);
-          }
+          await retryFetchTimeSlots();
         } catch (error) {
           console.error("Failed to fetch available time slots:", error);
-          toast({
-            title: "Müsait saatler yüklenemedi",
-            description: "Lütfen daha sonra tekrar deneyin.",
-            variant: "destructive",
-          });
+          setTimeSlotError(
+            "Unable to load available times. Using fallback times."
+          );
           setAvailableTimeSlots([]);
+          toast({
+            title: "Time slots unavailable",
+            description: "Using default time slots. Please try again later.",
+            variant: "default",
+          });
         } finally {
           setIsTimeSlotLoading(false);
         }
       } else {
         setAvailableTimeSlots([]);
+        setTimeSlotError(null);
       }
     };
 
     fetchAvailableTimeSlots();
-  }, [date, boatId]);
+  }, [date, boatId, retryFetchTimeSlots]);
 
   // Fallback time slots if API fails
   const fallbackTimeSlots = Array.from({ length: 11 }, (_, i) => {
