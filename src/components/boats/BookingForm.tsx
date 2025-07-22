@@ -29,6 +29,7 @@ import { availabilityService } from "@/services/availabilityService";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -41,6 +42,7 @@ interface BookingFormProps {
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { isCustomer, isAuthenticated } = useAuth();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
@@ -213,6 +215,28 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
     
     return isDateAvailable && isTimeSlotAvailable;
   };
+
+  // Helper function to check if user can make bookings
+  const canUserBook = () => {
+    return isAuthenticated && isCustomer();
+  };
+
+  // Helper function to get appropriate button text
+  const getBookingButtonText = () => {
+    if (!isAuthenticated) {
+      return "Login Required";
+    }
+    if (!isCustomer()) {
+      return "Customer Access Only";
+    }
+    if (loading) {
+      return "Processing...";
+    }
+    if (!isBookingValid()) {
+      return "No Availability";
+    }
+    return "Request to Book";
+  };
   
   // Helper function to disable dates that are not available
   const disabledDates = {
@@ -292,13 +316,25 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       }
       
       // Check availability with the backend before proceeding
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      const isAvailable = await availabilityService.isBoatAvailableOnDate(Number(boatId), formattedDate);
+      const formattedStartDate = format(date, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+      
+      // For multi-day bookings, check the entire date range
+      let isAvailable;
+      if (isHourlyMode) {
+        // For hourly bookings, check single date
+        isAvailable = await availabilityService.isBoatAvailableOnDateWithBookings(Number(boatId), formattedStartDate);
+      } else {
+        // For daily bookings, check the entire date range
+        isAvailable = await availabilityService.isBoatAvailableBetweenDates(Number(boatId), formattedStartDate, formattedEndDate);
+      }
       
       if (!isAvailable) {
         toast({
           title: "Müsait değil",
-          description: "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin.",
+          description: isHourlyMode 
+            ? "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin."
+            : "Seçilen tarih aralığında tekne müsait değil. Lütfen başka tarihler seçin.",
           variant: "destructive",
         });
         setLoading(false);
@@ -346,8 +382,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         <Button 
           className="px-8" 
           onClick={() => setIsFormOpen(true)}
+          disabled={!canUserBook()}
         >
-          Book Now
+          {!isAuthenticated ? "Login Required" : !isCustomer() ? "Customer Access Only" : "Book Now"}
         </Button>
       </div>
     </div>
@@ -496,9 +533,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         <Button 
           className="w-full" 
           onClick={handleBooking}
-          disabled={loading || !isBookingValid()}
+          disabled={loading || !isBookingValid() || !canUserBook()}
         >
-          {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+          {getBookingButtonText()}
         </Button>
         
         <p className="text-center text-sm text-gray-500 mt-4">
@@ -632,9 +669,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           <Button 
             className="w-full"
             onClick={handleBooking}
-            disabled={loading || !isBookingValid()}
+            disabled={loading || !isBookingValid() || !canUserBook()}
           >
-            {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+            {getBookingButtonText()}
           </Button>
 
           <p className="text-center text-sm text-gray-500">
