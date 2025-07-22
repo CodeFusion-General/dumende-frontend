@@ -15,52 +15,58 @@ interface BoatCardProps {
 }
 
 // Default image helper function
-const getBoatImageUrl = async (boat: BoatDTO): Promise<string> => {
+const getBoatImageUrl = (boat: BoatDTO): string => {
   console.log("🚤 Loading image for boat:", boat.name, boat.id);
   console.log("🖼️ Boat images:", boat.images);
 
-  try {
-    // Önce boat'ın kendi image'ını dene
-    if (boat.images && boat.images.length > 0) {
-      const primaryImage = boat.images.find((img) => img.isPrimary) || boat.images[0];
-      if (primaryImage && primaryImage.imageData) {
-        console.log("✅ Using boat's own image");
-        return primaryImage.imageData;
-      }
+  // Backend'den gelen URL'i direkt kullan
+  if (boat.images && boat.images.length > 0) {
+    const primaryImage =
+      boat.images.find((img) => img.isPrimary) || boat.images[0];
+    if (primaryImage && primaryImage.imageUrl) {
+      console.log("✅ Using boat's own image URL");
+      return primaryImage.imageUrl;
     }
-
-    console.log("⚠️ No boat images found, fetching default image from API");
-    // Eğer image yoksa default image API'sinden al
-    const response = await fetch("http://localhost:8080/api/boats/default-image");
-    console.log("🌐 Default image API response:", response.status, response.ok);
-
-    if (response.ok) {
-      const blob = await response.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      console.log("✅ Default image loaded successfully:", imageUrl);
-      return imageUrl;
-    } else {
-      console.error("❌ Default image API failed:", response.status, response.statusText);
-    }
-  } catch (error) {
-    console.error("💥 Error loading boat image:", error);
   }
 
-  console.log("🔄 Using fallback placeholder");
-  // Fallback placeholder
-  return "/placeholder-boat.jpg";
+  console.log("🔄 Using default image");
+  // Fallback to default image
+  return "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
 };
 
-export const BoatCard: React.FC<BoatCardProps> = ({ boat, viewMode, isHourlyMode = false, isCompared = false, onCompareToggle }) => {
-  if (viewMode === "grid") {
-    return <BoatCardGrid boat={boat} isHourlyMode={isHourlyMode} isCompared={isCompared} onCompareToggle={onCompareToggle} />;
-  }
-  return <BoatCardList boat={boat} isHourlyMode={isHourlyMode} isCompared={isCompared} onCompareToggle={onCompareToggle} />;
-};
-
-const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared: boolean; onCompareToggle?: (id: string) => void }> = ({
-  boat, isHourlyMode, isCompared, onCompareToggle
+export const BoatCard: React.FC<BoatCardProps> = ({
+  boat,
+  viewMode,
+  isHourlyMode = false,
+  isCompared = false,
+  onCompareToggle,
 }) => {
+  if (viewMode === "grid") {
+    return (
+      <BoatCardGrid
+        boat={boat}
+        isHourlyMode={isHourlyMode}
+        isCompared={isCompared}
+        onCompareToggle={onCompareToggle}
+      />
+    );
+  }
+  return (
+    <BoatCardList
+      boat={boat}
+      isHourlyMode={isHourlyMode}
+      isCompared={isCompared}
+      onCompareToggle={onCompareToggle}
+    />
+  );
+};
+
+const BoatCardGrid: React.FC<{
+  boat: BoatDTO;
+  isHourlyMode: boolean;
+  isCompared: boolean;
+  onCompareToggle?: (id: string) => void;
+}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
   const { language } = useLanguage();
   const t = translations[language];
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
@@ -95,19 +101,19 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared ? 'bg-blue-600 text-white' : 'bg-white/80 text-blue-600'
+              isCompared
+                ? "bg-blue-600 text-white"
+                : "bg-white/80 text-blue-600"
             }`}
           >
-            {isCompared ? 'Karşılaştırıldı' : 'Karşılaştır'}
+            {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
         )}
       </div>
 
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-gray-800">
-            {boat.name}
-          </h3>
+          <h3 className="font-bold text-lg text-gray-800">{boat.name}</h3>
           <div className="flex items-center">
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
@@ -119,7 +125,9 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <Users className="h-4 w-4 mr-1" />
-            <span>{boat.capacity} {t.boats?.card?.person || 'kişi'}</span>
+            <span>
+              {boat.capacity} {t.boats?.card?.person || "kişi"}
+            </span>
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <Calendar className="h-4 w-4 mr-1" />
@@ -161,9 +169,12 @@ const BoatCardGrid: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
   );
 };
 
-const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared: boolean; onCompareToggle?: (id: string) => void }> = ({
-  boat, isHourlyMode, isCompared, onCompareToggle
-}) => {
+const BoatCardList: React.FC<{
+  boat: BoatDTO;
+  isHourlyMode: boolean;
+  isCompared: boolean;
+  onCompareToggle?: (id: string) => void;
+}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
@@ -196,10 +207,12 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared ? 'bg-blue-600 text-white' : 'bg-white/80 text-blue-600'
+              isCompared
+                ? "bg-blue-600 text-white"
+                : "bg-white/80 text-blue-600"
             }`}
           >
-            {isCompared ? 'Karşılaştırıldı' : 'Karşılaştır'}
+            {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
         )}
       </div>
@@ -207,9 +220,7 @@ const BoatCardList: React.FC<{ boat: BoatDTO; isHourlyMode: boolean; isCompared:
       <div className="p-4 md:p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-bold text-xl text-gray-800">
-              {boat.name}
-            </h3>
+            <h3 className="font-bold text-xl text-gray-800">{boat.name}</h3>
             <div className="text-sm text-gray-500 mb-2">{boat.location}</div>
           </div>
           <div className="flex items-center">

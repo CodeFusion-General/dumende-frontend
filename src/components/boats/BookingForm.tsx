@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addHours, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
@@ -29,6 +29,7 @@ import { availabilityService } from "@/services/availabilityService";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -41,6 +42,7 @@ interface BookingFormProps {
 export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const { isCustomer, isAuthenticated } = useAuth();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
@@ -58,9 +60,21 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
   
-  // Fetch available dates for the next 6 months (180 days)
+  // Memoize the boatId number to prevent unnecessary re-renders
+  const boatIdNumber = useMemo(() => Number(boatId), [boatId]);
+
+  // Memoize date formatting to prevent unnecessary calculations
+  const formattedDateForSlots = useMemo(() => {
+    return date ? format(date, 'yyyy-MM-dd') : null;
+  }, [date]);
+
+  // Fetch available dates for the next 6 months (180 days) - Only run once per boatId
   useEffect(() => {
+    let isMounted = true; // Prevent state updates if component unmounts
+
     const fetchAvailableDates = async () => {
+      if (!boatIdNumber) return;
+
       setIsDateLoading(true);
       try {
         // Get current date and date 6 months from now (180 days)
@@ -74,44 +88,65 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         
         // Get calendar availability for the date range
         const calendarData = await availabilityService.getCalendarAvailability(
-          Number(boatId),
+          boatIdNumber,
           startDate,
           endDate
         );
         
-        // Filter for available dates and convert to Date objects
-        const availableDays = calendarData
-          .filter(day => day.isAvailable)
-          .map(day => new Date(day.date));
-        
-        setAvailableDates(availableDays);
-        setCalendarAvailability(calendarData);
+        if (isMounted) {
+          // Filter for available dates and convert to Date objects
+          const availableDays = calendarData
+            .filter(day => day.isAvailable)
+            .map(day => new Date(day.date));
+
+          setAvailableDates(availableDays);
+          setCalendarAvailability(calendarData);
+        }
       } catch (error) {
         console.error('Failed to fetch available dates:', error);
-        toast({
-          title: "Müsait tarihler yüklenemedi",
-          description: "Lütfen daha sonra tekrar deneyin.",
-          variant: "destructive",
-        });
+        if (isMounted) {
+          toast({
+            title: "Müsait tarihler yüklenemedi",
+            description: "Lütfen daha sonra tekrar deneyin.",
+            variant: "destructive",
+          });
+        }
       } finally {
-        setIsDateLoading(false);
+        if (isMounted) {
+          setIsDateLoading(false);
+        }
       }
     };
     
     fetchAvailableDates();
-  }, [boatId]);
-  
-  // Fetch available time slots when date changes
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [boatIdNumber]); // Only depend on boatIdNumber, not all the state setters
+
+  // Fetch available time slots when date changes - Add debouncing
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
     const fetchAvailableTimeSlots = async () => {
-      if (date) {
-        setIsTimeSlotLoading(true);
-        try {
-          const slots = await bookingService.getAvailableTimeSlots(
-            Number(boatId), 
-            format(date, 'yyyy-MM-dd')
-          );
-          
+      if (!formattedDateForSlots || !boatIdNumber) {
+        if (isMounted) {
+          setAvailableTimeSlots([]);
+        }
+        return;
+      }
+
+      setIsTimeSlotLoading(true);
+      try {
+        const slots = await bookingService.getAvailableTimeSlots(
+          boatIdNumber,
+          formattedDateForSlots
+        );
+
+        if (isMounted) {
           // Convert 24-hour format to 12-hour format with AM/PM
           const formattedSlots = slots.map(slot => {
             const hour = parseInt(slot.split(':')[0]);
@@ -124,25 +159,36 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           if (formattedSlots.length > 0 && !formattedSlots.includes(startTime)) {
             setStartTime(formattedSlots[0]);
           }
-        } catch (error) {
-          console.error('Failed to fetch available time slots:', error);
+        }
+      } catch (error) {
+        console.error('Failed to fetch available time slots:', error);
+        if (isMounted) {
           toast({
             title: "Müsait saatler yüklenemedi",
             description: "Lütfen daha sonra tekrar deneyin.",
             variant: "destructive",
           });
           setAvailableTimeSlots([]);
-        } finally {
+        }
+      } finally {
+        if (isMounted) {
           setIsTimeSlotLoading(false);
         }
-      } else {
-        setAvailableTimeSlots([]);
       }
     };
 
-    fetchAvailableTimeSlots();
-  }, [date, boatId]);
-  
+    // Debounce the API call to prevent too many requests
+    timeoutId = setTimeout(() => {
+      fetchAvailableTimeSlots();
+    }, 300);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [formattedDateForSlots, boatIdNumber, startTime]); // Remove toast from dependencies
+
   // Fallback time slots if API fails
   const fallbackTimeSlots = Array.from({ length: 11 }, (_, i) => {
     const hour = i + 8; // Start at 8 AM
@@ -168,6 +214,28 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
     const isTimeSlotAvailable = availableTimeSlots.length > 0;
     
     return isDateAvailable && isTimeSlotAvailable;
+  };
+
+  // Helper function to check if user can make bookings
+  const canUserBook = () => {
+    return isAuthenticated && isCustomer();
+  };
+
+  // Helper function to get appropriate button text
+  const getBookingButtonText = () => {
+    if (!isAuthenticated) {
+      return "Login Required";
+    }
+    if (!isCustomer()) {
+      return "Customer Access Only";
+    }
+    if (loading) {
+      return "Processing...";
+    }
+    if (!isBookingValid()) {
+      return "No Availability";
+    }
+    return "Request to Book";
   };
   
   // Helper function to disable dates that are not available
@@ -248,13 +316,25 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       }
       
       // Check availability with the backend before proceeding
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      const isAvailable = await availabilityService.isBoatAvailableOnDate(Number(boatId), formattedDate);
+      const formattedStartDate = format(date, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+      
+      // For multi-day bookings, check the entire date range
+      let isAvailable;
+      if (isHourlyMode) {
+        // For hourly bookings, check single date
+        isAvailable = await availabilityService.isBoatAvailableOnDateWithBookings(Number(boatId), formattedStartDate);
+      } else {
+        // For daily bookings, check the entire date range
+        isAvailable = await availabilityService.isBoatAvailableBetweenDates(Number(boatId), formattedStartDate, formattedEndDate);
+      }
       
       if (!isAvailable) {
         toast({
           title: "Müsait değil",
-          description: "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin.",
+          description: isHourlyMode 
+            ? "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin."
+            : "Seçilen tarih aralığında tekne müsait değil. Lütfen başka tarihler seçin.",
           variant: "destructive",
         });
         setLoading(false);
@@ -302,8 +382,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         <Button 
           className="px-8" 
           onClick={() => setIsFormOpen(true)}
+          disabled={!canUserBook()}
         >
-          Book Now
+          {!isAuthenticated ? "Login Required" : !isCustomer() ? "Customer Access Only" : "Book Now"}
         </Button>
       </div>
     </div>
@@ -452,9 +533,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         <Button 
           className="w-full" 
           onClick={handleBooking}
-          disabled={loading || !isBookingValid()}
+          disabled={loading || !isBookingValid() || !canUserBook()}
         >
-          {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+          {getBookingButtonText()}
         </Button>
         
         <p className="text-center text-sm text-gray-500 mt-4">
@@ -588,9 +669,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           <Button 
             className="w-full"
             onClick={handleBooking}
-            disabled={loading || !isBookingValid()}
+            disabled={loading || !isBookingValid() || !canUserBook()}
           >
-            {loading ? "Processing..." : isBookingValid() ? "Request to Book" : "No Availability"}
+            {getBookingButtonText()}
           </Button>
 
           <p className="text-center text-sm text-gray-500">

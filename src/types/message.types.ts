@@ -12,7 +12,7 @@ export interface UserDTO {
   fullName: string;
   email: string;
   phoneNumber?: string;
-  profileImage?: string; // byte[] -> string (base64 veya URL)
+  profileImage?: string; // URL olarak tutuluyor
 }
 
 // Message Types

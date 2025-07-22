@@ -33,7 +33,8 @@ import {
 import {
   compressImage,
   validateImageFile,
-  getImageUrl,
+  isValidImageUrl,
+  getDefaultImageUrl,
 } from "@/lib/imageUtils";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -162,7 +163,8 @@ const VesselsPage = () => {
       setError("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.");
       toast({
         title: "Kimlik Doğrulama Hatası",
-        description: "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
+        description:
+          "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
         variant: "destructive",
       });
       return;
@@ -173,7 +175,8 @@ const VesselsPage = () => {
       setError("Bu sayfaya erişim yetkiniz bulunmamaktadır.");
       toast({
         title: "Yetki Hatası",
-        description: "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
+        description:
+          "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
         variant: "destructive",
       });
       return;
@@ -186,34 +189,36 @@ const VesselsPage = () => {
       console.log("Fetching vessels for user ID:", user.id);
       const ownerId = user.id; // Giriş yapmış kullanıcının ID'sini kullan
       const data = await boatService.getVesselsByOwner(ownerId);
-      
+
       console.log("Vessels fetched successfully:", data.length);
       setVessels(data);
-
     } catch (err) {
       console.error("Vessels yükleme hatası:", err);
-      
+
       // Daha detaylı error handling
       if (err instanceof Error) {
-        if (err.message.includes('401') || err.message.includes('token')) {
+        if (err.message.includes("401") || err.message.includes("token")) {
           setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
           toast({
             title: "Oturum Süresi Doldu",
-            description: "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+            description:
+              "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
             variant: "destructive",
           });
-        } else if (err.message.includes('403')) {
+        } else if (err.message.includes("403")) {
           setError("Bu işlem için yetkiniz bulunmamaktadır.");
           toast({
-            title: "Yetki Hatası", 
-            description: "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
+            title: "Yetki Hatası",
+            description:
+              "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
             variant: "destructive",
           });
         } else {
           setError(`Tekneler yüklenirken hata: ${err.message}`);
           toast({
             title: "Yükleme Hatası",
-            description: "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            description:
+              "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
             variant: "destructive",
           });
         }
@@ -511,7 +516,6 @@ const VesselsPage = () => {
           });
 
           compressedImages.push(compressedFile);
-
         } catch (error) {
           console.error(`${file.name} compress edilemedi:`, error);
           errors.push(`${file.name} işlenemedi`);
@@ -522,7 +526,6 @@ const VesselsPage = () => {
         ...prev,
         images: [...prev.images, ...compressedImages],
       }));
-
 
       toast({
         title: "Başarılı",
@@ -595,7 +598,6 @@ const VesselsPage = () => {
           title: "Başarılı",
           description: "Tekne bilgileri güncellendi.",
         });
-
       } else {
         // Create new vessel with optimized images
         if (formData.images.length > 0) {
@@ -631,7 +633,6 @@ const VesselsPage = () => {
             title: "Başarılı",
             description: "Yeni tekne eklendi.",
           });
-
         } else {
           // Resim olmadan tekne oluştur
           const createDTO = await formDataToCreateDTO(formData);
@@ -641,7 +642,6 @@ const VesselsPage = () => {
             title: "Başarılı",
             description: "Yeni tekne eklendi.",
           });
-
         }
       }
 
@@ -682,7 +682,6 @@ const VesselsPage = () => {
         title: "Başarılı",
         description: "Tekne silindi.",
       });
-
 
       // Liste güncelle
       await fetchVessels();
@@ -765,10 +764,9 @@ const VesselsPage = () => {
                       {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
                     </h1>
                     <p className="text-gray-600 text-sm">
-                      {editingVesselId 
-                        ? "Mevcut teknenizin bilgilerini güncelleyin" 
-                        : "Yeni bir tekne ekleyerek müşterilerinize hizmet vermeye başlayın"
-                      }
+                      {editingVesselId
+                        ? "Mevcut teknenizin bilgilerini güncelleyin"
+                        : "Yeni bir tekne ekleyerek müşterilerinize hizmet vermeye başlayın"}
                       {loading && (
                         <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                           <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin mr-1"></div>
@@ -778,7 +776,7 @@ const VesselsPage = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Decorative Elements */}
                 <div className="absolute -top-1 -right-1 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl" />
                 <div className="absolute -bottom-1 -left-1 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg" />
@@ -858,9 +856,11 @@ const VesselsPage = () => {
                           <FileText className="mr-3 text-primary" size={24} />
                           Temel Bilgiler
                         </h2>
-                        <p className="text-gray-600 mt-1">Teknenizin temel özelliklerini ve detaylarını girin</p>
+                        <p className="text-gray-600 mt-1">
+                          Teknenizin temel özelliklerini ve detaylarını girin
+                        </p>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div className="space-y-2">
                           <label
@@ -873,7 +873,10 @@ const VesselsPage = () => {
                             value={formData.type}
                             onValueChange={handleSelectChange("type")}
                           >
-                            <SelectTrigger id="vesselType" className="h-12 border-gray-300 focus:border-primary focus:ring-primary">
+                            <SelectTrigger
+                              id="vesselType"
+                              className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
+                            >
                               <SelectValue placeholder="Tekne tipini seçiniz" />
                             </SelectTrigger>
                             <SelectContent>
@@ -890,7 +893,9 @@ const VesselsPage = () => {
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <p className="text-xs text-gray-500">Teknenizin kategorisini belirleyin</p>
+                          <p className="text-xs text-gray-500">
+                            Teknenizin kategorisini belirleyin
+                          </p>
                         </div>
 
                         <div>
@@ -923,7 +928,9 @@ const VesselsPage = () => {
                             required
                             className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
                           />
-                          <p className="text-xs text-gray-500">Müşterilerinizin göreceği tekne ismi</p>
+                          <p className="text-xs text-gray-500">
+                            Müşterilerinizin göreceği tekne ismi
+                          </p>
                         </div>
 
                         <div>
@@ -998,7 +1005,9 @@ const VesselsPage = () => {
                             required
                             className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
                           />
-                          <p className="text-xs text-gray-500">Günlük kiralama ücreti</p>
+                          <p className="text-xs text-gray-500">
+                            Günlük kiralama ücreti
+                          </p>
                         </div>
 
                         <div>
@@ -1050,7 +1059,8 @@ const VesselsPage = () => {
                         <div className="text-sm text-gray-500">
                           <div>* işaretli alanlar zorunludur</div>
                           <div className="mt-1 text-xs text-blue-600">
-                            💡 Bu kaydet butonu tüm sekmelerdeki bilgileri kaydeder
+                            💡 Bu kaydet butonu tüm sekmelerdeki bilgileri
+                            kaydeder
                           </div>
                         </div>
                         <div className="flex space-x-3">
@@ -1090,7 +1100,10 @@ const VesselsPage = () => {
                         <div className="flex items-center">
                           <div className="text-blue-600 mr-2">ℹ️</div>
                           <p className="text-sm text-blue-800">
-                            Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                            Bu sekmedeki bilgileri doldurduktan sonra{" "}
+                            <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                            <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                            basarak tüm bilgilerinizi kaydedin.
                           </p>
                         </div>
                       </div>
@@ -1206,7 +1219,10 @@ const VesselsPage = () => {
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmedeki bilgileri doldurduktan sonra{" "}
+                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                          basarak tüm bilgilerinizi kaydedin.
                         </p>
                       </div>
                     </div>
@@ -1298,7 +1314,10 @@ const VesselsPage = () => {
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki bilgileri doldurduktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmedeki bilgileri doldurduktan sonra{" "}
+                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                          basarak tüm bilgilerinizi kaydedin.
                         </p>
                       </div>
                     </div>
@@ -1387,7 +1406,10 @@ const VesselsPage = () => {
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki fotoğrafları ekledikten sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmedeki fotoğrafları ekledikten sonra{" "}
+                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                          basarak tüm bilgilerinizi kaydedin.
                         </p>
                       </div>
                     </div>
@@ -1527,7 +1549,10 @@ const VesselsPage = () => {
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki açıklamaları yazdıktan sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmedeki açıklamaları yazdıktan sonra{" "}
+                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                          basarak tüm bilgilerinizi kaydedin.
                         </p>
                       </div>
                     </div>
@@ -1584,7 +1609,10 @@ const VesselsPage = () => {
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki organizasyon bilgilerini seçtikten sonra <strong>"Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonuna basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmedeki organizasyon bilgilerini seçtikten sonra{" "}
+                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
+                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
+                          basarak tüm bilgilerinizi kaydedin.
                         </p>
                       </div>
                     </div>
