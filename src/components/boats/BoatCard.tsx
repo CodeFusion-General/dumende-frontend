@@ -133,13 +133,15 @@ const BoatCardGrid: React.FC<{
           <span className="text-sm font-medium">{boat.type}</span>
         </div>
 
-        {/* Heart button with glass effect */}
-        <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
-          <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
-        </button>
+        {/* Heart button with glass effect - Hidden on homepage */}
+        {variant !== "homepage" && (
+          <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
+            <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
+          </button>
+        )}
 
-        {/* Compare button with glass effect */}
-        {onCompareToggle && (
+        {/* Compare button with glass effect - Hidden on homepage */}
+        {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
@@ -202,7 +204,7 @@ const BoatCardGrid: React.FC<{
             <span className={`text-sm ${getTextColor("60")} ml-1`}>/{priceUnit}</span>
           </div>
           <Link to={`/boats/${boat.id}`}>
-            <Button className="glass-button bg-gradient-sunset text-gray-800 hover:bg-gradient-sunset-reverse font-medium px-6 py-2 animate-ripple">
+            <Button className="glass-button bg-gradient-ocean text-white hover:bg-gradient-ocean-reverse font-medium px-6 py-2 animate-ripple">
               İncele
             </Button>
           </Link>
@@ -277,13 +279,15 @@ const BoatCardList: React.FC<{
           <span className="text-sm font-medium">{boat.type}</span>
         </div>
 
-        {/* Heart button */}
-        <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
-          <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
-        </button>
+        {/* Heart button - Hidden on homepage */}
+        {variant !== "homepage" && (
+          <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
+            <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
+          </button>
+        )}
 
-        {/* Compare button */}
-        {onCompareToggle && (
+        {/* Compare button - Hidden on homepage */}
+        {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
             className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
@@ -346,7 +350,7 @@ const BoatCardList: React.FC<{
               </Button>
             </Link>
             <Link to={`/rezervasyon/${boat.id}`}>
-              <Button className="glass-button bg-gradient-sunset text-gray-800 hover:bg-gradient-sunset-reverse font-medium px-4 py-2 animate-ripple">
+              <Button className="glass-button bg-gradient-ocean text-white hover:bg-gradient-ocean-reverse font-medium px-4 py-2 animate-ripple">
                 Rezervasyon <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
