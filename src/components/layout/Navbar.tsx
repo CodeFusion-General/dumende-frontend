@@ -153,9 +153,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
             </DropdownMenu>
 
             {isAuthenticated && (
-              <div className="glass-button p-2 rounded-xl">
-                <NavbarNotification userId={user!.id} />
-              </div>
+              <NavbarNotification userId={user!.id} />
             )}
 
             {isAuthenticated ? (
