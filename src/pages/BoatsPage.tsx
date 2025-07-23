@@ -5,7 +5,7 @@ import BoatListingHeader from "@/components/boats/BoatListingHeader";
 import FilterSidebar from "@/components/boats/FilterSidebar";
 import { boatListingData } from "@/data/boats";
 import NoResults from "@/components/boats/NoResults";
-import { BoatCard } from "@/components/boats/BoatCard"; // Düzeltilen import path
+import AnimatedBoatGrid from "@/components/boats/AnimatedBoatGrid";
 import CompareBar from "@/components/boats/CompareBar";
 import ServiceFilterBadge from "@/components/boats/ServiceFilterBadge";
 import { toast } from "@/components/ui/use-toast";
@@ -13,6 +13,7 @@ import { boatService } from "@/services/boatService";
 import { BoatDTO } from "@/types/boat.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
+import { createRippleEffect } from "@/lib/animations";
 
 const serviceBoatMap: Record<string, string[]> = {
   "evlilik-teklifi": ["Lüks Yat", "Motorlu Yat"],
@@ -333,52 +334,42 @@ const BoatsPage = () => {
               </div>
             )}
 
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div key={n} className="animate-pulse">
-                    <div className="bg-gray-200 h-64 rounded-lg mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredBoats.length > 0 ? (
-              <div
-                className={`grid ${
-                  viewMode === "grid"
-                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                    : "grid-cols-1"
-                } gap-6`}
-              >
-                {filteredBoats.map((boat) => (
-                  <BoatCard
-                    key={boat.id}
-                    boat={boat}
-                    viewMode={viewMode}
-                    isHourlyMode={isHourlyMode}
-                    isCompared={comparedBoats.includes(boat.id.toString())}
-                    onCompareToggle={(id) => {
-                      if (comparedBoats.includes(id)) {
-                        setComparedBoats(
-                          comparedBoats.filter((boatId) => boatId !== id)
-                        );
-                      } else if (comparedBoats.length < 3) {
-                        setComparedBoats([...comparedBoats, id]);
-                      } else {
-                        toast({
-                          title: t.pages.boats.compare.title,
-                          description:
-                            "En fazla 3 tekneyi karşılaştırabilirsiniz.",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  />
-                ))}
-              </div>
+            {filteredBoats.length > 0 ? (
+              <AnimatedBoatGrid
+                boats={filteredBoats}
+                viewMode={viewMode}
+                isHourlyMode={isHourlyMode}
+                comparedBoats={comparedBoats}
+                loading={loading}
+                onCompareToggle={(id) => {
+                  if (comparedBoats.includes(id)) {
+                    setComparedBoats(
+                      comparedBoats.filter((boatId) => boatId !== id)
+                    );
+                  } else if (comparedBoats.length < 3) {
+                    setComparedBoats([...comparedBoats, id]);
+                  } else {
+                    toast({
+                      title: t.pages.boats.compare.title,
+                      description: "En fazla 3 tekneyi karşılaştırabilirsiniz.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              />
             ) : (
-              <NoResults onReset={handleFilterReset} />
+              <NoResults
+                onReset={handleFilterReset}
+                searchQuery={searchParams.get("search") || ""}
+                hasActiveFilters={
+                  selectedTypes.length > 0 ||
+                  selectedLocations.length > 0 ||
+                  selectedFeatures.length > 0 ||
+                  capacity !== "" ||
+                  priceRange[0] !== 500 ||
+                  priceRange[1] !== 30000
+                }
+              />
             )}
           </div>
         </div>

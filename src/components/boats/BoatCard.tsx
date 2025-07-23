@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
@@ -83,27 +84,37 @@ const BoatCardGrid: React.FC<{
   const priceUnit = isHourlyMode ? "saat" : "gün";
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-xl">
+    <GlassCard className="overflow-hidden animate-hover-lift group">
+      {/* Image Section with Glass Overlay */}
       <div className="relative overflow-hidden h-60">
         <img
           src={imageUrl}
           alt={boat.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
-          {boat.type}
+
+        {/* Gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+
+        {/* Boat type badge with glass effect */}
+        <div className="absolute top-4 left-4 glass-light px-3 py-1 rounded-full backdrop-blur-sm">
+          <span className="text-sm font-medium text-white">{boat.type}</span>
         </div>
-        <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
-          <Heart className="h-5 w-5 text-red-500" />
+
+        {/* Heart button with glass effect */}
+        <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
+          <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
         </button>
+
+        {/* Compare button with glass effect */}
         {onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${
               isCompared
-                ? "bg-blue-600 text-white"
-                : "bg-white/80 text-blue-600"
+                ? "bg-blue-500/80 text-white border border-blue-400/50"
+                : "glass-light text-white border border-white/30 hover:bg-blue-500/60"
             }`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
@@ -111,41 +122,46 @@ const BoatCardGrid: React.FC<{
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-gray-800">{boat.name}</h3>
-          <div className="flex items-center">
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
+      {/* Content Section */}
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-bold text-lg text-white group-hover:text-gradient transition-all duration-300">
+            {boat.name}
+          </h3>
+          <div className="flex items-center glass-light px-2 py-1 rounded-full">
+            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-sm font-medium ml-1 text-white">
+              {boat.rating || 0}
+            </span>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500 mb-3">{boat.location}</div>
+        <div className="text-sm text-white/70 mb-4">{boat.location}</div>
 
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-1" />
+          <div className="flex items-center text-sm text-white/80">
+            <Users className="h-4 w-4 mr-2 text-blue-400" />
             <span>
               {boat.capacity} {t.boats?.card?.person || "kişi"}
             </span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-1" />
+          <div className="flex items-center text-sm text-white/80">
+            <Calendar className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-6">
           {boat.features?.slice(0, 3).map((feature, index) => (
             <span
               key={index}
-              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
+              className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20"
             >
               {feature.featureName}
             </span>
           ))}
           {boat.features && boat.features.length > 3 && (
-            <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
+            <span className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20">
               +{boat.features.length - 3}
             </span>
           )}
@@ -153,19 +169,19 @@ const BoatCardGrid: React.FC<{
 
         <div className="flex justify-between items-center">
           <div>
-            <span className="font-bold text-lg text-blue-600">
+            <span className="font-bold text-xl text-gradient">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-gray-500">/{priceUnit}</span>
+            <span className="text-sm text-white/60 ml-1">/{priceUnit}</span>
           </div>
           <Link to={`/boats/${boat.id}`}>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="glass-button bg-gradient-sunset text-gray-800 hover:bg-gradient-sunset-reverse font-medium px-6 py-2 animate-ripple">
               İncele
             </Button>
           </Link>
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 };
 
@@ -189,27 +205,37 @@ const BoatCardList: React.FC<{
   const priceUnit = isHourlyMode ? "saat" : "gün";
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-xl flex flex-col md:flex-row h-full">
-      <div className="relative overflow-hidden md:w-1/3">
+    <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group">
+      {/* Image Section */}
+      <div className="relative overflow-hidden md:w-1/3 h-48 md:h-auto">
         <img
           src={imageUrl}
           alt={boat.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
-          {boat.type}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent md:bg-gradient-to-t md:from-black/20 md:via-transparent md:to-transparent" />
+
+        {/* Boat type badge */}
+        <div className="absolute top-4 left-4 glass-light px-3 py-1 rounded-full backdrop-blur-sm">
+          <span className="text-sm font-medium text-white">{boat.type}</span>
         </div>
-        <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
-          <Heart className="h-5 w-5 text-red-500" />
+
+        {/* Heart button */}
+        <button className="absolute top-4 right-4 glass-light p-2 rounded-full backdrop-blur-sm hover:bg-white/30 transition-all duration-300 animate-ripple">
+          <Heart className="h-5 w-5 text-red-400 hover:text-red-500 transition-colors" />
         </button>
+
+        {/* Compare button */}
         {onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${
               isCompared
-                ? "bg-blue-600 text-white"
-                : "bg-white/80 text-blue-600"
+                ? "bg-blue-500/80 text-white border border-blue-400/50"
+                : "glass-light text-white border border-white/30 hover:bg-blue-500/60"
             }`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
@@ -217,25 +243,30 @@ const BoatCardList: React.FC<{
         )}
       </div>
 
-      <div className="p-4 md:p-6 flex-1 flex flex-col">
+      {/* Content Section */}
+      <div className="p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-bold text-xl text-gray-800">{boat.name}</h3>
-            <div className="text-sm text-gray-500 mb-2">{boat.location}</div>
+            <h3 className="font-bold text-xl text-white group-hover:text-gradient transition-all duration-300">
+              {boat.name}
+            </h3>
+            <div className="text-sm text-white/70 mb-2">{boat.location}</div>
           </div>
-          <div className="flex items-center">
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
+          <div className="flex items-center glass-light px-2 py-1 rounded-full">
+            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            <span className="text-sm font-medium ml-1 text-white">
+              {boat.rating || 0}
+            </span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-2 text-blue-600" />
+          <div className="flex items-center text-sm text-white/80">
+            <Users className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.capacity} Kişi</span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2 text-blue-600" />
+          <div className="flex items-center text-sm text-white/80">
+            <Calendar className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
         </div>
@@ -244,7 +275,7 @@ const BoatCardList: React.FC<{
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
+              className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20"
             >
               {feature.featureName}
             </span>
@@ -253,28 +284,25 @@ const BoatCardList: React.FC<{
 
         <div className="flex justify-between items-center mt-2">
           <div>
-            <span className="font-bold text-xl text-blue-600">
+            <span className="font-bold text-xl text-gradient">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-gray-500">/{priceUnit}</span>
+            <span className="text-sm text-white/60">/{priceUnit}</span>
           </div>
           <div className="flex space-x-2">
             <Link to={`/boats/${boat.id}`}>
-              <Button
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-              >
+              <Button className="glass-button border border-white/30 text-white hover:bg-white/20 font-medium px-4 py-2">
                 Detaylar
               </Button>
             </Link>
             <Link to={`/rezervasyon/${boat.id}`}>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="glass-button bg-gradient-sunset text-gray-800 hover:bg-gradient-sunset-reverse font-medium px-4 py-2 animate-ripple">
                 Rezervasyon <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 };

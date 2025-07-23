@@ -68,17 +68,29 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   // Tekne tipi mapping (backend enum → frontend display)
   const getTypeDisplayName = (type: string): string => {
-    return t.pages.boats.filters.types[type as keyof typeof t.pages.boats.filters.types] || type;
+    return (
+      t.pages.boats.filters.types[
+        type as keyof typeof t.pages.boats.filters.types
+      ] || type
+    );
   };
 
   // Özellik mapping
   const getFeatureDisplayName = (feature: string): string => {
-    return t.pages.boats.filters.featuresList[feature as keyof typeof t.pages.boats.filters.featuresList] || feature;
+    return (
+      t.pages.boats.filters.featuresList[
+        feature as keyof typeof t.pages.boats.filters.featuresList
+      ] || feature
+    );
   };
 
   // Kapasite mapping
   const getCapacityDisplayName = (capacity: string): string => {
-    return t.pages.boats.filters.capacityRanges[capacity as keyof typeof t.pages.boats.filters.capacityRanges] || capacity;
+    return (
+      t.pages.boats.filters.capacityRanges[
+        capacity as keyof typeof t.pages.boats.filters.capacityRanges
+      ] || capacity
+    );
   };
 
   // *** PERFORMANCE OPTIMIZED DYNAMIC FILTERS ***
@@ -234,30 +246,28 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   return (
     <div
       className={`${
-        showFilters ? "block" : "hidden"
-      } md:block w-full md:w-80 bg-white border border-gray-200 rounded-lg p-6 h-fit`}
+        showFilters ? "block animate-slide-in-glass" : "hidden"
+      } md:block w-full md:w-80 glass-card bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 h-fit transition-all duration-500 ease-glass`}
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
-          <Filter className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">{t.pages.boats.filters.title}</h3>
+          <Filter className="w-5 h-5 text-white/80" />
+          <h3 className="text-lg font-semibold text-white">
+            {t.pages.boats.filters.title}
+          </h3>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={resetFilters}
-          className="text-gray-500 hover:text-gray-700"
+          className="glass-button px-3 py-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300 text-sm"
         >
           {t.pages.boats.filters.clear}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
+        </button>
+        <button
           onClick={() => setShowFilters(false)}
-          className="md:hidden"
+          className="md:hidden glass-button p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300"
         >
           <X className="w-4 h-4" />
-        </Button>
+        </button>
       </div>
 
       <div className="space-y-6">
@@ -266,30 +276,36 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           open={openSections.boatType}
           onOpenChange={() => toggleSection("boatType")}
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
-            <span className="font-medium">{t.pages.boats.filters.type}</span>
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-2 rounded-lg hover:bg-white/5 transition-all duration-300">
+            <span className="font-medium text-white/90">
+              {t.pages.boats.filters.type}
+            </span>
             {openSections.boatType ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-white/70 transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-white/70 transition-transform duration-300" />
             )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
-            {availableBoatTypes.map((boatType) => (
-              <div key={boatType.value} className="flex items-center justify-between">
-                <Label
-                  className="flex items-center space-x-2 cursor-pointer"
+          <CollapsibleContent className="space-y-2 animate-fade-in-up">
+            {availableBoatTypes.map((boatType, index) => (
+              <div
+                key={boatType.value}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <label
+                  className="flex items-center space-x-3 cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                   onClick={() => toggleBoatType(boatType.value)}
                 >
                   <input
                     type="checkbox"
                     checked={selectedTypes.includes(boatType.value)}
                     onChange={() => toggleBoatType(boatType.value)}
-                    className="rounded border-gray-300"
+                    className="w-4 h-4 rounded border-white/30 bg-white/10 text-blue-500 focus:ring-2 focus:ring-white/30 transition-all duration-200"
                   />
-                  <span>{boatType.label}</span>
-                </Label>
-                <span className="text-sm text-gray-500">
+                  <span className="text-sm">{boatType.label}</span>
+                </label>
+                <span className="text-xs text-white/50 bg-white/10 px-2 py-1 rounded-full">
                   {boatType.count}
                 </span>
               </div>
@@ -302,15 +318,17 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           open={openSections.priceRange}
           onOpenChange={() => toggleSection("priceRange")}
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
-            <span className="font-medium">{t.pages.boats.filters.priceRange}</span>
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-2 rounded-lg hover:bg-white/5 transition-all duration-300">
+            <span className="font-medium text-white/90">
+              {t.pages.boats.filters.priceRange}
+            </span>
             {openSections.priceRange ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-white/70 transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-white/70 transition-transform duration-300" />
             )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4">
+          <CollapsibleContent className="space-y-4 animate-fade-in-up">
             <div className="px-2">
               <Slider
                 value={priceRange}
@@ -320,9 +338,15 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                 step={priceRange_min_max.step}
                 className="w-full"
               />
-              <div className="flex justify-between mt-2 text-sm text-gray-600">
-                <span>{t.pages.boats.filters.min}: {priceRange[0].toLocaleString()} ₺</span>
-                <span>{t.pages.boats.filters.max}: {priceRange[1].toLocaleString()} ₺</span>
+              <div className="flex justify-between mt-3 text-sm text-white/70">
+                <span className="bg-white/10 px-2 py-1 rounded-lg">
+                  {t.pages.boats.filters.min}: {priceRange[0].toLocaleString()}{" "}
+                  ₺
+                </span>
+                <span className="bg-white/10 px-2 py-1 rounded-lg">
+                  {t.pages.boats.filters.max}: {priceRange[1].toLocaleString()}{" "}
+                  ₺
+                </span>
               </div>
             </div>
           </CollapsibleContent>
@@ -333,19 +357,25 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           open={openSections.capacity}
           onOpenChange={() => toggleSection("capacity")}
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
-            <span className="font-medium">{t.pages.boats.filters.capacity}</span>
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-2 rounded-lg hover:bg-white/5 transition-all duration-300">
+            <span className="font-medium text-white/90">
+              {t.pages.boats.filters.capacity}
+            </span>
             {openSections.capacity ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-white/70 transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-white/70 transition-transform duration-300" />
             )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
-            {availableCapacityRanges.map((range) => (
-              <div key={range} className="flex items-center justify-between">
-                <Label
-                  className="flex items-center space-x-2 cursor-pointer"
+          <CollapsibleContent className="space-y-2 animate-fade-in-up">
+            {availableCapacityRanges.map((range, index) => (
+              <div
+                key={range}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <label
+                  className="flex items-center space-x-3 cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                   onClick={() => setCapacity(range)}
                 >
                   <input
@@ -353,11 +383,13 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     name="capacity"
                     checked={capacity === range}
                     onChange={() => setCapacity(range)}
-                    className="rounded-full"
+                    className="w-4 h-4 rounded-full border-white/30 bg-white/10 text-blue-500 focus:ring-2 focus:ring-white/30 transition-all duration-200"
                   />
-                  <span>{getCapacityDisplayName(range)}</span>
-                </Label>
-                <span className="text-sm text-gray-500">
+                  <span className="text-sm">
+                    {getCapacityDisplayName(range)}
+                  </span>
+                </label>
+                <span className="text-xs text-white/50 bg-white/10 px-2 py-1 rounded-full">
                   {
                     allBoats.filter((boat) => {
                       const cap = boat.capacity;
@@ -382,30 +414,36 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           open={openSections.features}
           onOpenChange={() => toggleSection("features")}
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
-            <span className="font-medium">{t.pages.boats.filters.features}</span>
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-2 rounded-lg hover:bg-white/5 transition-all duration-300">
+            <span className="font-medium text-white/90">
+              {t.pages.boats.filters.features}
+            </span>
             {openSections.features ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-white/70 transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-white/70 transition-transform duration-300" />
             )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
+          <CollapsibleContent className="space-y-2 animate-fade-in-up">
             {availableFeatures.map((feature, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <Label
-                  className="flex items-center space-x-2 cursor-pointer"
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <label
+                  className="flex items-center space-x-3 cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                   onClick={() => toggleFeature(feature.value)}
                 >
                   <input
                     type="checkbox"
                     checked={selectedFeatures.includes(feature.value)}
                     onChange={() => toggleFeature(feature.value)}
-                    className="rounded border-gray-300"
+                    className="w-4 h-4 rounded border-white/30 bg-white/10 text-blue-500 focus:ring-2 focus:ring-white/30 transition-all duration-200"
                   />
-                  <span>{feature.label}</span>
-                </Label>
-                <span className="text-sm text-gray-500">
+                  <span className="text-sm">{feature.label}</span>
+                </label>
+                <span className="text-xs text-white/50 bg-white/10 px-2 py-1 rounded-full">
                   {feature.count}
                 </span>
               </div>
@@ -418,30 +456,36 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
           open={openSections.location}
           onOpenChange={() => toggleSection("location")}
         >
-          <CollapsibleTrigger className="flex w-full items-center justify-between py-2">
-            <span className="font-medium">{t.pages.boats.filters.location}</span>
+          <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-2 rounded-lg hover:bg-white/5 transition-all duration-300">
+            <span className="font-medium text-white/90">
+              {t.pages.boats.filters.location}
+            </span>
             {openSections.location ? (
-              <ChevronUp className="w-4 h-4" />
+              <ChevronUp className="w-4 h-4 text-white/70 transition-transform duration-300" />
             ) : (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4 text-white/70 transition-transform duration-300" />
             )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2">
+          <CollapsibleContent className="space-y-2 animate-fade-in-up">
             {availableLocations.map((location, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <Label
-                  className="flex items-center space-x-2 cursor-pointer"
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <label
+                  className="flex items-center space-x-3 cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                   onClick={() => toggleLocation(location.value)}
                 >
                   <input
                     type="checkbox"
                     checked={selectedLocations.includes(location.value)}
                     onChange={() => toggleLocation(location.value)}
-                    className="rounded border-gray-300"
+                    className="w-4 h-4 rounded border-white/30 bg-white/10 text-blue-500 focus:ring-2 focus:ring-white/30 transition-all duration-200"
                   />
-                  <span>{location.label}</span>
-                </Label>
-                <span className="text-sm text-gray-500">
+                  <span className="text-sm">{location.label}</span>
+                </label>
+                <span className="text-xs text-white/50 bg-white/10 px-2 py-1 rounded-full">
                   {location.count}
                 </span>
               </div>
@@ -452,19 +496,21 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Alt Butonlar */}
       <div className="mt-8 space-y-3">
-        <Button
+        <button
           onClick={applyFilters}
-          className="w-full bg-primary hover:bg-primary-dark text-white"
+          className="w-full glass-button bg-gradient-sunset px-6 py-3 rounded-xl font-semibold text-gray-900 hover:scale-105 transition-all duration-300 animate-ripple shadow-lg"
         >
-          {t.pages.boats.filters.applyWithResults.replace('{count}', filteredCount.toString())}
-        </Button>
-        <Button
+          {t.pages.boats.filters.applyWithResults.replace(
+            "{count}",
+            filteredCount.toString()
+          )}
+        </button>
+        <button
           onClick={resetFilters}
-          variant="outline"
-          className="w-full"
+          className="w-full glass-button bg-white/10 backdrop-blur-lg border border-white/20 px-6 py-3 rounded-xl font-medium text-white/90 hover:bg-white/15 hover:text-white transition-all duration-300"
         >
           {t.pages.boats.filters.clearFilters}
-        </Button>
+        </button>
       </div>
     </div>
   );

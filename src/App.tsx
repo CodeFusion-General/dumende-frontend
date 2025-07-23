@@ -9,6 +9,13 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import AuthNotificationsProvider from "./components/auth/AuthNotificationsProvider";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { UserType } from "@/types/auth.types";
+import { accessibilityManager } from "@/lib/accessibility-utils";
+import { accessibleAnimationController } from "@/lib/reduced-motion";
+import {
+  browserCompatibilityManager,
+  polyfillManager,
+} from "@/lib/browser-compatibility";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BoatListing from "./pages/BoatListing";
@@ -39,299 +46,347 @@ import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 import BookingsPage from "./pages/admin/BookingsPage";
 import ProfilePage from "./pages/admin/ProfilePage";
+import GlassmorphismTest from "./components/test/GlassmorphismTest";
+import MicroAnimationsTest from "./components/test/MicroAnimationsTest";
+import PageTransitionsTest from "./components/test/PageTransitionsTest";
+import AccessibilityTest from "./components/test/AccessibilityTest";
 // Removed demo component imports - these components were removed as they contained mock data
 // Use RatingsContainer with real API data instead
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <AuthNotificationsProvider>
-          <BrowserRouter>
-            <TooltipProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/boats" element={<BoatsPage />} />
-                <Route path="/boats/:id" element={<BoatListing />} />
-                <Route path="/compare-boats" element={<CompareBoats />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:id" element={<BlogPost />} />
-                <Route path="/my-bookings" element={<MyBookings />} />
-                <Route
-                  path="/boat-owner-application"
-                  element={<BoatOwnerApplication />}
-                />
-                <Route path="/notifications" element={<NotificationsPage />} />
+const App = () => {
+  useEffect(() => {
+    // Initialize accessibility features
+    accessibilityManager.announcePageChange("Application");
 
-                {/* Tour Detail Route */}
-                <Route path="/tours/:id" element={<TourDetailPage />} />
+    // Load polyfills for unsupported features
+    polyfillManager.loadAllPolyfills();
 
-                {/* Captain Panel Routes - Only BOAT_OWNER and ADMIN can access */}
-                <Route
-                  path="/captain"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <Dashboard />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/vessels"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <VesselsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/tours"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <ToursPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/tours/new"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <NewTourPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/tours/:id"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <NewTourPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/availability"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <AvailabilityPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/messages"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <MessagesPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/pricing"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <PricingPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/company"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <CompanyPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/calendar"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <VesselCalendarPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/tour-calendar"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <TourCalendarPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/ratings"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <RatingsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/bookings"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <BookingsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/captain/profile"
-                  element={
-                    <RoleGuard
-                      requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
-                    >
-                      <ProfilePage />
-                    </RoleGuard>
-                  }
-                />
+    // Log browser compatibility information in development
+    if (process.env.NODE_ENV === "development") {
+      browserCompatibilityManager.logCompatibilityInfo();
+    }
 
-                {/* Admin Panel Routes - Only ADMIN can access */}
-                <Route
-                  path="/admin"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <Dashboard />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/vessels"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <VesselsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/tours"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <ToursPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/tours/new"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <NewTourPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/tours/:id"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <NewTourPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/availability"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <AvailabilityPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/messages"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <MessagesPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/pricing"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <PricingPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/company"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <CompanyPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/calendar"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <VesselCalendarPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/tour-calendar"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <TourCalendarPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/ratings"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <RatingsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/admin/bookings"
-                  element={
-                    <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                      <BookingsPage />
-                    </RoleGuard>
-                  }
-                />
+    // Cleanup on unmount
+    return () => {
+      accessibilityManager.destroy();
+      accessibleAnimationController.destroy();
+    };
+  }, []);
 
-                {/* Demo Routes Removed - Components contained mock data and have been replaced with RatingsContainer */}
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <AuthNotificationsProvider>
+            <BrowserRouter>
+              <TooltipProvider>
+                <main id="main-content" role="main">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/boats" element={<BoatsPage />} />
+                    <Route path="/boats/:id" element={<BoatListing />} />
+                    <Route path="/compare-boats" element={<CompareBoats />} />
+                    <Route path="/services" element={<Services />} />
+                    <Route path="/about" element={<AboutUs />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:id" element={<BlogPost />} />
+                    <Route path="/my-bookings" element={<MyBookings />} />
+                    <Route
+                      path="/boat-owner-application"
+                      element={<BoatOwnerApplication />}
+                    />
+                    <Route
+                      path="/notifications"
+                      element={<NotificationsPage />}
+                    />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
-              <Sonner />
-            </TooltipProvider>
-          </BrowserRouter>
-        </AuthNotificationsProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+                    {/* Tour Detail Route */}
+                    <Route path="/tours/:id" element={<TourDetailPage />} />
+
+                    {/* Captain Panel Routes - Only BOAT_OWNER and ADMIN can access */}
+                    <Route
+                      path="/captain"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <Dashboard />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/vessels"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <VesselsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/tours"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <ToursPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/tours/new"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <NewTourPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/tours/:id"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <NewTourPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/availability"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <AvailabilityPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/messages"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <MessagesPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/pricing"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <PricingPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/company"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <CompanyPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/calendar"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <VesselCalendarPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/tour-calendar"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <TourCalendarPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/ratings"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <RatingsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/bookings"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <BookingsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/profile"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <ProfilePage />
+                        </RoleGuard>
+                      }
+                    />
+
+                    {/* Admin Panel Routes - Only ADMIN can access */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <Dashboard />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/vessels"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <VesselsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/tours"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <ToursPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/tours/new"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <NewTourPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/tours/:id"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <NewTourPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/availability"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <AvailabilityPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/messages"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <MessagesPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/pricing"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <PricingPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/company"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <CompanyPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/calendar"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <VesselCalendarPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/tour-calendar"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <TourCalendarPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/ratings"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <RatingsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/bookings"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <BookingsPage />
+                        </RoleGuard>
+                      }
+                    />
+
+                    {/* Test Routes */}
+                    <Route
+                      path="/test/glassmorphism"
+                      element={<GlassmorphismTest />}
+                    />
+                    <Route
+                      path="/test/micro-animations"
+                      element={<MicroAnimationsTest />}
+                    />
+                    <Route
+                      path="/test/page-transitions"
+                      element={<PageTransitionsTest />}
+                    />
+                    <Route
+                      path="/test/accessibility"
+                      element={<AccessibilityTest />}
+                    />
+
+                    {/* Demo Routes Removed - Components contained mock data and have been replaced with RatingsContainer */}
+
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+                <Toaster />
+                <Sonner />
+              </TooltipProvider>
+            </BrowserRouter>
+          </AuthNotificationsProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

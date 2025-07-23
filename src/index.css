@@ -1,10 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap");
+/* Import modern design system styles */
+@import "./styles/glassmorphism.css";
+/* Import enhanced animation system */
+@import "./styles/animations.css";
 /* Import responsive utilities */
 @import "./styles/responsive.css";
 /* Import micro-interactions and visual feedback styles */
 @import "./styles/micro-interactions.css";
+/* Import image optimization styles */
+@import "./styles/image-optimization.css";
+/* Import accessibility enhancements */
+@import "./styles/accessibility.css";
+/* Import browser compatibility fallbacks */
+@import "./styles/browser-fallbacks.css";
 
 @tailwind base;
 @tailwind components;
@@ -46,11 +56,13 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
 
   body {
-    @apply bg-background text-foreground font-roboto;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: "Inter", sans-serif;
   }
 
   h1,
@@ -59,15 +71,29 @@
   h4,
   h5,
   h6 {
-    @apply font-montserrat font-bold;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
   }
 
   .emphasized-text {
-    @apply font-playfair italic;
+    font-family: "Playfair Display", serif;
+    font-style: italic;
   }
 
   .section-padding {
-    @apply py-16 px-4 md:px-8 lg:px-12;
+    padding: 4rem 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-padding {
+      padding: 4rem 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .section-padding {
+      padding: 4rem 3rem;
+    }
   }
 
   .fixed-position {
@@ -82,43 +108,116 @@
 /* Custom Utility Classes */
 @layer components {
   .btn-primary {
-    @apply bg-primary hover:bg-primary-dark text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+    background-color: hsl(var(--primary));
+    color: white;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    background-color: hsl(var(--primary) / 0.9);
   }
 
   .btn-secondary {
-    @apply bg-secondary hover:bg-secondary-dark text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+    background-color: hsl(var(--secondary));
+    color: white;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-secondary:hover {
+    background-color: hsl(var(--secondary) / 0.9);
   }
 
   .btn-accent {
-    @apply bg-accent hover:bg-accent-dark text-accent-foreground font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-accent:hover {
+    background-color: hsl(var(--accent) / 0.9);
   }
 
   .btn-outline {
-    @apply border border-primary text-primary hover:bg-primary hover:text-white font-montserrat font-medium py-2 px-6 rounded-lg transition duration-300 ease-in-out;
+    border: 1px solid hsl(var(--primary));
+    color: hsl(var(--primary));
+    background: transparent;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-outline:hover {
+    background-color: hsl(var(--primary));
+    color: white;
   }
 
   .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 80rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-custom {
+      padding: 0 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-custom {
+      padding: 0 2rem;
+    }
   }
 
   .transition-custom {
-    @apply transition-all duration-300 ease-in-out;
+    transition: all 0.3s ease-in-out;
   }
 
   /* Navbar Specific Styles */
   .active-nav-item {
-    @apply text-white relative;
+    color: white;
+    position: relative;
   }
 
   .active-nav-item::after {
     content: "";
-    @apply absolute bottom-0 left-0 w-full h-0.5 bg-accent transform origin-bottom-right transition-transform duration-300;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0.125rem;
+    background-color: hsl(var(--accent));
+    transform: scaleX(1);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease;
   }
 
   /* Hover animation for nav items */
   nav a:hover::after {
     content: "";
-    @apply absolute bottom-0 left-0 w-full h-0.5 bg-accent scale-x-100 transform origin-bottom-left transition-transform duration-300;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0.125rem;
+    background-color: hsl(var(--accent));
+    transform: scaleX(1);
+    transform-origin: bottom left;
+    transition: transform 0.3s ease;
   }
 
   /* Enhanced utility classes for SimilarBoats */
@@ -164,5 +263,160 @@
   /* Shadow utilities */
   .shadow-3xl {
     box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  /* Modern glassmorphism button variants */
+  .btn-glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.75rem;
+    transition: all var(--duration-fast) var(--ease-glass);
+    position: relative;
+    overflow: hidden;
+    color: white;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .btn-glass-primary {
+    background: var(--gradient-ocean);
+    color: white;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.75rem;
+    transition: all var(--duration-fast) var(--ease-glass);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glass-primary:hover {
+    background: var(--gradient-ocean-reverse);
+  }
+
+  .btn-glass-secondary {
+    background: var(--gradient-deep-sea);
+    color: white;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.75rem;
+    transition: all var(--duration-fast) var(--ease-glass);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glass-secondary:hover {
+    background: var(--gradient-deep-sea-reverse);
+  }
+
+  .btn-glass-accent {
+    background: var(--gradient-sunset);
+    color: #374151;
+    font-family: "Montserrat", sans-serif;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.75rem;
+    transition: all var(--duration-fast) var(--ease-glass);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glass-accent:hover {
+    background: var(--gradient-sunset-reverse);
+  }
+
+  /* Enhanced card utilities */
+  .card-glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1rem;
+    transition: all var(--duration-normal) var(--ease-glass);
+    padding: 1.5rem;
+  }
+
+  .card-glass-hover {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+    padding: 1.5rem;
+  }
+
+  .card-glass-hover:hover {
+    box-shadow: var(--glass-shadow-hover);
+  }
+
+  /* Text gradient utilities */
+  .text-gradient-primary {
+    background: var(--color-text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-hero {
+    background: var(--color-text-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
+  }
+
+  /* Modern navigation utilities */
+  .nav-glass {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-light);
+    -webkit-backdrop-filter: var(--glass-blur-light);
+    border: 1px solid var(--glass-border-light);
+    box-shadow: var(--glass-shadow);
+    transition: all var(--duration-normal) var(--ease-smooth);
+    padding: 1rem 1.5rem;
+  }
+
+  /* Enhanced focus states - Improved Contrast */
+  .focus-glass {
+    outline: none;
+  }
+
+  .focus-glass:focus {
+    outline: 3px solid rgba(59, 130, 246, 0.8);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3);
+    border-radius: 0.25rem;
+  }
+
+  /* Backdrop utilities */
+  .backdrop-glass {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .backdrop-glass-heavy {
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
   }
 }
