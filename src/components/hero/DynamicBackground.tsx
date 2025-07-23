@@ -28,7 +28,7 @@ const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   const backgroundRef = useRef<HTMLDivElement>(null);
   const scrollY = useRef(0);
 
-  // Gradient configurations for different moods/times
+  // Gradient configurations for different moods/times - All Ocean Theme
   const gradientConfigs = [
     {
       primary:
@@ -38,15 +38,15 @@ const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
     },
     {
       primary:
-        "linear-gradient(135deg, rgba(248, 203, 46, 0.7) 0%, rgba(255, 213, 79, 0.8) 100%)",
+        "linear-gradient(135deg, rgba(0, 43, 91, 0.8) 0%, rgba(26, 95, 122, 0.9) 100%)",
       secondary:
-        "linear-gradient(45deg, rgba(255, 235, 59, 0.6) 0%, rgba(248, 203, 46, 0.7) 100%)",
+        "linear-gradient(45deg, rgba(21, 101, 192, 0.6) 0%, rgba(26, 95, 122, 0.7) 100%)",
     },
     {
       primary:
-        "linear-gradient(135deg, rgba(0, 43, 91, 0.9) 0%, rgba(21, 101, 192, 0.8) 100%)",
+        "linear-gradient(135deg, rgba(21, 101, 192, 0.8) 0%, rgba(0, 43, 91, 0.9) 100%)",
       secondary:
-        "linear-gradient(45deg, rgba(21, 101, 192, 0.7) 0%, rgba(74, 155, 184, 0.6) 100%)",
+        "linear-gradient(45deg, rgba(74, 155, 184, 0.6) 0%, rgba(26, 95, 122, 0.7) 100%)",
     },
   ];
 

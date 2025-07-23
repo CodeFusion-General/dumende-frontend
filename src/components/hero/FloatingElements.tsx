@@ -80,7 +80,7 @@ const FloatingGlassElements: React.FC<FloatingGlassElementsProps> = ({
           className="absolute top-40 right-20 w-24 h-24 glass-light rounded-full opacity-15"
           style={{
             background:
-              "radial-gradient(circle, rgba(248, 203, 46, 0.3) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(21, 101, 192, 0.3) 0%, transparent 70%)",
             backdropFilter: "blur(15px)",
             animation: "float 6s ease-in-out infinite reverse",
           }}
@@ -120,14 +120,14 @@ const FloatingGlassElements: React.FC<FloatingGlassElementsProps> = ({
         <div
           className="absolute bottom-32 right-10 glass-card p-3 rounded-xl opacity-15 w-32 h-24"
           style={{
-            background: "rgba(248, 203, 46, 0.08)",
+            background: "rgba(26, 95, 122, 0.08)",
             backdropFilter: "blur(20px)",
-            border: "1px solid rgba(248, 203, 46, 0.2)",
+            border: "1px solid rgba(26, 95, 122, 0.2)",
             animation: "float 9s ease-in-out infinite reverse",
           }}
         >
-          <div className="w-full h-3 bg-yellow-300/30 rounded mb-2"></div>
-          <div className="w-2/3 h-2 bg-yellow-300/20 rounded"></div>
+          <div className="w-full h-3 bg-blue-300/30 rounded mb-2"></div>
+          <div className="w-2/3 h-2 bg-blue-300/20 rounded"></div>
         </div>
       </FloatingElement>
 
@@ -150,7 +150,7 @@ const FloatingGlassElements: React.FC<FloatingGlassElementsProps> = ({
           className="absolute bottom-1/4 left-1/2 w-12 h-12 glass-light opacity-25"
           style={{
             background:
-              "linear-gradient(135deg, rgba(248, 203, 46, 0.2) 0%, rgba(255, 213, 79, 0.1) 100%)",
+              "linear-gradient(135deg, rgba(21, 101, 192, 0.2) 0%, rgba(74, 155, 184, 0.1) 100%)",
             backdropFilter: "blur(10px)",
             borderRadius: "30% 70% 70% 30% / 30% 30% 70% 70%",
             animation:
@@ -177,7 +177,7 @@ const FloatingGlassElements: React.FC<FloatingGlassElementsProps> = ({
           className="absolute top-0 right-1/3 w-1 h-full opacity-15"
           style={{
             background:
-              "linear-gradient(to bottom, transparent 0%, rgba(248, 203, 46, 0.4) 50%, transparent 100%)",
+              "linear-gradient(to bottom, transparent 0%, rgba(26, 95, 122, 0.4) 50%, transparent 100%)",
             transform: "rotate(-20deg)",
             animation: "shimmer 4s ease-in-out infinite reverse",
           }}

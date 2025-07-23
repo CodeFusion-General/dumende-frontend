@@ -135,7 +135,7 @@ const Hero = () => {
               className={`h-3 rounded-full transition-all duration-300 glass-button animate-hover-scale
                 ${
                   index === currentSlide
-                    ? "bg-gradient-sunset w-6 shadow-lg"
+                    ? "bg-gradient-ocean w-6 shadow-lg"
                     : "bg-white bg-opacity-30 w-3 backdrop-blur-sm"
                 }`}
               style={{

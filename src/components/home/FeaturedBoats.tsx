@@ -288,7 +288,7 @@ const FeaturedBoats = () => {
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-teal-900/20" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-radial from-white/5 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-radial from-yellow-400/10 to-transparent rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-radial from-blue-400/10 to-transparent rounded-full blur-2xl" />
 
         <div className="container-custom relative z-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
