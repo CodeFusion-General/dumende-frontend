@@ -24,17 +24,257 @@ const FeaturedBoats = () => {
     try {
       setLoading(true);
 
-      const response = await boatService.getBoats();
+      // Önce API'yi dene
+      try {
+        const response = await boatService.getBoats();
+        const allBoats = Array.isArray(response)
+          ? response
+          : (response as any)?.content || [];
 
-      const allBoats = Array.isArray(response)
-        ? response
-        : (response as any)?.content || [];
-      const featuredBoats = allBoats.slice(0, 6);
+        if (allBoats.length > 0) {
+          const featuredBoats = allBoats.slice(0, 6);
+          setBoats(featuredBoats);
+          setError(null);
+          return;
+        }
+      } catch (apiError) {
+        console.warn(
+          "API'den veri alınamadı, mock data kullanılıyor:",
+          apiError
+        );
+      }
 
-      setBoats(featuredBoats);
+      // API'den veri gelmezse mock data kullan
+      const mockBoats: BoatDTO[] = [
+        {
+          id: 1,
+          name: "Luxury Yacht Princess",
+          type: "Yacht",
+          location: "Bodrum Marina",
+          capacity: 12,
+          dailyPrice: 2500,
+          hourlyPrice: 350,
+          rating: 4.8,
+          buildYear: 2020,
+          year: 2020,
+          length: 25.5,
+          width: 6.2,
+          description: "Lüks ve konforlu yacht deneyimi için mükemmel seçim",
+          images: [
+            {
+              id: 1,
+              boatId: 1,
+              imageUrl:
+                "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          features: [
+            {
+              id: 1,
+              boatId: 1,
+              featureName: "Klima",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: 2,
+              boatId: 1,
+              featureName: "WiFi",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: 3,
+              boatId: 1,
+              featureName: "Ses Sistemi",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: 4,
+              boatId: 1,
+              featureName: "Güneş Güvertesi",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+        },
+        {
+          id: 2,
+          name: "Speedboat Thunder",
+          type: "Speedboat",
+          location: "Çeşme Marina",
+          capacity: 8,
+          dailyPrice: 1800,
+          hourlyPrice: 250,
+          rating: 4.6,
+          buildYear: 2019,
+          year: 2019,
+          length: 18.0,
+          width: 4.5,
+          description: "Hızlı ve eğlenceli deniz macerası",
+          images: [
+            {
+              id: 2,
+              boatId: 2,
+              imageUrl:
+                "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          features: [
+            {
+              id: 5,
+              boatId: 2,
+              featureName: "GPS",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: 6,
+              boatId: 2,
+              featureName: "Sonar",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: 7,
+              boatId: 2,
+              featureName: "Güvenlik Ekipmanları",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+        },
+        {
+          id: 3,
+          name: "Sailing Boat Harmony",
+          type: "Sailboat",
+          location: "Kaş Marina",
+          capacity: 10,
+          dailyPrice: 2000,
+          hourlyPrice: 280,
+          rating: 4.9,
+          buildYear: 2021,
+          year: 2021,
+          length: 22.0,
+          width: 5.8,
+          description: "Rüzgarın gücüyle sakin bir yolculuk",
+          images: [
+            {
+              id: 3,
+              imageUrl:
+                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+            },
+          ],
+          features: [
+            { id: 8, featureName: "Yelken Sistemi" },
+            { id: 9, featureName: "Navigasyon" },
+            { id: 10, featureName: "Güvenlik Donanımı" },
+          ],
+        },
+        {
+          id: 4,
+          name: "Catamaran Explorer",
+          type: "Catamaran",
+          location: "Marmaris Marina",
+          capacity: 16,
+          dailyPrice: 3200,
+          hourlyPrice: 450,
+          rating: 4.7,
+          buildYear: 2022,
+          year: 2022,
+          length: 28.0,
+          width: 8.5,
+          description: "Geniş ve stabil catamaran deneyimi",
+          images: [
+            {
+              id: 4,
+              imageUrl:
+                "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+            },
+          ],
+          features: [
+            { id: 11, featureName: "Geniş Güverte" },
+            { id: 12, featureName: "Barbekü" },
+            { id: 13, featureName: "Su Sporları Ekipmanları" },
+          ],
+        },
+        {
+          id: 5,
+          name: "Motor Yacht Elegance",
+          type: "Motor Yacht",
+          location: "Antalya Marina",
+          capacity: 14,
+          dailyPrice: 2800,
+          hourlyPrice: 380,
+          rating: 4.8,
+          buildYear: 2020,
+          year: 2020,
+          length: 24.5,
+          width: 6.8,
+          description: "Lüks motor yacht ile unutulmaz anlar",
+          images: [
+            {
+              id: 5,
+              imageUrl:
+                "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+            },
+          ],
+          features: [
+            { id: 14, featureName: "Jakuzi" },
+            { id: 15, featureName: "Bar" },
+            { id: 16, featureName: "Kabin" },
+          ],
+        },
+        {
+          id: 6,
+          name: "Fishing Boat Captain",
+          type: "Fishing Boat",
+          location: "Sinop Marina",
+          capacity: 6,
+          dailyPrice: 1200,
+          hourlyPrice: 180,
+          rating: 4.5,
+          buildYear: 2018,
+          year: 2018,
+          length: 15.0,
+          width: 4.0,
+          description: "Balık tutma macerası için ideal",
+          images: [
+            {
+              id: 6,
+              imageUrl:
+                "https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+              isPrimary: true,
+              displayOrder: 1,
+            },
+          ],
+          features: [
+            { id: 17, featureName: "Balık Tutma Ekipmanları" },
+            { id: 18, featureName: "Soğutucu" },
+            { id: 19, featureName: "Radar" },
+          ],
+        },
+      ];
+
+      setBoats(mockBoats);
       setError(null);
     } catch (err) {
-      setError(t.errors.somethingWentWrong);
+      setError("Tekneler yüklenirken bir hata oluştu");
       setBoats([]);
     } finally {
       setLoading(false);
@@ -145,20 +385,17 @@ const FeaturedBoats = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {boats.length > 0 ? (
             boats.map((boat, index) => (
-              <div
-                key={boat.id}
-                className="animate-fade-in-up opacity-0"
-                style={getStaggeredStyle(index)}
-              >
+              <div key={boat.id} className="opacity-100 visible">
                 <BoatCard
                   boat={boat}
                   viewMode="grid"
-                  isHourlyMode={false} // Ana sayfada daily price göster
+                  isHourlyMode={false}
                   isCompared={false}
-                  onCompareToggle={() => {}} // Ana sayfada karşılaştırma yok
+                  onCompareToggle={() => {}}
+                  variant="homepage"
                 />
               </div>
             ))

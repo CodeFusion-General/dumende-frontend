@@ -13,6 +13,7 @@ interface BoatCardProps {
   isHourlyMode?: boolean;
   isCompared?: boolean;
   onCompareToggle?: (id: string) => void;
+  variant?: "homepage" | "listing";
 }
 
 // Default image helper function
@@ -41,6 +42,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
   isHourlyMode = false,
   isCompared = false,
   onCompareToggle,
+  variant = "listing",
 }) => {
   if (viewMode === "grid") {
     return (
@@ -49,6 +51,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
         isHourlyMode={isHourlyMode}
         isCompared={isCompared}
         onCompareToggle={onCompareToggle}
+        variant={variant}
       />
     );
   }
@@ -58,6 +61,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
       isHourlyMode={isHourlyMode}
       isCompared={isCompared}
       onCompareToggle={onCompareToggle}
+      variant={variant}
     />
   );
 };
@@ -67,7 +71,8 @@ const BoatCardGrid: React.FC<{
   isHourlyMode: boolean;
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
-}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
+  variant?: "homepage" | "listing";
+}> = ({ boat, isHourlyMode, isCompared, onCompareToggle, variant = "listing" }) => {
   const { language } = useLanguage();
   const t = translations[language];
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
@@ -82,6 +87,32 @@ const BoatCardGrid: React.FC<{
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
   const priceUnit = isHourlyMode ? "saat" : "gün";
+
+  // Helper functions for conditional styling based on variant
+  const getTextColor = (opacity?: string) => {
+    if (variant === "homepage") {
+      return opacity ? `text-white/${opacity}` : "text-white";
+    }
+    return opacity ? `text-gray-${opacity === "70" ? "600" : opacity === "80" ? "700" : opacity === "90" ? "800" : "500"}` : "text-gray-800";
+  };
+
+  const getBadgeStyles = () => {
+    if (variant === "homepage") {
+      return "glass-light text-white backdrop-blur-sm border border-white/20";
+    }
+    return "bg-white/90 text-gray-800 backdrop-blur-sm border border-gray-200/50";
+  };
+
+  const getCompareButtonStyles = () => {
+    if (variant === "homepage") {
+      return isCompared
+        ? "bg-blue-500/80 text-white border border-blue-400/50"
+        : "glass-light text-white border border-white/30 hover:bg-blue-500/60";
+    }
+    return isCompared
+      ? "bg-blue-500 text-white border border-blue-400"
+      : "bg-white/90 text-gray-800 border border-gray-300 hover:bg-blue-500 hover:text-white";
+  };
 
   return (
     <GlassCard className="overflow-hidden animate-hover-lift group">
@@ -98,8 +129,8 @@ const BoatCardGrid: React.FC<{
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
 
         {/* Boat type badge with glass effect */}
-        <div className="absolute top-4 left-4 glass-light px-3 py-1 rounded-full backdrop-blur-sm">
-          <span className="text-sm font-medium text-white">{boat.type}</span>
+        <div className={`absolute top-4 left-4 px-3 py-1 rounded-full ${getBadgeStyles()}`}>
+          <span className="text-sm font-medium">{boat.type}</span>
         </div>
 
         {/* Heart button with glass effect */}
@@ -111,11 +142,7 @@ const BoatCardGrid: React.FC<{
         {onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${
-              isCompared
-                ? "bg-blue-500/80 text-white border border-blue-400/50"
-                : "glass-light text-white border border-white/30 hover:bg-blue-500/60"
-            }`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -125,27 +152,27 @@ const BoatCardGrid: React.FC<{
       {/* Content Section */}
       <div className="p-6">
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-bold text-lg text-white group-hover:text-gradient transition-all duration-300">
+          <h3 className={`font-bold text-lg ${getTextColor()} group-hover:text-gradient transition-all duration-300`}>
             {boat.name}
           </h3>
-          <div className="flex items-center glass-light px-2 py-1 rounded-full">
+          <div className={`flex items-center px-2 py-1 rounded-full ${getBadgeStyles()}`}>
             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-sm font-medium ml-1 text-white">
+            <span className="text-sm font-medium ml-1">
               {boat.rating || 0}
             </span>
           </div>
         </div>
 
-        <div className="text-sm text-white/70 mb-4">{boat.location}</div>
+        <div className={`text-sm ${getTextColor("70")} mb-4`}>{boat.location}</div>
 
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center text-sm text-white/80">
+          <div className={`flex items-center text-sm ${getTextColor("80")}`}>
             <Users className="h-4 w-4 mr-2 text-blue-400" />
             <span>
               {boat.capacity} {t.boats?.card?.person || "kişi"}
             </span>
           </div>
-          <div className="flex items-center text-sm text-white/80">
+          <div className={`flex items-center text-sm ${getTextColor("80")}`}>
             <Calendar className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
@@ -155,13 +182,13 @@ const BoatCardGrid: React.FC<{
           {boat.features?.slice(0, 3).map((feature, index) => (
             <span
               key={index}
-              className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20"
+              className={`text-xs px-3 py-1 rounded-full ${getBadgeStyles()}`}
             >
               {feature.featureName}
             </span>
           ))}
           {boat.features && boat.features.length > 3 && (
-            <span className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20">
+            <span className={`text-xs px-3 py-1 rounded-full ${getBadgeStyles()}`}>
               +{boat.features.length - 3}
             </span>
           )}
@@ -172,7 +199,7 @@ const BoatCardGrid: React.FC<{
             <span className="font-bold text-xl text-gradient">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-white/60 ml-1">/{priceUnit}</span>
+            <span className={`text-sm ${getTextColor("60")} ml-1`}>/{priceUnit}</span>
           </div>
           <Link to={`/boats/${boat.id}`}>
             <Button className="glass-button bg-gradient-sunset text-gray-800 hover:bg-gradient-sunset-reverse font-medium px-6 py-2 animate-ripple">
@@ -190,7 +217,8 @@ const BoatCardList: React.FC<{
   isHourlyMode: boolean;
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
-}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
+  variant?: "homepage" | "listing";
+}> = ({ boat, isHourlyMode, isCompared, onCompareToggle, variant = "listing" }) => {
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
@@ -203,6 +231,32 @@ const BoatCardList: React.FC<{
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
   const priceUnit = isHourlyMode ? "saat" : "gün";
+
+  // Helper functions for conditional styling based on variant
+  const getTextColor = (opacity?: string) => {
+    if (variant === "homepage") {
+      return opacity ? `text-white/${opacity}` : "text-white";
+    }
+    return opacity ? `text-gray-${opacity === "70" ? "600" : opacity === "80" ? "700" : opacity === "90" ? "800" : "500"}` : "text-gray-800";
+  };
+
+  const getBadgeStyles = () => {
+    if (variant === "homepage") {
+      return "glass-light text-white backdrop-blur-sm border border-white/20";
+    }
+    return "bg-white/90 text-gray-800 backdrop-blur-sm border border-gray-200/50";
+  };
+
+  const getCompareButtonStyles = () => {
+    if (variant === "homepage") {
+      return isCompared
+        ? "bg-blue-500/80 text-white border border-blue-400/50"
+        : "glass-light text-white border border-white/30 hover:bg-blue-500/60";
+    }
+    return isCompared
+      ? "bg-blue-500 text-white border border-blue-400"
+      : "bg-white/90 text-gray-800 border border-gray-300 hover:bg-blue-500 hover:text-white";
+  };
 
   return (
     <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group">
@@ -219,8 +273,8 @@ const BoatCardList: React.FC<{
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent md:bg-gradient-to-t md:from-black/20 md:via-transparent md:to-transparent" />
 
         {/* Boat type badge */}
-        <div className="absolute top-4 left-4 glass-light px-3 py-1 rounded-full backdrop-blur-sm">
-          <span className="text-sm font-medium text-white">{boat.type}</span>
+        <div className={`absolute top-4 left-4 px-3 py-1 rounded-full ${getBadgeStyles()}`}>
+          <span className="text-sm font-medium">{boat.type}</span>
         </div>
 
         {/* Heart button */}
@@ -232,11 +286,7 @@ const BoatCardList: React.FC<{
         {onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${
-              isCompared
-                ? "bg-blue-500/80 text-white border border-blue-400/50"
-                : "glass-light text-white border border-white/30 hover:bg-blue-500/60"
-            }`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -247,25 +297,25 @@ const BoatCardList: React.FC<{
       <div className="p-6 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-bold text-xl text-white group-hover:text-gradient transition-all duration-300">
+            <h3 className={`font-bold text-xl ${getTextColor()} group-hover:text-gradient transition-all duration-300`}>
               {boat.name}
             </h3>
-            <div className="text-sm text-white/70 mb-2">{boat.location}</div>
+            <div className={`text-sm ${getTextColor("70")} mb-2`}>{boat.location}</div>
           </div>
-          <div className="flex items-center glass-light px-2 py-1 rounded-full">
+          <div className={`flex items-center px-2 py-1 rounded-full ${getBadgeStyles()}`}>
             <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-sm font-medium ml-1 text-white">
+            <span className="text-sm font-medium ml-1">
               {boat.rating || 0}
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-          <div className="flex items-center text-sm text-white/80">
+          <div className={`flex items-center text-sm ${getTextColor("80")}`}>
             <Users className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.capacity} Kişi</span>
           </div>
-          <div className="flex items-center text-sm text-white/80">
+          <div className={`flex items-center text-sm ${getTextColor("80")}`}>
             <Calendar className="h-4 w-4 mr-2 text-blue-400" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
@@ -275,7 +325,7 @@ const BoatCardList: React.FC<{
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className="text-xs glass-light px-3 py-1 rounded-full text-white/90 backdrop-blur-sm border border-white/20"
+              className={`text-xs px-3 py-1 rounded-full ${getBadgeStyles()}`}
             >
               {feature.featureName}
             </span>
@@ -287,11 +337,11 @@ const BoatCardList: React.FC<{
             <span className="font-bold text-xl text-gradient">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-white/60">/{priceUnit}</span>
+            <span className={`text-sm ${getTextColor("60")}`}>/{priceUnit}</span>
           </div>
           <div className="flex space-x-2">
             <Link to={`/boats/${boat.id}`}>
-              <Button className="glass-button border border-white/30 text-white hover:bg-white/20 font-medium px-4 py-2">
+              <Button className={`glass-button border ${variant === "homepage" ? "border-white/30 text-white hover:bg-white/20" : "border-gray-300 text-gray-800 hover:bg-gray-100"} font-medium px-4 py-2`}>
                 Detaylar
               </Button>
             </Link>

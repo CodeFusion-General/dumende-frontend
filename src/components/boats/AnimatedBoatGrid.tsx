@@ -54,14 +54,14 @@ const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {[1, 2, 3, 4, 5, 6].map((n) => (
         <div key={n} className="animate-pulse">
-          <div className="glass-card bg-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
-            <div className="bg-white/10 h-48 rounded-xl mb-4"></div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/50 shadow-sm">
+            <div className="bg-gray-200 h-48 rounded-xl mb-4"></div>
             <div className="space-y-3">
-              <div className="h-4 bg-white/10 rounded w-3/4"></div>
-              <div className="h-4 bg-white/10 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
               <div className="flex justify-between items-center">
-                <div className="h-4 bg-white/10 rounded w-1/4"></div>
-                <div className="h-8 bg-white/10 rounded w-20"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                <div className="h-8 bg-gray-200 rounded w-20"></div>
               </div>
             </div>
           </div>
@@ -85,14 +85,7 @@ const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
       } gap-6`}
     >
       {boats.map((boat, index) => (
-        <div
-          key={boat.id}
-          className="boat-card opacity-0"
-          style={{
-            animationDelay: `${index * 100}ms`,
-            animationFillMode: "forwards",
-          }}
-        >
+        <div key={boat.id} className="boat-card opacity-100 visible">
           <BoatCard
             boat={boat}
             viewMode={viewMode}

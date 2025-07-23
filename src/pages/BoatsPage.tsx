@@ -229,15 +229,30 @@ const BoatsPage = () => {
     try {
       setLoading(true);
 
-      // Real API call
-      const response = await boatService.getBoats();
-      // Ensure we always set an array
-      const boats = Array.isArray(response)
-        ? response
-        : (response as any)?.content || [];
-      setAllBoats(boats);
-      setFilteredBoats(boats);
+      // Önce API'yi dene
+      try {
+        const response = await boatService.getBoats();
+        const boats = Array.isArray(response)
+          ? response
+          : (response as any)?.content || [];
 
+        if (boats.length > 0) {
+          setAllBoats(boats);
+          setFilteredBoats(boats);
+          setError(null);
+          return;
+        }
+      } catch (apiError) {
+        console.warn(
+          "API'den veri alınamadı, mock data kullanılıyor:",
+          apiError
+        );
+      }
+
+      // API'den veri gelmezse mock data kullan
+      const mockBoats = boatListingData.map(convertToBoatDTO);
+      setAllBoats(mockBoats);
+      setFilteredBoats(mockBoats);
       setError(null);
     } catch (err) {
       console.error("Error fetching boats:", err);
@@ -289,101 +304,106 @@ const BoatsPage = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <BoatListingHeader
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-          totalBoats={filteredBoats.length}
-          isHourlyMode={isHourlyMode}
-          setIsHourlyMode={setIsHourlyMode}
-        />
-
-        <div className="flex flex-col md:flex-row gap-6">
-          <FilterSidebar
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
+        <div className="container mx-auto px-4 py-8">
+          <BoatListingHeader
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
-            selectedTypes={selectedTypes}
-            setSelectedTypes={setSelectedTypes}
-            capacity={capacity}
-            setCapacity={setCapacity}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            selectedLocations={selectedLocations}
-            setSelectedLocations={setSelectedLocations}
-            selectedFeatures={selectedFeatures}
-            setSelectedFeatures={setSelectedFeatures}
-            openSections={openSections}
-            toggleSection={toggleSection}
-            resetFilters={handleFilterReset}
-            applyFilters={applyFilters}
-            allBoats={allBoats}
-            filteredCount={filteredBoats.length}
+            totalBoats={filteredBoats.length}
+            isHourlyMode={isHourlyMode}
+            setIsHourlyMode={setIsHourlyMode}
           />
 
-          <div className="flex-1">
-            {serviceParam && (
-              <div className="mb-4">
-                <ServiceFilterBadge
-                  service={serviceParam}
-                  onRemove={() => navigate("/boats")}
+          <div className="flex flex-col md:flex-row gap-6">
+            <FilterSidebar
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+              capacity={capacity}
+              setCapacity={setCapacity}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              selectedLocations={selectedLocations}
+              setSelectedLocations={setSelectedLocations}
+              selectedFeatures={selectedFeatures}
+              setSelectedFeatures={setSelectedFeatures}
+              openSections={openSections}
+              toggleSection={toggleSection}
+              resetFilters={handleFilterReset}
+              applyFilters={applyFilters}
+              allBoats={allBoats}
+              filteredCount={filteredBoats.length}
+            />
+
+            <div className="flex-1">
+              {serviceParam && (
+                <div className="mb-4">
+                  <ServiceFilterBadge
+                    service={serviceParam}
+                    onRemove={() => navigate("/boats")}
+                  />
+                </div>
+              )}
+
+              {filteredBoats.length > 0 ? (
+                <AnimatedBoatGrid
+                  boats={filteredBoats}
+                  viewMode={viewMode}
+                  isHourlyMode={isHourlyMode}
+                  comparedBoats={comparedBoats}
+                  loading={loading}
+                  onCompareToggle={(id) => {
+                    if (comparedBoats.includes(id)) {
+                      setComparedBoats(
+                        comparedBoats.filter((boatId) => boatId !== id)
+                      );
+                    } else if (comparedBoats.length < 3) {
+                      setComparedBoats([...comparedBoats, id]);
+                    } else {
+                      toast({
+                        title: t.pages.boats.compare.title,
+                        description:
+                          "En fazla 3 tekneyi karşılaştırabilirsiniz.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
                 />
-              </div>
-            )}
-
-            {filteredBoats.length > 0 ? (
-              <AnimatedBoatGrid
-                boats={filteredBoats}
-                viewMode={viewMode}
-                isHourlyMode={isHourlyMode}
-                comparedBoats={comparedBoats}
-                loading={loading}
-                onCompareToggle={(id) => {
-                  if (comparedBoats.includes(id)) {
-                    setComparedBoats(
-                      comparedBoats.filter((boatId) => boatId !== id)
-                    );
-                  } else if (comparedBoats.length < 3) {
-                    setComparedBoats([...comparedBoats, id]);
-                  } else {
-                    toast({
-                      title: t.pages.boats.compare.title,
-                      description: "En fazla 3 tekneyi karşılaştırabilirsiniz.",
-                      variant: "destructive",
-                    });
+              ) : (
+                <NoResults
+                  onReset={handleFilterReset}
+                  searchQuery={searchParams.get("search") || ""}
+                  hasActiveFilters={
+                    selectedTypes.length > 0 ||
+                    selectedLocations.length > 0 ||
+                    selectedFeatures.length > 0 ||
+                    capacity !== "" ||
+                    priceRange[0] !== 500 ||
+                    priceRange[1] !== 30000
                   }
-                }}
-              />
-            ) : (
-              <NoResults
-                onReset={handleFilterReset}
-                searchQuery={searchParams.get("search") || ""}
-                hasActiveFilters={
-                  selectedTypes.length > 0 ||
-                  selectedLocations.length > 0 ||
-                  selectedFeatures.length > 0 ||
-                  capacity !== "" ||
-                  priceRange[0] !== 500 ||
-                  priceRange[1] !== 30000
-                }
-              />
-            )}
+                />
+              )}
+            </div>
           </div>
-        </div>
 
-        {comparedBoats.length > 0 && (
-          <CompareBar
-            comparedBoats={comparedBoats}
-            boats={allBoats}
-            onRemove={(id) =>
-              setComparedBoats(comparedBoats.filter((boatId) => boatId !== id))
-            }
-            onClearAll={() => setComparedBoats([])}
-          />
-        )}
+          {comparedBoats.length > 0 && (
+            <CompareBar
+              comparedBoats={comparedBoats}
+              boats={allBoats}
+              onRemove={(id) =>
+                setComparedBoats(
+                  comparedBoats.filter((boatId) => boatId !== id)
+                )
+              }
+              onClearAll={() => setComparedBoats([])}
+            />
+          )}
+        </div>
       </div>
     </Layout>
   );
