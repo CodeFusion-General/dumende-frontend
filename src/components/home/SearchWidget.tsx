@@ -686,3 +686,4 @@ const SearchWidget = () => {
 };
 
 export default SearchWidget;
+

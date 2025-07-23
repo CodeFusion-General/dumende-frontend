@@ -78,11 +78,8 @@ const BoatCardGrid: React.FC<{
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
-    const loadImage = async () => {
-      const url = await getBoatImageUrl(boat);
-      setImageUrl(url);
-    };
-    loadImage();
+    const url = getBoatImageUrl(boat);
+    setImageUrl(url);
   }, [boat]);
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
@@ -224,11 +221,8 @@ const BoatCardList: React.FC<{
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
-    const loadImage = async () => {
-      const url = await getBoatImageUrl(boat);
-      setImageUrl(url);
-    };
-    loadImage();
+    const url = getBoatImageUrl(boat);
+    setImageUrl(url);
   }, [boat]);
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
@@ -360,3 +354,4 @@ const BoatCardList: React.FC<{
     </GlassCard>
   );
 };
+

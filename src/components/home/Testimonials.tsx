@@ -157,7 +157,7 @@ const Testimonials = () => {
           <p className="text-gray-600 max-w-3xl mx-auto">
             {t.home.testimonials.subtitle}
           </p>
-          
+
           {/* Demo Note */}
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
             <p className="text-sm text-blue-700">
@@ -238,3 +238,4 @@ const Testimonials = () => {
 };
 
 export default Testimonials;
+

@@ -271,3 +271,4 @@ const Destinations = () => {
 };
 
 export default Destinations;
+
