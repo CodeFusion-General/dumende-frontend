@@ -136,33 +136,31 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
               <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
                 <Globe size={20} />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-modal border-none mt-2">
+              <DropdownMenuContent className="glass-modal border-none mt-2 min-w-[140px] p-2 bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl">
                 <DropdownMenuItem
                   onClick={() => setLanguage("tr")}
-                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
                 >
                   🇹🇷 Türkçe
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setLanguage("en")}
-                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
                 >
                   🇬🇧 English
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isAuthenticated && (
-              <NavbarNotification userId={user!.id} />
-            )}
+            {isAuthenticated && <NavbarNotification userId={user!.id} />}
 
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
                   <User size={20} />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass-modal border-none mt-2">
-                  <div className="px-4 py-2 border-b border-white/20">
+                <DropdownMenuContent className="glass-modal border-none mt-2 min-w-[200px] p-2 bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+                  <div className="px-3 py-2 border-b border-white/20 mb-1">
                     <p className="text-sm font-medium text-white">
                       {user?.username}
                     </p>
@@ -170,7 +168,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                   </div>
                   <DropdownMenuItem
                     onClick={() => (window.location.href = "/my-bookings")}
-                    className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                    className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
                   >
                     <User className="mr-2 h-4 w-4" />
                     {t.nav.myBookings}
@@ -180,7 +178,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       onClick={() =>
                         (window.location.href = "/boat-owner-application")
                       }
-                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
                     >
                       <Ship className="mr-2 h-4 w-4" />
                       {t.nav.boatOwnerApplication}
@@ -189,7 +187,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                   {user?.role === "BOAT_OWNER" && (
                     <DropdownMenuItem
                       onClick={() => (window.location.href = "/captain")}
-                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
                     >
                       <Anchor className="mr-2 h-4 w-4" />
                       {t.nav.captainPanel}
