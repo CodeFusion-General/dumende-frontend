@@ -56,12 +56,12 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
 
     if (isHomePage) {
       return isScrolled
-        ? `${baseClasses} glass-nav scrolled py-2`
+        ? `${baseClasses} bg-white/95 backdrop-blur-xl border-b border-white/20 shadow-lg py-2`
         : `${baseClasses} bg-transparent py-4`;
     } else {
       return isScrolled
-        ? `${baseClasses} glass-nav scrolled py-2`
-        : `${baseClasses} glass-nav py-4`;
+        ? `${baseClasses} bg-white/95 backdrop-blur-xl border-b border-white/20 shadow-lg py-2`
+        : `${baseClasses} bg-white/90 backdrop-blur-lg border-b border-white/10 shadow-md py-4`;
     }
   };
 
@@ -94,8 +94,17 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Anchor className="w-10 h-10 text-white" />
-            <span className="font-bold text-xl text-white font-montserrat tracking-wide">
+            <Anchor
+              strokeWidth={2.5}
+              className={`w-10 h-10 transition-colors duration-300 ${
+                isScrolled ? "text-[#2c3e50]" : "text-white"
+              }`}
+            />
+            <span
+              className={`font-bold text-xl font-montserrat tracking-wide transition-colors duration-300 ${
+                isScrolled ? "text-[#2c3e50]" : "text-white"
+              }`}
+            >
               Dumende
             </span>
           </Link>
@@ -113,13 +122,21 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                 key={item.path}
                 to={item.path}
                 className={`
-                  relative px-4 py-2 rounded-xl font-montserrat font-medium tracking-wide text-white
+                  relative px-4 py-2 rounded-xl font-montserrat font-medium tracking-wide
                   transition-all duration-300 ease-glass animate-ripple
-                  hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-lg hover:scale-105
+                  hover:backdrop-blur-sm hover:shadow-lg hover:scale-105
                   ${
-                    isActive(item.path)
-                      ? "text-accent bg-white/15 backdrop-blur-sm shadow-md"
-                      : "hover:text-accent"
+                    isScrolled
+                      ? `text-[#2c3e50] hover:bg-[#3498db]/10 hover:text-[#3498db] ${
+                          isActive(item.path)
+                            ? "text-[#3498db] bg-[#3498db]/15 backdrop-blur-sm shadow-md"
+                            : ""
+                        }`
+                      : `text-white hover:bg-white/10 hover:text-accent ${
+                          isActive(item.path)
+                            ? "text-accent bg-white/15 backdrop-blur-sm shadow-md"
+                            : ""
+                        }`
                   }
                 `}
                 style={{
@@ -133,8 +150,14 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
 
           <div className="flex items-center space-x-2">
             <DropdownMenu>
-              <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
-                <Globe size={20} />
+              <DropdownMenuTrigger
+                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  isScrolled
+                    ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                    : "text-white hover:text-accent hover:bg-white/10"
+                }`}
+              >
+                <Globe size={20} strokeWidth={2.5} />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="border-none mt-2 min-w-[140px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
@@ -153,12 +176,20 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {isAuthenticated && <NavbarNotification userId={user!.id} />}
+            {isAuthenticated && (
+              <NavbarNotification userId={user!.id} isScrolled={isScrolled} />
+            )}
 
             {isAuthenticated ? (
               <DropdownMenu>
-                <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
-                  <User size={20} />
+                <DropdownMenuTrigger
+                  className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    isScrolled
+                      ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                      : "text-white hover:text-accent hover:bg-white/10"
+                  }`}
+                >
+                  <User size={20} strokeWidth={2.5} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="border-none mt-2 min-w-[200px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
@@ -174,7 +205,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                     onClick={() => (window.location.href = "/my-bookings")}
                     className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                   >
-                    <User className="mr-2 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" strokeWidth={2.5} />
                     {t.nav.myBookings}
                   </DropdownMenuItem>
                   {user?.role === "CUSTOMER" && (
@@ -184,7 +215,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       }
                       className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
-                      <Ship className="mr-2 h-4 w-4" />
+                      <Ship className="mr-2 h-4 w-4" strokeWidth={2.5} />
                       {t.nav.boatOwnerApplication}
                     </DropdownMenuItem>
                   )}
@@ -193,7 +224,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       onClick={() => (window.location.href = "/captain")}
                       className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
-                      <Anchor className="mr-2 h-4 w-4" />
+                      <Anchor className="mr-2 h-4 w-4" strokeWidth={2.5} />
                       {t.nav.captainPanel}
                     </DropdownMenuItem>
                   )}
@@ -202,7 +233,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       onClick={() => (window.location.href = "/admin")}
                       className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
-                      <Shield className="mr-2 h-4 w-4" />
+                      <Shield className="mr-2 h-4 w-4" strokeWidth={2.5} />
                       {t.nav.adminPanel}
                     </DropdownMenuItem>
                   )}
@@ -211,17 +242,21 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                     onClick={handleLogout}
                     className="relative hover:bg-red-500/20 cursor-pointer text-red-600 hover:text-red-700 transition-all duration-200 rounded-lg px-3 py-2 focus:bg-red-500/20 focus:text-red-700 font-roboto"
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="mr-2 h-4 w-4" strokeWidth={2.5} />
                     {t.nav.logout}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <button
-                className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105"
+                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  isScrolled
+                    ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                    : "text-white hover:text-accent hover:bg-white/10"
+                }`}
                 onClick={() => setIsAuthOpen(true)}
               >
-                <User size={20} />
+                <User size={20} strokeWidth={2.5} />
               </button>
             )}
 
@@ -232,10 +267,18 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
 
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105"
+              className={`md:hidden p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                isScrolled
+                  ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                  : "text-white hover:text-accent hover:bg-white/10"
+              }`}
               aria-label="Toggle menu"
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />}
+              {isOpen ? (
+                <X size={20} strokeWidth={2.5} />
+              ) : (
+                <Menu size={20} strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
