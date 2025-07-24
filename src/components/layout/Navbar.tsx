@@ -136,16 +136,17 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
               <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
                 <Globe size={20} />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-modal border-none mt-2 min-w-[140px] p-2 bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl">
+              <DropdownMenuContent className="border-none mt-2 min-w-[140px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
                 <DropdownMenuItem
                   onClick={() => setLanguage("tr")}
-                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
+                  className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                 >
                   🇹🇷 Türkçe
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setLanguage("en")}
-                  className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
+                  className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                 >
                   🇬🇧 English
                 </DropdownMenuItem>
@@ -159,16 +160,19 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                 <DropdownMenuTrigger className="glass-button text-white hover:text-accent p-2 rounded-xl transition-all duration-300 hover:scale-105">
                   <User size={20} />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="glass-modal border-none mt-2 min-w-[200px] p-2 bg-slate-900/95 backdrop-blur-xl border border-white/20 shadow-2xl">
-                  <div className="px-3 py-2 border-b border-white/20 mb-1">
-                    <p className="text-sm font-medium text-white">
+                <DropdownMenuContent className="border-none mt-2 min-w-[200px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
+                  <div className="relative px-3 py-3 border-b border-white/20 mb-2 bg-gradient-to-r from-[#3498db]/10 via-[#2c3e50]/5 to-[#3498db]/10 rounded-lg">
+                    <p className="text-sm font-medium text-[#2c3e50] font-montserrat">
                       {user?.username}
                     </p>
-                    <p className="text-xs text-white/70">{getUserRoleText()}</p>
+                    <p className="text-xs text-gray-600 font-roboto">
+                      {getUserRoleText()}
+                    </p>
                   </div>
                   <DropdownMenuItem
                     onClick={() => (window.location.href = "/my-bookings")}
-                    className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
+                    className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                   >
                     <User className="mr-2 h-4 w-4" />
                     {t.nav.myBookings}
@@ -178,7 +182,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                       onClick={() =>
                         (window.location.href = "/boat-owner-application")
                       }
-                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
                       <Ship className="mr-2 h-4 w-4" />
                       {t.nav.boatOwnerApplication}
@@ -187,7 +191,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                   {user?.role === "BOAT_OWNER" && (
                     <DropdownMenuItem
                       onClick={() => (window.location.href = "/captain")}
-                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200 rounded-lg px-3 py-2 focus:bg-white/10 focus:text-white"
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
                       <Anchor className="mr-2 h-4 w-4" />
                       {t.nav.captainPanel}
@@ -196,16 +200,16 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                   {user?.role === "ADMIN" && (
                     <DropdownMenuItem
                       onClick={() => (window.location.href = "/admin")}
-                      className="hover:bg-white/10 cursor-pointer text-white transition-all duration-200"
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                     >
                       <Shield className="mr-2 h-4 w-4" />
                       {t.nav.adminPanel}
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator className="bg-white/20" />
+                  <DropdownMenuSeparator className="bg-white/20 my-2" />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="hover:bg-red-500/20 cursor-pointer text-red-300 hover:text-red-200 transition-all duration-200"
+                    className="relative hover:bg-red-500/20 cursor-pointer text-red-600 hover:text-red-700 transition-all duration-200 rounded-lg px-3 py-2 focus:bg-red-500/20 focus:text-red-700 font-roboto"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     {t.nav.logout}
