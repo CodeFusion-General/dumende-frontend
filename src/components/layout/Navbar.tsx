@@ -1,11 +1,19 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Globe, Anchor, LogOut, Ship, Shield } from 'lucide-react';
-import { NavbarNotification } from '@/components/notification/NavbarNotification';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { translations } from '@/locales/translations';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Menu,
+  X,
+  User,
+  Globe,
+  Anchor,
+  LogOut,
+  Ship,
+  Shield,
+} from "lucide-react";
+import { NavbarNotification } from "@/components/notification/NavbarNotification";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { translations } from "@/locales/translations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +21,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { AuthDialog } from '@/components/auth/AuthDialog';
+import { AuthDialog } from "@/components/auth/AuthDialog";
+import MobileGlassMenu from "@/components/navigation/MobileGlassMenu";
 
 interface NavbarProps {
   isHomePage?: boolean;
@@ -26,7 +35,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
   const location = useLocation();
   const { language, setLanguage } = useLanguage();
   const { user, isAuthenticated, logout } = useAuth();
-  
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 10) {
@@ -35,19 +44,27 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
         setIsScrolled(false);
       }
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navbarStyle = isHomePage
-    ? isScrolled 
-      ? 'bg-primary/90 backdrop-blur-sm shadow-md py-2' 
-      : 'bg-transparent py-4'
-    : isScrolled
-      ? 'bg-primary/90 backdrop-blur-sm shadow-md py-2'
-      : 'bg-primary/90 backdrop-blur-sm shadow-md py-4';
-  
+  // Enhanced glass navigation styling with smooth morphing
+  const getNavbarClasses = () => {
+    const baseClasses =
+      "fixed w-full z-50 transition-all duration-500 ease-smooth";
+
+    if (isHomePage) {
+      return isScrolled
+        ? `${baseClasses} bg-white/95 backdrop-blur-xl border-b border-white/20 shadow-lg py-2`
+        : `${baseClasses} bg-transparent py-4`;
+    } else {
+      return isScrolled
+        ? `${baseClasses} bg-white/95 backdrop-blur-xl border-b border-white/20 shadow-lg py-2`
+        : `${baseClasses} bg-gradient-to-r from-[#1a5f7a] to-[#2d7795] shadow-lg py-4`;
+    }
+  };
+
   const t = translations[language];
 
   const isActive = (path: string) => {
@@ -59,239 +76,219 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
   };
 
   const getUserRoleText = () => {
-    if (!user) return '';
+    if (!user) return "";
     switch (user.role) {
-      case 'CUSTOMER':
-        return language === 'tr' ? 'Müşteri' : 'Customer';
-      case 'BOAT_OWNER':
-        return language === 'tr' ? 'Tekne Sahibi' : 'Boat Owner';
-      case 'ADMIN':
-        return language === 'tr' ? 'Yönetici' : 'Admin';
+      case "CUSTOMER":
+        return language === "tr" ? "Müşteri" : "Customer";
+      case "BOAT_OWNER":
+        return language === "tr" ? "Tekne Sahibi" : "Boat Owner";
+      case "ADMIN":
+        return language === "tr" ? "Yönetici" : "Admin";
       default:
-        return '';
+        return "";
     }
   };
 
   return (
-    <header className={`fixed w-full z-50 transition-all duration-300 ${navbarStyle}`}>
+    <header className={getNavbarClasses()}>
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Anchor className="w-10 h-10 text-white" />
-            <span className="font-bold text-xl text-white font-montserrat tracking-wide">
+            <Anchor
+              strokeWidth={2.5}
+              className={`w-10 h-10 transition-colors duration-300 ${
+                isScrolled ? "text-[#2c3e50]" : "text-white"
+              }`}
+            />
+            <span
+              className={`font-bold text-xl font-montserrat tracking-wide transition-colors duration-300 ${
+                isScrolled ? "text-[#2c3e50]" : "text-white"
+              }`}
+            >
               Dumende
             </span>
           </Link>
-          
-          <nav className="hidden md:flex items-center space-x-8">
+
+          <nav className="hidden md:flex items-center space-x-2">
             {[
-              { path: '/', label: t.nav.home },
-              { path: '/boats', label: t.nav.boats },
-              { path: '/services', label: t.nav.services },
-              { path: '/about', label: t.nav.about },
-              { path: '/contact', label: t.nav.contact },
-              { path: '/blog', label: t.nav.blog }
-            ].map((item) => (
+              { path: "/", label: t.nav.home },
+              { path: "/boats", label: t.nav.boats },
+              { path: "/services", label: t.nav.services },
+              { path: "/about", label: t.nav.about },
+              { path: "/contact", label: t.nav.contact },
+              { path: "/blog", label: t.nav.blog },
+            ].map((item, index) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`font-montserrat font-medium tracking-wide text-white hover:text-accent transition-colors
-                  ${isActive(item.path) ? 'text-accent' : ''}`}
+                className={`
+                  relative px-4 py-2 rounded-xl font-montserrat font-medium tracking-wide
+                  transition-all duration-300 ease-glass animate-ripple
+                  hover:backdrop-blur-sm hover:shadow-lg hover:scale-105
+                  ${
+                    isScrolled
+                      ? `text-[#2c3e50] hover:bg-[#3498db]/10 hover:text-[#3498db] ${
+                          isActive(item.path)
+                            ? "text-[#3498db] bg-[#3498db]/15 backdrop-blur-sm shadow-md"
+                            : ""
+                        }`
+                      : `text-white hover:bg-white/10 hover:text-accent ${
+                          isActive(item.path)
+                            ? "text-accent bg-white/15 backdrop-blur-sm shadow-md"
+                            : ""
+                        }`
+                  }
+                `}
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                }}
               >
                 {item.label}
               </Link>
             ))}
           </nav>
-          
-          <div className="flex items-center space-x-4">
+
+          <div className="flex items-center space-x-2">
             <DropdownMenu>
-              <DropdownMenuTrigger 
-                className="text-white hover:text-accent p-2 rounded-full transition-colors"
+              <DropdownMenuTrigger
+                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  isScrolled
+                    ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                    : "text-white hover:text-accent hover:bg-white/10"
+                }`}
               >
-                <Globe size={24} />
+                <Globe size={20} strokeWidth={2.5} />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-white shadow-lg rounded-md border-none">
-                <DropdownMenuItem 
-                  onClick={() => setLanguage('tr')}
-                  className="hover:bg-primary/10 cursor-pointer"
+              <DropdownMenuContent className="border-none mt-2 min-w-[140px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
+                <DropdownMenuItem
+                  onClick={() => setLanguage("tr")}
+                  className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                 >
                   🇹🇷 Türkçe
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setLanguage('en')}
-                  className="hover:bg-primary/10 cursor-pointer"
+                <DropdownMenuItem
+                  onClick={() => setLanguage("en")}
+                  className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                 >
                   🇬🇧 English
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {isAuthenticated && <NavbarNotification userId={user!.id} />}
+
+            {isAuthenticated && (
+              <NavbarNotification userId={user!.id} isScrolled={isScrolled} />
+            )}
+
             {isAuthenticated ? (
               <DropdownMenu>
-                <DropdownMenuTrigger 
-                  className="text-white hover:text-accent p-2 rounded-full transition-colors"
+                <DropdownMenuTrigger
+                  className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                    isScrolled
+                      ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                      : "text-white hover:text-accent hover:bg-white/10"
+                  }`}
                 >
-                  <User size={24} />
+                  <User size={20} strokeWidth={2.5} />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white shadow-lg rounded-md border-none">
-                  <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">
+                <DropdownMenuContent className="border-none mt-2 min-w-[200px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
+                  <div className="relative px-3 py-3 border-b border-white/20 mb-2 bg-gradient-to-r from-[#3498db]/10 via-[#2c3e50]/5 to-[#3498db]/10 rounded-lg">
+                    <p className="text-sm font-medium text-[#2c3e50] font-montserrat">
                       {user?.username}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-600 font-roboto">
                       {getUserRoleText()}
                     </p>
                   </div>
-                            <DropdownMenuItem 
-            onClick={() => window.location.href = '/my-bookings'}
-            className="hover:bg-primary/10 cursor-pointer"
-          >
-            <User className="mr-2 h-4 w-4" />
-            {t.nav.myBookings}
-          </DropdownMenuItem>
-          {user?.role === 'CUSTOMER' && (
-            <DropdownMenuItem 
-              onClick={() => window.location.href = '/boat-owner-application'}
-              className="hover:bg-primary/10 cursor-pointer"
-            >
-              <Ship className="mr-2 h-4 w-4" />
-              {t.nav.boatOwnerApplication}
-            </DropdownMenuItem>
-          )}
-          {user?.role === 'BOAT_OWNER' && (
-            <DropdownMenuItem 
-              onClick={() => window.location.href = '/captain'}
-              className="hover:bg-primary/10 cursor-pointer"
-            >
-              <Anchor className="mr-2 h-4 w-4" />
-              {t.nav.captainPanel}
-            </DropdownMenuItem>
-          )}
-          {user?.role === 'ADMIN' && (
-            <DropdownMenuItem 
-              onClick={() => window.location.href = '/admin'}
-              className="hover:bg-primary/10 cursor-pointer"
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              {t.nav.adminPanel}
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleLogout}
-            className="hover:bg-primary/10 cursor-pointer text-red-600"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            {t.nav.logout}
-          </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => (window.location.href = "/my-bookings")}
+                    className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
+                  >
+                    <User className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                    {t.nav.myBookings}
+                  </DropdownMenuItem>
+                  {user?.role === "CUSTOMER" && (
+                    <DropdownMenuItem
+                      onClick={() =>
+                        (window.location.href = "/boat-owner-application")
+                      }
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
+                    >
+                      <Ship className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                      {t.nav.boatOwnerApplication}
+                    </DropdownMenuItem>
+                  )}
+                  {user?.role === "BOAT_OWNER" && (
+                    <DropdownMenuItem
+                      onClick={() => (window.location.href = "/captain")}
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
+                    >
+                      <Anchor className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                      {t.nav.captainPanel}
+                    </DropdownMenuItem>
+                  )}
+                  {user?.role === "ADMIN" && (
+                    <DropdownMenuItem
+                      onClick={() => (window.location.href = "/admin")}
+                      className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
+                    >
+                      <Shield className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                      {t.nav.adminPanel}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-white/20 my-2" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="relative hover:bg-red-500/20 cursor-pointer text-red-600 hover:text-red-700 transition-all duration-200 rounded-lg px-3 py-2 focus:bg-red-500/20 focus:text-red-700 font-roboto"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                    {t.nav.logout}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <button 
-                className="text-white hover:text-accent p-2 rounded-full transition-colors"
+              <button
+                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  isScrolled
+                    ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                    : "text-white hover:text-accent hover:bg-white/10"
+                }`}
                 onClick={() => setIsAuthOpen(true)}
               >
-                <User size={24} />
+                <User size={20} strokeWidth={2.5} />
               </button>
             )}
-            
+
             <AuthDialog
               isOpen={isAuthOpen}
               onClose={() => setIsAuthOpen(false)}
             />
-            
-            <button 
-              onClick={() => setIsOpen(!isOpen)} 
-              className="md:hidden text-white hover:text-accent p-2 rounded-full transition-colors"
+
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className={`md:hidden p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                isScrolled
+                  ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                  : "text-white hover:text-accent hover:bg-white/10"
+              }`}
               aria-label="Toggle menu"
             >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
+              {isOpen ? (
+                <X size={20} strokeWidth={2.5} />
+              ) : (
+                <Menu size={20} strokeWidth={2.5} />
+              )}
             </button>
           </div>
         </div>
-        
-        {isOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-primary/95 backdrop-blur-sm shadow-lg animate-slide-in-right">
-            <div className="flex flex-col py-4 space-y-2 px-6">
-              {[
-                { path: '/', label: t.nav.home },
-                { path: '/boats', label: t.nav.boats },
-                { path: '/services', label: t.nav.services },
-                { path: '/about', label: t.nav.about },
-                { path: '/contact', label: t.nav.contact },
-                { path: '/blog', label: t.nav.blog }
-              ].map((item) => (
-                <Link 
-                  key={item.path}
-                  to={item.path} 
-                  className={`py-3 border-b border-white/20 font-montserrat font-medium tracking-wide text-white hover:text-accent transition-colors
-                    ${isActive(item.path) ? 'text-accent' : ''}`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              
-              {isAuthenticated ? (
-                <div className="border-t border-white/20 pt-4">
-                  <div className="text-white text-sm mb-2">
-                    {user?.username} ({getUserRoleText()})
-                  </div>
-                  <Link 
-                    to="/my-bookings"
-                    className="py-2 block text-white hover:text-accent transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Rezervasyonlarım
-                  </Link>
-                  {user?.role === 'CUSTOMER' && (
-                    <Link 
-                      to="/boat-owner-application"
-                      className="py-2 block text-white hover:text-accent transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Tekne Sahibi Başvurusu
-                    </Link>
-                  )}
-                  {user?.role === 'BOAT_OWNER' && (
-                    <Link 
-                      to="/captain"
-                      className="py-2 block text-white hover:text-accent transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Kaptan Paneli
-                    </Link>
-                  )}
-                  {user?.role === 'ADMIN' && (
-                    <Link 
-                      to="/admin"
-                      className="py-2 block text-white hover:text-accent transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Admin Paneli
-                    </Link>
-                  )}
-                  <button 
-                    onClick={handleLogout}
-                    className="py-2 block text-red-300 hover:text-red-200 transition-colors"
-                  >
-                    Çıkış Yap
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => {
-                    setIsAuthOpen(true);
-                    setIsOpen(false);
-                  }}
-                  className="py-3 border-t border-white/20 text-white hover:text-accent transition-colors text-left"
-                >
-                  Giriş Yap / Hesap Oluştur
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+
+        {/* Full-screen Glass Mobile Menu */}
+        <MobileGlassMenu
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          onAuthOpen={() => setIsAuthOpen(true)}
+        />
       </div>
     </header>
   );

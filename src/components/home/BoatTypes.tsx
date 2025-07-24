@@ -144,7 +144,7 @@ const BoatTypes = () => {
                 onClick={() => handleViewBoatsByType(type.type)}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div 
+                  <div
                     className="text-4xl p-2 rounded-full"
                     style={{ backgroundColor: getTypeColor(index) }}
                   >
@@ -213,3 +213,4 @@ const BoatTypes = () => {
 };
 
 export default BoatTypes;
+

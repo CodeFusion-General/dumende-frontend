@@ -1,0 +1,477 @@
+/* Image Optimization and Loading Effects */
+
+/* ===== PROGRESSIVE IMAGE LOADING ===== */
+
+/* Image placeholder styles */
+.image-placeholder {
+  filter: blur(5px);
+  transform: scale(1.05);
+  transition: all 0.3s ease;
+}
+
+/* Loading state */
+.image-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.image-loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+  z-index: 1;
+}
+
+/* Loaded state */
+.image-loaded {
+  filter: none;
+  transform: scale(1);
+  transition: all 0.3s ease;
+}
+
+/* Error state */
+.image-error {
+  background-color: #f3f4f6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 48px 48px;
+  opacity: 0.5;
+}
+
+/* ===== BACKGROUND IMAGE LOADING ===== */
+
+/* Background loading state */
+.bg-loading {
+  position: relative;
+  background-color: #f3f4f6;
+}
+
+.bg-loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%
+  );
+  background-size: 20px 20px;
+  animation: backgroundShimmer 2s linear infinite;
+  z-index: 1;
+}
+
+/* Background loaded state */
+.bg-loaded {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: all 0.5s ease;
+}
+
+.bg-loaded::before {
+  display: none;
+}
+
+/* Background error state */
+.bg-error {
+  background-color: #f3f4f6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 48px 48px;
+}
+
+/* ===== RESPONSIVE IMAGE UTILITIES ===== */
+
+/* Responsive image container */
+.responsive-image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.responsive-image-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+/* Aspect ratio utilities */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-photo {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* Object fit utilities */
+.object-cover {
+  object-fit: cover;
+}
+
+.object-contain {
+  object-fit: contain;
+}
+
+.object-fill {
+  object-fit: fill;
+}
+
+.object-scale-down {
+  object-fit: scale-down;
+}
+
+/* ===== LAZY LOADING ANIMATIONS ===== */
+
+/* Fade in animation for lazy loaded images */
+@keyframes fadeInImage {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.lazy-fade-in {
+  animation: fadeInImage 0.5s ease-out forwards;
+}
+
+/* Blur to sharp animation */
+@keyframes blurToSharp {
+  from {
+    filter: blur(10px);
+    opacity: 0.8;
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+.blur-to-sharp {
+  animation: blurToSharp 0.6s ease-out forwards;
+}
+
+/* Scale in animation */
+@keyframes scaleInImage {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in-image {
+  animation: scaleInImage 0.4s ease-out forwards;
+}
+
+/* ===== SHIMMER ANIMATIONS ===== */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes backgroundShimmer {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
+/* Skeleton loading for images */
+.image-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* GPU acceleration for image transitions */
+.image-optimized {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.image-optimized.animation-complete {
+  will-change: auto;
+}
+
+/* Intersection observer loading states */
+.intersection-loading {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s ease;
+}
+
+.intersection-loaded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== MODERN IMAGE FORMATS ===== */
+
+/* WebP support detection */
+.webp .image-webp {
+  display: block;
+}
+
+.no-webp .image-webp {
+  display: none;
+}
+
+.webp .image-fallback {
+  display: none;
+}
+
+.no-webp .image-fallback {
+  display: block;
+}
+
+/* AVIF support detection */
+.avif .image-avif {
+  display: block;
+}
+
+.no-avif .image-avif {
+  display: none;
+}
+
+/* ===== RESPONSIVE BREAKPOINT UTILITIES ===== */
+
+/* Mobile first responsive images */
+@media (max-width: 640px) {
+  .responsive-image-container {
+    max-width: 100%;
+  }
+
+  .mobile-full-width {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .tablet-optimized {
+    max-width: 90%;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-optimized {
+    max-width: 80%;
+    margin: 0 auto;
+  }
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS ===== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .image-loading::before {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 0, 0, 0.3),
+      transparent
+    );
+  }
+
+  .image-error {
+    border: 2px solid #000;
+    background-color: #fff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .image-placeholder,
+  .image-loaded,
+  .bg-loaded,
+  .lazy-fade-in,
+  .blur-to-sharp,
+  .scale-in-image,
+  .intersection-loading,
+  .intersection-loaded {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .image-loading::before,
+  .bg-loading::before {
+    animation: none !important;
+  }
+
+  .image-skeleton {
+    animation: none !important;
+    background: #f0f0f0 !important;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .image-loading::before,
+  .bg-loading::before {
+    display: none !important;
+  }
+
+  .image-error,
+  .bg-error {
+    background-image: none !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Image loading states */
+.img-loading {
+  opacity: 0.7;
+  filter: blur(2px);
+}
+
+.img-loaded {
+  opacity: 1;
+  filter: none;
+  transition: all 0.3s ease;
+}
+
+.img-error {
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
+/* Background image states */
+.bg-img-loading {
+  background-color: #f3f4f6;
+  position: relative;
+}
+
+.bg-img-loaded {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Progressive enhancement classes */
+.progressive-image {
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.progressive-image.loaded {
+  filter: none;
+  transform: scale(1);
+}
+
+/* Lazy loading utilities */
+.lazy-image {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.lazy-image.loaded {
+  opacity: 1;
+}
+
+/* Image hover effects */
+.hover-zoom {
+  transition: transform 0.3s ease;
+}
+
+.hover-zoom:hover {
+  transform: scale(1.05);
+}
+
+.hover-brightness {
+  transition: filter 0.3s ease;
+}
+
+.hover-brightness:hover {
+  filter: brightness(1.1);
+}
+
+/* Image grid utilities */
+.image-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.image-grid img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Masonry-style image layout */
+.image-masonry {
+  column-count: 3;
+  column-gap: 1rem;
+}
+
+.image-masonry img {
+  width: 100%;
+  margin-bottom: 1rem;
+  break-inside: avoid;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .image-masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-masonry {
+    column-count: 1;
+  }
+}

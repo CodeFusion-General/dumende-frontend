@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
@@ -12,6 +13,7 @@ interface BoatCardProps {
   isHourlyMode?: boolean;
   isCompared?: boolean;
   onCompareToggle?: (id: string) => void;
+  variant?: "homepage" | "listing";
 }
 
 // Default image helper function
@@ -40,6 +42,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
   isHourlyMode = false,
   isCompared = false,
   onCompareToggle,
+  variant = "listing",
 }) => {
   if (viewMode === "grid") {
     return (
@@ -48,6 +51,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
         isHourlyMode={isHourlyMode}
         isCompared={isCompared}
         onCompareToggle={onCompareToggle}
+        variant={variant}
       />
     );
   }
@@ -57,6 +61,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
       isHourlyMode={isHourlyMode}
       isCompared={isCompared}
       onCompareToggle={onCompareToggle}
+      variant={variant}
     />
   );
 };
@@ -66,106 +71,174 @@ const BoatCardGrid: React.FC<{
   isHourlyMode: boolean;
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
-}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
+  variant?: "homepage" | "listing";
+}> = ({
+  boat,
+  isHourlyMode,
+  isCompared,
+  onCompareToggle,
+  variant = "listing",
+}) => {
   const { language } = useLanguage();
   const t = translations[language];
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
-    const loadImage = async () => {
-      const url = await getBoatImageUrl(boat);
-      setImageUrl(url);
-    };
-    loadImage();
+    const url = getBoatImageUrl(boat);
+    setImageUrl(url);
   }, [boat]);
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
   const priceUnit = isHourlyMode ? "saat" : "gün";
 
+  // Helper functions for modern glass styling
+  const getTextColor = (opacity?: string) => {
+    return opacity
+      ? `text-gray-${
+          opacity === "70"
+            ? "600"
+            : opacity === "80"
+            ? "700"
+            : opacity === "90"
+            ? "800"
+            : "500"
+        }`
+      : "text-[#2c3e50]";
+  };
+
+  const getBadgeStyles = () => {
+    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
+  };
+
+  const getCompareButtonStyles = () => {
+    return isCompared
+      ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-xl">
-      <div className="relative overflow-hidden h-60">
+    <GlassCard className="overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
+      {/* Image Section with Glass Overlay */}
+      <div className="relative overflow-hidden h-60 flex-shrink-0">
         <img
           src={imageUrl}
           alt={boat.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
-          {boat.type}
+
+        {/* Enhanced gradient overlay for better contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+
+        {/* Boat type badge with enhanced glass effect */}
+        <div
+          className={`absolute top-4 left-4 px-3 py-1.5 rounded-full ${getBadgeStyles()} font-medium`}
+        >
+          <span className="text-sm">{boat.type}</span>
         </div>
-        <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
-          <Heart className="h-5 w-5 text-red-500" />
-        </button>
-        {onCompareToggle && (
+
+        {/* Heart button with enhanced glass effect - Hidden on homepage */}
+        {variant !== "homepage" && (
+          <button className="absolute top-4 right-4 bg-white/60 backdrop-blur-sm p-2 rounded-full border border-white/30 hover:bg-white/80 transition-all duration-300 animate-ripple shadow-md">
+            <Heart className="h-5 w-5 text-red-500 hover:text-red-600 transition-colors" />
+          </button>
+        )}
+
+        {/* Compare button with enhanced glass effect - Hidden on homepage */}
+        {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared
-                ? "bg-blue-600 text-white"
-                : "bg-white/80 text-blue-600"
-            }`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${getCompareButtonStyles()}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
         )}
       </div>
 
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-bold text-lg text-gray-800">{boat.name}</h3>
-          <div className="flex items-center">
+      {/* Content Section with enhanced styling - Flexible height */}
+      <div className="p-6 bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-3">
+          <h3
+            className={`font-bold text-lg ${getTextColor()} group-hover:text-[#3498db] transition-all duration-300 font-montserrat line-clamp-2 flex-1 mr-2`}
+          >
+            {boat.name}
+          </h3>
+          <div
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()} flex-shrink-0`}
+          >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
           </div>
         </div>
 
-        <div className="text-sm text-gray-500 mb-3">{boat.location}</div>
+        <div
+          className={`text-sm ${getTextColor(
+            "70"
+          )} mb-4 font-roboto line-clamp-1`}
+        >
+          {boat.location}
+        </div>
 
         <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-1" />
+          <div
+            className={`flex items-center text-sm ${getTextColor(
+              "80"
+            )} font-roboto`}
+          >
+            <Users className="h-4 w-4 mr-2 text-[#3498db]" />
             <span>
               {boat.capacity} {t.boats?.card?.person || "kişi"}
             </span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-1" />
+          <div
+            className={`flex items-center text-sm ${getTextColor(
+              "80"
+            )} font-roboto`}
+          >
+            <Calendar className="h-4 w-4 mr-2 text-[#3498db]" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {boat.features?.slice(0, 3).map((feature, index) => (
-            <span
-              key={index}
-              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
-            >
-              {feature.featureName}
-            </span>
-          ))}
-          {boat.features && boat.features.length > 3 && (
-            <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700">
-              +{boat.features.length - 3}
-            </span>
-          )}
+        {/* Features section with consistent height */}
+        <div className="flex-1 mb-6">
+          <div className="flex flex-wrap gap-2 h-16 overflow-hidden items-start content-start">
+            {boat.features?.slice(0, 3).map((feature, index) => (
+              <span
+                key={index}
+                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} line-clamp-1 whitespace-nowrap`}
+              >
+                {feature.featureName}
+              </span>
+            ))}
+            {boat.features && boat.features.length > 3 && (
+              <span
+                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} whitespace-nowrap`}
+              >
+                +{boat.features.length - 3}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex justify-between items-center">
+        {/* Price and button section - Always at bottom with fixed position */}
+        <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/10">
           <div>
-            <span className="font-bold text-lg text-blue-600">
+            <span className="font-bold text-xl bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent font-montserrat">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-gray-500">/{priceUnit}</span>
+            <span className={`text-sm ${getTextColor("60")} ml-1 font-roboto`}>
+              /{priceUnit}
+            </span>
           </div>
           <Link to={`/boats/${boat.id}`}>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
               İncele
             </Button>
           </Link>
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 };
 
@@ -174,68 +247,124 @@ const BoatCardList: React.FC<{
   isHourlyMode: boolean;
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
-}> = ({ boat, isHourlyMode, isCompared, onCompareToggle }) => {
+  variant?: "homepage" | "listing";
+}> = ({
+  boat,
+  isHourlyMode,
+  isCompared,
+  onCompareToggle,
+  variant = "listing",
+}) => {
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
   useEffect(() => {
-    const loadImage = async () => {
-      const url = await getBoatImageUrl(boat);
-      setImageUrl(url);
-    };
-    loadImage();
+    const url = getBoatImageUrl(boat);
+    setImageUrl(url);
   }, [boat]);
 
   const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
   const priceUnit = isHourlyMode ? "saat" : "gün";
 
+  // Helper functions for modern glass styling
+  const getTextColor = (opacity?: string) => {
+    return opacity
+      ? `text-gray-${
+          opacity === "70"
+            ? "600"
+            : opacity === "80"
+            ? "700"
+            : opacity === "90"
+            ? "800"
+            : "500"
+        }`
+      : "text-[#2c3e50]";
+  };
+
+  const getBadgeStyles = () => {
+    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
+  };
+
+  const getCompareButtonStyles = () => {
+    return isCompared
+      ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-xl flex flex-col md:flex-row h-full">
-      <div className="relative overflow-hidden md:w-1/3">
+    <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
+      {/* Image Section */}
+      <div className="relative overflow-hidden md:w-1/3 h-48 md:h-auto">
         <img
           src={imageUrl}
           alt={boat.name}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl("/placeholder-boat.jpg")}
         />
-        <div className="absolute top-4 left-4 bg-yellow-500 text-gray-800 font-medium text-sm py-1 px-3 rounded-full">
-          {boat.type}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent md:bg-gradient-to-t md:from-black/20 md:via-transparent md:to-transparent" />
+
+        {/* Boat type badge */}
+        <div
+          className={`absolute top-4 left-4 px-3 py-1 rounded-full ${getBadgeStyles()}`}
+        >
+          <span className="text-sm font-medium">{boat.type}</span>
         </div>
-        <button className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full transition-colors">
-          <Heart className="h-5 w-5 text-red-500" />
-        </button>
-        {onCompareToggle && (
+
+        {/* Heart button - Hidden on homepage */}
+        {variant !== "homepage" && (
+          <button className="absolute top-4 right-4 bg-white/60 backdrop-blur-sm p-2 rounded-full border border-white/30 hover:bg-white/80 transition-all duration-300 animate-ripple shadow-md">
+            <Heart className="h-5 w-5 text-red-500 hover:text-red-600 transition-colors" />
+          </button>
+        )}
+
+        {/* Compare button - Hidden on homepage */}
+        {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-1 px-2 rounded ${
-              isCompared
-                ? "bg-blue-600 text-white"
-                : "bg-white/80 text-blue-600"
-            }`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
         )}
       </div>
 
-      <div className="p-4 md:p-6 flex-1 flex flex-col">
+      {/* Content Section with enhanced styling */}
+      <div className="p-6 flex-1 flex flex-col bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm">
         <div className="flex justify-between items-start mb-3">
           <div>
-            <h3 className="font-bold text-xl text-gray-800">{boat.name}</h3>
-            <div className="text-sm text-gray-500 mb-2">{boat.location}</div>
+            <h3
+              className={`font-bold text-xl ${getTextColor()} group-hover:text-[#3498db] transition-all duration-300 font-montserrat`}
+            >
+              {boat.name}
+            </h3>
+            <div className={`text-sm ${getTextColor("70")} mb-2 font-roboto`}>
+              {boat.location}
+            </div>
           </div>
-          <div className="flex items-center">
+          <div
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()}`}
+          >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-          <div className="flex items-center text-sm text-gray-600">
-            <Users className="h-4 w-4 mr-2 text-blue-600" />
+          <div
+            className={`flex items-center text-sm ${getTextColor(
+              "80"
+            )} font-roboto`}
+          >
+            <Users className="h-4 w-4 mr-2 text-[#3498db]" />
             <span>{boat.capacity} Kişi</span>
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <Calendar className="h-4 w-4 mr-2 text-blue-600" />
+          <div
+            className={`flex items-center text-sm ${getTextColor(
+              "80"
+            )} font-roboto`}
+          >
+            <Calendar className="h-4 w-4 mr-2 text-[#3498db]" />
             <span>{boat.buildYear || boat.year}</span>
           </div>
         </div>
@@ -244,7 +373,7 @@ const BoatCardList: React.FC<{
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-700"
+              className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()}`}
             >
               {feature.featureName}
             </span>
@@ -253,28 +382,27 @@ const BoatCardList: React.FC<{
 
         <div className="flex justify-between items-center mt-2">
           <div>
-            <span className="font-bold text-xl text-blue-600">
+            <span className="font-bold text-xl bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent font-montserrat">
               {price?.toLocaleString("tr-TR") || "0"} ₺
             </span>
-            <span className="text-sm text-gray-500">/{priceUnit}</span>
+            <span className={`text-sm ${getTextColor("60")} font-roboto`}>
+              /{priceUnit}
+            </span>
           </div>
           <div className="flex space-x-2">
             <Link to={`/boats/${boat.id}`}>
-              <Button
-                variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-              >
+              <Button className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-4 py-2 rounded-xl transition-all duration-300 font-montserrat">
                 Detaylar
               </Button>
             </Link>
             <Link to={`/rezervasyon/${boat.id}`}>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
                 Rezervasyon <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
         </div>
       </div>
-    </div>
+    </GlassCard>
   );
 };

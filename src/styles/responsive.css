@@ -1,9 +1,539 @@
-/* Responsive Design Utilities */
+/* Enhanced Responsive Design System with Fluid Animations */
 
-/* Touch-friendly interactions */
+/* ===== FLUID RESPONSIVE ANIMATIONS ===== */
+
+/* Smooth layout transitions for different screen sizes */
+.layout-transition {
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.layout-transition-slow {
+  transition: all var(--duration-slow) var(--ease-smooth);
+}
+
+.layout-transition-fast {
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+/* Container fluid transitions */
+.container-fluid {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  transition: padding var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .container-fluid {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-fluid {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-fluid {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-fluid {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* Responsive grid with smooth transitions */
+.grid-fluid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  transition: grid-template-columns var(--duration-normal) var(--ease-smooth),
+    gap var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 475px) {
+  .grid-fluid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .grid-fluid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .grid-fluid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-fluid-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+}
+
+/* Responsive flexbox with smooth transitions */
+.flex-fluid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: flex-direction var(--duration-normal) var(--ease-smooth),
+    gap var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .flex-fluid-row {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .flex-fluid-row {
+    gap: 2rem;
+  }
+}
+
+/* Responsive spacing with smooth transitions */
+.spacing-fluid {
+  padding: 1rem;
+  margin: 0.5rem;
+  transition: padding var(--duration-normal) var(--ease-smooth),
+    margin var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .spacing-fluid {
+    padding: 1.5rem;
+    margin: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .spacing-fluid {
+    padding: 2rem;
+    margin: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .spacing-fluid {
+    padding: 2.5rem;
+    margin: 1.25rem;
+  }
+}
+
+/* Responsive typography with smooth scaling */
+.text-fluid {
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: font-size var(--duration-normal) var(--ease-smooth),
+    line-height var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .text-fluid {
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+}
+
+@media (min-width: 768px) {
+  .text-fluid {
+    font-size: 1.25rem;
+    line-height: 1.7;
+  }
+}
+
+.heading-fluid {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  transition: font-size var(--duration-normal) var(--ease-smooth),
+    line-height var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .heading-fluid {
+    font-size: 1.875rem;
+    line-height: 1.3;
+  }
+}
+
+@media (min-width: 768px) {
+  .heading-fluid {
+    font-size: 2.25rem;
+    line-height: 1.2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heading-fluid {
+    font-size: 3rem;
+    line-height: 1.1;
+  }
+}
+
+/* ===== TOUCH-FRIENDLY INTERACTIONS ===== */
+
+/* Enhanced touch-friendly interactions */
 .touch-manipulation {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Touch-friendly button interactions */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.75rem 1.5rem;
+  touch-action: manipulation;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.touch-button:active {
+  transform: scale(0.95);
+  background: var(--glass-bg-light);
+}
+
+/* Touch-friendly card interactions */
+.touch-card {
+  touch-action: manipulation;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.touch-card:active {
+  transform: scale(0.98);
+  background: var(--glass-bg-light);
+}
+
+/* Enhanced touch feedback with haptic-like effects */
+.haptic-feedback {
+  transition: all 0.1s ease-out;
+  transform-origin: center;
+}
+
+.haptic-feedback:active {
+  transform: scale(0.95);
+  filter: brightness(1.1);
+}
+
+/* Touch-friendly navigation items */
+.touch-nav-item {
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  touch-action: manipulation;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.touch-nav-item:active {
+  transform: scale(0.98);
+  background: var(--glass-bg-light);
+}
+
+/* ===== RESPONSIVE GLASSMORPHISM EFFECTS ===== */
+
+/* Adaptive glassmorphism that responds to screen size */
+.glass-responsive {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: 1rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-responsive {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 1.25rem;
+    background: var(--glass-bg-light);
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-responsive {
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border-radius: 1.5rem;
+    box-shadow: var(--glass-shadow-hover);
+  }
+}
+
+@media (min-width: 1024px) {
+  .glass-responsive {
+    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Responsive glass navigation */
+.glass-nav-responsive {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-nav-responsive {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-nav-responsive {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+  }
+}
+
+/* Responsive glass cards with adaptive blur */
+.glass-card-responsive {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-card-responsive {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-card-responsive {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: var(--glass-shadow);
+  }
+}
+
+@media (min-width: 1024px) {
+  .glass-card-responsive {
+    border-radius: 2rem;
+    padding: 2.5rem;
+    box-shadow: var(--glass-shadow-hover);
+  }
+}
+
+/* Responsive glass buttons */
+.glass-button-responsive {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-button-responsive {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-button-responsive {
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border-radius: 1rem;
+    padding: 1rem 2rem;
+    background: var(--glass-bg-light);
+  }
+}
+
+/* Mobile-specific glass effects */
+@media (max-width: 640px) {
+  .glass-mobile {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-mobile-heavy {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Tablet-specific glass effects */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .glass-tablet {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-tablet-heavy {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border: 1px solid var(--glass-border-light);
+  }
+}
+
+/* Desktop-specific glass effects */
+@media (min-width: 1024px) {
+  .glass-desktop {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border: 1px solid var(--glass-border-light);
+    box-shadow: var(--glass-shadow-hover);
+  }
+}
+
+/* Responsive glass modal overlays */
+.glass-modal-responsive {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-modal-responsive {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-modal-responsive {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Responsive glass search widgets */
+.glass-search-responsive {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .glass-search-responsive {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .glass-search-responsive {
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: var(--glass-shadow);
+  }
+}
+
+/* ===== ORIENTATION CHANGE HANDLING ===== */
+
+/* Smooth transitions for orientation changes */
+.orientation-transition {
+  transition: all var(--duration-slow) var(--ease-smooth);
+}
+
+/* Portrait orientation optimizations */
+@media (orientation: portrait) {
+  .portrait-stack {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .portrait-full-width {
+    width: 100%;
+  }
+
+  .portrait-center {
+    text-align: center;
+    align-items: center;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (orientation: landscape) {
+  .landscape-row {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .landscape-split {
+    width: 50%;
+  }
+
+  .landscape-sidebar {
+    width: 30%;
+  }
+
+  .landscape-main {
+    width: 70%;
+  }
 }
 
 /* Safe area support for mobile devices */
@@ -325,5 +855,560 @@
 
   .dark-mode-border {
     border-color: #374151;
+  }
+}
+
+/* ===== MODERN GRID LAYOUTS FOR TABLET AND DESKTOP ===== */
+
+/* Advanced CSS Grid System */
+.grid-modern {
+  display: grid;
+  gap: 1rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+/* Tablet-optimized grid layouts */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .grid-tablet-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .grid-tablet-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .grid-tablet-auto {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .grid-tablet-masonry {
+    columns: 2;
+    column-gap: 1.5rem;
+    column-fill: balance;
+  }
+
+  .grid-tablet-sidebar {
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+  }
+
+  .grid-tablet-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: 60vh auto;
+    gap: 2rem;
+  }
+}
+
+/* Desktop-optimized grid layouts */
+@media (min-width: 1024px) {
+  .grid-desktop-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .grid-desktop-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .grid-desktop-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .grid-desktop-auto {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+
+  .grid-desktop-masonry {
+    columns: 3;
+    column-gap: 2rem;
+    column-fill: balance;
+  }
+
+  .grid-desktop-sidebar {
+    grid-template-columns: 1fr 350px;
+    gap: 3rem;
+  }
+
+  .grid-desktop-hero {
+    grid-template-columns: 1fr;
+    grid-template-rows: 70vh auto;
+    gap: 3rem;
+  }
+
+  .grid-desktop-dashboard {
+    grid-template-columns: 250px 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+    gap: 2rem;
+    min-height: 100vh;
+  }
+}
+
+/* Large desktop optimizations */
+@media (min-width: 1280px) {
+  .grid-xl-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+
+  .grid-xl-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .grid-xl-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .grid-xl-auto {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2.5rem;
+  }
+
+  .grid-xl-masonry {
+    columns: 4;
+    column-gap: 2.5rem;
+  }
+
+  .grid-xl-sidebar {
+    grid-template-columns: 1fr 400px;
+    gap: 4rem;
+  }
+
+  .grid-xl-dashboard {
+    grid-template-columns: 280px 1fr 350px;
+    gap: 3rem;
+  }
+}
+
+/* Ultra-wide desktop optimizations */
+@media (min-width: 1600px) {
+  .grid-2xl-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 3rem;
+  }
+
+  .grid-2xl-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2.5rem;
+  }
+
+  .grid-2xl-auto {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 3rem;
+  }
+
+  .grid-2xl-masonry {
+    columns: 5;
+    column-gap: 3rem;
+  }
+
+  .grid-2xl-dashboard {
+    grid-template-columns: 320px 1fr 400px;
+    gap: 4rem;
+  }
+}
+
+/* ===== ADAPTIVE CARD SIZING AND SPACING ===== */
+
+/* Base card system with adaptive sizing */
+.card-adaptive {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-light);
+  -webkit-backdrop-filter: var(--glass-blur-light);
+  border: 1px solid var(--glass-border);
+}
+
+/* Tablet card optimizations */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .card-adaptive {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .card-adaptive-small {
+    padding: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  .card-adaptive-large {
+    padding: 2rem;
+    border-radius: 1.25rem;
+  }
+
+  .card-adaptive-hero {
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+    background: var(--glass-bg-light);
+  }
+}
+
+/* Desktop card optimizations */
+@media (min-width: 1024px) {
+  .card-adaptive {
+    padding: 2rem;
+    border-radius: 1.5rem;
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    background: var(--glass-bg-light);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .card-adaptive-small {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .card-adaptive-large {
+    padding: 3rem;
+    border-radius: 2rem;
+    box-shadow: var(--glass-shadow-hover);
+  }
+
+  .card-adaptive-hero {
+    padding: 4rem;
+    border-radius: 2.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Large desktop card optimizations */
+@media (min-width: 1280px) {
+  .card-adaptive {
+    padding: 2.5rem;
+    border-radius: 2rem;
+  }
+
+  .card-adaptive-small {
+    padding: 2rem;
+    border-radius: 1.5rem;
+  }
+
+  .card-adaptive-large {
+    padding: 4rem;
+    border-radius: 2.5rem;
+  }
+
+  .card-adaptive-hero {
+    padding: 5rem;
+    border-radius: 3rem;
+  }
+}
+
+/* Card spacing system */
+.card-grid-spacing {
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .card-grid-spacing {
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid-spacing {
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .card-grid-spacing {
+    gap: 2.5rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .card-grid-spacing {
+    gap: 3rem;
+  }
+}
+
+/* ===== EFFECTIVE SPACE UTILIZATION ===== */
+
+/* Container system for optimal space usage */
+.container-optimized {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+@media (min-width: 640px) {
+  .container-optimized {
+    max-width: 640px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-optimized {
+    max-width: 768px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-optimized {
+    max-width: 1024px;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-optimized {
+    max-width: 1280px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container-optimized {
+    max-width: 1536px;
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* Full-width container for hero sections */
+.container-full {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-full {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-full {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Sidebar layouts */
+.layout-sidebar {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .layout-sidebar {
+    grid-template-columns: 1fr 250px;
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-sidebar {
+    grid-template-columns: 1fr 300px;
+    gap: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .layout-sidebar {
+    grid-template-columns: 1fr 350px;
+    gap: 4rem;
+  }
+}
+
+/* Dashboard layouts */
+.layout-dashboard {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+}
+
+@media (min-width: 1024px) {
+  .layout-dashboard {
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .layout-dashboard {
+    grid-template-columns: 280px 1fr 300px;
+    gap: 3rem;
+  }
+}
+
+/* ===== SMOOTH ORIENTATION CHANGE HANDLING ===== */
+
+/* Base transition for orientation changes */
+.orientation-smooth {
+  transition: all var(--duration-slow) var(--ease-smooth);
+}
+
+/* Portrait-specific layouts */
+@media (orientation: portrait) {
+  .portrait-stack {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .portrait-center {
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .portrait-full {
+    width: 100%;
+    height: auto;
+  }
+
+  .portrait-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Landscape-specific layouts */
+@media (orientation: landscape) {
+  .landscape-row {
+    flex-direction: row;
+    gap: 2rem;
+  }
+
+  .landscape-split {
+    width: 50%;
+  }
+
+  .landscape-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Tablet landscape optimizations */
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+  .tablet-landscape-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .tablet-landscape-sidebar {
+    grid-template-columns: 1fr 280px;
+    gap: 2rem;
+  }
+}
+
+/* Desktop orientation handling */
+@media (min-width: 1024px) {
+  .desktop-orientation-stable {
+    /* Maintain consistent layout regardless of orientation */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS FOR LARGE LAYOUTS ===== */
+
+/* GPU acceleration for large grids */
+.grid-performance {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+}
+
+/* Optimize animations for large screens */
+@media (min-width: 1024px) {
+  .large-screen-optimized {
+    contain: layout style paint;
+  }
+
+  .large-screen-optimized * {
+    will-change: auto;
+  }
+
+  .large-screen-optimized:hover * {
+    will-change: transform, opacity;
+  }
+}
+
+/* Reduce complexity on smaller devices */
+@media (max-width: 767px) {
+  .mobile-simplified {
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ===== ACCESSIBILITY ENHANCEMENTS FOR DIFFERENT VIEWPORTS ===== */
+
+/* Focus indicators that scale with viewport */
+.focus-responsive {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color var(--duration-fast) var(--ease-smooth);
+}
+
+.focus-responsive:focus-visible {
+  outline-color: #1a5f7a;
+}
+
+@media (min-width: 768px) {
+  .focus-responsive:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .focus-responsive:focus-visible {
+    outline-width: 4px;
+    outline-offset: 4px;
+    box-shadow: 0 0 0 4px rgba(26, 95, 122, 0.2);
+  }
+}
+
+/* Skip links for large screens */
+@media (min-width: 1024px) {
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--glass-bg-light);
+    backdrop-filter: var(--glass-blur-heavy);
+    -webkit-backdrop-filter: var(--glass-blur-heavy);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: top var(--duration-fast) var(--ease-smooth);
+  }
+
+  .skip-link:focus {
+    top: 6px;
   }
 }

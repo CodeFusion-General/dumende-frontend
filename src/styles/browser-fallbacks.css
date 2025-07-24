@@ -1,0 +1,729 @@
+/* ===== BROWSER COMPATIBILITY FALLBACKS ===== */
+
+/* ===== BACKDROP FILTER FALLBACKS ===== */
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(10px)) {
+  .glass,
+  .glass-light,
+  .glass-dark,
+  .glass-card,
+  .glass-nav,
+  .glass-modal,
+  .glass-button {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Solid background fallbacks for glass elements */
+  .glass {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+  }
+
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .glass-nav.scrolled {
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .glass-modal {
+    background: rgba(0, 0, 0, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .glass-button {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+  }
+}
+
+/* ===== CSS GRID FALLBACKS ===== */
+
+/* Flexbox fallbacks for CSS Grid */
+@supports not (display: grid) {
+  .grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: -0.5rem !important;
+  }
+
+  .grid > * {
+    flex: 1 1 auto !important;
+    margin: 0.5rem !important;
+    min-width: 250px !important;
+  }
+
+  /* Grid column fallbacks */
+  .grid-cols-1 > * {
+    flex-basis: calc(100% - 1rem) !important;
+    max-width: calc(100% - 1rem) !important;
+  }
+
+  .grid-cols-2 > * {
+    flex-basis: calc(50% - 1rem) !important;
+    max-width: calc(50% - 1rem) !important;
+  }
+
+  .grid-cols-3 > * {
+    flex-basis: calc(33.333% - 1rem) !important;
+    max-width: calc(33.333% - 1rem) !important;
+  }
+
+  .grid-cols-4 > * {
+    flex-basis: calc(25% - 1rem) !important;
+    max-width: calc(25% - 1rem) !important;
+  }
+
+  .grid-cols-5 > * {
+    flex-basis: calc(20% - 1rem) !important;
+    max-width: calc(20% - 1rem) !important;
+  }
+
+  .grid-cols-6 > * {
+    flex-basis: calc(16.666% - 1rem) !important;
+    max-width: calc(16.666% - 1rem) !important;
+  }
+
+  /* Responsive grid fallbacks */
+  @media (max-width: 1024px) {
+    .grid-cols-4 > *,
+    .grid-cols-5 > *,
+    .grid-cols-6 > * {
+      flex-basis: calc(33.333% - 1rem) !important;
+      max-width: calc(33.333% - 1rem) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .grid-cols-2 > *,
+    .grid-cols-3 > *,
+    .grid-cols-4 > *,
+    .grid-cols-5 > *,
+    .grid-cols-6 > * {
+      flex-basis: calc(50% - 1rem) !important;
+      max-width: calc(50% - 1rem) !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .grid > * {
+      flex-basis: calc(100% - 1rem) !important;
+      max-width: calc(100% - 1rem) !important;
+    }
+  }
+}
+
+/* ===== FLEXBOX FALLBACKS ===== */
+
+/* Float-based fallbacks for flexbox */
+@supports not (display: flex) {
+  .flex {
+    display: block !important;
+    overflow: hidden !important;
+  }
+
+  .flex::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .flex > * {
+    float: left !important;
+    display: block !important;
+  }
+
+  .flex-col {
+    display: block !important;
+  }
+
+  .flex-col > * {
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .justify-center > * {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    float: none !important;
+  }
+
+  .justify-between > *:first-child {
+    float: left !important;
+  }
+
+  .justify-between > *:last-child {
+    float: right !important;
+  }
+
+  .items-center > * {
+    vertical-align: middle !important;
+  }
+
+  /* Flex grow/shrink fallbacks */
+  .flex-1 {
+    width: 100% !important;
+  }
+
+  .flex-auto {
+    width: auto !important;
+  }
+
+  .flex-none {
+    width: auto !important;
+    flex: none !important;
+  }
+}
+
+/* ===== CUSTOM PROPERTIES FALLBACKS ===== */
+
+/* Hardcoded values for browsers without CSS custom properties support */
+@supports not (color: var(--test)) {
+  /* Glass effect fallbacks */
+  .glass {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .glass-dark {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Gradient fallbacks */
+  .bg-gradient-ocean {
+    background: linear-gradient(
+      135deg,
+      #1a5f7a 0%,
+      #2d7795 50%,
+      #4a9bb8 100%
+    ) !important;
+  }
+
+  .bg-gradient-ocean-reverse {
+    background: linear-gradient(
+      315deg,
+      #1a5f7a 0%,
+      #2d7795 50%,
+      #4a9bb8 100%
+    ) !important;
+  }
+
+  .bg-gradient-sunset {
+    background: linear-gradient(
+      135deg,
+      #f8cb2e 0%,
+      #ffd54f 50%,
+      #ffeb3b 100%
+    ) !important;
+  }
+
+  .bg-gradient-sunset-reverse {
+    background: linear-gradient(
+      315deg,
+      #f8cb2e 0%,
+      #ffd54f 50%,
+      #ffeb3b 100%
+    ) !important;
+  }
+
+  .bg-gradient-deep-sea {
+    background: linear-gradient(
+      135deg,
+      #002b5b 0%,
+      #003a77 50%,
+      #1565c0 100%
+    ) !important;
+  }
+
+  .bg-gradient-deep-sea-reverse {
+    background: linear-gradient(
+      315deg,
+      #002b5b 0%,
+      #003a77 50%,
+      #1565c0 100%
+    ) !important;
+  }
+
+  .bg-gradient-hero-primary {
+    background: linear-gradient(
+      135deg,
+      #1a5f7a 0%,
+      #002b5b 50%,
+      #1565c0 100%
+    ) !important;
+  }
+
+  .bg-gradient-hero-secondary {
+    background: linear-gradient(
+      45deg,
+      rgba(26, 95, 122, 0.8) 0%,
+      rgba(0, 43, 91, 0.9) 100%
+    ) !important;
+  }
+
+  /* Text gradient fallbacks */
+  .text-gradient {
+    background: linear-gradient(135deg, #1a5f7a 0%, #f8cb2e 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  .text-gradient-reverse {
+    background: linear-gradient(315deg, #1a5f7a 0%, #f8cb2e 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  /* Animation duration fallbacks */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+  }
+
+  .animate-slide-in-glass {
+    animation: slideInGlass 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .animate-scale-in-bounce {
+    animation: scaleInBounce 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)
+      forwards !important;
+  }
+
+  .animate-hover-lift {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  }
+
+  .animate-glow-pulse {
+    animation: glowPulse 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite !important;
+  }
+
+  .animate-float {
+    animation: float 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite !important;
+  }
+}
+
+/* ===== TRANSFORM 3D FALLBACKS ===== */
+
+/* 2D transform fallbacks for browsers without 3D transform support */
+@supports not (transform: translateZ(0)) {
+  .animate-hover-lift:hover {
+    transform: translateY(-4px) !important;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px) !important;
+  }
+
+  .glass-button:hover {
+    transform: translateY(-1px) !important;
+  }
+
+  /* Remove 3D transforms from animations */
+  .parallax-float,
+  .scroll-reveal,
+  .scroll-scale {
+    transform: none !important;
+  }
+
+  /* Use 2D transforms for animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInGlass {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleInBounce {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ===== GRADIENT FALLBACKS ===== */
+
+/* Solid color fallbacks for browsers without gradient support */
+@supports not (background: linear-gradient(to right, red, blue)) {
+  .bg-gradient-ocean,
+  .bg-gradient-ocean-reverse {
+    background: #1a5f7a !important;
+  }
+
+  .bg-gradient-sunset,
+  .bg-gradient-sunset-reverse {
+    background: #f8cb2e !important;
+  }
+
+  .bg-gradient-deep-sea,
+  .bg-gradient-deep-sea-reverse {
+    background: #002b5b !important;
+  }
+
+  .bg-gradient-hero-primary,
+  .bg-gradient-hero-secondary {
+    background: #1a5f7a !important;
+  }
+
+  .text-gradient,
+  .text-gradient-reverse {
+    background: none !important;
+    color: #1a5f7a !important;
+    -webkit-text-fill-color: inherit !important;
+  }
+}
+
+/* ===== BORDER RADIUS FALLBACKS ===== */
+
+/* Square corners for browsers without border-radius support */
+@supports not (border-radius: 10px) {
+  .rounded,
+  .rounded-md,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl,
+  .glass-card,
+  .glass-button,
+  .glass-modal {
+    border-radius: 0 !important;
+  }
+
+  /* Add borders to distinguish elements without rounded corners */
+  .glass-card,
+  .glass-button {
+    border: 2px solid rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* ===== BOX SHADOW FALLBACKS ===== */
+
+/* Border fallbacks for browsers without box-shadow support */
+@supports not (box-shadow: 0 0 10px rgba(0, 0, 0, 0.5)) {
+  .glass,
+  .glass-light,
+  .glass-dark,
+  .glass-card,
+  .glass-button {
+    box-shadow: none !important;
+    border: 2px solid rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .glass-card:hover,
+  .glass-button:hover {
+    border-color: rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Use borders for depth instead of shadows */
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+/* ===== OPACITY FALLBACKS ===== */
+
+/* Filter fallbacks for browsers without opacity support */
+@supports not (opacity: 0.5) {
+  .opacity-0 {
+    filter: alpha(opacity=0) !important;
+  }
+  .opacity-25 {
+    filter: alpha(opacity=25) !important;
+  }
+  .opacity-50 {
+    filter: alpha(opacity=50) !important;
+  }
+  .opacity-75 {
+    filter: alpha(opacity=75) !important;
+  }
+  .opacity-100 {
+    filter: alpha(opacity=100) !important;
+  }
+
+  /* Glass effect adjustments */
+  .glass {
+    filter: alpha(opacity=90) !important;
+  }
+  .glass-light {
+    filter: alpha(opacity=95) !important;
+  }
+  .glass-dark {
+    filter: alpha(opacity=80) !important;
+  }
+}
+
+/* ===== RGBA FALLBACKS ===== */
+
+/* Hex color fallbacks for browsers without RGBA support */
+@supports not (color: rgba(255, 255, 255, 0.5)) {
+  .glass {
+    background: #f0f0f0 !important;
+    border-color: #e0e0e0 !important;
+  }
+
+  .glass-light {
+    background: #f5f5f5 !important;
+    border-color: #e5e5e5 !important;
+  }
+
+  .glass-dark {
+    background: #333333 !important;
+    border-color: #555555 !important;
+    color: #ffffff !important;
+  }
+
+  .glass-nav {
+    background: #ffffff !important;
+    border-bottom-color: #e0e0e0 !important;
+  }
+
+  .glass-modal {
+    background: #000000 !important;
+    border-color: #333333 !important;
+  }
+}
+
+/* ===== INTERNET EXPLORER SPECIFIC FIXES ===== */
+
+/* IE 11 and below fixes */
+.browser-internet-explorer {
+  /* Remove all modern effects */
+  .glass,
+  .glass-light,
+  .glass-dark,
+  .glass-card,
+  .glass-nav,
+  .glass-modal,
+  .glass-button {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+  }
+
+  /* Simplify animations */
+  * {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Use table layout for complex layouts */
+  .flex {
+    display: table !important;
+    width: 100% !important;
+  }
+
+  .flex > * {
+    display: table-cell !important;
+    vertical-align: top !important;
+  }
+
+  /* Remove gradients */
+  .bg-gradient-ocean,
+  .bg-gradient-sunset,
+  .bg-gradient-deep-sea,
+  .text-gradient {
+    background: #1a5f7a !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: inherit !important;
+  }
+}
+
+/* ===== SAFARI SPECIFIC FIXES ===== */
+
+/* Safari webkit prefix fixes */
+.browser-safari {
+  .glass,
+  .glass-light,
+  .glass-dark {
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  .text-gradient {
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+
+  /* Fix Safari flexbox bugs */
+  .flex {
+    display: -webkit-flex !important;
+    display: flex !important;
+  }
+
+  .flex > * {
+    -webkit-flex: 1 !important;
+    flex: 1 !important;
+  }
+}
+
+/* ===== FIREFOX SPECIFIC FIXES ===== */
+
+/* Firefox specific adjustments */
+.browser-firefox {
+  /* Firefox doesn't support backdrop-filter well */
+  .glass,
+  .glass-light,
+  .glass-dark {
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Fix Firefox flexbox bugs */
+  .flex {
+    display: -moz-flex !important;
+    display: flex !important;
+  }
+}
+
+/* ===== MOBILE BROWSER FIXES ===== */
+
+/* Mobile Safari fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .glass,
+  .glass-light,
+  .glass-dark {
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  /* Fix mobile Safari viewport issues */
+  .glass-nav {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+  }
+}
+
+/* Android browser fixes */
+.browser-android {
+  /* Simplify effects for better performance */
+  .glass,
+  .glass-light,
+  .glass-dark {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Reduce animations for better performance */
+  .animate-fade-in-up,
+  .animate-slide-in-glass,
+  .animate-scale-in-bounce {
+    animation-duration: 0.2s !important;
+  }
+}
+
+/* ===== PROGRESSIVE ENHANCEMENT CLASSES ===== */
+
+/* Enhanced features for modern browsers */
+.modern-browser.supports-backdrop-filter .glass {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.modern-browser.supports-css-grid .grid {
+  display: grid !important;
+}
+
+.modern-browser.supports-flexbox .flex {
+  display: flex !important;
+}
+
+.modern-browser.supports-custom-properties {
+  /* Use CSS custom properties when supported */
+}
+
+/* Basic features for legacy browsers */
+.legacy-browser .glass,
+.legacy-browser .glass-light,
+.legacy-browser .glass-dark {
+  background: #ffffff !important;
+  border: 1px solid #cccccc !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.legacy-browser .bg-gradient-ocean,
+.legacy-browser .bg-gradient-sunset,
+.legacy-browser .bg-gradient-deep-sea {
+  background: #1a5f7a !important;
+}
+
+.legacy-browser .text-gradient {
+  background: none !important;
+  color: #1a5f7a !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+.legacy-browser * {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}

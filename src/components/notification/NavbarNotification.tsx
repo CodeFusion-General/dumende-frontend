@@ -1,19 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Bell } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { NotificationDropdown } from './NotificationDropdown';
-import { NotificationDTO } from '@/types/notification.types';
-import { notificationService} from '@/services/notificationsService';
-import { useNotifications } from '@/contexts/NotificationsContext';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { NotificationDropdown } from "./NotificationDropdown";
+import { NotificationDTO } from "@/types/notification.types";
+import { notificationService } from "@/services/notificationsService";
+import { useNotifications } from "@/contexts/NotificationsContext";
+import { useNavigate } from "react-router-dom";
 
 interface NavbarNotificationProps {
   userId: number;
+  isScrolled?: boolean;
 }
 
-export function NavbarNotification({ userId }: NavbarNotificationProps) {
+export function NavbarNotification({
+  userId,
+  isScrolled = false,
+}: NavbarNotificationProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState<NotificationDTO[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState<
+    NotificationDTO[]
+  >([]);
   const { unreadCount, refreshUnreadCount } = useNotifications();
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -21,46 +27,50 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isOpen]);
 
   // Handle escape key to close dropdown
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener("keydown", handleEscape);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
 
   useEffect(() => {
     const loadUnreadNotifications = async () => {
       try {
-        const notifications = await notificationService.fetchUnreadNotifications(userId);
+        const notifications =
+          await notificationService.fetchUnreadNotifications(userId);
         setUnreadNotifications(notifications);
       } catch (error) {
-        console.error('Failed to fetch unread notifications:', error);
+        console.error("Failed to fetch unread notifications:", error);
       }
     };
 
@@ -72,16 +82,18 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
   const handleMarkRead = async (notificationId: number) => {
     try {
       await notificationService.markNotificationRead(notificationId);
-      setUnreadNotifications(prev => prev.filter(n => n.id !== notificationId));
+      setUnreadNotifications((prev) =>
+        prev.filter((n) => n.id !== notificationId)
+      );
       await refreshUnreadCount();
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error("Failed to mark notification as read:", error);
     }
   };
 
   const handleShowAll = () => {
     setIsOpen(false);
-    navigate('/notifications');
+    navigate("/notifications");
   };
 
   const handleToggle = () => {
@@ -92,29 +104,42 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="group relative p-3 rounded-full transition-all duration-300 ease-out transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-transparent"
-        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+        className={`group relative p-2 rounded-xl transition-all duration-300 ease-out transform hover:scale-105 focus:outline-none ${
+          isScrolled
+            ? "hover:bg-[#3498db]/10 focus:ring-2 focus:ring-[#3498db]/20"
+            : "hover:bg-white/10 focus:ring-2 focus:ring-white/20"
+        }`}
+        aria-label={`Notifications ${
+          unreadCount > 0 ? `(${unreadCount} unread)` : ""
+        }`}
       >
-        {/* Background with glassmorphism effect */}
-        <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Bell icon with enhanced styling */}
+        {/* Bell icon with enhanced styling and bold appearance */}
         <div className="relative">
-          <Bell 
-            size={24} 
-            className={`text-white transition-all duration-300 ${
-              unreadCount > 0 
-                ? 'drop-shadow-lg group-hover:text-yellow-200' 
-                : 'group-hover:text-blue-200'
+          <Bell
+            size={22}
+            strokeWidth={2.5}
+            className={`transition-all duration-300 ${
+              isScrolled
+                ? `text-[#2c3e50] ${
+                    unreadCount > 0
+                      ? "group-hover:text-[#3498db]"
+                      : "group-hover:text-[#3498db]"
+                  }`
+                : `text-white ${
+                    unreadCount > 0
+                      ? "drop-shadow-lg group-hover:text-yellow-200"
+                      : "group-hover:text-accent"
+                  }`
             }`}
           />
-          
+
           {/* Notification pulse effect for unread notifications */}
           {unreadCount > 0 && (
-            <div className="absolute inset-0 rounded-full bg-yellow-400/30 animate-ping" />
+            <div
+              className={`absolute inset-0 rounded-full animate-ping ${
+                isScrolled ? "bg-[#3498db]/30" : "bg-yellow-400/30"
+              }`}
+            />
           )}
         </div>
 
@@ -124,13 +149,13 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
             <div className="relative">
               {/* Badge glow effect */}
               <div className="absolute inset-0 bg-red-500/50 rounded-full blur-sm animate-pulse" />
-              
+
               {/* Main badge */}
-              <Badge 
-                variant="destructive" 
-                className="relative h-6 w-6 flex items-center justify-center text-xs p-0 min-w-[1.5rem] bg-gradient-to-br from-red-500 to-red-600 border-2 border-white shadow-lg font-bold font-montserrat"
+              <Badge
+                variant="destructive"
+                className="relative h-5 w-5 flex items-center justify-center text-xs p-0 min-w-[1.25rem] bg-gradient-to-br from-red-500 to-red-600 border-2 border-white shadow-lg font-bold font-montserrat"
               >
-                {unreadCount > 99 ? '99+' : unreadCount}
+                {unreadCount > 99 ? "99+" : unreadCount}
               </Badge>
             </div>
           </div>
@@ -138,7 +163,11 @@ export function NavbarNotification({ userId }: NavbarNotificationProps) {
 
         {/* Subtle ring indicator for active state */}
         {isOpen && (
-          <div className="absolute inset-0 rounded-full ring-2 ring-white/30 ring-offset-2 ring-offset-transparent" />
+          <div
+            className={`absolute inset-0 rounded-xl ring-2 ring-offset-2 ring-offset-transparent ${
+              isScrolled ? "ring-[#3498db]/30" : "ring-white/30"
+            }`}
+          />
         )}
       </button>
 
