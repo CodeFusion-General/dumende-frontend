@@ -61,7 +61,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
     } else {
       return isScrolled
         ? `${baseClasses} bg-white/95 backdrop-blur-xl border-b border-white/20 shadow-lg py-2`
-        : `${baseClasses} bg-white/90 backdrop-blur-lg border-b border-white/10 shadow-md py-4`;
+        : `${baseClasses} bg-gradient-to-r from-[#1a5f7a] to-[#2d7795] shadow-lg py-4`;
     }
   };
 
