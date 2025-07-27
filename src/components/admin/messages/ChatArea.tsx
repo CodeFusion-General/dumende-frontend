@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
 import { messageService } from "@/services/messageService";
+import { useAuth } from "@/contexts/AuthContext";
 import { ReadStatus } from "@/types/message.types";
 
 interface ChatAreaProps {
@@ -24,6 +25,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   // Use messages from conversation if available, otherwise fetch them
   useEffect(() => {
@@ -80,8 +82,9 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     try {
       setSending(true);
 
-      // TODO: Get current user ID from auth context
-      const currentUserId = 1; // Temporary hardcoded value
+      // Get current user ID from auth context
+      const { user } = useAuth();
+      const currentUserId = user?.id || 1; // Fallback to 1 if user is not available
       const recipientId = parseInt(conversation.user.id);
 
       const response = await messageService.sendMessage(

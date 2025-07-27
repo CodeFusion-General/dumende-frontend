@@ -10,6 +10,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
@@ -27,6 +28,7 @@ const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   onArchiveConversation
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
