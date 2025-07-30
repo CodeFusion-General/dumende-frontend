@@ -25,6 +25,8 @@ import {
   Camera,
 } from "lucide-react";
 import { boatService } from "@/services/boatService";
+import { bookingService } from "@/services/bookingService";
+import { captainService } from "@/services/captainService";
 import { useQuery } from "@tanstack/react-query";
 import { useMicroInteractions } from "@/hooks/useMicroInteractions";
 import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
@@ -37,6 +39,12 @@ import {
   getFullImageUrl,
 } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
+import { CustomerCaptainChat } from "@/components/boats/messaging/CustomerCaptainChat";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
+import { extractCaptainIdFromBooking } from "@/utils/conversationUtils";
+import { BookingDTO } from "@/types/booking.types";
+import { Captain } from "@/types/captain.types";
 import {
   ImageGallerySkeleton,
   BoatInfoSkeleton,
@@ -65,6 +73,14 @@ const getBoatImageUrl = (): string => {
 
 const BoatListing = () => {
   const { id } = useParams();
+  const { isAuthenticated, isCustomer, user } = useAuth();
+
+  // Messaging state
+  const [showMessaging, setShowMessaging] = React.useState(false);
+  const [userBooking, setUserBooking] = React.useState<BookingDTO | null>(null);
+  const [captain, setCaptain] = React.useState<Captain | null>(null);
+  const [captainLoading, setCaptainLoading] = React.useState(false);
+  const [checkingBooking, setCheckingBooking] = React.useState(false);
 
   // Micro-interactions
   const { fadeIn, slideIn, staggerAnimation, prefersReducedMotion } =
@@ -130,6 +146,75 @@ const BoatListing = () => {
     enabled: !!boatData?.type && shouldLoadSimilarBoats,
     retry: 2,
   });
+
+  // Check if user has booking with this boat
+  const checkUserBooking = React.useCallback(async () => {
+    if (!isAuthenticated || !isCustomer() || !boatData?.id) {
+      return;
+    }
+
+    setCheckingBooking(true);
+    try {
+      const booking = await bookingService.getCustomerBookingWithBoat(
+        boatData.id
+      );
+      setUserBooking(booking);
+
+      if (booking) {
+        console.log("✅ User has booking with this boat:", booking);
+        // Load captain info
+        setCaptainLoading(true);
+        try {
+          const captainId = await extractCaptainIdFromBooking(booking);
+          const captainData = await captainService.getCaptainById(captainId);
+          setCaptain(captainData);
+          console.log("👨‍✈️ Captain data loaded:", captainData);
+        } catch (error) {
+          console.error("❌ Failed to load captain info:", error);
+        } finally {
+          setCaptainLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking user booking:", error);
+    } finally {
+      setCheckingBooking(false);
+    }
+  }, [isAuthenticated, isCustomer, boatData?.id]);
+
+  // Check user booking when boat data is loaded
+  React.useEffect(() => {
+    if (boatData && isAuthenticated && isCustomer()) {
+      checkUserBooking();
+    }
+  }, [boatData?.id, isAuthenticated, isCustomer, checkUserBooking]);
+
+  // Messaging functions
+  const handleOpenMessaging = React.useCallback(() => {
+    if (userBooking && captain) {
+      setShowMessaging(true);
+    } else {
+      toast({
+        title: "Mesajlaşma mevcut değil",
+        description: "Bu tekne ile aktif bir rezervasyonunuz bulunmuyor.",
+        variant: "destructive",
+      });
+    }
+  }, [userBooking, captain]);
+
+  const handleCloseMessaging = React.useCallback(() => {
+    setShowMessaging(false);
+  }, []);
+
+  // Check if messaging should be available
+  const isMessagingAvailable = React.useCallback(() => {
+    if (!isAuthenticated || !isCustomer() || !userBooking) {
+      return false;
+    }
+
+    const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED"];
+    return allowedStatuses.includes(userBooking.status);
+  }, [isAuthenticated, isCustomer, userBooking]);
 
   // Geçerli fotoğrafları filtrele ve default image sistemi ekle
   const [validImages, setValidImages] = React.useState<string[]>([]);
@@ -577,6 +662,19 @@ const BoatListing = () => {
                     rating={boatData.rating || 4.8}
                     reviewCount={24}
                     totalBookings={150}
+                    boatId={boatData.id}
+                    onMessageHost={handleOpenMessaging}
+                    showMessageButton={isMessagingAvailable()}
+                    messageButtonDisabled={captainLoading || !captain}
+                    messageButtonText={
+                      checkingBooking
+                        ? "Kontrol ediliyor..."
+                        : captainLoading
+                        ? "Yükleniyor..."
+                        : userBooking
+                        ? "Mesaj Gönder"
+                        : "Rezervasyon Gerekli"
+                    }
                   />
                 </div>
 
@@ -649,6 +747,16 @@ const BoatListing = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Customer Captain Chat Modal */}
+      {userBooking && captain && (
+        <CustomerCaptainChat
+          isOpen={showMessaging}
+          onClose={handleCloseMessaging}
+          booking={userBooking}
+          captain={captain}
+        />
+      )}
     </div>
   );
 };

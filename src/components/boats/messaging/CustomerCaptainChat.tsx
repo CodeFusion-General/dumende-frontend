@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -355,9 +361,17 @@ export const CustomerCaptainChat: React.FC<CustomerCaptainChatProps> = ({
           "flex flex-col overflow-hidden",
           className
         )}
-        aria-labelledby="chat-title"
-        aria-describedby="chat-description"
       >
+        <VisuallyHidden>
+          <DialogTitle>
+            {captain?.name
+              ? `${captain.name} ile Mesajlaşma`
+              : "Kaptan ile Mesajlaşma"}
+          </DialogTitle>
+          <DialogDescription>
+            Rezervasyon #{booking.id} için kaptan ile mesajlaşma penceresi
+          </DialogDescription>
+        </VisuallyHidden>
         <ChatErrorBoundary onError={handleErrorBoundaryError}>
           {/* Loading State */}
           {(isLoading || isInitializing) && <ChatLoadingSkeleton />}

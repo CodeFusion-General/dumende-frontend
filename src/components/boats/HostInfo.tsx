@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Shield,
   Clock,
@@ -53,6 +54,12 @@ interface HostInfoProps {
   className?: string;
   // Alternative: accept full host data object
   hostData?: HostData;
+  // Messaging props
+  boatId?: number;
+  onMessageHost?: () => void;
+  showMessageButton?: boolean;
+  messageButtonDisabled?: boolean;
+  messageButtonText?: string;
 }
 
 const HostInfo: React.FC<HostInfoProps> = ({
@@ -71,6 +78,11 @@ const HostInfo: React.FC<HostInfoProps> = ({
   languages = [],
   className = "",
   hostData,
+  boatId,
+  onMessageHost,
+  showMessageButton = false,
+  messageButtonDisabled = false,
+  messageButtonText = "Mesaj Gönder",
 }) => {
   const { staggerAnimation, fadeIn, prefersReducedMotion } =
     useMicroInteractions();
@@ -213,28 +225,42 @@ const HostInfo: React.FC<HostInfoProps> = ({
             </div>
           </div>
 
-          {/* Host Rating */}
-          <div className="flex items-center gap-4 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 rounded-2xl border border-amber-200/50">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.floor(data.rating)
-                        ? "text-amber-400 fill-current"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
+          {/* Host Rating and Message Button */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-4 bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-4 rounded-2xl border border-amber-200/50 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 ${
+                        i < Math.floor(data.rating)
+                          ? "text-amber-400 fill-current"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-lg font-bold text-gray-900">
+                  {data.rating}
+                </span>
               </div>
-              <span className="text-lg font-bold text-gray-900">
-                {data.rating}
-              </span>
+              <div className="text-sm text-gray-600">
+                {data.reviewCount} değerlendirme
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              {data.reviewCount} değerlendirme
-            </div>
+
+            {/* Message Host Button */}
+            {showMessageButton && (
+              <Button
+                onClick={onMessageHost}
+                disabled={messageButtonDisabled}
+                className="bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {messageButtonText}
+              </Button>
+            )}
           </div>
         </div>
       </div>

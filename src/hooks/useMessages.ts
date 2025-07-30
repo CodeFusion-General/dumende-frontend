@@ -131,6 +131,61 @@ export function useMessages(
     lastPollTime: 0,
   });
 
+  // Cache utilities (must be defined before useEffect)
+  const getCacheKey = useCallback(
+    () => `${MESSAGE_CACHE_PREFIX}${cacheKey}`,
+    [cacheKey]
+  );
+
+  const setCachedMessages = useCallback(
+    (messages: MessageDTO[]) => {
+      if (enableAdvancedCaching && messageCache.current) {
+        messageCache.current.set(conversationId, messages);
+        return;
+      }
+
+      // Fallback to localStorage
+      try {
+        const cacheData = {
+          data: messages,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(getCacheKey(), JSON.stringify(cacheData));
+      } catch (error) {
+        console.warn("Failed to cache messages:", error);
+      }
+    },
+    [getCacheKey, conversationId, enableAdvancedCaching]
+  );
+
+  const getCachedMessages = useCallback((): MessageDTO[] | null => {
+    if (enableAdvancedCaching && messageCache.current) {
+      const cached = messageCache.current.get(conversationId);
+      if (cached) {
+        performanceMetrics.current.cacheHits++;
+        return cached;
+      }
+      performanceMetrics.current.cacheMisses++;
+      return null;
+    }
+
+    // Fallback to localStorage
+    try {
+      const cached = localStorage.getItem(getCacheKey());
+      if (!cached) return null;
+
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp > CACHE_EXPIRY_MS) {
+        localStorage.removeItem(getCacheKey());
+        return null;
+      }
+
+      return data;
+    } catch {
+      return null;
+    }
+  }, [getCacheKey, conversationId, enableAdvancedCaching]);
+
   // Initialize performance optimization instances
   useEffect(() => {
     if (enableAdvancedCaching && !messageCache.current) {
@@ -170,33 +225,37 @@ export function useMessages(
         }
       };
 
+      const debouncedPollerOptions = {
+        interval: pollingInterval,
+        maxInterval: 30000,
+        backoffMultiplier: 1.5,
+        maxRetries: 5,
+        debounceDelay: 500,
+        adaptivePolling: true,
+        activityThreshold: 60000,
+      };
+
+      const debouncedPollerCallbacks = {
+        onError: (error: unknown) => {
+          console.warn("Debounced polling failed:", error);
+          failedPollCountRef.current++;
+
+          if (failedPollCountRef.current >= 3) {
+            setConnectionStatus("disconnected");
+          }
+        },
+        onSuccess: () => {
+          failedPollCountRef.current = 0;
+          if (connectionStatus !== "connected") {
+            setConnectionStatus("connected");
+          }
+        },
+      };
+
       debouncedPoller.current = new DebouncedPoller(
         pollFunction,
-        {
-          interval: pollingInterval,
-          maxInterval: 30000,
-          backoffMultiplier: 1.5,
-          maxRetries: 5,
-          debounceDelay: 500,
-          adaptivePolling: true,
-          activityThreshold: 60000,
-        },
-        {
-          onError: (error) => {
-            console.warn("Debounced polling failed:", error);
-            failedPollCountRef.current++;
-
-            if (failedPollCountRef.current >= 3) {
-              setConnectionStatus("disconnected");
-            }
-          },
-          onSuccess: () => {
-            failedPollCountRef.current = 0;
-            if (connectionStatus !== "connected") {
-              setConnectionStatus("connected");
-            }
-          },
-        }
+        debouncedPollerOptions,
+        debouncedPollerCallbacks
       );
     }
   }, [
@@ -211,61 +270,6 @@ export function useMessages(
     setCachedMessages,
     connectionStatus,
   ]);
-
-  // Cache utilities (fallback for backward compatibility)
-  const getCacheKey = useCallback(
-    () => `${MESSAGE_CACHE_PREFIX}${cacheKey}`,
-    [cacheKey]
-  );
-
-  const getCachedMessages = useCallback((): MessageDTO[] | null => {
-    if (enableAdvancedCaching && messageCache.current) {
-      const cached = messageCache.current.get(conversationId);
-      if (cached) {
-        performanceMetrics.current.cacheHits++;
-        return cached;
-      }
-      performanceMetrics.current.cacheMisses++;
-      return null;
-    }
-
-    // Fallback to localStorage
-    try {
-      const cached = localStorage.getItem(getCacheKey());
-      if (!cached) return null;
-
-      const { data, timestamp } = JSON.parse(cached);
-      if (Date.now() - timestamp > CACHE_EXPIRY_MS) {
-        localStorage.removeItem(getCacheKey());
-        return null;
-      }
-
-      return data;
-    } catch {
-      return null;
-    }
-  }, [getCacheKey, conversationId, enableAdvancedCaching]);
-
-  const setCachedMessages = useCallback(
-    (messages: MessageDTO[]) => {
-      if (enableAdvancedCaching && messageCache.current) {
-        messageCache.current.set(conversationId, messages);
-        return;
-      }
-
-      // Fallback to localStorage
-      try {
-        const cacheData = {
-          data: messages,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(getCacheKey(), JSON.stringify(cacheData));
-      } catch (error) {
-        console.warn("Failed to cache messages:", error);
-      }
-    },
-    [getCacheKey, conversationId, enableAdvancedCaching]
-  );
 
   // Enhanced error handling function
   const handleError = useCallback((error: unknown, context: string) => {
@@ -628,6 +632,15 @@ export function useMessages(
     )
       return;
 
+    // If debounced polling is enabled, use it instead of manual polling
+    if (enableDebouncedPolling && debouncedPoller.current) {
+      debouncedPoller.current.start();
+      isPollingActiveRef.current = true;
+      setConnectionStatus("connected");
+      failedPollCountRef.current = 0;
+      return;
+    }
+
     isPollingActiveRef.current = true;
     setConnectionStatus("connected");
     failedPollCountRef.current = 0;
@@ -692,6 +705,7 @@ export function useMessages(
     pollingInterval,
     setCachedMessages,
     connectionStatus,
+    enableDebouncedPolling
   ]);
 
   // Automatic reconnection logic
@@ -721,6 +735,11 @@ export function useMessages(
   const stopPolling = useCallback(() => {
     isPollingActiveRef.current = false;
 
+    // Stop debounced polling if active
+    if (enableDebouncedPolling && debouncedPoller.current) {
+      debouncedPoller.current.stop();
+    }
+
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
@@ -733,7 +752,7 @@ export function useMessages(
 
     setConnectionStatus("disconnected");
     failedPollCountRef.current = 0;
-  }, []);
+  }, [enableDebouncedPolling]);
 
   // Refresh messages
   const refresh = useCallback(async () => {
@@ -752,6 +771,30 @@ export function useMessages(
     setError(null);
     setErrorType(null);
   }, []);
+
+  // Record activity
+  const recordActivity = useCallback(() => {
+    // Use debounced poller if available
+    if (enableDebouncedPolling && debouncedPoller.current) {
+      debouncedPoller.current.recordActivity();
+    } else if (isPollingActiveRef.current) {
+      // For manual polling, we can trigger an immediate poll if needed
+      // But we'll be more conservative about it
+      if (pollingIntervalRef.current) {
+        // Clear and reset the interval to ensure we don't poll too frequently
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = setInterval(
+          () => {
+            // This will be handled by the existing polling mechanism
+          },
+          Math.max(pollingInterval / 2, 1000) // Minimum 1 second
+        );
+      }
+    }
+
+    // Update last activity time for performance tracking
+    performanceMetrics.current.lastPollTime = Date.now();
+  }, [enableDebouncedPolling, pollingInterval]);
 
   // Initialize and cleanup
   useEffect(() => {
@@ -852,15 +895,6 @@ export function useMessages(
     },
     [enableAdvancedCaching, conversationId, setCachedMessages]
   );
-
-  const recordActivity = useCallback(() => {
-    if (enableDebouncedPolling && debouncedPoller.current) {
-      debouncedPoller.current.recordActivity();
-    }
-
-    // Update last activity time for performance tracking
-    performanceMetrics.current.lastPollTime = Date.now();
-  }, [enableDebouncedPolling]);
 
   const getPerformanceMetrics = useCallback(() => {
     const metrics = performanceMetrics.current;

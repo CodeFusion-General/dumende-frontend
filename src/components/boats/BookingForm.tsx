@@ -314,7 +314,7 @@ export function BookingForm({
     ];
 
     return allowedStatuses.includes(lastBooking.status as BookingStatus);
-  }, [lastBooking, isAuthenticated, isCustomer]);
+  }, [lastBooking, isAuthenticated, isCustomer, captain, captainLoading]);
 
   // Cleanup messaging state when component unmounts
   useEffect(() => {

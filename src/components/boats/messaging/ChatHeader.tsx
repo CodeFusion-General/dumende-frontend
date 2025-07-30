@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { X, User } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Captain } from "@/types/captain.types";
 import { BookingStatus } from "@/types/booking.types";
@@ -56,6 +56,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   };
 
   const getUserInitials = (name: string) => {
+    if (!name || typeof name !== "string") {
+      return "U"; // Default fallback
+    }
     return name
       .split(" ")
       .map((n) => n.charAt(0))
