@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
+import { getFullImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
 
 interface BoatCardProps {
   boat: BoatDTO;
@@ -21,19 +22,21 @@ const getBoatImageUrl = (boat: BoatDTO): string => {
   console.log("🚤 Loading image for boat:", boat.name, boat.id);
   console.log("🖼️ Boat images:", boat.images);
 
-  // Backend'den gelen URL'i direkt kullan
+  // Backend'den gelen URL'i tam URL'e çevir
   if (boat.images && boat.images.length > 0) {
     const primaryImage =
       boat.images.find((img) => img.isPrimary) || boat.images[0];
     if (primaryImage && primaryImage.imageUrl) {
-      console.log("✅ Using boat's own image URL");
-      return primaryImage.imageUrl;
+      console.log("✅ Using boat's own image URL:", primaryImage.imageUrl);
+      const fullUrl = getFullImageUrl(primaryImage.imageUrl);
+      console.log("🔗 Full image URL:", fullUrl);
+      return fullUrl;
     }
   }
 
   console.log("🔄 Using default image");
   // Fallback to default image
-  return "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
+  return getDefaultImageUrl();
 };
 
 export const BoatCard: React.FC<BoatCardProps> = ({

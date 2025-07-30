@@ -31,7 +31,11 @@ import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { isValidImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
+import {
+  isValidImageUrl,
+  getDefaultImageUrl,
+  getFullImageUrl,
+} from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import {
   ImageGallerySkeleton,

@@ -1,7 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addHours, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { Calendar as CalendarIcon, Clock, Users, ChevronUp, ChevronDown, Star } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Users,
+  ChevronUp,
+  ChevronDown,
+  Star,
+  MessageCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -26,10 +34,16 @@ import {
 } from "@/components/ui/card";
 import { bookingService } from "@/services/bookingService";
 import { availabilityService } from "@/services/availabilityService";
+import { boatService } from "@/services/boatService";
+import { captainService } from "@/services/captainService";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { CustomerCaptainChat } from "./messaging/CustomerCaptainChat";
+import { BookingDTO, BookingStatus } from "@/types/booking.types";
+import { Captain } from "@/types/captain.types";
+import { extractCaptainIdFromBooking } from "@/utils/conversationUtils";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -39,10 +53,16 @@ interface BookingFormProps {
   boatId: string;
 }
 
-export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly = true, maxGuests, boatId }: BookingFormProps) {
+export function BookingForm({
+  dailyPrice,
+  hourlyPrice,
+  isHourly: defaultIsHourly = true,
+  maxGuests,
+  boatId,
+}: BookingFormProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const { isCustomer, isAuthenticated } = useAuth();
+  const { isCustomer, isAuthenticated, user } = useAuth();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
   const [duration, setDuration] = useState<number>(4);
@@ -50,22 +70,30 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Messaging state
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [lastBooking, setLastBooking] = useState<BookingDTO | null>(null);
+  const [captain, setCaptain] = useState<Captain | null>(null);
+  const [captainLoading, setCaptainLoading] = useState(false);
+
   // Toggle between hourly and daily pricing
   const [isHourlyMode, setIsHourlyMode] = useState<boolean>(defaultIsHourly);
-  
+
   // State for available dates and time slots
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [calendarAvailability, setCalendarAvailability] = useState<CalendarAvailability[]>([]);
+  const [calendarAvailability, setCalendarAvailability] = useState<
+    CalendarAvailability[]
+  >([]);
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
-  
+
   // Memoize the boatId number to prevent unnecessary re-renders
   const boatIdNumber = useMemo(() => Number(boatId), [boatId]);
 
   // Memoize date formatting to prevent unnecessary calculations
   const formattedDateForSlots = useMemo(() => {
-    return date ? format(date, 'yyyy-MM-dd') : null;
+    return date ? format(date, "yyyy-MM-dd") : null;
   }, [date]);
 
   // Fetch available dates for the next 6 months (180 days) - Only run once per boatId
@@ -81,29 +109,29 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         const today = new Date();
         const sixMonthsLater = new Date();
         sixMonthsLater.setMonth(today.getMonth() + 6);
-        
+
         // Format dates for API
-        const startDate = format(today, 'yyyy-MM-dd');
-        const endDate = format(sixMonthsLater, 'yyyy-MM-dd');
-        
+        const startDate = format(today, "yyyy-MM-dd");
+        const endDate = format(sixMonthsLater, "yyyy-MM-dd");
+
         // Get calendar availability for the date range
         const calendarData = await availabilityService.getCalendarAvailability(
           boatIdNumber,
           startDate,
           endDate
         );
-        
+
         if (isMounted) {
           // Filter for available dates and convert to Date objects
           const availableDays = calendarData
-            .filter(day => day.isAvailable)
-            .map(day => new Date(day.date));
+            .filter((day) => day.isAvailable)
+            .map((day) => new Date(day.date));
 
           setAvailableDates(availableDays);
           setCalendarAvailability(calendarData);
         }
       } catch (error) {
-        console.error('Failed to fetch available dates:', error);
+        console.error("Failed to fetch available dates:", error);
         if (isMounted) {
           toast({
             title: "Müsait tarihler yüklenemedi",
@@ -117,7 +145,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         }
       }
     };
-    
+
     fetchAvailableDates();
 
     // Cleanup function
@@ -148,20 +176,23 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
 
         if (isMounted) {
           // Convert 24-hour format to 12-hour format with AM/PM
-          const formattedSlots = slots.map(slot => {
-            const hour = parseInt(slot.split(':')[0]);
-            return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+          const formattedSlots = slots.map((slot) => {
+            const hour = parseInt(slot.split(":")[0]);
+            return `${hour % 12 || 12}:00 ${hour < 12 ? "AM" : "PM"}`;
           });
-          
+
           setAvailableTimeSlots(formattedSlots);
-          
+
           // If current selected time is not available, reset it
-          if (formattedSlots.length > 0 && !formattedSlots.includes(startTime)) {
+          if (
+            formattedSlots.length > 0 &&
+            !formattedSlots.includes(startTime)
+          ) {
             setStartTime(formattedSlots[0]);
           }
         }
       } catch (error) {
-        console.error('Failed to fetch available time slots:', error);
+        console.error("Failed to fetch available time slots:", error);
         if (isMounted) {
           toast({
             title: "Müsait saatler yüklenemedi",
@@ -192,27 +223,28 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
   // Fallback time slots if API fails
   const fallbackTimeSlots = Array.from({ length: 11 }, (_, i) => {
     const hour = i + 8; // Start at 8 AM
-    return `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+    return `${hour % 12 || 12}:00 ${hour < 12 ? "AM" : "PM"}`;
   });
-  
+
   // Use available time slots if we have them, otherwise use fallback
-  const timeSlots = availableTimeSlots.length > 0 ? availableTimeSlots : fallbackTimeSlots;
-  
+  const timeSlots =
+    availableTimeSlots.length > 0 ? availableTimeSlots : fallbackTimeSlots;
+
   // Helper function to determine if the current selection is valid for booking
   const isBookingValid = () => {
     // Check if date is selected and is in availableDates
     if (!date) return false;
-    
+
     const isDateAvailable = availableDates.some(
-      availableDate => 
+      (availableDate) =>
         availableDate.getDate() === date.getDate() &&
         availableDate.getMonth() === date.getMonth() &&
         availableDate.getFullYear() === date.getFullYear()
     );
-    
+
     // Check if time slot is available
     const isTimeSlotAvailable = availableTimeSlots.length > 0;
-    
+
     return isDateAvailable && isTimeSlotAvailable;
   };
 
@@ -237,32 +269,91 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
     }
     return "Request to Book";
   };
-  
+
+  // Messaging functions
+  const loadCaptainInfo = useCallback(async (booking: BookingDTO) => {
+    if (!booking) return;
+
+    setCaptainLoading(true);
+    try {
+      const captainId = await extractCaptainIdFromBooking(booking);
+      const captainData = await captainService.getCaptainById(captainId);
+      setCaptain(captainData);
+    } catch (error) {
+      console.error("Failed to load captain info:", error);
+      toast({
+        title: "Kaptan bilgileri yüklenemedi",
+        description: "Mesajlaşma özelliği şu anda kullanılamıyor.",
+        variant: "destructive",
+      });
+    } finally {
+      setCaptainLoading(false);
+    }
+  }, []);
+
+  const handleOpenMessaging = useCallback(() => {
+    if (lastBooking && captain) {
+      setShowMessaging(true);
+    }
+  }, [lastBooking, captain]);
+
+  const handleCloseMessaging = useCallback(() => {
+    setShowMessaging(false);
+  }, []);
+
+  // Check if messaging should be available for the booking
+  const isMessagingAvailable = useCallback(() => {
+    if (!lastBooking || !isAuthenticated || !isCustomer()) {
+      return false;
+    }
+
+    const allowedStatuses: BookingStatus[] = [
+      BookingStatus.PENDING,
+      BookingStatus.CONFIRMED,
+      BookingStatus.COMPLETED,
+    ];
+
+    return allowedStatuses.includes(lastBooking.status as BookingStatus);
+  }, [lastBooking, isAuthenticated, isCustomer]);
+
+  // Cleanup messaging state when component unmounts
+  useEffect(() => {
+    return () => {
+      setShowMessaging(false);
+      setLastBooking(null);
+      setCaptain(null);
+    };
+  }, []);
+
   // Helper function to disable dates that are not available
   const disabledDates = {
     before: new Date(), // Disable past dates
     dayOfWeek: [], // Don't disable specific days of the week
-    dates: isDateLoading ? [] : Array.from({ length: 365 }).map((_, i) => {
-      // Create a date for each day in the next year
-      const day = new Date();
-      day.setDate(day.getDate() + i);
-      
-      // Disable dates beyond 180 days (make them red and non-selectable)
-      if (i >= 180) {
-        return day;
-      }
-      
-      // For dates within 180 days, check if they are in the availableDates array
-      const isAvailable = availableDates.some(
-        availableDate => 
-          availableDate.getDate() === day.getDate() &&
-          availableDate.getMonth() === day.getMonth() &&
-          availableDate.getFullYear() === day.getFullYear()
-      );
-      
-      // Return the date if it's not available (to be disabled)
-      return isAvailable ? null : day;
-    }).filter(Boolean) // Remove null values
+    dates: isDateLoading
+      ? []
+      : Array.from({ length: 365 })
+          .map((_, i) => {
+            // Create a date for each day in the next year
+            const day = new Date();
+            day.setDate(day.getDate() + i);
+
+            // Disable dates beyond 180 days (make them red and non-selectable)
+            if (i >= 180) {
+              return day;
+            }
+
+            // For dates within 180 days, check if they are in the availableDates array
+            const isAvailable = availableDates.some(
+              (availableDate) =>
+                availableDate.getDate() === day.getDate() &&
+                availableDate.getMonth() === day.getMonth() &&
+                availableDate.getFullYear() === day.getFullYear()
+            );
+
+            // Return the date if it's not available (to be disabled)
+            return isAvailable ? null : day;
+          })
+          .filter(Boolean), // Remove null values
   };
 
   // Dynamic duration options based on mode
@@ -270,7 +361,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
 
   // Calculate total price
   const totalUnits = duration; // hours or days depending on mode
-  const subtotal = isHourlyMode ? hourlyPrice * totalUnits : dailyPrice * totalUnits;
+  const subtotal = isHourlyMode
+    ? hourlyPrice * totalUnits
+    : dailyPrice * totalUnits;
   const serviceFee = subtotal * 0.1;
   const total = subtotal + serviceFee;
 
@@ -284,12 +377,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       });
       return;
     }
-    
+
     // Check if the selected date and time are available
     if (!isBookingValid()) {
       toast({
         title: "Müsait değil",
-        description: "Seçilen tarih veya saat için tekne müsait değil. Lütfen başka bir tarih veya saat seçin.",
+        description:
+          "Seçilen tarih veya saat için tekne müsait değil. Lütfen başka bir tarih veya saat seçin.",
         variant: "destructive",
       });
       return;
@@ -297,16 +391,16 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
 
     try {
       setLoading(true);
-      
+
       // Parse the start time
-      const [hourStr, minuteStr] = startTime.split(':');
+      const [hourStr, minuteStr] = startTime.split(":");
       const hour = parseInt(hourStr);
       const minute = parseInt(minuteStr);
-      
+
       // Create start date with the selected time
       const startDate = new Date(date);
       startDate.setHours(hour, minute, 0, 0);
-      
+
       // Calculate end date based on duration and mode (hourly or daily)
       let endDate;
       if (isHourlyMode) {
@@ -314,25 +408,33 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       } else {
         endDate = addDays(startDate, duration);
       }
-      
+
       // Check availability with the backend before proceeding
-      const formattedStartDate = format(date, 'yyyy-MM-dd');
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
-      
+      const formattedStartDate = format(date, "yyyy-MM-dd");
+      const formattedEndDate = format(endDate, "yyyy-MM-dd");
+
       // For multi-day bookings, check the entire date range
       let isAvailable;
       if (isHourlyMode) {
         // For hourly bookings, check single date
-        isAvailable = await availabilityService.isBoatAvailableOnDateWithBookings(Number(boatId), formattedStartDate);
+        isAvailable =
+          await availabilityService.isBoatAvailableOnDateWithBookings(
+            Number(boatId),
+            formattedStartDate
+          );
       } else {
         // For daily bookings, check the entire date range
-        isAvailable = await availabilityService.isBoatAvailableBetweenDates(Number(boatId), formattedStartDate, formattedEndDate);
+        isAvailable = await availabilityService.isBoatAvailableBetweenDates(
+          Number(boatId),
+          formattedStartDate,
+          formattedEndDate
+        );
       }
-      
+
       if (!isAvailable) {
         toast({
           title: "Müsait değil",
-          description: isHourlyMode 
+          description: isHourlyMode
             ? "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin."
             : "Seçilen tarih aralığında tekne müsait değil. Lütfen başka tarihler seçin.",
           variant: "destructive",
@@ -340,26 +442,33 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         setLoading(false);
         return;
       }
-      
+
       const bookingData = {
         boatId: Number(boatId),
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         passengerCount: guests,
         totalPrice: total,
-        notes: `Booking created on ${new Date().toISOString()}`
+        notes: `Booking created on ${new Date().toISOString()}`,
       };
 
       const response = await bookingService.createBooking(bookingData);
-      
+
+      // Save booking for messaging
+      setLastBooking(response);
+
+      // Load captain info for messaging
+      await loadCaptainInfo(response);
+
       toast({
         title: "Rezervasyon talebi gönderildi",
         description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
       });
 
-      navigate('/my-bookings');
+      // Don't navigate immediately, let user see the message captain button
+      // navigate("/my-bookings");
     } catch (error) {
-      console.error('Booking failed:', error);
+      console.error("Booking failed:", error);
       toast({
         title: "Rezervasyon yapılamadı",
         description: "Lütfen daha sonra tekrar deneyin.",
@@ -375,50 +484,66 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 md:hidden">
       <div className="flex justify-between items-center">
         <div className="text-left">
-          <span className="text-lg font-semibold">${isHourlyMode ? hourlyPrice : dailyPrice}</span>
-          <span className="text-gray-500 ml-1">{isHourlyMode ? '/hour' : '/day'}</span>
+          <span className="text-lg font-semibold">
+            ${isHourlyMode ? hourlyPrice : dailyPrice}
+          </span>
+          <span className="text-gray-500 ml-1">
+            {isHourlyMode ? "/hour" : "/day"}
+          </span>
         </div>
-        
-        <Button 
-          className="px-8" 
+
+        <Button
+          className="px-8"
           onClick={() => setIsFormOpen(true)}
           disabled={!canUserBook()}
         >
-          {!isAuthenticated ? "Login Required" : !isCustomer() ? "Customer Access Only" : "Book Now"}
+          {!isAuthenticated
+            ? "Login Required"
+            : !isCustomer()
+            ? "Customer Access Only"
+            : "Book Now"}
         </Button>
       </div>
     </div>
   );
-  
+
   // Mobile full-screen booking form
   const MobileBookingForm = () => (
-    <div className={cn(
-      "fixed inset-0 bg-white z-50 transition-transform transform md:hidden",
-      isFormOpen ? "translate-y-0" : "translate-y-full"
-    )}>
+    <div
+      className={cn(
+        "fixed inset-0 bg-white z-50 transition-transform transform md:hidden",
+        isFormOpen ? "translate-y-0" : "translate-y-full"
+      )}
+    >
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="font-semibold">Book this boat</h2>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setIsFormOpen(false)}
         >
           <ChevronDown size={24} />
         </Button>
       </div>
-      
+
       <div className="p-4 overflow-auto h-full pb-24">
         <div className="flex mb-3 ">
           <Button
             variant="outline"
-            className={cn("flex-1 rounded-none rounded-l-md", isHourlyMode && "bg-gray-200")}
+            className={cn(
+              "flex-1 rounded-none rounded-l-md",
+              isHourlyMode && "bg-gray-200"
+            )}
             onClick={() => setIsHourlyMode(true)}
           >
             Hourly
           </Button>
           <Button
             variant="outline"
-            className={cn("flex-1 rounded-none rounded-r-md", !isHourlyMode && "bg-gray-200")}
+            className={cn(
+              "flex-1 rounded-none rounded-r-md",
+              !isHourlyMode && "bg-gray-200"
+            )}
             onClick={() => setIsHourlyMode(false)}
           >
             Daily
@@ -453,14 +578,13 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
               </PopoverContent>
             </Popover>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Start Time</label>
-              <Select
-                value={startTime}
-                onValueChange={setStartTime}
-              >
+              <label className="block text-sm font-medium mb-1">
+                Start Time
+              </label>
+              <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select time" />
                 </SelectTrigger>
@@ -473,7 +597,7 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Duration</label>
               <Select
@@ -483,19 +607,22 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select duration" />
                 </SelectTrigger>
-              <SelectContent>
-                {durationOptions.map((val) => (
-                  <SelectItem key={val} value={val.toString()}>
-                    {val} {isHourlyMode ? 'hours' : val === 1 ? 'day' : 'days'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+                <SelectContent>
+                  {durationOptions.map((val) => (
+                    <SelectItem key={val} value={val.toString()}>
+                      {val}{" "}
+                      {isHourlyMode ? "hours" : val === 1 ? "day" : "days"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium mb-1">Number of Guests</label>
+            <label className="block text-sm font-medium mb-1">
+              Number of Guests
+            </label>
             <Select
               value={guests.toString()}
               onValueChange={(value) => setGuests(parseInt(value))}
@@ -504,20 +631,25 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 <SelectValue placeholder="Select guests" />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: maxGuests }, (_, i) => i + 1).map((num) => (
-                  <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? 'guest' : 'guests'}
-                  </SelectItem>
-                ))}
+                {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
+                  (num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? "guest" : "guests"}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
         </div>
-        
+
         {/* Price summary */}
         <div className="mt-6 space-y-3 border-t border-b py-4 my-4">
           <div className="flex justify-between">
-            <span className="text-gray-600">${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits} {isHourlyMode ? 'hours' : totalUnits === 1 ? 'day' : 'days'}</span>
+            <span className="text-gray-600">
+              ${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
+              {isHourlyMode ? "hours" : totalUnits === 1 ? "day" : "days"}
+            </span>
             <span>${subtotal}</span>
           </div>
           <div className="flex justify-between">
@@ -529,22 +661,35 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
             <span>${total.toFixed(2)}</span>
           </div>
         </div>
-        
-        <Button 
-          className="w-full" 
+
+        <Button
+          className="w-full"
           onClick={handleBooking}
           disabled={loading || !isBookingValid() || !canUserBook()}
         >
           {getBookingButtonText()}
         </Button>
-        
+
+        {/* Message Captain Button - Show after successful booking */}
+        {lastBooking && isMessagingAvailable() && (
+          <Button
+            className="w-full mt-2"
+            variant="outline"
+            onClick={handleOpenMessaging}
+            disabled={captainLoading || !captain}
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            {captainLoading ? "Loading..." : "Message Captain"}
+          </Button>
+        )}
+
         <p className="text-center text-sm text-gray-500 mt-4">
           You won't be charged yet
         </p>
       </div>
     </div>
   );
-  
+
   return (
     <>
       <Card className="sticky top-24 hidden md:block">
@@ -552,14 +697,20 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           <div className="flex mb-3">
             <Button
               variant="outline"
-              className={cn("flex-1 rounded-none rounded-l-md", isHourlyMode && "bg-gray-200")}
+              className={cn(
+                "flex-1 rounded-none rounded-l-md",
+                isHourlyMode && "bg-gray-200"
+              )}
               onClick={() => setIsHourlyMode(true)}
             >
               Hourly
             </Button>
             <Button
               variant="outline"
-              className={cn("flex-1 rounded-none rounded-r-md", !isHourlyMode && "bg-gray-200")}
+              className={cn(
+                "flex-1 rounded-none rounded-r-md",
+                !isHourlyMode && "bg-gray-200"
+              )}
               onClick={() => setIsHourlyMode(false)}
             >
               Daily
@@ -567,8 +718,12 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           </div>
           <div className="flex justify-between">
             <div>
-              <span className="text-lg font-semibold">${isHourlyMode ? hourlyPrice : dailyPrice}</span>
-              <span className="text-gray-500 ml-1">{isHourlyMode ? '/hour' : '/day'}</span>
+              <span className="text-lg font-semibold">
+                ${isHourlyMode ? hourlyPrice : dailyPrice}
+              </span>
+              <span className="text-gray-500 ml-1">
+                {isHourlyMode ? "/hour" : "/day"}
+              </span>
             </div>
             {/*<div className="flex items-center">
               <Star size={16} className="text-yellow-400 fill-yellow-400" />
@@ -609,11 +764,10 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Start Time</label>
-              <Select
-                value={startTime}
-                onValueChange={setStartTime}
-              >
+              <label className="block text-sm font-medium mb-1">
+                Start Time
+              </label>
+              <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select time" />
                 </SelectTrigger>
@@ -639,7 +793,8 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 <SelectContent>
                   {durationOptions.map((val) => (
                     <SelectItem key={val} value={val.toString()}>
-                      {val} {isHourlyMode ? 'hours' : val === 1 ? 'day' : 'days'}
+                      {val}{" "}
+                      {isHourlyMode ? "hours" : val === 1 ? "day" : "days"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -648,7 +803,9 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Number of Guests</label>
+            <label className="block text-sm font-medium mb-1">
+              Number of Guests
+            </label>
             <Select
               value={guests.toString()}
               onValueChange={(value) => setGuests(parseInt(value))}
@@ -657,16 +814,18 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
                 <SelectValue placeholder="Select guests" />
               </SelectTrigger>
               <SelectContent>
-                {Array.from({ length: maxGuests }, (_, i) => i + 1).map((num) => (
-                  <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? 'guest' : 'guests'}
-                  </SelectItem>
-                ))}
+                {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
+                  (num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? "guest" : "guests"}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
 
-          <Button 
+          <Button
             className="w-full"
             onClick={handleBooking}
             disabled={loading || !isBookingValid() || !canUserBook()}
@@ -674,7 +833,20 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
             {getBookingButtonText()}
           </Button>
 
-          <p className="text-center text-sm text-gray-500">
+          {/* Message Captain Button - Show after successful booking */}
+          {lastBooking && isMessagingAvailable() && (
+            <Button
+              className="w-full mt-2"
+              variant="outline"
+              onClick={handleOpenMessaging}
+              disabled={captainLoading || !captain}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              {captainLoading ? "Loading..." : "Message Captain"}
+            </Button>
+          )}
+
+          <p className="text-center text-sm text-gray-500 mt-4">
             You won't be charged yet
           </p>
         </CardContent>
@@ -682,7 +854,10 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
         <CardFooter className="border-t pt-4">
           <div className="space-y-3 w-full">
             <div className="flex justify-between">
-              <span className="text-gray-600">${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits} {isHourlyMode ? 'hours' : totalUnits === 1 ? 'day' : 'days'}</span>
+              <span className="text-gray-600">
+                ${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
+                {isHourlyMode ? "hours" : totalUnits === 1 ? "day" : "days"}
+              </span>
               <span>${subtotal}</span>
             </div>
             <div className="flex justify-between">
@@ -700,6 +875,16 @@ export function BookingForm({ dailyPrice, hourlyPrice, isHourly: defaultIsHourly
       {/* Mobile View Components */}
       <MobileBookingFooter />
       <MobileBookingForm />
+
+      {/* Customer Captain Chat Modal */}
+      {lastBooking && captain && (
+        <CustomerCaptainChat
+          isOpen={showMessaging}
+          onClose={handleCloseMessaging}
+          booking={lastBooking}
+          captain={captain}
+        />
+      )}
     </>
   );
 }
