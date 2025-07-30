@@ -82,8 +82,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     try {
       setSending(true);
 
-      // Get current user ID from auth context
-      const { user } = useAuth();
+      // Use user from useAuth hook
       const currentUserId = user?.id || 1; // Fallback to 1 if user is not available
       const recipientId = parseInt(conversation.user.id);
 

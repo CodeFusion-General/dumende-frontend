@@ -79,18 +79,18 @@ export function useMessages(
   options: UseMessagesOptions = {}
 ): UseMessagesReturn {
   const {
-    pollingInterval = 3000,
+    pollingInterval = 3000, // Changed from 3000 to 120000ms (2 minutes)
     maxRetries = 3,
     cacheKey = conversationId,
     pageSize = 50,
-    enableRealTime = true,
+    enableRealTime = false, // Changed from true to false
     booking,
     captainId,
     enableSecurityValidation = true,
     enableVirtualScrolling = false,
     enablePagination = true,
     enableAdvancedCaching = true,
-    enableDebouncedPolling = true,
+    enableDebouncedPolling = false, // Changed from true to false
     maxCacheSize = 1000,
     cacheMaxAge = 5 * 60 * 1000,
   } = options;
@@ -800,13 +800,15 @@ export function useMessages(
   useEffect(() => {
     if (conversationId && user) {
       loadMessages();
-      startPolling();
+      if (enableRealTime) {
+        startPolling();
+      }
     }
 
     return () => {
       stopPolling();
     };
-  }, [conversationId, user, loadMessages, startPolling, stopPolling]);
+  }, [conversationId, user?.id, enableRealTime]);
 
   // Handle online/offline events for better connection management
   useEffect(() => {
