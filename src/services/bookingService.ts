@@ -91,9 +91,14 @@ class BookingService extends BaseService {
 
   public async updateBookingStatus(
     id: number,
-    status: BookingStatus
-  ): Promise<BookingDTO> {
-    return this.patch<BookingDTO>(`/${id}/status`, { status });
+    status: BookingStatus,
+    reason?: string
+  ): Promise<void> {
+    const params = new URLSearchParams({ status });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async cancelBooking(id: number, reason?: string): Promise<BookingDTO> {
@@ -325,9 +330,14 @@ class BookingService extends BaseService {
 
   public async updateBookingStatusById(
     id: number,
-    status: string
+    status: string,
+    reason?: string
   ): Promise<void> {
-    return this.patch<void>(`/${id}/status?status=${status}`, null);
+    const params = new URLSearchParams({ status });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async getUserById(userId: number): Promise<any> {
@@ -426,8 +436,12 @@ export const bookingCommandService = {
   },
 
   // Update booking status
-  updateBookingStatus: async (id: number, status: string): Promise<void> => {
-    return bookingService.updateBookingStatusById(id, status);
+  updateBookingStatus: async (
+    id: number,
+    status: string,
+    reason?: string
+  ): Promise<void> => {
+    return bookingService.updateBookingStatusById(id, status, reason);
   },
 };
 
