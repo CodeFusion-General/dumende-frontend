@@ -41,7 +41,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
   loading = false,
 }) => {
   const { toast } = useToast();
-  const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
+  const [selectedStatus, setSelectedStatus] = useState<BookingStatus | null>(null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
@@ -61,7 +61,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setSelectedStatus("");
+      setSelectedStatus(null);
       setReason("");
       setValidationErrors({});
       setIsSubmitting(false);
@@ -132,7 +132,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
       return;
     }
 
-    if (selectedStatus === booking.status) {
+    if (selectedStatus && selectedStatus === booking.status) {
       setValidationErrors({
         general: `Booking is already ${selectedStatus.toLowerCase()}.`,
       });
@@ -145,7 +145,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
       // Call the API to update booking status
       await onStatusUpdate(
         booking.id,
-        selectedStatus as BookingStatus,
+        selectedStatus!,
         selectedStatus === BookingStatus.CANCELLED ? reason.trim() : undefined
       );
 
@@ -385,7 +385,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
               New Status
             </Label>
             <Select
-              value={selectedStatus}
+              value={selectedStatus ?? ""}
               onValueChange={(value) =>
                 setSelectedStatus(value as BookingStatus)
               }
