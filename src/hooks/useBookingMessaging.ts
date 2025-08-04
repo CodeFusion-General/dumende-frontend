@@ -65,8 +65,8 @@ export function useBookingMessaging(
   booking: BookingDTO | null,
   options: UseBookingMessagingOptions = {}
 ): UseBookingMessagingReturn {
-  const {
-    pollingInterval = 3000,
+    const {
+    pollingInterval = 30000, // 3 saniye yerine 30 saniye
     maxRetries = 3,
     enableRealTime = true,
     autoLoadMessages = true,

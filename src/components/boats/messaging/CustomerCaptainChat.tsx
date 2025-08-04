@@ -231,8 +231,9 @@ export const CustomerCaptainChat: React.FC<CustomerCaptainChatProps> = ({
     cleanup,
     retryFailedMessage,
   } = useBookingMessaging(booking, {
-    enableRealTime: isOpen,
-    autoLoadMessages: isOpen,
+    enableRealTime: isOpen, // Sadece modal açıkken polling yapın
+    autoLoadMessages: isOpen, // Sadece modal açıkken yükleyin
+    pollingInterval: 30000, // 30 saniye
   });
 
   // Auto-scroll to bottom when new messages arrive

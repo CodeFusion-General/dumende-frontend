@@ -65,6 +65,7 @@ import { useRetry } from "@/hooks/useRetry";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
+import { BoatDTO } from "@/types/boat.types";
 
 // Default image helper function for boat detail page
 const getBoatImageUrl = (): string => {
@@ -131,9 +132,9 @@ const BoatListing = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
-    staleTime: 15 * 60 * 1000, // 15 minutes cache - increased to prevent refetches
-    cacheTime: 30 * 60 * 1000, // 30 minutes cache - increased
-    gcTime: 30 * 60 * 1000, // For React Query v5 compatibility
+    staleTime: 30 * 60 * 1000, // 30 dakika cache
+    gcTime: 60 * 60 * 1000, // For React Query v5 compatibility
+    refetchInterval: false, // Otomatik refetch'i kapatın
   });
 
   // Memoize similar boats query to prevent re-computation
@@ -141,13 +142,14 @@ const BoatListing = () => {
     data: similarBoatsData,
     isLoading: isSimilarBoatsLoading,
     error: similarBoatsError,
+    refetch: refetchSimilarBoats,
   } = useQuery({
     queryKey: ["similar-boats", boatData?.type, boatData?.id],
     queryFn: () =>
       boatService.searchBoats({
         type: boatData?.type,
       }),
-    select: useCallback((data) =>
+    select: useCallback((data: BoatDTO[]) =>
       data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
       [boatData?.id]
     ),
@@ -156,9 +158,8 @@ const BoatListing = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
     staleTime: 15 * 60 * 1000, // 15 minutes cache
-    cacheTime: 30 * 60 * 1000, // 30 minutes cache
     gcTime: 30 * 60 * 1000, // For React Query v5 compatibility
   });
 
@@ -205,7 +206,7 @@ const BoatListing = () => {
   }, [boatData?.id, isAuthenticated, isCustomer, checkUserBooking]);
 
   // Custom hook to prevent messaging from triggering refetches
-  const useStableBoatData = (boatData: any) => {
+  const useStableBoatData = (boatData: BoatDTO | undefined) => {
     const stableDataRef = React.useRef(boatData);
     const [stableData, setStableData] = React.useState(boatData);
 

@@ -79,18 +79,18 @@ export function useMessages(
   options: UseMessagesOptions = {}
 ): UseMessagesReturn {
   const {
-    pollingInterval = 3000, // Changed from 3000 to 120000ms (2 minutes)
+    pollingInterval = 30000, // 3 saniye yerine 30 saniye
     maxRetries = 3,
     cacheKey = conversationId,
     pageSize = 50,
-    enableRealTime = false, // Changed from true to false
+    enableRealTime = false, // Varsayılan olarak false yapın
     booking,
     captainId,
     enableSecurityValidation = true,
     enableVirtualScrolling = false,
     enablePagination = true,
     enableAdvancedCaching = true,
-    enableDebouncedPolling = false, // Changed from true to false
+    enableDebouncedPolling = true, // Debounced polling'i aktif edin
     maxCacheSize = 1000,
     cacheMaxAge = 5 * 60 * 1000,
   } = options;
