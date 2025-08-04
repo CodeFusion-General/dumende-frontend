@@ -1,5 +1,6 @@
 import { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import { httpClient } from "@/lib/axios";
+import { tokenUtils } from "@/lib/utils";
 
 // Generic API Response wrapper
 export interface ApiResponse<T> {
@@ -29,11 +30,17 @@ export abstract class BaseService {
     this.baseUrl = baseUrl;
   }
 
+  private getAuthHeaders(): Record<string, string> {
+    const token = tokenUtils.getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
   protected async get<T>(url: string, params?: any): Promise<T> {
     return this.executeWithRetry(async () => {
       const fullUrl = `${this.baseUrl}${url}`;
       const response: AxiosResponse<T> = await this.api.get(fullUrl, {
         params,
+        headers: this.getAuthHeaders(),
       });
       return response.data;
     }, `GET ${this.baseUrl}${url}`);
@@ -43,7 +50,8 @@ export abstract class BaseService {
     return this.executeWithRetry(async () => {
       const response: AxiosResponse<T> = await this.api.post(
         `${this.baseUrl}${url}`,
-        data
+        data,
+        { headers: this.getAuthHeaders() }
       );
       return response.data;
     }, `POST ${this.baseUrl}${url}`);
@@ -53,7 +61,8 @@ export abstract class BaseService {
     return this.executeWithRetry(async () => {
       const response: AxiosResponse<T> = await this.api.put(
         `${this.baseUrl}${url}`,
-        data
+        data,
+        { headers: this.getAuthHeaders() }
       );
       return response.data;
     }, `PUT ${this.baseUrl}${url}`);
@@ -63,7 +72,8 @@ export abstract class BaseService {
     return this.executeWithRetry(async () => {
       const response: AxiosResponse<T> = await this.api.patch(
         `${this.baseUrl}${url}`,
-        data
+        data,
+        { headers: this.getAuthHeaders() }
       );
       return response.data;
     }, `PATCH ${this.baseUrl}${url}`);
@@ -72,7 +82,8 @@ export abstract class BaseService {
   protected async delete<T>(url: string): Promise<T> {
     return this.executeWithRetry(async () => {
       const response: AxiosResponse<T> = await this.api.delete(
-        `${this.baseUrl}${url}`
+        `${this.baseUrl}${url}`,
+        { headers: this.getAuthHeaders() }
       );
       return response.data;
     }, `DELETE ${this.baseUrl}${url}`);
@@ -100,6 +111,7 @@ export abstract class BaseService {
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            ...this.getAuthHeaders(),
           },
         }
       );
@@ -119,6 +131,7 @@ export abstract class BaseService {
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            ...this.getAuthHeaders(),
           },
         }
       );
@@ -145,7 +158,10 @@ export abstract class BaseService {
     last: boolean;
   }> {
     return this.executeWithRetry(async () => {
-      const response = await this.api.get(`${this.baseUrl}${url}`, { params });
+      const response = await this.api.get(`${this.baseUrl}${url}`, {
+        params,
+        headers: this.getAuthHeaders(),
+      });
       return response.data;
     }, `GET_PAGINATED ${this.baseUrl}${url}`);
   }
