@@ -1,0 +1,34 @@
+[33mcommit 638bd25437e728c837a7fbe120deb554eb2997cd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mSearchingUı[m[33m, [m[1;31morigin/SearchingUı[m[33m)[m
+Author: SoGood <108363656+sogutemir@users.noreply.github.com>
+Date:   Wed Jul 30 16:00:33 2025 +0300
+
+    Add messaging components and hooks for boat chats
+    
+    Introduces a messaging system for boat bookings, including new components (ChatHeader, CustomerCaptainChat, MessageBubble, MessageInput, VirtualMessageList), related hooks (useBookingMessaging, useMessages), and supporting utilities. Updates dependencies and adds tests for messaging functionality. Also updates BoatCard, BookingForm, BoatListing, and imageUtils to integrate messaging features.
+
+package-lock.json
+package.json
+src/components/boats/BoatCard.tsx
+src/components/boats/BookingForm.tsx
+src/components/boats/messaging/ChatHeader.tsx
+src/components/boats/messaging/CustomerCaptainChat.tsx
+src/components/boats/messaging/MessageBubble.tsx
+src/components/boats/messaging/MessageInput.tsx
+src/components/boats/messaging/VirtualMessageList.tsx
+src/components/boats/messaging/index.ts
+src/examples/chat-header-usage.example.tsx
+src/hooks/__tests__/useBookingMessaging.test.ts
+src/hooks/__tests__/useMessages.test.ts
+src/hooks/useBookingMessaging.ts
+src/hooks/useMessages.ts
+src/lib/imageUtils.ts
+src/pages/BoatListing.tsx
+src/test/setup.ts
+src/utils/conversationUtils.ts
+src/utils/debouncedPolling.ts
+src/utils/errorHandling.ts
+src/utils/index.ts
+src/utils/messageCache.ts
+src/utils/messagePagination.ts
+src/utils/messagingSecurity.ts
+vitest.config.ts

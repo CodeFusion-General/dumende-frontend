@@ -6,6 +6,7 @@ import { Conversation } from "./types";
 import { useSidebar } from "@/components/ui/sidebar";
 import { toast } from "@/components/ui/use-toast";
 import { messageService } from "@/services/messageService";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   MessageDTO,
   ConversationInfo,
@@ -19,6 +20,7 @@ const MessagesContainer = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Get the sidebar state to adjust layout
   const { state } = useSidebar();
@@ -42,8 +44,8 @@ const MessagesContainer = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: Get currentUserId from auth context
-      const currentUserId = 1; // Temporary hardcoded value
+      // Get currentUserId from auth context
+      const currentUserId = user?.id || 1; // Fallback to 1 if user is not available
 
       const conversationInfos = await messageService.getUserConversations(
         currentUserId

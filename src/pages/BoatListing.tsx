@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -25,14 +25,26 @@ import {
   Camera,
 } from "lucide-react";
 import { boatService } from "@/services/boatService";
+import { bookingService } from "@/services/bookingService";
+import { captainService } from "@/services/captainService";
 import { useQuery } from "@tanstack/react-query";
 import { useMicroInteractions } from "@/hooks/useMicroInteractions";
 import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { isValidImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
+import {
+  isValidImageUrl,
+  getDefaultImageUrl,
+  getFullImageUrl,
+} from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
+import { CustomerCaptainChat } from "@/components/boats/messaging/CustomerCaptainChat";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
+import { extractCaptainIdFromBooking } from "@/utils/conversationUtils";
+import { BookingDTO } from "@/types/booking.types";
+import { Captain } from "@/types/captain.types";
 import {
   ImageGallerySkeleton,
   BoatInfoSkeleton,
@@ -53,6 +65,7 @@ import { useRetry } from "@/hooks/useRetry";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
+import { BoatDTO } from "@/types/boat.types";
 
 // Default image helper function for boat detail page
 const getBoatImageUrl = (): string => {
@@ -61,6 +74,14 @@ const getBoatImageUrl = (): string => {
 
 const BoatListing = () => {
   const { id } = useParams();
+  const { isAuthenticated, isCustomer, user } = useAuth();
+
+  // Messaging state
+  const [showMessaging, setShowMessaging] = React.useState(false);
+  const [userBooking, setUserBooking] = React.useState<BookingDTO | null>(null);
+  const [captain, setCaptain] = React.useState<Captain | null>(null);
+  const [captainLoading, setCaptainLoading] = React.useState(false);
+  const [checkingBooking, setCheckingBooking] = React.useState(false);
 
   // Micro-interactions
   const { fadeIn, slideIn, staggerAnimation, prefersReducedMotion } =
@@ -96,6 +117,7 @@ const BoatListing = () => {
     }
   );
 
+  // Optimize React Query with stricter caching and prevent refetching
   const {
     data: boatData,
     isLoading,
@@ -107,50 +129,210 @@ const BoatListing = () => {
     enabled: !!id,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    staleTime: 30 * 60 * 1000, // 30 dakika cache
+    gcTime: 60 * 60 * 1000, // For React Query v5 compatibility
+    refetchInterval: false, // Otomatik refetch'i kapatın
   });
 
-  // Find similar boats based on type and price range
+  // Memoize similar boats query to prevent re-computation
   const {
     data: similarBoatsData,
     isLoading: isSimilarBoatsLoading,
     error: similarBoatsError,
     refetch: refetchSimilarBoats,
   } = useQuery({
-    queryKey: ["similar-boats", boatData?.type],
+    queryKey: ["similar-boats", boatData?.type, boatData?.id],
     queryFn: () =>
       boatService.searchBoats({
         type: boatData?.type,
       }),
-    select: (data) =>
+    select: useCallback((data: BoatDTO[]) =>
       data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
+      [boatData?.id]
+    ),
     enabled: !!boatData?.type && shouldLoadSimilarBoats,
     retry: 2,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
+    staleTime: 15 * 60 * 1000, // 15 minutes cache
+    gcTime: 30 * 60 * 1000, // For React Query v5 compatibility
   });
 
+  // Check if user has booking with this boat
+  const checkUserBooking = React.useCallback(async () => {
+    if (!isAuthenticated || !isCustomer() || !boatData?.id) {
+      return;
+    }
+
+    setCheckingBooking(true);
+    try {
+      const booking = await bookingService.getCustomerBookingWithBoat(
+        boatData.id
+      );
+      setUserBooking(booking);
+
+      if (booking) {
+        console.log("✅ User has booking with this boat:", booking);
+        // Load captain info
+        setCaptainLoading(true);
+        try {
+          const captainId = await extractCaptainIdFromBooking(booking);
+          const captainData = await captainService.getCaptainById(captainId);
+          setCaptain(captainData);
+          console.log("👨‍✈️ Captain data loaded:", captainData);
+        } catch (error) {
+          console.error("❌ Failed to load captain info:", error);
+        } finally {
+          setCaptainLoading(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking user booking:", error);
+    } finally {
+      setCheckingBooking(false);
+    }
+  }, [isAuthenticated, isCustomer, boatData?.id]);
+
+  // Check user booking when boat data is loaded
+  React.useEffect(() => {
+    if (boatData && isAuthenticated && isCustomer()) {
+      checkUserBooking();
+    }
+  }, [boatData?.id, isAuthenticated, isCustomer, checkUserBooking]);
+
+  // Custom hook to prevent messaging from triggering refetches
+  const useStableBoatData = (boatData: BoatDTO | undefined) => {
+    const stableDataRef = React.useRef(boatData);
+    const [stableData, setStableData] = React.useState(boatData);
+
+    React.useEffect(() => {
+      if (boatData && !stableDataRef.current) {
+        stableDataRef.current = boatData;
+        setStableData(boatData);
+      }
+    }, [boatData]);
+
+    return stableData || boatData;
+  };
+
+  const stableBoatData = useStableBoatData(boatData);
+
+  // Memoize messaging callbacks to prevent re-renders
+  const messagingCallbacks = useMemo(() => ({
+    handleOpenMessaging: () => {
+      if (userBooking && captain) {
+        setShowMessaging(true);
+      } else {
+        toast({
+          title: "Mesajlaşma mevcut değil",
+          description: "Bu tekne ile aktif bir rezervasyonunuz bulunmuyor.",
+          variant: "destructive",
+        });
+      }
+    },
+    handleCloseMessaging: () => {
+      setShowMessaging(false);
+    },
+    isMessagingAvailable: () => {
+      if (!isAuthenticated || !isCustomer() || !userBooking) {
+        return false;
+      }
+
+      const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED"];
+      return allowedStatuses.includes(userBooking.status);
+    }
+  }), [userBooking, captain, isAuthenticated, isCustomer]);
+
+  // Messaging functions
+  const handleOpenMessaging = messagingCallbacks.handleOpenMessaging;
+  const handleCloseMessaging = messagingCallbacks.handleCloseMessaging;
+  const isMessagingAvailable = messagingCallbacks.isMessagingAvailable;
+
+  // Check if messaging should be available
+  const messagingAvailable = isMessagingAvailable();
+
   // Geçerli fotoğrafları filtrele ve default image sistemi ekle
+  const [signedUrlCache, setSignedUrlCache] = React.useState<Record<string, string>>({});
+  const [isProcessingImages, setIsProcessingImages] = React.useState(false);
+
+  // Cache for signed URLs to prevent repeated requests
+  const signedUrlCacheRef = React.useRef<Record<string, string>>({});
+  const pendingUrlRequests = React.useRef<Set<string>>(new Set());
+
+  // Memoize image URLs to prevent re-processing
+  const processedImageUrls = useMemo(() => {
+    if (!boatData?.images || boatData.images.length === 0) {
+      return [getBoatImageUrl()];
+    }
+
+    const validImageUrls = boatData.images
+      .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
+      .map((img) => img.imageUrl);
+
+    return validImageUrls.length > 0 ? validImageUrls : [getBoatImageUrl()];
+  }, [boatData?.images]);
+
+  // Process images with caching
+  React.useEffect(() => {
+    const processImages = async () => {
+      if (!processedImageUrls.length || isProcessingImages) return;
+
+      setIsProcessingImages(true);
+      try {
+        const newValidImages: string[] = [];
+        
+        for (const imageUrl of processedImageUrls) {
+          // Skip if already cached
+          if (signedUrlCacheRef.current[imageUrl]) {
+            newValidImages.push(signedUrlCacheRef.current[imageUrl]);
+            continue;
+          }
+
+          // Skip if request is already pending
+          if (pendingUrlRequests.current.has(imageUrl)) {
+            continue;
+          }
+
+          // For Firebase Storage URLs, we need to check if they need signing
+          if (imageUrl.includes('firebasestorage.googleapis.com') && !imageUrl.includes('&signature=')) {
+            pendingUrlRequests.current.add(imageUrl);
+            
+            try {
+              // Use the existing URL as-is for now (assuming backend provides signed URLs)
+              // In a real implementation, you would call a service to get signed URLs
+              signedUrlCacheRef.current[imageUrl] = imageUrl;
+              newValidImages.push(imageUrl);
+            } catch (error) {
+              console.warn('Failed to get signed URL for:', imageUrl, error);
+              signedUrlCacheRef.current[imageUrl] = imageUrl; // Fallback to original
+              newValidImages.push(imageUrl);
+            } finally {
+              pendingUrlRequests.current.delete(imageUrl);
+            }
+          } else {
+            // Already signed or not Firebase URL
+            signedUrlCacheRef.current[imageUrl] = imageUrl;
+            newValidImages.push(imageUrl);
+          }
+        }
+
+        setValidImages(newValidImages);
+        setSignedUrlCache(signedUrlCacheRef.current);
+      } finally {
+        setIsProcessingImages(false);
+      }
+    };
+
+    processImages();
+  }, [processedImageUrls, isProcessingImages]);
+
   const [validImages, setValidImages] = React.useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-
-  React.useEffect(() => {
-    if (boatData?.images && boatData.images.length > 0) {
-      // Backend'den gelen URL'leri direkt kullan
-      const validImageUrls = boatData.images
-        .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
-        .map((img) => img.imageUrl);
-
-      if (validImageUrls.length > 0) {
-        setValidImages(validImageUrls);
-      } else {
-        // Geçerli URL yoksa default image kullan
-        setValidImages([getBoatImageUrl()]);
-      }
-      setCurrentImageIndex(0);
-    } else {
-      // Hiç fotoğraf yoksa default image kullan
-      setValidImages([getBoatImageUrl()]);
-      setCurrentImageIndex(0);
-    }
-  }, [boatData]);
 
   // Navigation functions for image gallery
   const nextImage = () => {
@@ -166,6 +348,26 @@ const BoatListing = () => {
   const goToImage = (index: number) => {
     setCurrentImageIndex(index);
   };
+
+  // Add cleanup on unmount to prevent memory leaks
+  React.useEffect(() => {
+    return () => {
+      // Clear cache references on unmount
+      signedUrlCacheRef.current = {};
+      pendingUrlRequests.current.clear();
+    };
+  }, []);
+
+  // Memoize the CustomerCaptainChat props to prevent re-renders
+  const chatProps = useMemo(() => ({
+    isOpen: showMessaging,
+    onClose: handleCloseMessaging,
+    booking: userBooking,
+    captain: captain
+  }), [showMessaging, handleCloseMessaging, userBooking, captain]);
+
+  // Stable boat data for the entire component lifecycle
+  const finalBoatData = stableBoatData || boatData;
 
   if (isLoading || isRetrying) {
     return (
@@ -286,7 +488,7 @@ const BoatListing = () => {
                     <div className="aspect-[16/10] relative overflow-hidden">
                       <img
                         src={validImages[currentImageIndex]}
-                        alt={`${boatData.name} - Görsel ${
+                        alt={`${finalBoatData.name} - Görsel ${
                           currentImageIndex + 1
                         }`}
                         className="w-full h-full object-cover transition-all duration-700 ease-out hover:scale-105 cursor-pointer"
@@ -399,7 +601,7 @@ const BoatListing = () => {
                           variant="secondary"
                           className="bg-gradient-to-r from-primary/10 to-primary/20 text-primary border-primary/20 hover:from-primary/20 hover:to-primary/30 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all duration-300"
                         >
-                          {boatData.type}
+                          {finalBoatData.type}
                         </Badge>
                         <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-amber-200/50">
                           <div className="flex items-center gap-1">
@@ -407,7 +609,7 @@ const BoatListing = () => {
                               <Star
                                 key={i}
                                 className={`h-3 w-3 sm:h-4 sm:w-4 ${
-                                  i < Math.floor(boatData.rating || 4.8)
+                                  i < Math.floor(finalBoatData.rating || 4.8)
                                     ? "text-amber-400 fill-current"
                                     : "text-gray-300"
                                 }`}
@@ -415,7 +617,7 @@ const BoatListing = () => {
                             ))}
                           </div>
                           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-                            {boatData.rating || 4.8}
+                            {finalBoatData.rating || 4.8}
                           </span>
                           <span className="text-xs sm:text-sm text-gray-500">
                             (24 değerlendirme)
@@ -426,14 +628,14 @@ const BoatListing = () => {
                       {/* Title and Location */}
                       <div className="space-y-3 sm:space-y-4">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                          {boatData.name}
+                          {finalBoatData.name}
                         </h1>
                         <div className="flex items-center gap-3 text-gray-600">
                           <div className="p-1.5 sm:p-2 bg-primary/10 rounded-full">
                             <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <span className="text-base sm:text-lg font-medium">
-                            {boatData.location}
+                            {finalBoatData.location}
                           </span>
                         </div>
                       </div>
@@ -444,16 +646,16 @@ const BoatListing = () => {
                       <div className="text-left lg:text-right">
                         <div className="flex items-baseline gap-2">
                           <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">
-                            ₺{Number(boatData.dailyPrice).toLocaleString()}
+                            ₺{Number(finalBoatData.dailyPrice).toLocaleString()}
                           </span>
                           <span className="text-gray-500 text-base sm:text-lg font-medium">
                             /gün
                           </span>
                         </div>
-                        {boatData.hourlyPrice && (
-                          <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                        {finalBoatData.hourlyPrice && (
+                          <div className="text-xs text-gray-600 mt-1">
                             veya ₺
-                            {Number(boatData.hourlyPrice).toLocaleString()}/saat
+                            {Number(finalBoatData.hourlyPrice).toLocaleString()}/saat
                           </div>
                         )}
                       </div>
@@ -484,7 +686,7 @@ const BoatListing = () => {
                           Kapasite
                         </div>
                         <div className="text-xl font-bold text-blue-900">
-                          {boatData.capacity} kişi
+                          {finalBoatData.capacity} kişi
                         </div>
                       </div>
                     </VisualFeedback>
@@ -506,7 +708,7 @@ const BoatListing = () => {
                           Uzunluk
                         </div>
                         <div className="text-xl font-bold text-primary-dark">
-                          {boatData.length}m
+                          {finalBoatData.length}m
                         </div>
                       </div>
                     </VisualFeedback>
@@ -528,7 +730,7 @@ const BoatListing = () => {
                           Kaptan
                         </div>
                         <div className="text-xl font-bold text-green-900">
-                          {boatData.captainIncluded ? "Dahil" : "Opsiyonel"}
+                          {finalBoatData.captainIncluded ? "Dahil" : "Opsiyonel"}
                         </div>
                       </div>
                     </VisualFeedback>
@@ -542,7 +744,7 @@ const BoatListing = () => {
                     </h3>
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-6 border border-gray-200/50">
                       <p className="text-gray-700 leading-relaxed text-lg">
-                        {boatData.description}
+                        {finalBoatData.description}
                       </p>
                     </div>
                   </div>
@@ -554,7 +756,7 @@ const BoatListing = () => {
                     <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
                     Özellikler
                   </h2>
-                  <BoatFeatures features={boatData.features} />
+                  <BoatFeatures features={finalBoatData.features} />
                 </div>
 
                 {/* Enhanced Host Section with Professional Design */}
@@ -564,15 +766,28 @@ const BoatListing = () => {
                     Tekne Sahibi
                   </h2>
                   <HostInfo
-                    hostName={`${boatData.name} Sahibi`}
+                    hostName={`${finalBoatData.name} Sahibi`}
                     responseRate={95}
                     responseTime="~1 saat"
                     isCertified={true}
                     isVerified={true}
                     joinDate="2020"
-                    rating={boatData.rating || 4.8}
+                    rating={finalBoatData.rating || 4.8}
                     reviewCount={24}
                     totalBookings={150}
+                    boatId={finalBoatData.id}
+                    onMessageHost={handleOpenMessaging}
+                    showMessageButton={messagingAvailable}
+                    messageButtonDisabled={captainLoading || !captain}
+                    messageButtonText={
+                      checkingBooking
+                        ? "Kontrol ediliyor..."
+                        : captainLoading
+                        ? "Yükleniyor..."
+                        : userBooking
+                        ? "Mesaj Gönder"
+                        : "Rezervasyon Gerekli"
+                    }
                   />
                 </div>
 
@@ -584,7 +799,7 @@ const BoatListing = () => {
                       Değerlendirmeler
                     </h2>
                   </div>
-                  <Reviews boatId={boatData.id} />
+                  <Reviews boatId={finalBoatData.id} />
                 </div>
 
                 {/* Enhanced Similar Boats Section */}
@@ -596,7 +811,7 @@ const BoatListing = () => {
                     <SimilarBoats
                       boats={similarBoatsData || []}
                       isLoading={isSimilarBoatsLoading}
-                      currentBoatId={boatData?.id}
+                      currentBoatId={finalBoatData?.id}
                       error={
                         similarBoatsError
                           ? "Failed to load similar boats"
@@ -613,11 +828,11 @@ const BoatListing = () => {
                 <div className="sticky top-8 space-y-6">
                   <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
                     <BookingForm
-                      dailyPrice={Number(boatData.dailyPrice) || 0}
-                      hourlyPrice={Number(boatData.hourlyPrice) || 0}
+                      dailyPrice={Number(finalBoatData.dailyPrice) || 0}
+                      hourlyPrice={Number(finalBoatData.hourlyPrice) || 0}
                       isHourly={false}
-                      maxGuests={boatData.capacity}
-                      boatId={boatData.id.toString()}
+                      maxGuests={finalBoatData.capacity}
+                      boatId={finalBoatData.id.toString()}
                     />
                   </div>
 
@@ -645,6 +860,11 @@ const BoatListing = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Customer Captain Chat Modal */}
+      {userBooking && captain && (
+        <CustomerCaptainChat {...chatProps} />
+      )}
     </div>
   );
 };

@@ -104,3 +104,32 @@ export const isValidImageUrl = (url: string): boolean => {
 export const getDefaultImageUrl = (): string => {
   return "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
 };
+
+// Convert backend image URL to full URL
+export const getFullImageUrl = (imageUrl: string): string => {
+  if (!imageUrl) {
+    return getDefaultImageUrl();
+  }
+
+  // Eğer zaten tam URL ise direkt döndür
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    return imageUrl;
+  }
+
+  // Backend'den gelen relative path'i tam URL'e çevir
+  // Backend muhtemelen /uploads/ veya /images/ prefix'i ile dosyaları serve ediyor
+  const baseUrl = window.location.origin;
+
+  // Eğer imageUrl zaten /api ile başlıyorsa direkt kullan
+  if (imageUrl.startsWith("/api/")) {
+    return `${baseUrl}${imageUrl}`;
+  }
+
+  // Eğer / ile başlıyorsa /api prefix'i ekle
+  if (imageUrl.startsWith("/")) {
+    return `${baseUrl}/api${imageUrl}`;
+  }
+
+  // Diğer durumlarda /api/uploads/ prefix'i ekle
+  return `${baseUrl}/api/uploads/${imageUrl}`;
+};

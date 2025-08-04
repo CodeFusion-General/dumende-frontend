@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EmptyConversationStateProps {
   sidebarOpen: boolean;
@@ -12,6 +13,7 @@ const EmptyConversationState: React.FC<EmptyConversationStateProps> = ({
   sidebarOpen,
   toggleSidebar 
 }) => {
+  const { user } = useAuth();
   return (
     <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50">
       <div className="text-gray-500 mb-3">

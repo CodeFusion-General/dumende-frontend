@@ -28,21 +28,33 @@ class BookingService extends BaseService {
     const queryString = filters ? this.buildQueryString(filters) : "";
     return this.get<BookingDTO[]>(`?${queryString}`);
   }
-  
+
   // Get available time slots for a specific date
-  public async getAvailableTimeSlots(boatId: number, date: string): Promise<string[]> {
+  public async getAvailableTimeSlots(
+    boatId: number,
+    date: string
+  ): Promise<string[]> {
     try {
       // Use the new backend endpoint for available time slots
-      const response = await this.get<string[]>(`/boat/${boatId}/available-time-slots`, {
-        date
-      });
+      const response = await this.get<string[]>(
+        `/boat/${boatId}/available-time-slots`,
+        {
+          date,
+        }
+      );
       return response;
     } catch (error) {
-      console.error('Failed to fetch available time slots from backend:', error);
+      console.error(
+        "Failed to fetch available time slots from backend:",
+        error
+      );
 
       // Fallback: Check availability using availabilityService
       try {
-        const isAvailable = await availabilityService.isBoatAvailableOnDate(boatId, date);
+        const isAvailable = await availabilityService.isBoatAvailableOnDate(
+          boatId,
+          date
+        );
 
         if (!isAvailable) {
           return []; // No availability defined for this date
@@ -51,12 +63,15 @@ class BookingService extends BaseService {
         // Generate fallback time slots (hourly from 8 AM to 6 PM)
         const allTimeSlots = Array.from({ length: 11 }, (_, i) => {
           const hour = i + 8; // Start at 8 AM
-          return `${hour.toString().padStart(2, '0')}:00`;
+          return `${hour.toString().padStart(2, "0")}:00`;
         });
 
         return allTimeSlots;
       } catch (fallbackError) {
-        console.error('Fallback availability check also failed:', fallbackError);
+        console.error(
+          "Fallback availability check also failed:",
+          fallbackError
+        );
         return [];
       }
     }
@@ -76,9 +91,14 @@ class BookingService extends BaseService {
 
   public async updateBookingStatus(
     id: number,
-    status: BookingStatus
-  ): Promise<BookingDTO> {
-    return this.patch<BookingDTO>(`/${id}/status`, { status });
+    status: BookingStatus,
+    reason?: string
+  ): Promise<void> {
+    const params = new URLSearchParams({ status });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async cancelBooking(id: number, reason?: string): Promise<BookingDTO> {
@@ -92,13 +112,39 @@ class BookingService extends BaseService {
   // Customer based queries
   public async getCustomerBookings(): Promise<BookingDTO[]> {
     const userId = tokenUtils.getUserId();
-    if (!userId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
+    if (!userId)
+      throw new Error("Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın");
     return this.get<BookingDTO[]>(`/customer/${userId}`);
+  }
+
+  // Check if customer has active booking with specific boat
+  public async getCustomerBookingWithBoat(
+    boatId: number
+  ): Promise<BookingDTO | null> {
+    try {
+      const userId = tokenUtils.getUserId();
+      if (!userId) return null;
+
+      const bookings = await this.get<BookingDTO[]>(`/customer/${userId}`);
+
+      // Find active booking with this boat
+      const activeBooking = bookings.find(
+        (booking) =>
+          booking.boatId === boatId &&
+          ["PENDING", "CONFIRMED", "COMPLETED"].includes(booking.status)
+      );
+
+      return activeBooking || null;
+    } catch (error) {
+      console.error("Error checking customer booking with boat:", error);
+      return null;
+    }
   }
 
   public async getCustomerActiveBookings(): Promise<BookingDTO[]> {
     const userId = tokenUtils.getUserId();
-    if (!userId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
+    if (!userId)
+      throw new Error("Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın");
     return this.get<BookingDTO[]>(`/customer/${userId}/active`);
   }
 
@@ -115,7 +161,12 @@ class BookingService extends BaseService {
   ): Promise<BookingDTO[]> {
     // Availability verilerini almak için availabilityService kullanıyoruz
     try {
-      const availabilities = await availabilityService.getAvailabilitiesByBoatIdAndDateRange(boatId, startDate, endDate);
+      const availabilities =
+        await availabilityService.getAvailabilitiesByBoatIdAndDateRange(
+          boatId,
+          startDate,
+          endDate
+        );
 
       // Eğer availability verileri mevcut değilse, boş array döndür
       if (!availabilities || availabilities.length === 0) {
@@ -129,7 +180,7 @@ class BookingService extends BaseService {
         endDate,
       });
     } catch (error) {
-      console.error('Error fetching boat bookings in range:', error);
+      console.error("Error fetching boat bookings in range:", error);
       // Fallback olarak eski endpoint'i kullan
       return this.get<BookingDTO[]>(`/boat/${boatId}/range`, {
         startDate,
@@ -279,9 +330,14 @@ class BookingService extends BaseService {
 
   public async updateBookingStatusById(
     id: number,
-    status: string
+    status: string,
+    reason?: string
   ): Promise<void> {
-    return this.patch<void>(`/${id}/status?status=${status}`, null);
+    const params = new URLSearchParams({ status });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async getUserById(userId: number): Promise<any> {
@@ -380,8 +436,12 @@ export const bookingCommandService = {
   },
 
   // Update booking status
-  updateBookingStatus: async (id: number, status: string): Promise<void> => {
-    return bookingService.updateBookingStatusById(id, status);
+  updateBookingStatus: async (
+    id: number,
+    status: string,
+    reason?: string
+  ): Promise<void> => {
+    return bookingService.updateBookingStatusById(id, status, reason);
   },
 };
 
@@ -392,9 +452,12 @@ export const bookingHelperService = {
     try {
       // AuthContext'ten gelen userId'yi kullan, yoksa cookie'den al
       const ownerId = userId || tokenUtils.getUserId();
-      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
-      
-      console.log('Getting boats for owner ID:', ownerId);
+      if (!ownerId)
+        throw new Error(
+          "Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın"
+        );
+
+      console.log("Getting boats for owner ID:", ownerId);
       // boatService'i kullanarak doğru endpoint'e git
       const boats = await boatService.getBoatsByOwner(ownerId);
       // Get bookings for each boat
@@ -414,9 +477,12 @@ export const bookingHelperService = {
     try {
       // AuthContext'ten gelen userId'yi kullan, yoksa cookie'den al
       const ownerId = userId || tokenUtils.getUserId();
-      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
-      
-      console.log('Getting tours for owner ID:', ownerId);
+      if (!ownerId)
+        throw new Error(
+          "Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın"
+        );
+
+      console.log("Getting tours for owner ID:", ownerId);
       // boatService'i kullanarak doğru endpoint'e git
       const boats = await boatService.getBoatsByOwner(ownerId);
       const bookingsPromises: Promise<BookingDTO[]>[] = [];
@@ -440,9 +506,12 @@ export const bookingHelperService = {
     try {
       // AuthContext'ten gelen userId'yi kullan
       const ownerId = userId || tokenUtils.getUserId();
-      if (!ownerId) throw new Error('Kullanıcı ID\'si bulunamadı - lütfen tekrar giriş yapın');
-      
-      console.log('Getting all bookings for owner ID:', ownerId);
+      if (!ownerId)
+        throw new Error(
+          "Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın"
+        );
+
+      console.log("Getting all bookings for owner ID:", ownerId);
       const [boatBookings, tourBookings] = await Promise.all([
         bookingHelperService.getBookingsForOwnerBoats(ownerId),
         bookingHelperService.getBookingsForOwnerTours(ownerId),
