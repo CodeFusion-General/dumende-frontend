@@ -427,8 +427,8 @@ export abstract class BaseService {
 
   // Token temizleme method'u ekle
   private clearAuthToken(): void {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
+    tokenUtils.clearAuthToken();
+    tokenUtils.clearUserData();
 
     window.location.href = "/";
   }

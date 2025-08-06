@@ -25,6 +25,13 @@ export interface UpdateAvailabilityDTO {
   priceOverride?: number; // BigDecimal -> number, nullable
 }
 
+export interface CreateAvailabilityPeriodCommand {
+  boatId: number;
+  startDate: string;
+  endDate: string;
+  isAvailable: boolean;
+}
+
 // Boat Feature (Özellik) Types
 export interface BoatFeatureDTO {
   id: number;

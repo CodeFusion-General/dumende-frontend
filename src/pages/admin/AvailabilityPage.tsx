@@ -3,13 +3,7 @@ import CaptainLayout from "@/components/admin/layout/CaptainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import ModernBoatSelector from "@/components/admin/ModernBoatSelector";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -24,13 +18,15 @@ import { toast } from "@/components/ui/use-toast";
 import { availabilityService } from "@/services/availabilityService";
 import { boatService } from "@/services/boatService";
 import {
-  AvailabilityDTO,
   CreateAvailabilityDTO,
   UpdateAvailabilityDTO,
   CreateAvailabilityPeriodCommand,
-  CalendarAvailability,
-} from "@/types/availability.types";
+} from "@/types/boat.types";
 import { BoatDTO } from "@/types/boat.types";
+import { useAuth } from "@/contexts/AuthContext";
+import { AddAvailabilityModal } from "@/components/admin/AddAvailabilityModal";
+import { EditAvailabilityModal } from "@/components/admin/EditAvailabilityModal";
+import { ConfirmationDialog } from "@/components/admin/ConfirmationDialog";
 
 interface AvailabilityEntry {
   id: number;
@@ -43,7 +39,6 @@ interface AvailabilityEntry {
 }
 
 const AvailabilityPage = () => {
-  const [activeTab, setActiveTab] = useState("available");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availabilityEntries, setAvailabilityEntries] = useState<
@@ -52,14 +47,50 @@ const AvailabilityPage = () => {
   const [boats, setBoats] = useState<BoatDTO[]>([]);
   const [selectedBoat, setSelectedBoat] = useState<BoatDTO | null>(null);
   const [boatsLoading, setBoatsLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<AvailabilityEntry | null>(
+    null
+  );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingEntry, setDeletingEntry] = useState<AvailabilityEntry | null>(
+    null
+  );
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // TODO: Get from auth context - temporarily hardcoded owner ID
-  const currentOwnerId = 2; // Ahmet Yılmaz from test data
+  const { user, isAuthenticated } = useAuth();
 
+  // Get current owner ID from authenticated user
+  const currentOwnerId = user?.id;
+
+  // Early return for unauthenticated users
+  if (!isAuthenticated || !user) {
+    return (
+      <SidebarProvider>
+        <CaptainLayout>
+          <div className="flex h-[50vh] w-full items-center justify-center">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">
+                Bu sayfaya erişim için giriş yapmanız gerekiyor.
+              </p>
+              <button
+                onClick={() => (window.location.href = "/")}
+                className="bg-[#15847c] hover:bg-[#0e5c56] text-white px-4 py-2 rounded"
+              >
+                Ana Sayfaya Dön
+              </button>
+            </div>
+          </div>
+        </CaptainLayout>
+      </SidebarProvider>
+    );
+  }
 
   useEffect(() => {
-    fetchBoats();
-  }, []);
+    if (isAuthenticated && currentOwnerId) {
+      fetchBoats();
+    }
+  }, [isAuthenticated, currentOwnerId]);
 
   useEffect(() => {
     if (selectedBoat) {
@@ -68,11 +99,15 @@ const AvailabilityPage = () => {
   }, [selectedBoat]);
 
   const fetchBoats = async () => {
+    if (!currentOwnerId) {
+      setError("Kullanıcı bilgileri alınamadı. Lütfen tekrar giriş yapın.");
+      setBoatsLoading(false);
+      return;
+    }
 
     try {
       setBoatsLoading(true);
       setError(null);
-
 
       // Get boats for the current owner
       const ownerBoats = await boatService.getBoatsByOwner(currentOwnerId);
@@ -83,7 +118,6 @@ const AvailabilityPage = () => {
       if (ownerBoats.length > 0 && !selectedBoat) {
         setSelectedBoat(ownerBoats[0]);
       }
-
     } catch (error) {
       console.error("Gemiler yüklenirken hata:", error);
       console.error("Error details:", error.message, error.stack);
@@ -102,18 +136,15 @@ const AvailabilityPage = () => {
   const fetchAvailabilityData = async () => {
     if (!selectedBoat) return;
 
-
     try {
       setLoading(true);
       setError(null);
-
 
       // Get availability data for the selected boat
       const availabilities =
         await availabilityService.getAvailabilitiesByBoatId(selectedBoat.id);
 
-
-      // Convert AvailabilityDTO to AvailabilityEntry format
+      // Convert AvailabilityData to AvailabilityEntry format
       const formattedEntries: AvailabilityEntry[] = availabilities.map(
         (availability) => ({
           id: availability.id,
@@ -142,75 +173,19 @@ const AvailabilityPage = () => {
     }
   };
 
-  const handleBoatChange = (boatId: string) => {
-    const boat = boats.find((b) => b.id.toString() === boatId);
-    if (boat) {
-      setSelectedBoat(boat);
-    }
-  };
-
-  const handleAddAvailability = async (
-    data: Partial<CreateAvailabilityDTO>
-  ) => {
-    if (!selectedBoat) {
-      toast({
-        title: "Hata",
-        description: "Lütfen önce bir gemi seçin.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const createCommand: CreateAvailabilityDTO = {
-        boatId: selectedBoat.id,
-        date: data.date!,
-        isAvailable: data.isAvailable ?? true,
-        priceOverride: data.priceOverride,
-      };
-
-
-      const response = await availabilityService.createAvailability(
-        createCommand
-      );
-
-      const newEntry: AvailabilityEntry = {
-        id: response.id,
-        date: response.date,
-        isAvailable: response.isAvailable,
-        priceOverride: response.priceOverride,
-        boatId: response.boatId,
-        displayDate: formatDate(response.date),
-        status: response.isAvailable ? "available" : "unavailable",
-      };
-
-      setAvailabilityEntries((prev) => [...prev, newEntry]);
-
-      toast({
-        title: "Başarılı",
-        description: "Yeni müsaitlik eklendi.",
-      });
-
-    } catch (error) {
-      console.error("Failed to add availability:", error);
-      toast({
-        title: "Hata",
-        description: "Müsaitlik eklenirken bir hata oluştu.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateAvailability = async (
-    id: number,
-    data: Partial<UpdateAvailabilityDTO>
-  ) => {
+  const handleUpdateAvailability = async (data: {
+    id: number;
+    date?: string;
+    isAvailable?: boolean;
+    priceOverride?: number;
+  }) => {
     try {
       const updateCommand: UpdateAvailabilityDTO = {
-        id,
-        ...data,
+        id: data.id,
+        date: data.date,
+        isAvailable: data.isAvailable,
+        priceOverride: data.priceOverride,
       };
-
 
       const response = await availabilityService.updateAvailability(
         updateCommand
@@ -227,14 +202,13 @@ const AvailabilityPage = () => {
       };
 
       setAvailabilityEntries((prev) =>
-        prev.map((entry) => (entry.id === id ? updatedEntry : entry))
+        prev.map((entry) => (entry.id === data.id ? updatedEntry : entry))
       );
 
       toast({
         title: "Başarılı",
         description: "Müsaitlik güncellendi.",
       });
-
     } catch (error) {
       console.error("Failed to update availability:", error);
       toast({
@@ -242,12 +216,12 @@ const AvailabilityPage = () => {
         description: "Müsaitlik güncellenirken bir hata oluştu.",
         variant: "destructive",
       });
+      throw error; // Re-throw to let modal handle the error
     }
   };
 
   const handleDeleteAvailability = async (id: number) => {
     try {
-
       await availabilityService.deleteAvailability(id);
       setAvailabilityEntries((prev) => prev.filter((entry) => entry.id !== id));
 
@@ -255,7 +229,6 @@ const AvailabilityPage = () => {
         title: "Başarılı",
         description: "Müsaitlik silindi.",
       });
-
     } catch (error) {
       console.error("Failed to delete availability:", error);
       toast({
@@ -263,6 +236,30 @@ const AvailabilityPage = () => {
         description: "Müsaitlik silinirken bir hata oluştu.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleOpenDeleteDialog = (entry: AvailabilityEntry) => {
+    setDeletingEntry(entry);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setIsDeleteDialogOpen(false);
+    setDeletingEntry(null);
+    setDeleteLoading(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingEntry) return;
+
+    setDeleteLoading(true);
+    try {
+      await handleDeleteAvailability(deletingEntry.id);
+      handleCloseDeleteDialog();
+    } catch (error) {
+      // Error is already handled in handleDeleteAvailability
+      setDeleteLoading(false);
     }
   };
 
@@ -291,7 +288,6 @@ const AvailabilityPage = () => {
           !entry.isAvailable ? "müsait" : "müsait değil"
         } olarak güncellendi.`,
       });
-
     } catch (error) {
       console.error("Failed to toggle availability:", error);
       toast({
@@ -302,11 +298,12 @@ const AvailabilityPage = () => {
     }
   };
 
-  const handleCreatePeriod = async (
-    startDate: string,
-    endDate: string,
-    isAvailable: boolean = true
-  ) => {
+  const handleAddAvailabilityPeriod = async (data: {
+    startDate: string;
+    endDate: string;
+    isAvailable: boolean;
+    priceOverride?: number;
+  }) => {
     if (!selectedBoat) {
       toast({
         title: "Hata",
@@ -319,9 +316,9 @@ const AvailabilityPage = () => {
     try {
       const command: CreateAvailabilityPeriodCommand = {
         boatId: selectedBoat.id,
-        startDate,
-        endDate,
-        isAvailable,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        isAvailable: data.isAvailable,
       };
 
       await availabilityService.createAvailabilityPeriod(command);
@@ -333,17 +330,23 @@ const AvailabilityPage = () => {
         title: "Başarılı",
         description: "Dönem müsaitliği başarıyla oluşturuldu.",
       });
-
     } catch (error) {
       console.error("Failed to create availability period:", error);
-      toast({
-        title: "Hata",
-        description: "Dönem müsaitliği oluşturulurken bir hata oluştu.",
-        variant: "destructive",
-      });
+      throw error; // Re-throw to let modal handle the error
     }
   };
 
+  const handleOpenEditModal = (entry: AvailabilityEntry) => {
+    setEditingEntry(entry);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingEntry(null);
+  };
+
+  // Helper function for formatting dates
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("tr-TR", {
@@ -415,52 +418,29 @@ const AvailabilityPage = () => {
     <SidebarProvider>
       <CaptainLayout>
         <div className="space-y-6">
-          {/* Header with Boat Selector */}
+          {/* Header */}
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold flex items-center">
-                <Clock className="mr-2" />
-                Müsaitlik
-              </h1>
-
-              {/* Boat Selector */}
-              <div className="flex items-center space-x-2">
-                <Ship className="h-5 w-5 text-gray-600" />
-                <Select
-                  value={selectedBoat?.id.toString()}
-                  onValueChange={handleBoatChange}
-                >
-                  <SelectTrigger className="w-[250px]">
-                    <SelectValue placeholder="Gemi seçin..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {boats.map((boat) => (
-                      <SelectItem key={boat.id} value={boat.id.toString()}>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{boat.name}</span>
-                          <span className="text-sm text-gray-500">
-                            ({boat.location})
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold flex items-center">
+              <Clock className="mr-2" />
+              Müsaitlik Yönetimi
+            </h1>
 
             <Button
               className="bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
-              onClick={() => {
-                // TODO: Open add availability modal
-                const today = new Date().toISOString().split("T")[0];
-                handleAddAvailability({ date: today, isAvailable: true });
-              }}
+              onClick={() => setIsAddModalOpen(true)}
               disabled={!selectedBoat}
             >
               <Plus size={16} className="mr-1" /> Yeni Müsaitlik Ekle
             </Button>
           </div>
+
+          {/* Modern Boat Selector */}
+          <ModernBoatSelector
+            boats={boats}
+            selectedBoat={selectedBoat}
+            onBoatSelect={setSelectedBoat}
+            loading={boatsLoading}
+          />
 
           {/* Selected Boat Info */}
           {selectedBoat && (
@@ -496,11 +476,7 @@ const AvailabilityPage = () => {
 
           {/* Rest of the component remains the same */}
           <div className="bg-white rounded-lg shadow-md border border-gray-100">
-            <Tabs
-              defaultValue="available"
-              className="w-full"
-              onValueChange={setActiveTab}
-            >
+            <Tabs defaultValue="available" className="w-full">
               <TabsList className="w-full justify-start border-b rounded-none">
                 <TabsTrigger value="available">Müsait Günler</TabsTrigger>
                 <TabsTrigger value="unavailable">
@@ -523,8 +499,8 @@ const AvailabilityPage = () => {
                           key={entry.id}
                           entry={entry}
                           onToggle={handleToggleAvailability}
-                          onUpdate={handleUpdateAvailability}
-                          onDelete={handleDeleteAvailability}
+                          onEdit={handleOpenEditModal}
+                          onDelete={handleOpenDeleteDialog}
                         />
                       ))}
 
@@ -534,15 +510,7 @@ const AvailabilityPage = () => {
                         <p>Henüz müsait gün eklenmemiş.</p>
                         <Button
                           className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
-                          onClick={() => {
-                            const today = new Date()
-                              .toISOString()
-                              .split("T")[0];
-                            handleAddAvailability({
-                              date: today,
-                              isAvailable: true,
-                            });
-                          }}
+                          onClick={() => setIsAddModalOpen(true)}
                           disabled={!selectedBoat}
                         >
                           <Plus size={16} className="mr-1" /> Müsaitlik Ekle
@@ -567,8 +535,8 @@ const AvailabilityPage = () => {
                           key={entry.id}
                           entry={entry}
                           onToggle={handleToggleAvailability}
-                          onUpdate={handleUpdateAvailability}
-                          onDelete={handleDeleteAvailability}
+                          onEdit={handleOpenEditModal}
+                          onDelete={handleOpenDeleteDialog}
                         />
                       ))}
 
@@ -600,8 +568,8 @@ const AvailabilityPage = () => {
                           key={entry.id}
                           entry={entry}
                           onToggle={handleToggleAvailability}
-                          onUpdate={handleUpdateAvailability}
-                          onDelete={handleDeleteAvailability}
+                          onEdit={handleOpenEditModal}
+                          onDelete={handleOpenDeleteDialog}
                         />
                       ))}
 
@@ -610,21 +578,10 @@ const AvailabilityPage = () => {
                         <p>Henüz müsaitlik kaydı bulunmamaktadır.</p>
                         <Button
                           className="mt-4 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
-                          onClick={() => {
-                            const today = new Date()
-                              .toISOString()
-                              .split("T")[0];
-                            const weekLater = new Date(
-                              Date.now() + 7 * 24 * 60 * 60 * 1000
-                            )
-                              .toISOString()
-                              .split("T")[0];
-                            handleCreatePeriod(today, weekLater, true);
-                          }}
+                          onClick={() => setIsAddModalOpen(true)}
                           disabled={!selectedBoat}
                         >
-                          <Plus size={16} className="mr-1" /> Haftalık Müsaitlik
-                          Oluştur
+                          <Plus size={16} className="mr-1" /> Müsaitlik Ekle
                         </Button>
                       </div>
                     )}
@@ -634,6 +591,39 @@ const AvailabilityPage = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Add Availability Modal */}
+        <AddAvailabilityModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSubmit={handleAddAvailabilityPeriod}
+          selectedBoat={selectedBoat}
+        />
+
+        {/* Edit Availability Modal */}
+        <EditAvailabilityModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onSubmit={handleUpdateAvailability}
+          availabilityEntry={editingEntry}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={handleCloseDeleteDialog}
+          onConfirm={handleConfirmDelete}
+          title="Müsaitlik Kaydını Sil"
+          message={
+            deletingEntry
+              ? `"${deletingEntry.displayDate}" tarihli müsaitlik kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
+              : "Bu müsaitlik kaydını silmek istediğinizden emin misiniz?"
+          }
+          confirmText="Sil"
+          cancelText="İptal"
+          variant="destructive"
+          loading={deleteLoading}
+        />
       </CaptainLayout>
     </SidebarProvider>
   );
@@ -642,16 +632,30 @@ const AvailabilityPage = () => {
 interface AvailabilityCardProps {
   entry: AvailabilityEntry;
   onToggle: (id: number) => void;
-  onUpdate: (id: number, data: Partial<UpdateAvailabilityDTO>) => void;
-  onDelete: (id: number) => void;
+  onEdit: (entry: AvailabilityEntry) => void;
+  onDelete: (entry: AvailabilityEntry) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
   entry,
   onToggle,
-  onUpdate,
+  onEdit,
   onDelete,
+  isLoading = false,
+  error = null,
 }) => {
+  const [actionLoading, setActionLoading] = useState<{
+    toggle: boolean;
+    edit: boolean;
+    delete: boolean;
+  }>({
+    toggle: false,
+    edit: false,
+    delete: false,
+  });
+
   const formatDate = (dateStr: string): string => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("tr-TR", {
@@ -662,97 +666,269 @@ const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
   };
 
   const getStatusBadge = (status: string) => {
+    const baseClasses =
+      "font-medium text-xs px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm";
+
     switch (status) {
       case "available":
         return (
-          <Badge className="bg-green-500 hover:bg-green-600">Müsait</Badge>
+          <Badge
+            className={`${baseClasses} bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-800 border border-emerald-200 hover:from-emerald-100 hover:to-emerald-200 hover:shadow-md`}
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-sm"></div>
+              <span className="font-semibold">Müsait</span>
+            </div>
+          </Badge>
         );
       case "unavailable":
         return (
-          <Badge className="bg-gray-500 hover:bg-gray-600">
-            Müsait Olmayan
+          <Badge
+            className={`${baseClasses} bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200 hover:from-slate-100 hover:to-slate-200 hover:shadow-md`}
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-slate-500 rounded-full shadow-sm"></div>
+              <span className="font-semibold">Müsait Olmayan</span>
+            </div>
           </Badge>
         );
       case "reserved":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Rezerve</Badge>;
+        return (
+          <Badge
+            className={`${baseClasses} bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border border-blue-200 hover:from-blue-100 hover:to-blue-200 hover:shadow-md`}
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-sm"></div>
+              <span className="font-semibold">Rezerve</span>
+            </div>
+          </Badge>
+        );
       default:
         return null;
     }
   };
 
+  const handleToggle = async () => {
+    if (actionLoading.toggle) return;
+
+    setActionLoading((prev) => ({ ...prev, toggle: true }));
+    try {
+      await onToggle(entry.id);
+    } catch (error) {
+      console.error("Toggle failed:", error);
+      toast({
+        title: "Hata",
+        description:
+          "Durum değiştirilirken bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, toggle: false }));
+    }
+  };
+
+  const handleEdit = async () => {
+    if (actionLoading.edit) return;
+
+    setActionLoading((prev) => ({ ...prev, edit: true }));
+    try {
+      await onEdit(entry);
+    } catch (error) {
+      console.error("Edit failed:", error);
+      toast({
+        title: "Hata",
+        description:
+          "Düzenleme sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, edit: false }));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (actionLoading.delete) return;
+
+    setActionLoading((prev) => ({ ...prev, delete: true }));
+    try {
+      await onDelete(entry);
+    } catch (error) {
+      console.error("Delete failed:", error);
+      toast({
+        title: "Hata",
+        description:
+          "Silme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, delete: false }));
+    }
+  };
+
   return (
-    <div className="border rounded-lg p-4 bg-gray-50 hover:shadow transition-shadow">
-      <div className="flex flex-col md:flex-row md:items-center justify-between">
-        <div className="space-y-2 mb-4 md:mb-0">
-          <h3 className="font-medium">{entry.displayDate}</h3>
-          <div className="flex items-center space-x-2">
+    <div
+      className={`
+      relative border rounded-xl p-5 bg-white shadow-sm hover:shadow-lg 
+      transition-all duration-300 hover:border-blue-200 hover:-translate-y-0.5 group
+      backdrop-blur-sm border-gray-200/50 animate-in fade-in-0 slide-in-from-bottom-2
+      ${isLoading ? "opacity-60 pointer-events-none" : ""}
+      ${
+        error
+          ? "border-red-200 bg-gradient-to-br from-red-50 to-red-25"
+          : "hover:bg-gradient-to-br hover:from-blue-50/30 hover:to-white"
+      }
+    `}
+    >
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-xl flex items-center justify-center z-10">
+          <div className="flex flex-col items-center gap-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-600 shadow-sm"></div>
+            <span className="text-xs text-gray-600 font-medium">
+              Yükleniyor...
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Error indicator */}
+      {error && (
+        <div className="absolute top-3 right-3 flex items-center gap-1">
+          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-sm"></div>
+          <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse delay-75 shadow-sm"></div>
+        </div>
+      )}
+
+      <div className="flex flex-col space-y-4 min-h-0">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg text-gray-900 truncate group-hover:text-blue-900 transition-colors duration-200 leading-tight">
+              {entry.displayDate}
+            </h3>
+            <div className="flex items-center text-sm text-gray-500 mt-2 bg-gray-50 rounded-lg px-2 py-1 w-fit">
+              <CalendarIcon
+                size={14}
+                className="mr-1.5 flex-shrink-0 text-gray-400"
+              />
+              <span className="truncate font-medium">{entry.date}</span>
+            </div>
+          </div>
+
+          {/* Status and Price Section */}
+          <div className="flex flex-col sm:items-end gap-2">
             {getStatusBadge(entry.status)}
             {entry.priceOverride && (
-              <Badge variant="outline" className="text-xs">
-                ₺{entry.priceOverride}
+              <Badge
+                variant="outline"
+                className="text-xs font-medium bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border border-amber-200 hover:from-amber-100 hover:to-amber-200 hover:shadow-md transition-all duration-200 shadow-sm"
+              >
+                <div className="flex items-center gap-1">
+                  <span className="text-amber-600">₺</span>
+                  <span className="font-bold">
+                    {entry.priceOverride.toLocaleString("tr-TR")}
+                  </span>
+                </div>
               </Badge>
             )}
           </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <CalendarIcon size={14} className="mr-1" />
-            {entry.date}
-          </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        {/* Error Message */}
+        {error && (
+          <div className="text-sm text-red-700 bg-gradient-to-r from-red-50 to-red-100 px-4 py-3 rounded-lg border border-red-200 shadow-sm">
+            <div className="flex items-start gap-2">
+              <Info size={16} className="flex-shrink-0 mt-0.5 text-red-500" />
+              <div className="flex-1">
+                <p className="font-medium text-red-800 mb-1">Hata Oluştu</p>
+                <p className="text-red-600">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions Section */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100/80">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onToggle(entry.id)}
-            className={
-              entry.isAvailable
-                ? "text-orange-600 hover:bg-orange-50"
-                : "text-green-600 hover:bg-green-50"
-            }
+            onClick={handleToggle}
+            disabled={actionLoading.toggle || isLoading}
+            className={`
+              flex-1 sm:flex-none transition-all duration-200 font-medium shadow-sm hover:shadow-md
+              ${
+                entry.isAvailable
+                  ? "text-orange-700 border-orange-200 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 hover:border-orange-300"
+                  : "text-emerald-700 border-emerald-200 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 hover:border-emerald-300"
+              }
+              ${actionLoading.toggle ? "opacity-50" : ""}
+            `}
             title={entry.isAvailable ? "Müsait Olmayan Yap" : "Müsait Yap"}
           >
-            {entry.isAvailable ? "Müsait Olmayan Yap" : "Müsait Yap"}
+            {actionLoading.toggle ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                <span className="hidden sm:inline font-medium">
+                  İşleniyor...
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    entry.isAvailable ? "bg-orange-500" : "bg-emerald-500"
+                  }`}
+                ></div>
+                <span className="truncate font-medium">
+                  {entry.isAvailable ? "Müsait Olmayan Yap" : "Müsait Yap"}
+                </span>
+              </div>
+            )}
           </Button>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            title="Düzenle"
-            onClick={() => {
-              // TODO: Open edit modal with current values
-              const newPrice = prompt(
-                "Yeni fiyat (boş bırakabilirsiniz):",
-                entry.priceOverride?.toString() || ""
-              );
-              if (newPrice !== null) {
-                const priceOverride = newPrice
-                  ? parseFloat(newPrice)
-                  : undefined;
-                onUpdate(entry.id, { priceOverride });
-              }
-            }}
-          >
-            <Edit size={16} />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none h-9 w-full sm:w-10 text-blue-600 border-blue-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md group/edit"
+              title="Düzenle"
+              onClick={handleEdit}
+              disabled={actionLoading.edit || isLoading}
+            >
+              {actionLoading.edit ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <Edit
+                    size={16}
+                    className="group-hover/edit:scale-110 transition-transform duration-200"
+                  />
+                  <span className="ml-1 sm:hidden font-medium">Düzenle</span>
+                </div>
+              )}
+            </Button>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 text-red-500 hover:text-white hover:bg-red-500"
-            title="Sil"
-            onClick={() => {
-              if (
-                confirm(
-                  "Bu müsaitlik kaydını silmek istediğinizden emin misiniz?"
-                )
-              ) {
-                onDelete(entry.id);
-              }
-            }}
-          >
-            <Trash2 size={16} />
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none h-9 w-full sm:w-10 text-red-600 border-red-200 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:border-red-300 hover:text-red-700 transition-all duration-200 shadow-sm hover:shadow-md group/delete"
+              title="Sil"
+              onClick={handleDelete}
+              disabled={actionLoading.delete || isLoading}
+            >
+              {actionLoading.delete ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <Trash2
+                    size={16}
+                    className="group-hover/delete:scale-110 transition-transform duration-200"
+                  />
+                  <span className="ml-1 sm:hidden font-medium">Sil</span>
+                </div>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
