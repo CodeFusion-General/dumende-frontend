@@ -20,8 +20,7 @@ import {
   Shield,
   Utensils,
   MapPin,
-  Image,
-  Calendar,
+    Image,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { boatService } from "@/services/boatService";
@@ -110,6 +109,7 @@ const VesselsPage = () => {
   const [activeTab, setActiveTab] = useState("list");
   const [editingVesselId, setEditingVesselId] = useState<number | null>(null);
   const [formTab, setFormTab] = useState("details");
+    const [newFeature, setNewFeature] = useState("");
 
   // Backend state
   const [loading, setLoading] = useState(false);
@@ -634,6 +634,36 @@ const VesselsPage = () => {
         const updateDTO = formDataToUpdateDTO(formData);
         await boatService.updateVessel(updateDTO);
 
+        // Özellik farklılıklarını uygula
+        try {
+          const originalFeatures = currentVessel.features || [];
+          const originalNames = new Set(originalFeatures.map((f) => f.featureName));
+          const currentNames = new Set(formData.features);
+
+          // Eklenecekler
+          const featuresToAdd = formData.features.filter((name) => !originalNames.has(name));
+          // Silinecekler
+          const featuresToRemove = originalFeatures.filter((f) => !currentNames.has(f.featureName));
+
+          for (const name of featuresToAdd) {
+            try {
+              await boatService.addBoatFeature(editingVesselId, name);
+            } catch (e) {
+              console.error(`Özellik eklenemedi: ${name}`, e);
+            }
+          }
+
+          for (const feat of featuresToRemove) {
+            try {
+              await boatService.removeBoatFeature(editingVesselId, feat.id);
+            } catch (e) {
+              console.error(`Özellik silinemedi: ${feat.featureName}`, e);
+            }
+          }
+        } catch (e) {
+          console.error("Özellik güncelleme hatası:", e);
+        }
+
         // Silinecek fotoğrafları sil
         if (formData.imageIdsToRemove.length > 0) {
           for (const imageId of formData.imageIdsToRemove) {
@@ -890,18 +920,18 @@ const VesselsPage = () => {
                           <span className="font-medium">Fotoğraflar</span>
                         </TabsTrigger>
                         <TabsTrigger
+                          value="features"
+                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                        >
+                          <Shield size={18} />
+                          <span className="font-medium">Özellikler</span>
+                        </TabsTrigger>
+                        <TabsTrigger
                           value="descriptions"
                           className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
                         >
                           <FileText size={18} />
                           <span className="font-medium">Açıklamalar</span>
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="organizations"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
-                        >
-                          <Calendar size={18} />
-                          <span className="font-medium">Organizasyonlar</span>
                         </TabsTrigger>
                       </div>
                     </TabsList>
@@ -1674,86 +1704,116 @@ const VesselsPage = () => {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="organizations" className="p-6">
+                  <TabsContent value="features" className="p-6">
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                       <div className="flex items-center">
                         <div className="text-blue-600 mr-2">ℹ️</div>
                         <p className="text-sm text-blue-800">
-                          Bu sekmedeki organizasyon bilgilerini seçtikten sonra{" "}
-                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                          basarak tüm bilgilerinizi kaydedin.
+                          Bu sekmede teknenizin özelliklerini seçin veya özel özellikler ekleyin. Kaydetmek için
+                          <strong> "Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonunu kullanın.
                         </p>
                       </div>
                     </div>
-                    <h2 className="text-xl font-medium mb-4">
-                      Organizasyonlar
-                    </h2>
-                    <div className="space-y-6">
-                      <p className="text-gray-600">
-                        Teknenizin hangi organizasyon tiplerine uygun olduğunu
-                        seçin:
-                      </p>
+                    <h2 className="text-xl font-medium mb-4">Özellikler</h2>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">
-                            Doğum Günü Partisi
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            Özel günlerde unutulmaz kutlamalar için
-                          </p>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">Evlilik Teklifi</h3>
-                          <p className="text-sm text-gray-500">
-                            Romantik anlara özel düzenlemeler
-                          </p>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">İş Toplantısı</h3>
-                          <p className="text-sm text-gray-500">
-                            Profesyonel görüşmeler için ideal ortam
-                          </p>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">Düğün</h3>
-                          <p className="text-sm text-gray-500">
-                            Unutulmaz bir düğün günü için
-                          </p>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">Bekarlığa Veda</h3>
-                          <p className="text-sm text-gray-500">
-                            Eğlenceli bir kutlama için
-                          </p>
-                        </div>
-                        <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                          <h3 className="font-medium mb-1">Özel Tur</h3>
-                          <p className="text-sm text-gray-500">
-                            Kişiselleştirilmiş rotalar ve deneyimler
-                          </p>
+                    {/* Seçili Özellikler */}
+                    {formData.features.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Seçili Özellikler</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.features.map((f) => (
+                            <span key={f} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
+                              {f}
+                              <button
+                                type="button"
+                                className="ml-1 text-primary hover:text-primary/80"
+                                onClick={() => handleMultiSelectToggle("features", f)}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
                         </div>
                       </div>
+                    )}
 
+                    {/* Önerilen Özellikler */}
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Önerilen Özellikler</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          "GPS Navigation",
+                          "Air Conditioning",
+                          "Sound System",
+                          "Wi-Fi",
+                          "Safety Equipment",
+                          "Fishing Gear",
+                          "Sunshade",
+                          "Kitchenette",
+                        ].map((feature) => {
+                          const selected = formData.features.includes(feature);
+                          return (
+                            <button
+                              type="button"
+                              key={feature}
+                              onClick={() => handleMultiSelectToggle("features", feature)}
+                              className={`px-3 py-1 rounded-full border text-sm transition ${selected ? "bg-primary text-white border-primary" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+                            >
+                              {feature}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Özel Özellik Ekle */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium mb-1">Özel Özellik Ekle</label>
+                        <Input
+                          placeholder="Örn: Underwater Lights"
+                          value={newFeature}
+                          onChange={(e) => setNewFeature(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const value = newFeature.trim();
+                              if (value && !formData.features.includes(value)) {
+                                setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
+                                setNewFeature("");
+                              }
+                            }
+                          }}
+                        />
+                      </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Ek Organizasyon Detayları
-                        </label>
-                        <Textarea placeholder="Organizasyonlar ile ilgili ek bilgiler..." />
-                      </div>
-
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
                         <Button
                           type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
+                          onClick={() => {
+                            const value = newFeature.trim();
+                            if (value && !formData.features.includes(value)) {
+                              setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
+                              setNewFeature("");
+                            }
+                          }}
+                          className="w-full"
                           disabled={loading}
                         >
-                          Geri Dön
+                          Özellik Ekle
                         </Button>
                       </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBackToList}
+                        className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
+                        disabled={loading}
+                      >
+                        Geri Dön
+                      </Button>
                     </div>
                   </TabsContent>
                 </Tabs>
