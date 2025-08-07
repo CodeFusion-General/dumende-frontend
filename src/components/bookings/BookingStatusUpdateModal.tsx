@@ -20,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import { BookingDTO, BookingStatus } from "@/types/booking.types";
 import { X, Save, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { bookingService } from "@/services/bookingService";
+import { tokenUtils } from "@/lib/utils";
 
 interface BookingStatusUpdateModalProps {
   booking: BookingDTO;
@@ -41,7 +43,9 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
   loading = false,
 }) => {
   const { toast } = useToast();
-  const [selectedStatus, setSelectedStatus] = useState<BookingStatus | "">("");
+  const [selectedStatus, setSelectedStatus] = useState<BookingStatus | null>(
+    null
+  );
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
@@ -61,7 +65,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
-      setSelectedStatus("");
+      setSelectedStatus(null);
       setReason("");
       setValidationErrors({});
       setIsSubmitting(false);
@@ -132,7 +136,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
       return;
     }
 
-    if (selectedStatus === booking.status) {
+    if (selectedStatus && selectedStatus === booking.status) {
       setValidationErrors({
         general: `Booking is already ${selectedStatus.toLowerCase()}.`,
       });
@@ -141,11 +145,35 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
 
     setIsSubmitting(true);
 
+    // Check if user is authenticated before making the request
+    if (!tokenUtils.hasAuthToken()) {
+      setValidationErrors({
+        general: "Your session has expired. Please log in again.",
+      });
+      setIsSubmitting(false);
+
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+      return;
+    }
+
     try {
+      console.log("Making status update request with:", {
+        bookingId: booking.id,
+        selectedStatus,
+        reason:
+          selectedStatus === BookingStatus.CANCELLED
+            ? reason.trim()
+            : undefined,
+        hasToken: tokenUtils.hasAuthToken(),
+      });
+
       // Call the API to update booking status
       await onStatusUpdate(
         booking.id,
-        selectedStatus as BookingStatus,
+        selectedStatus!,
         selectedStatus === BookingStatus.CANCELLED ? reason.trim() : undefined
       );
 
@@ -172,6 +200,10 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
         retryCount,
         errorType: typeof error,
         errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        statusCode: (error as any)?.statusCode,
+        isAuthError: (error as any)?.isAuthError,
+        originalError: (error as any)?.originalError,
       });
 
       // Handle different types of errors with specific messages
@@ -385,7 +417,7 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
               New Status
             </Label>
             <Select
-              value={selectedStatus}
+              value={selectedStatus ?? ""}
               onValueChange={(value) =>
                 setSelectedStatus(value as BookingStatus)
               }

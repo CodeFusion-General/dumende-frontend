@@ -1,194 +1,91 @@
 import { useState, useCallback } from "react";
-
-// Custom hook for retry mechanisms with exponential backoff
+import { retryOperation, parseApiError, AppError } from "@/utils/errorHandling";
 
 interface UseRetryOptions {
-  maxAttempts?: number;
-  initialDelay?: number;
-  maxDelay?: number;
-  backoffFactor?: number;
-  onError?: (error: Error, attempt: number) => void;
-  onSuccess?: () => void;
+  maxRetries?: number;
+  baseDelay?: number;
+  onRetry?: (attempt: number, error: any) => void;
+  onError?: (error: AppError) => void;
 }
 
 interface UseRetryReturn<T> {
-  execute: () => Promise<T | null>;
-  isLoading: boolean;
-  error: Error | null;
-  attempt: number;
-  canRetry: boolean;
+  execute: (operation: () => Promise<T>) => Promise<T>;
+  isRetrying: boolean;
+  retryCount: number;
+  lastError: AppError | null;
   reset: () => void;
 }
 
-export function useRetry<T>(
-  asyncFunction: () => Promise<T>,
+export function useRetry<T = any>(
   options: UseRetryOptions = {}
 ): UseRetryReturn<T> {
-  const {
-    maxAttempts = 3,
-    initialDelay = 1000,
-    maxDelay = 10000,
-    backoffFactor = 2,
-    onError,
-    onSuccess,
-  } = options;
+  const { maxRetries = 3, baseDelay = 1000, onRetry, onError } = options;
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [attempt, setAttempt] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastError, setLastError] = useState<AppError | null>(null);
 
-  const delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
-
-  const calculateDelay = (attemptNumber: number): number => {
-    const exponentialDelay =
-      initialDelay * Math.pow(backoffFactor, attemptNumber - 1);
-    return Math.min(exponentialDelay, maxDelay);
-  };
-
-  const execute = useCallback(async (): Promise<T | null> => {
-    setIsLoading(true);
-    setError(null);
-
-    for (
-      let currentAttempt = 1;
-      currentAttempt <= maxAttempts;
-      currentAttempt++
-    ) {
-      setAttempt(currentAttempt);
+  const execute = useCallback(
+    async (operation: () => Promise<T>): Promise<T> => {
+      setIsRetrying(true);
+      setLastError(null);
+      setRetryCount(0);
 
       try {
-        const result = await asyncFunction();
-        setIsLoading(false);
-        setError(null);
-        onSuccess?.();
+        const result = await retryOperation(
+          operation,
+          maxRetries,
+          baseDelay,
+          (attempt, error) => {
+            setRetryCount(attempt);
+            if (onRetry) {
+              onRetry(attempt, error);
+            }
+          }
+        );
+
+        setIsRetrying(false);
+        setRetryCount(0);
         return result;
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error("Unknown error");
-        setError(error);
-        onError?.(error, currentAttempt);
+      } catch (error) {
+        const appError =
+          error instanceof Error && "type" in error
+            ? (error as AppError)
+            : parseApiError(error);
 
-        if (currentAttempt === maxAttempts) {
-          setIsLoading(false);
-          return null;
+        setLastError(appError);
+        setIsRetrying(false);
+
+        if (onError) {
+          onError(appError);
         }
 
-        // Wait before retrying (except for the last attempt)
-        if (currentAttempt < maxAttempts) {
-          const delayMs = calculateDelay(currentAttempt);
-          await delay(delayMs);
-        }
+        throw appError;
       }
-    }
-
-    setIsLoading(false);
-    return null;
-  }, [
-    asyncFunction,
-    maxAttempts,
-    initialDelay,
-    maxDelay,
-    backoffFactor,
-    onError,
-    onSuccess,
-  ]);
+    },
+    [maxRetries, baseDelay, onRetry, onError]
+  );
 
   const reset = useCallback(() => {
-    setIsLoading(false);
-    setError(null);
-    setAttempt(0);
+    setIsRetrying(false);
+    setRetryCount(0);
+    setLastError(null);
   }, []);
-
-  const canRetry = attempt < maxAttempts && !isLoading;
 
   return {
     execute,
-    isLoading,
-    error,
-    attempt,
-    canRetry,
+    isRetrying,
+    retryCount,
+    lastError,
     reset,
   };
 }
 
-// Specialized retry hook for image loading
-export function useImageRetry(src: string, options: UseRetryOptions = {}) {
-  const loadImage = useCallback(async (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(src);
-      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
-      img.src = src;
-    });
-  }, [src]);
-
-  return useRetry(loadImage, {
-    maxAttempts: 3,
-    initialDelay: 500,
-    maxDelay: 2000,
-    ...options,
-  });
-}
-
-// Specialized retry hook for API calls
-export function useApiRetry<T>(
-  apiCall: () => Promise<T>,
-  options: UseRetryOptions = {}
-) {
-  return useRetry(apiCall, {
-    maxAttempts: 3,
-    initialDelay: 1000,
-    maxDelay: 5000,
-    backoffFactor: 2,
-    ...options,
-  });
-}
-
 // Specialized retry hook for profile operations
-export function useProfileRetry() {
-  const [isRetrying, setIsRetrying] = useState(false);
-  
-  const executeWithRetry = useCallback(async <T>(
-    operation: () => Promise<T>
-  ): Promise<T> => {
-    setIsRetrying(true);
-    
-    try {
-      // Execute the operation directly first
-      const result = await operation();
-      setIsRetrying(false);
-      return result;
-    } catch (error) {
-      // If it fails, try up to 2 more times with delays
-      let retryCount = 0;
-      const maxRetries = 2;
-      
-      while (retryCount < maxRetries) {
-        try {
-          // Wait before retrying
-          const delayMs = 1000 * Math.pow(2, retryCount);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-          
-          // Try again
-          const result = await operation();
-          setIsRetrying(false);
-          return result;
-        } catch (retryError) {
-          retryCount++;
-          
-          // If we've exhausted all retries, give up
-          if (retryCount >= maxRetries) {
-            setIsRetrying(false);
-            throw retryError;
-          }
-        }
-      }
-      
-      // This should never be reached due to the throw above
-      setIsRetrying(false);
-      throw error;
-    }
-  }, []);
-  
-  return { executeWithRetry, isRetrying };
-}
+export const useProfileRetry = (options: UseRetryOptions = {}) => {
+  return useRetry({
+    maxRetries: 2,
+    baseDelay: 1500,
+    ...options,
+  });
+};
