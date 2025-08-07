@@ -66,6 +66,7 @@ const convertToBoatDTO = (mockData: any): BoatDTO => ({
     updatedAt: new Date().toISOString(),
   })),
   availabilities: [],
+  services: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 });
@@ -146,29 +147,35 @@ const BoatsPage = () => {
   const applyFilters = useCallback(async () => {
     try {
       setLoading(true);
-      // Real API call
-      const response = await boatService.searchBoats({
-        type:
-          debouncedSelectedTypes.length > 0
-            ? debouncedSelectedTypes[0]
+      // Advanced paginated search: çoklu tip/lokasyon ve sıralama desteği
+      const advancedReq: any = {
+        types:
+          debouncedSelectedTypes.length > 0 ? debouncedSelectedTypes : undefined,
+        locations:
+          debouncedSelectedLocations.length > 0
+            ? debouncedSelectedLocations
             : undefined,
         minCapacity: debouncedCapacity
           ? parseInt(debouncedCapacity.split("-")[0])
           : undefined,
         minPrice: debouncedPriceRange[0],
         maxPrice: debouncedPriceRange[1],
-        location:
-          debouncedSelectedLocations.length > 0
-            ? debouncedSelectedLocations[0]
-            : undefined,
+      };
+
+      const sortParam =
+        sortBy === "priceHigh"
+          ? "dailyPrice,desc"
+          : sortBy === "priceLow"
+          ? "dailyPrice,asc"
+          : "popularity,desc";
+
+      const pageResp = await boatService.advancedSearchPaginated(advancedReq, {
+        page: 0,
+        size: 24,
+        sort: sortParam,
       });
 
-      // Ensure we always set an array
-      const filteredResults = Array.isArray(response)
-        ? response
-        : (response as any)?.content || [];
-
-      setFilteredBoats(filteredResults);
+      setFilteredBoats(pageResp.content || []);
     } catch (err) {
       console.error("Filter uygulama hatası:", err);
       toast({
@@ -187,6 +194,7 @@ const BoatsPage = () => {
     debouncedPriceRange,
     debouncedSelectedLocations,
     debouncedSelectedFeatures,
+    sortBy,
   ]);
 
   // Optimized reset function

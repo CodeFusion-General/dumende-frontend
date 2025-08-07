@@ -1,5 +1,4 @@
-import React, { useEffect, useRef } from "react";
-import { useParallax } from "@/hooks/useScrollAnimation";
+import { useEffect, useRef } from "react";
 
 interface FloatingElementProps {
   children: React.ReactNode;
@@ -16,12 +15,26 @@ const FloatingElement: React.FC<FloatingElementProps> = ({
   delay = 0,
   className = "",
 }) => {
-  const { ref } = useParallax({ speed, direction });
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const handleScroll = () => {
+      const scrollY = window.pageYOffset;
+      const rate = scrollY * speed * (direction === "up" ? -1 : 1);
+      element.style.transform = `translateY(${rate}px)`;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [speed, direction]);
 
   return (
     <div
-      ref={ref}
-      className={`animate-parallax-float gpu-accelerated ${className}`}
+      ref={elementRef}
+      className={`gpu-accelerated ${className}`}
       style={{
         animationDelay: `${delay}s`,
         willChange: "transform",

@@ -37,6 +37,8 @@ export interface TypeStatistic {
 export interface AdvancedSearchRequest {
   location?: string;
   type?: string;
+  locations?: string[];
+  types?: string[];
   minCapacity?: number;
   maxCapacity?: number;
   minPrice?: number;
@@ -44,10 +46,17 @@ export interface AdvancedSearchRequest {
   startDate?: string;
   endDate?: string;
   captainIncluded?: boolean;
+  instantConfirmation?: boolean;
   minYear?: number;
   maxYear?: number;
   minLength?: number;
   maxLength?: number;
+}
+
+export interface SearchSuggestion {
+  id: string;
+  text: string;
+  type: "LOCATION" | "BOAT";
 }
 
 class BoatService extends BaseService {
@@ -206,6 +215,36 @@ class BoatService extends BaseService {
     searchRequest: AdvancedSearchRequest
   ): Promise<BoatDTO[]> {
     return this.post<BoatDTO[]>("/search/advanced", searchRequest);
+  }
+
+  // Gelişmiş arama + sayfalama (POST)
+  public async advancedSearchPaginated(
+    searchRequest: AdvancedSearchRequest,
+    params?: { page?: number; size?: number; sort?: string }
+  ): Promise<{
+    content: BoatDTO[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    last: boolean;
+  }> {
+    const { page = 0, size = 12, sort = "popularity,desc" } = params || {};
+    const response = await this.api.post(
+      `${this.baseUrl}/search/advanced/paginated`,
+      searchRequest,
+      {
+        params: { page, size, sort },
+        headers: this.getAuthHeaders(),
+      }
+    );
+    return response.data;
+  }
+
+  // Arama önerileri (GET)
+  public async getSuggestions(query: string, limit: number = 6): Promise<SearchSuggestion[]> {
+    return this.get<SearchSuggestion[]>(`/suggestions`, { query, limit });
   }
 
   // Pagination support

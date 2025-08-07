@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Calendar,
   MapPin,
@@ -42,40 +42,22 @@ const generateSearchSuggestions = async (
   const suggestions: SearchSuggestion[] = [];
 
   try {
-    const matchingLocations = allLocations
-      .filter((loc) => loc.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 3)
-      .map((loc) => ({
-        id: `location-${loc}`,
-        text: loc,
-        type: "location" as const,
-        icon: <MapPin size={16} className="text-white/60" />,
-      }));
+    // Backend suggestions
+    const backendSuggestions = await boatService.getSuggestions(query, 6);
+    const mapped = backendSuggestions.map((s) => ({
+      id: s.id,
+      text: s.text,
+      type: s.type.toLowerCase() as "location" | "boat" | "recent",
+      icon:
+        s.type === "LOCATION" ? (
+          <MapPin size={16} className="text-white/60" />
+        ) : (
+          <Search size={16} className="text-white/60" />
+        ),
+    }));
+    suggestions.push(...mapped);
 
-    suggestions.push(...matchingLocations);
-
-    if (query.length >= 2) {
-      const boatSuggestions = [
-        { name: "Luxury Yacht", location: "Bodrum" },
-        { name: "Sailing Boat", location: "Fethiye" },
-        { name: "Motor Yacht", location: "Marmaris" },
-      ]
-        .filter(
-          (boat) =>
-            boat.name.toLowerCase().includes(query.toLowerCase()) ||
-            boat.location.toLowerCase().includes(query.toLowerCase())
-        )
-        .slice(0, 2)
-        .map((boat) => ({
-          id: `boat-${boat.name}`,
-          text: `${boat.name} - ${boat.location}`,
-          type: "boat" as const,
-          icon: <Search size={16} className="text-white/60" />,
-        }));
-
-      suggestions.push(...boatSuggestions);
-    }
-
+    // Recent searches (local)
     const recentSearches = JSON.parse(
       localStorage.getItem("recentSearches") || "[]"
     )
@@ -89,7 +71,6 @@ const generateSearchSuggestions = async (
         type: "recent" as const,
         icon: <Search size={16} className="text-white/40" />,
       }));
-
     suggestions.push(...recentSearches);
   } catch (error) {
     console.error("Error generating suggestions:", error);
@@ -212,23 +193,21 @@ const SearchWidget = () => {
       const guestRange = guests.split("-");
       const minCapacity = parseInt(guestRange[0]);
 
-      // Gelişmiş arama parametrelerini hazırla
+      // Gelişmiş arama parametrelerini hazırla (tarih aralığına uyumlu)
       const searchRequest: AdvancedSearchRequest = {
-        location: location,
+        locations: [location],
         startDate: date,
-        endDate: date, // Tek günlük arama için aynı tarih
-        minCapacity: minCapacity,
+        endDate: date, // İstenirse tarih aralığına çevrildiğinde ikinci tarih gelecek
+        minCapacity,
       };
 
-      // Arama yap ve sonuçlar sayfasına yönlendir
-      const results = await boatService.advancedSearch(searchRequest);
-
-      // URL parametreleri ile tekne listesi sayfasına yönlendir
+      // Sonuçlar sayfasına yönlendir (server tarafında paginated kullanılacak)
       const params = new URLSearchParams({
         location,
-        date,
+        start: searchRequest.startDate || "",
+        end: searchRequest.endDate || "",
         guests,
-        results: results.length.toString(),
+        filter: "location",
       });
 
       navigate(`/boats?${params.toString()}`);
@@ -337,6 +316,7 @@ const SearchWidget = () => {
   return (
     <div
       ref={widgetRef}
+      data-search-widget
       className={`glass-card bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 transition-all duration-500 ease-glass animate-slide-in-glass ${
         isExpanded ? "p-6" : "p-4"
       } ${isFocused ? "bg-white/15 shadow-glass-hover" : ""}`}
@@ -400,8 +380,8 @@ const SearchWidget = () => {
                 id="search"
                 placeholder={
                   language === "tr"
-                    ? "Tekne, lokasyon veya özellik ara..."
-                    : "Search boats, locations, or features..."
+                    ? "Nereden Binmek İstiyorsun"
+                    : "Where do you want to board?"
                 }
                 className={`w-full pl-10 pr-10 py-3 glass-light rounded-xl border transition-all duration-300 backdrop-blur-sm text-white placeholder-white/60 ${
                   focusedField === "search"
@@ -454,7 +434,9 @@ const SearchWidget = () => {
                 ref={suggestionsRef}
                 role="listbox"
                 id="search-suggestions"
-                aria-label={language === "tr" ? "Arama önerileri" : "Search suggestions"}
+                aria-label={
+                  language === "tr" ? "Arama önerileri" : "Search suggestions"
+                }
                 className="absolute top-full left-0 right-0 z-50 glass-card bg-white/10 backdrop-blur-lg border border-white/20 border-t-0 rounded-b-xl shadow-2xl animate-fade-in-up"
                 style={{
                   backdropFilter: "blur(20px)",
@@ -571,7 +553,9 @@ const SearchWidget = () => {
                       ? language === "tr"
                         ? "Lokasyonlar yükleniyor..."
                         : "Loading locations..."
-                      : t.search.locationPlaceholder}
+                      : language === "tr"
+                      ? "Nereden Binmek istiyorsun"
+                      : "Choose location"}
                   </option>
                   {locations.map((loc) => (
                     <option
@@ -689,4 +673,3 @@ const SearchWidget = () => {
 };
 
 export default SearchWidget;
-

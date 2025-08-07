@@ -1,21 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import SearchWidget from "./SearchWidget";
 import DynamicBackground from "../hero/DynamicBackground";
 import FloatingGlassElements from "../hero/FloatingElements";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
-import { useParallax } from "@/hooks/useScrollAnimation";
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const { language } = useLanguage();
   const t = translations[language];
   const heroRef = useRef<HTMLDivElement>(null);
-
-  // Parallax refs for different content layers
-  const { ref: titleRef } = useParallax({ speed: 0.2, direction: "up" });
-  const { ref: subtitleRef } = useParallax({ speed: 0.3, direction: "up" });
-  const { ref: ctaRef } = useParallax({ speed: 0.1, direction: "up" });
 
   const slides = [
     {
@@ -65,71 +59,99 @@ const Hero = () => {
   return (
     <div
       ref={heroRef}
-      className="relative h-screen w-full overflow-hidden gpu-accelerated"
+      className="relative h-screen w-full overflow-hidden gpu-accelerated z-0"
     >
-      {/* Dynamic Multi-Layer Background System */}
-      <DynamicBackground
-        images={slideImages}
-        currentIndex={currentSlide}
-        transitionDuration={1000}
-        enableTimeBasedShifting={true}
-        enableScrollBasedShifting={true}
-      />
+      {/* Dynamic Multi-Layer Background System (click-through) */}
+      <div className="pointer-events-none">
+        <DynamicBackground
+          images={slideImages}
+          currentIndex={currentSlide}
+          transitionDuration={1000}
+          enableTimeBasedShifting={true}
+          enableScrollBasedShifting={true}
+        />
+      </div>
 
-      {/* Floating Glass Elements */}
-      <FloatingGlassElements isVisible={true} />
+      {/* Floating Glass Elements (decorative, no pointer capture) */}
+      <div className="pointer-events-none">
+        <FloatingGlassElements isVisible={true} />
+      </div>
 
-      {/* Hero Content with Enhanced Animations and Parallax */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
-        <h1
-          ref={titleRef}
-          className="text-4xl md:text-5xl lg:text-6xl font-montserrat font-bold text-white max-w-4xl mx-auto mb-6 animate-fade-in-up parallax-float"
-          style={{
-            textShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
-            animationDelay: "0.2s",
-            opacity: 0,
-            animationFillMode: "forwards",
-          }}
-        >
-          {slides[currentSlide].title}
-        </h1>
+      {/* Hero Content */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10 pointer-events-auto">
+        {/* Title */}
+        <div className="w-full mb-6">
+          <h1
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white max-w-4xl mx-auto animate-fade-in-up"
+            style={{
+              textShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+              animationDelay: "0.2s",
+              opacity: 0,
+              animationFillMode: "forwards",
+            }}
+          >
+            {slides[currentSlide].title}
+          </h1>
+        </div>
 
-        <p
-          ref={subtitleRef}
-          className="emphasized-text text-xl md:text-2xl text-white mb-8 animate-fade-in-up parallax-float"
-          style={{
-            textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
-            animationDelay: "0.4s",
-            opacity: 0,
-            animationFillMode: "forwards",
-          }}
-        >
-          {t.hero.subtitle}
-        </p>
+        {/* Subtitle */}
+        <div className="w-full mb-8">
+          <p
+            className="text-xl md:text-2xl text-white animate-fade-in-up"
+            style={{
+              textShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
+              animationDelay: "0.4s",
+              opacity: 0,
+              animationFillMode: "forwards",
+            }}
+          >
+            {t.hero.subtitle}
+          </p>
+        </div>
 
-        <button
-          ref={ctaRef}
-          className="btn-glass-accent text-lg mb-12 animate-scale-in-bounce animate-hover-lift parallax-float"
+        {/* Search Widget */}
+        <div
+          className="w-full max-w-5xl mx-auto mb-8 animate-fade-in-up"
           style={{
             animationDelay: "0.6s",
             opacity: 0,
             animationFillMode: "forwards",
           }}
-          onClick={() => {
-            const el = document.getElementById("home-search-widget");
-            if (el) {
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }}
+          data-search-widget
         >
-          {t.hero.cta}
-        </button>
+          <SearchWidget />
+        </div>
 
-        {/* Enhanced Dots Navigation with Glass Effect */}
+        {/* CTA Button */}
+        <div className="w-full mb-8">
+          <button
+            className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-semibold rounded-xl hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300 transform hover:scale-105 animate-fade-in-up"
+            style={{
+              animationDelay: "0.8s",
+              opacity: 0,
+              animationFillMode: "forwards",
+            }}
+            onClick={() => {
+              const searchWidget = document.querySelector(
+                "[data-search-widget]"
+              );
+              if (searchWidget) {
+                searchWidget.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }
+            }}
+          >
+            {t.hero.cta}
+          </button>
+        </div>
+
+        {/* Slide Navigation Dots */}
         <div
-          className="flex space-x-3 mt-6 animate-fade-in-up"
+          className="flex space-x-3 animate-fade-in-up"
           style={{
-            animationDelay: "0.8s",
+            animationDelay: "1s",
             opacity: 0,
             animationFillMode: "forwards",
           }}
@@ -138,35 +160,19 @@ const Hero = () => {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`h-3 rounded-full transition-all duration-300 glass-button animate-hover-scale
-                ${
-                  index === currentSlide
-                    ? "bg-gradient-ocean w-6 shadow-lg"
-                    : "bg-white bg-opacity-30 w-3 backdrop-blur-sm"
-                }`}
-              style={{
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
+              className={`h-3 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                  ? "bg-white w-8 shadow-lg"
+                  : "bg-white/50 w-3 hover:bg-white/70"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
       </div>
 
-      {/* Enhanced Search Widget with Glass Effect */}
-      <div
-        className="absolute bottom-8 left-0 right-0 z-20 px-4 animate-slide-in-bottom"
-        style={{
-          animationDelay: "1s",
-          opacity: 0,
-          animationFillMode: "forwards",
-        }}
-        id="home-search-widget"
-      >
-        <div className="max-w-5xl mx-auto">
-          <SearchWidget />
-        </div>
-      </div>
+      {/* Bottom anchor for smooth scroll (kept for CTA) */}
+      <div id="home-search-widget" data-hero-search className="sr-only" />
     </div>
   );
 };
