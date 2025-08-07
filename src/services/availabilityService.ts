@@ -3,6 +3,7 @@ import {
   CalendarAvailability,
   AvailabilityData,
 } from "@/types/availability.types";
+import { tokenUtils } from "@/lib/utils";
 
 // Date format conversion utilities for API compatibility
 export const dateUtils = {
@@ -257,37 +258,153 @@ class AvailabilityService extends BaseService {
     }
   }
 
-  // Set availability status - Fixed to use correct PATCH endpoint and request body format
+  // Set availability status - Use URL parameters as expected by backend
   public async setAvailabilityStatus(
     id: number,
     isAvailable: boolean
   ): Promise<void> {
     try {
-      return await this.patch<void>(`/${id}/status`, { isAvailable });
+      // Use PATCH request with URL parameters as expected by backend @RequestParam
+      const token = tokenUtils.getAuthToken();
+      const response = await this.api.patch(`${this.baseUrl}/${id}/status`, null, {
+        params: { isAvailable },
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
     } catch (error) {
       console.error("Failed to set availability status:", error);
       throw error;
     }
   }
 
-  // Create availability period - Fixed to use correct API format with date conversion
+  // Set availability price override - Use URL parameters as expected by backend
+  public async setAvailabilityPriceOverride(
+    id: number,
+    priceOverride: number
+  ): Promise<void> {
+    try {
+      const token = tokenUtils.getAuthToken();
+      const response = await this.api.patch(`${this.baseUrl}/${id}/price-override`, null, {
+        params: { priceOverride },
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Failed to set availability price override:", error);
+      throw error;
+    }
+  }
+
+  // Set instant confirmation status - Use URL parameters as expected by backend
+  public async setInstantConfirmationStatus(
+    id: number,
+    isInstantConfirmation: boolean
+  ): Promise<void> {
+    try {
+      const token = tokenUtils.getAuthToken();
+      const response = await this.api.patch(`${this.baseUrl}/${id}/instant-confirmation`, null, {
+        params: { isInstantConfirmation },
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Failed to set instant confirmation status:", error);
+      throw error;
+    }
+  }
+
+  // Create availability period - Use URL parameters as expected by backend
   public async createAvailabilityPeriod(command: any): Promise<void> {
     try {
       // Convert dates to API format if they are in ISO format
-      const apiCommand = {
+      const apiStartDate = dateUtils.isISOFormat(command.startDate)
+        ? dateUtils.formatDateForAPI(command.startDate)
+        : command.startDate;
+      const apiEndDate = dateUtils.isISOFormat(command.endDate)
+        ? dateUtils.formatDateForAPI(command.endDate)
+        : command.endDate;
+
+      // Prepare URL parameters as expected by backend @RequestParam
+      const params: { [key: string]: any } = {
         boatId: command.boatId,
-        startDate: dateUtils.isISOFormat(command.startDate)
-          ? dateUtils.formatDateForAPI(command.startDate)
-          : command.startDate,
-        endDate: dateUtils.isISOFormat(command.endDate)
-          ? dateUtils.formatDateForAPI(command.endDate)
-          : command.endDate,
+        startDate: apiStartDate,
+        endDate: apiEndDate,
         isAvailable: command.isAvailable,
       };
 
-      return await this.post<void>("/period", apiCommand);
+      // Add priceOverride if provided
+      if (command.priceOverride !== undefined && command.priceOverride !== null) {
+        params.priceOverride = command.priceOverride;
+      }
+
+      // Use POST request with URL parameters using the inherited post method with params
+      const token = tokenUtils.getAuthToken();
+      const response = await this.api.post(`${this.baseUrl}/period`, null, {
+        params: params,
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
     } catch (error) {
       console.error("Failed to create availability period:", error);
+      throw error;
+    }
+  }
+
+  // Update availability period - Use URL parameters as expected by backend
+  public async updateAvailabilityPeriod(command: any): Promise<void> {
+    try {
+      // Convert dates to ISO format (yyyy-MM-dd) as backend expects @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      const apiStartDate = dateUtils.isISOFormat(command.startDate)
+        ? command.startDate  // Already ISO format
+        : dateUtils.formatDateFromAPI(command.startDate);  // Convert dd-MM-yyyy to yyyy-MM-dd
+      const apiEndDate = dateUtils.isISOFormat(command.endDate)
+        ? command.endDate  // Already ISO format
+        : dateUtils.formatDateFromAPI(command.endDate);  // Convert dd-MM-yyyy to yyyy-MM-dd
+
+      // Prepare URL parameters as expected by backend @RequestParam
+      const params: { [key: string]: any } = {
+        boatId: command.boatId,
+        startDate: apiStartDate,
+        endDate: apiEndDate,
+      };
+
+      // Add optional parameters if provided
+      if (command.isAvailable !== undefined && command.isAvailable !== null) {
+        params.isAvailable = command.isAvailable;
+      }
+      if (command.priceOverride !== undefined && command.priceOverride !== null) {
+        params.priceOverride = command.priceOverride;
+      }
+
+      // Use PUT request with URL parameters
+      const token = tokenUtils.getAuthToken();
+      const response = await this.api.put(`${this.baseUrl}/period`, null, {
+        params: params,
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Failed to update availability period:", error);
       throw error;
     }
   }
