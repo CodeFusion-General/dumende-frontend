@@ -105,7 +105,7 @@ export interface BoatImageDTO {
 }
 
 export interface CreateBoatImageDTO {
-  imageUrl: string; // URL olarak gönderiliyor
+  imageData: string; // Base64 data
   isPrimary: boolean;
   displayOrder: number;
 }
@@ -161,6 +161,7 @@ export interface CreateBoatDTO {
   captainIncluded?: boolean;
   images?: CreateBoatImageDTO[];
   features?: CreateBoatFeatureDTO[];
+  services?: CreateBoatServiceDTO[]; // YENİ: Boat services
 }
 
 export interface UpdateBoatDTO {

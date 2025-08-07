@@ -62,7 +62,6 @@ import {
   BoatNotFoundError,
   ErrorBoundaryFallback,
 } from "@/components/ui/ErrorStates";
-import { useRetry } from "@/hooks/useRetry";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
@@ -107,16 +106,8 @@ const BoatListing = () => {
     priority: "low",
   });
 
-  // Retry mechanism for boat data
-  const { execute: retryBoatData, isLoading: isRetrying } = useRetry(
-    () => boatService.getBoatById(Number(id)),
-    {
-      maxAttempts: 3,
-      onError: (error, attempt) => {
-        console.error(`Boat loading attempt ${attempt} failed:`, error);
-      },
-    }
-  );
+  // State for retry mechanism
+  const [isRetrying, setIsRetrying] = React.useState(false);
 
   // Optimize React Query with stricter caching and prevent refetching
   const {
@@ -199,12 +190,12 @@ const BoatListing = () => {
     }
   }, [isAuthenticated, isCustomer, boatData?.id]);
 
-  // Check user booking when boat data is loaded
+  // Check user booking when boat data is loaded - memoized to prevent excessive calls
   React.useEffect(() => {
-    if (boatData && isAuthenticated && isCustomer()) {
+    if (boatData?.id && isAuthenticated && isCustomer()) {
       checkUserBooking();
     }
-  }, [boatData?.id, isAuthenticated, isCustomer, checkUserBooking]);
+  }, [boatData?.id, isAuthenticated, isCustomer]);
 
   // Custom hook to prevent messaging from triggering refetches
   const useStableBoatData = (boatData: BoatDTO | undefined) => {
@@ -278,10 +269,15 @@ const BoatListing = () => {
     return validImageUrls.length > 0 ? validImageUrls : [getBoatImageUrl()];
   }, [boatData?.images]);
 
-  // Process images with caching
+  // Process images with caching - optimized to prevent unnecessary processing
   React.useEffect(() => {
     const processImages = async () => {
       if (!processedImageUrls.length || isProcessingImages) return;
+
+      // Skip if images haven't changed and we already have valid images
+      if (validImages.length > 0 && validImages.length === processedImageUrls.length) {
+        return;
+      }
 
       setIsProcessingImages(true);
       try {
@@ -330,7 +326,7 @@ const BoatListing = () => {
     };
 
     processImages();
-  }, [processedImageUrls, isProcessingImages]);
+  }, [processedImageUrls]);
 
   const [validImages, setValidImages] = React.useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);

@@ -30,6 +30,7 @@ import BlogPost from "./pages/BlogPost";
 import MyBookings from "./pages/MyBookings";
 import BoatOwnerApplication from "./pages/BoatOwnerApplication";
 import NotificationsPage from "./pages/NotificationsPage";
+import PaymentReturn from "./pages/PaymentReturn";
 
 // Captain Panel pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -95,6 +96,7 @@ const App = () => {
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/blog/:id" element={<BlogPost />} />
                     <Route path="/my-bookings" element={<MyBookings />} />
+                    <Route path="/payment-return" element={<PaymentReturn />} />
                     <Route
                       path="/boat-owner-application"
                       element={<BoatOwnerApplication />}

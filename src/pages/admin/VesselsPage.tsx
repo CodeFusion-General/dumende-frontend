@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import CaptainLayout from "@/components/admin/layout/CaptainLayout";
 import VesselsList from "@/components/admin/vessels/VesselsList";
+import BoatServicesManager from "@/components/boats/BoatServicesManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +90,15 @@ interface VesselFormData {
   existingImages: BoatImageDTO[]; // Mevcut fotoğraflar
   imageIdsToRemove: number[]; // Silinecek fotoğraf ID'leri
   features: string[];
+
+  // Boat Services
+  boatServices: Array<{
+    name: string;
+    description: string;
+    price: number;
+    serviceType: string;
+    quantity: number;
+  }>;
 }
 
 const VesselsPage = () => {
@@ -139,6 +149,7 @@ const VesselsPage = () => {
     existingImages: [],
     imageIdsToRemove: [],
     features: [],
+    boatServices: [],
   });
 
   // Component mount'da vessels'ları yükle
@@ -289,6 +300,13 @@ const VesselsPage = () => {
       existingImages: vessel.images || [], // Mevcut fotoğrafları yükle
       imageIdsToRemove: [],
       features: vessel.features?.map((f) => f.featureName) || [],
+      boatServices: vessel.services?.map((s) => ({
+        name: s.name,
+        description: s.description,
+        price: s.price,
+        serviceType: s.serviceType,
+        quantity: s.quantity
+      })) || [],
     });
   };
 
@@ -328,6 +346,7 @@ const VesselsPage = () => {
       existingImages: [],
       imageIdsToRemove: [],
       features: [],
+      boatServices: [],
     });
   };
 
@@ -392,6 +411,14 @@ const VesselsPage = () => {
       captainIncluded: false, // Default false
       images: imagesDTOs, // Base64 formatında fotoğraflar (prefix'siz)
       features: data.features.map((name) => ({ featureName: name })),
+      services: data.boatServices.map((service) => ({
+        boatId: 0, // Will be set by backend after boat creation
+        name: service.name,
+        description: service.description,
+        serviceType: service.serviceType as any, // ServiceType enum
+        price: service.price,
+        quantity: service.quantity,
+      })),
     };
   };
 
@@ -1226,86 +1253,24 @@ const VesselsPage = () => {
                         </p>
                       </div>
                     </div>
-                    <h2 className="text-xl font-medium mb-4">Servisler</h2>
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Yemek Servisi
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="included">Dahil</SelectItem>
-                              <SelectItem value="optional">
-                                Opsiyonel
-                              </SelectItem>
-                              <SelectItem value="not-available">
-                                Mevcut Değil
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            DJ / Müzik
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="included">Dahil</SelectItem>
-                              <SelectItem value="optional">
-                                Opsiyonel
-                              </SelectItem>
-                              <SelectItem value="not-available">
-                                Mevcut Değil
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Su Sporları
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="included">Dahil</SelectItem>
-                              <SelectItem value="optional">
-                                Opsiyonel
-                              </SelectItem>
-                              <SelectItem value="not-available">
-                                Mevcut Değil
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                    <h2 className="text-xl font-medium mb-4">Ek Hizmetler</h2>
+                    
+                    {/* Boat Services Management Component */}
+                    <BoatServicesManager 
+                      services={formData.boatServices}
+                      onServicesChange={(services) => setFormData(prev => ({...prev, boatServices: services}))}
+                    />
 
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Diğer Servisler
-                        </label>
-                        <Textarea placeholder="Sunduğunuz diğer servisleri buraya ekleyebilirsiniz..." />
-                      </div>
-
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                      </div>
+                    <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBackToList}
+                        className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
+                        disabled={loading}
+                      >
+                        Geri Dön
+                      </Button>
                     </div>
                   </TabsContent>
 
@@ -1428,7 +1393,7 @@ const VesselsPage = () => {
                                 <div key={image.id} className="relative group">
                                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                                     <img
-                                      src={getImageUrl(image.id)}
+                                      src={image.imageUrl}
                                       alt={`Mevcut fotoğraf ${index + 1}`}
                                       className="w-full h-full object-cover"
                                     />

@@ -75,7 +75,13 @@ export default function ServiceSelector({
       
       try {
         const services = await boatService.getBoatServicesWithPricing(boatId);
-        setAvailableServices(services);
+        
+        // Remove duplicates based on service ID
+        const uniqueServices = services.filter((service, index, self) => 
+          index === self.findIndex(s => s.id === service.id)
+        );
+        
+        setAvailableServices(uniqueServices);
       } catch (err) {
         console.error("Failed to load boat services:", err);
         setError("Hizmetler yüklenirken hata oluştu");

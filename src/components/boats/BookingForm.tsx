@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Star,
   MessageCircle,
+  Package,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,13 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { bookingService } from "@/services/bookingService";
 import { availabilityService } from "@/services/availabilityService";
 import { boatService } from "@/services/boatService";
@@ -42,8 +51,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomerCaptainChat } from "./messaging/CustomerCaptainChat";
 import { BookingDTO, BookingStatus, SelectedServiceDTO, CreateBookingDTO } from "@/types/booking.types";
+import { BoatServiceDTO } from "@/types/boat.types";
 import { Captain } from "@/types/captain.types";
+import { PaymentStatusResponseDto } from "@/types/payment.types";
 import { extractCaptainIdFromBooking } from "@/utils/conversationUtils";
+import { paymentService } from "@/services/paymentService";
 import ServiceSelector from "./ServiceSelector";
 
 interface BookingFormProps {
@@ -92,6 +104,13 @@ export function BookingForm({
   // Services state
   const [selectedServices, setSelectedServices] = useState<SelectedServiceDTO[]>([]);
   const [servicesPrice, setServicesPrice] = useState<number>(0);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [availableServices, setAvailableServices] = useState<BoatServiceDTO[]>([]);
+
+  // Payment state
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusResponseDto | null>(null);
+  const [showPaymentInfo, setShowPaymentInfo] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   // Memoize the boatId number to prevent unnecessary re-renders
   const boatIdNumber = useMemo(() => Number(boatId), [boatId]);
@@ -159,6 +178,26 @@ export function BookingForm({
     };
   }, [boatIdNumber]); // Only depend on boatIdNumber, not all the state setters
 
+  // Load available services
+  useEffect(() => {
+    const loadServices = async () => {
+      if (!boatIdNumber) return;
+      
+      try {
+        const services = await boatService.getBoatServicesWithPricing(boatIdNumber);
+        // Remove duplicates based on service ID
+        const uniqueServices = services.filter((service, index, self) => 
+          index === self.findIndex(s => s.id === service.id)
+        );
+        setAvailableServices(uniqueServices);
+      } catch (error) {
+        console.error('Failed to load boat services:', error);
+      }
+    };
+
+    loadServices();
+  }, [boatIdNumber]);
+
   // Fetch available time slots when date changes - Add debouncing
   useEffect(() => {
     let isMounted = true;
@@ -188,10 +227,10 @@ export function BookingForm({
 
           setAvailableTimeSlots(formattedSlots);
 
-          // If current selected time is not available, reset it
+          // If current selected time is not available and we don't have a selected time yet, set first available
           if (
             formattedSlots.length > 0 &&
-            !formattedSlots.includes(startTime)
+            (!startTime || !formattedSlots.includes(startTime))
           ) {
             setStartTime(formattedSlots[0]);
           }
@@ -223,7 +262,7 @@ export function BookingForm({
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [formattedDateForSlots, boatIdNumber, startTime]); // Remove toast from dependencies
+  }, [formattedDateForSlots, boatIdNumber]); // Remove startTime to prevent infinite loop
 
   // Fallback time slots if API fails
   const fallbackTimeSlots = Array.from({ length: 11 }, (_, i) => {
@@ -321,12 +360,51 @@ export function BookingForm({
     return allowedStatuses.includes(lastBooking.status as BookingStatus);
   }, [lastBooking, isAuthenticated, isCustomer, captain, captainLoading]);
 
+  // Payment redirect function
+  const handlePaymentRedirect = useCallback(async (bookingId: number) => {
+    try {
+      setPaymentLoading(true);
+      
+      // Get payment status from backend
+      const paymentInfo = await paymentService.getPaymentStatus(bookingId);
+      setPaymentStatus(paymentInfo);
+      
+      // If payment is required and we have a payment URL, redirect
+      if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
+        // Show payment info briefly before redirect
+        setShowPaymentInfo(true);
+        
+        // Short delay to show payment info, then redirect
+        setTimeout(() => {
+          paymentService.redirectToPayment(paymentInfo.paymentUrl!);
+        }, 2000);
+      } else {
+        // No payment required or no URL, show success message
+        toast({
+          title: "Rezervasyon tamamlandı",
+          description: "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
+        });
+      }
+    } catch (error) {
+      console.error("Payment redirect failed:", error);
+      toast({
+        title: "Ödeme sayfası yüklenemedi",
+        description: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+        variant: "destructive",
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
+  }, []);
+
   // Cleanup messaging state when component unmounts
   useEffect(() => {
     return () => {
       setShowMessaging(false);
       setLastBooking(null);
       setCaptain(null);
+      setPaymentStatus(null);
+      setShowPaymentInfo(false);
     };
   }, []);
 
@@ -370,6 +448,10 @@ export function BookingForm({
     ? hourlyPrice * totalUnits
     : dailyPrice * totalUnits;
   const estimatedTotal = rentalPrice + servicesPrice; // Tahminî toplam (service fee backend'de)
+  
+  // Payment calculations
+  const depositAmount = paymentService.calculateDepositAmount(estimatedTotal, 20);
+  const remainingAmount = estimatedTotal - depositAmount;
 
   // Booking function
   const handleBooking = async () => {
@@ -465,11 +547,14 @@ export function BookingForm({
       await loadCaptainInfo(response);
 
       toast({
-        title: "Rezervasyon talebi gönderildi",
-        description: "Tekne sahibi en kısa sürede size dönüş yapacaktır.",
+        title: "Rezervasyon oluşturuldu",
+        description: "Ödeme sayfasına yönlendiriliyorsunuz...",
       });
 
-      // Don't navigate immediately, let user see the message captain button
+      // Get payment status and redirect to payment
+      await handlePaymentRedirect(response.id);
+
+      // Don't navigate immediately, let user complete payment
       // navigate("/my-bookings");
     } catch (error) {
       console.error("Booking failed:", error);
@@ -530,7 +615,7 @@ export function BookingForm({
         </Button>
       </div>
 
-      <div className="p-4 overflow-auto h-full pb-24">
+      <div className="p-4 overflow-y-auto h-full pb-24 max-h-[calc(100vh-80px)]">
         <div className="flex mb-3 ">
           <Button
             variant="outline"
@@ -646,14 +731,48 @@ export function BookingForm({
             </Select>
           </div>
 
-          {/* Service Selection */}
+          {/* Service Selection - Compact Button */}
           <div className="border-t pt-4 mt-4">
-            <ServiceSelector
-              boatId={boatIdNumber}
-              selectedServices={selectedServices}
-              onServicesChange={setSelectedServices}
-              onPriceChange={setServicesPrice}
-            />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium">Ek Hizmetler</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowServiceModal(true)}
+                  className="text-primary border-primary hover:bg-primary/10"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Hizmet Seç ({selectedServices.length})
+                </Button>
+              </div>
+              
+              {selectedServices.length > 0 && (
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
+                  <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Seçilen Hizmetler ({selectedServices.length})
+                  </div>
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {selectedServices.map((selected) => {
+                      const service = availableServices.find(s => s.id === selected.boatServiceId);
+                      if (!service) return null;
+                      return (
+                        <div key={selected.boatServiceId} className="flex justify-between items-center text-xs text-gray-700">
+                          <span className="truncate mr-2">{service.name} x{selected.quantity}</span>
+                          <span className="font-medium text-primary">₺{(service.price * selected.quantity).toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="border-t border-primary/20 pt-2 flex justify-between font-bold text-sm text-primary">
+                    <span>Hizmet Toplamı:</span>
+                    <span>₺{servicesPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -673,9 +792,25 @@ export function BookingForm({
             </div>
           )}
           <div className="flex justify-between font-semibold pt-3 border-t">
-            <span>Tahmini Toplam</span>
+            <span>Toplam tutar</span>
             <span>₺{estimatedTotal.toLocaleString()}</span>
           </div>
+          
+          {/* Payment breakdown */}
+          <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
+            <div className="flex justify-between text-sm">
+              <span className="text-blue-700 font-medium flex items-center">
+                💳 Online ön ödeme tutarı
+                <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">%20</span>
+              </span>
+              <span className="font-semibold text-blue-800">₺{depositAmount.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Teknede ödenecek tutar</span>
+              <span className="text-gray-700">₺{remainingAmount.toLocaleString()}</span>
+            </div>
+          </div>
+          
           <p className="text-xs text-gray-500 text-center">
             *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
           </p>
@@ -711,7 +846,7 @@ export function BookingForm({
 
   return (
     <>
-      <Card className="sticky top-24 hidden md:block">
+      <Card className="sticky top-24 hidden md:block max-h-[calc(100vh-120px)] overflow-y-auto">
         <CardHeader className="pb-3">
           <div className="flex mb-3">
             <Button
@@ -844,14 +979,48 @@ export function BookingForm({
             </Select>
           </div>
 
-          {/* Service Selection */}
+          {/* Service Selection - Compact Button */}
           <div className="border-t pt-4">
-            <ServiceSelector
-              boatId={boatIdNumber}
-              selectedServices={selectedServices}
-              onServicesChange={setSelectedServices}
-              onPriceChange={setServicesPrice}
-            />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium">Ek Hizmetler</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowServiceModal(true)}
+                  className="text-primary border-primary hover:bg-primary/10"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Hizmet Seç ({selectedServices.length})
+                </Button>
+              </div>
+              
+              {selectedServices.length > 0 && (
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
+                  <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Seçilen Hizmetler ({selectedServices.length})
+                  </div>
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {selectedServices.map((selected) => {
+                      const service = availableServices.find(s => s.id === selected.boatServiceId);
+                      if (!service) return null;
+                      return (
+                        <div key={selected.boatServiceId} className="flex justify-between items-center text-xs text-gray-700">
+                          <span className="truncate mr-2">{service.name} x{selected.quantity}</span>
+                          <span className="font-medium text-primary">₺{(service.price * selected.quantity).toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="border-t border-primary/20 pt-2 flex justify-between font-bold text-sm text-primary">
+                    <span>Hizmet Toplamı:</span>
+                    <span>₺{servicesPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <Button
@@ -896,9 +1065,25 @@ export function BookingForm({
               </div>
             )}
             <div className="flex justify-between font-semibold pt-3 border-t">
-              <span>Tahmini Toplam</span>
+              <span>Toplam tutar</span>
               <span>₺{estimatedTotal.toLocaleString()}</span>
             </div>
+            
+            {/* Payment breakdown */}
+            <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
+              <div className="flex justify-between text-sm">
+                <span className="text-blue-700 font-medium flex items-center">
+                  💳 Online ön ödeme tutarı
+                  <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">%20</span>
+                </span>
+                <span className="font-semibold text-blue-800">₺{depositAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Teknede ödenecek tutar</span>
+                <span className="text-gray-700">₺{remainingAmount.toLocaleString()}</span>
+              </div>
+            </div>
+            
             <p className="text-xs text-gray-500 text-center">
               *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
             </p>
@@ -919,6 +1104,101 @@ export function BookingForm({
           captain={captain}
         />
       )}
+
+      {/* Payment Info Modal */}
+      <Dialog open={showPaymentInfo} onOpenChange={setShowPaymentInfo}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              💳 Ödeme Sayfasına Yönlendiriliyorsunuz
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {paymentStatus && (
+              <>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <h3 className="font-semibold text-green-800 mb-2">
+                    Rezervasyon Başarıyla Oluşturuldu!
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Rezervasyon ID: #{paymentStatus.bookingId}
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Toplam Tutar:</span>
+                    <span className="font-semibold">₺{paymentStatus.totalAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-blue-700">
+                    <span>Şimdi Ödenecek (Depozito):</span>
+                    <span className="font-bold">₺{paymentStatus.depositAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Teknede Ödenecek:</span>
+                    <span>₺{paymentStatus.remainingAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <p className="text-sm text-blue-800 text-center">
+                    ⏰ Güvenli ödeme sayfasına yönlendiriliyorsunuz...
+                  </p>
+                </div>
+              </>
+            )}
+            
+            {paymentLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Ödeme sayfası hazırlanıyor...</span>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Selection Modal */}
+      <Dialog open={showServiceModal} onOpenChange={setShowServiceModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Ekstralarınızı Seçiniz
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-4 top-4"
+              onClick={() => setShowServiceModal(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DialogHeader>
+          <div className="mt-4">
+            <ServiceSelector
+              boatId={boatIdNumber}
+              selectedServices={selectedServices}
+              onServicesChange={setSelectedServices}
+              onPriceChange={setServicesPrice}
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowServiceModal(false)}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={() => setShowServiceModal(false)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Seçimi Tamamla ({selectedServices.length} hizmet)
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
