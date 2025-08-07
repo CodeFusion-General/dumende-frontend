@@ -32,7 +32,7 @@ const initialState: ProfileLoadingState = {
 
 export const useProfileState = () => {
   const [state, setState] = useState<ProfileLoadingState>(initialState);
-  const { executeWithRetry, isRetrying } = useProfileRetry();
+  const { execute, isRetrying } = useProfileRetry();
 
   const actions: ProfileStateActions = {
     setLoading: useCallback((loading: boolean) => {
@@ -108,7 +108,7 @@ export const useProfileState = () => {
         }
 
         // Execute operation with retry logic
-        const result = await executeWithRetry(operation);
+        const result = await execute(operation);
 
         // Show success message
         if (showSuccessToast && successMessage) {
@@ -135,7 +135,7 @@ export const useProfileState = () => {
         actions.setUploading(false);
       }
     },
-    [executeWithRetry, actions]
+    [execute, actions]
   );
 
   // Specific handlers for common profile operations
@@ -197,8 +197,10 @@ export const usePersonalInfoState = () => {
   return {
     ...state,
     actions,
-    savePersonalInfo: (saveFn: () => Promise<any>) =>
-      operations.saveProfile(saveFn, "Kişisel bilgiler başarıyla güncellendi"),
+    savePersonalInfo: (saveFn: () => Promise<any> | void) =>
+      operations.saveProfile(async () => {
+        await saveFn();
+      }, "Kişisel bilgiler başarıyla güncellendi"),
   };
 };
 
@@ -208,8 +210,10 @@ export const useProfessionalInfoState = () => {
   return {
     ...state,
     actions,
-    saveProfessionalInfo: (saveFn: () => Promise<any>) =>
-      operations.saveProfile(saveFn, "Mesleki bilgiler başarıyla güncellendi"),
+    saveProfessionalInfo: (saveFn: () => Promise<any> | void) =>
+      operations.saveProfile(async () => {
+        await saveFn();
+      }, "Mesleki bilgiler başarıyla güncellendi"),
   };
 };
 

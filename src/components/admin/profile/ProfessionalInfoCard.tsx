@@ -53,11 +53,6 @@ const ProfessionalInfoCard: React.FC<ProfessionalInfoCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const profileState = useProfessionalInfoState();
 
-  // Show loading skeleton if loading or data is missing
-  if (isLoading || !professionalInfo) {
-    return <ProfessionalInfoCardSkeleton />;
-  }
-
   // Convert ProfessionalInfo to form data format
   const getFormData = (info: ProfessionalInfo): ProfessionalInfoFormData => ({
     licenseNumber: info.licenseNumber,
@@ -67,15 +62,31 @@ const ProfessionalInfoCard: React.FC<ProfessionalInfoCardProps> = ({
     bio: info.bio || "",
   });
 
+  // Always initialize form to keep hooks order stable
+  const initialFormData: ProfessionalInfoFormData = professionalInfo
+    ? getFormData(professionalInfo)
+    : {
+        licenseNumber: "",
+        licenseExpiry: "",
+        yearsOfExperience: 0,
+        specializations: [],
+        bio: "",
+      };
+
   const form = useForm<ProfessionalInfoFormData>({
     resolver: zodResolver(professionalInfoFormSchema),
-    defaultValues: getFormData(professionalInfo),
+    defaultValues: initialFormData,
     mode: "onChange",
     reValidateMode: "onChange",
   });
 
-  // Simple validation state
+  // Simple validation state (declare before any conditional return to keep hook order stable)
   const [showErrorSummary, setShowErrorSummary] = useState(false);
+
+  // Show loading skeleton if loading or data is missing
+  if (isLoading || !professionalInfo) {
+    return <ProfessionalInfoCardSkeleton />;
+  }
 
   const handleEdit = () => {
     setIsEditing(true);

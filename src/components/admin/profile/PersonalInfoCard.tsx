@@ -37,11 +37,6 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const profileState = usePersonalInfoState();
 
-  // Show loading skeleton if loading or data is missing
-  if (isLoading || !personalInfo) {
-    return <PersonalInfoCardSkeleton />;
-  }
-
   // Convert PersonalInfo to form data format
   const getFormData = (info: PersonalInfo): PersonalInfoFormData => ({
     firstName: info.firstName,
@@ -56,15 +51,36 @@ const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
     country: info.address?.country || "",
   });
 
+  // Always initialize form to keep hooks order stable
+  const initialFormData: PersonalInfoFormData = personalInfo
+    ? getFormData(personalInfo)
+    : {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        dateOfBirth: "",
+        street: "",
+        city: "",
+        district: "",
+        postalCode: "",
+        country: "",
+      };
+
   const form = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoFormSchema),
-    defaultValues: getFormData(personalInfo),
+    defaultValues: initialFormData,
     mode: "onChange",
     reValidateMode: "onChange",
   });
 
   // Simple validation state
   const [showErrorSummary, setShowErrorSummary] = useState(false);
+
+  // Show loading skeleton if loading or data is missing
+  if (isLoading || !personalInfo) {
+    return <PersonalInfoCardSkeleton />;
+  }
 
   const handleEdit = () => {
     setIsEditing(true);

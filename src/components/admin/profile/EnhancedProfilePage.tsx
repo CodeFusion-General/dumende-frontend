@@ -22,11 +22,7 @@ const EnhancedProfilePage: React.FC = () => {
   const [statistics, setStatistics] = useState<CaptainStatistics | null>(null);
 
   const { state, actions, operations } = useProfileState();
-  const { executeWithRetry } = useRetry({
-    maxAttempts: 3,
-    delay: 1000,
-    backoff: true,
-  });
+  const { execute } = useRetry({ maxRetries: 3, baseDelay: 1000 });
 
   // Load profile data on component mount
   useEffect(() => {
@@ -68,7 +64,7 @@ const EnhancedProfilePage: React.FC = () => {
   };
 
   const handleRetryStatistics = async () => {
-    await executeWithRetry(async () => {
+    await execute(async () => {
       const statisticsData = await captainProfileService.getStatistics();
       setStatistics(statisticsData);
     });
