@@ -828,7 +828,7 @@ const VesselsPage = () => {
 
   return (
     <CaptainLayout>
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="list" className="mt-0">
             <VesselsList
@@ -844,31 +844,27 @@ const VesselsPage = () => {
 
           <TabsContent value="form" className="mt-0">
             <div className="space-y-8">
-              {/* Modern Header Section */}
-              <div className="relative">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 p-6 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl border border-primary/10">
-                  <div className="space-y-2">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight flex items-center">
-                      <Ship className="mr-3 text-primary" size={32} />
+              {/* Başlık */}
+              <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                      <Ship className="text-primary" size={24} />
                       {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
                     </h1>
-                    <p className="text-gray-600 text-sm">
+                    <p className="mt-1 text-sm text-gray-600">
                       {editingVesselId
-                        ? "Mevcut teknenizin bilgilerini güncelleyin"
-                        : "Yeni bir tekne ekleyerek müşterilerinize hizmet vermeye başlayın"}
-                      {loading && (
-                        <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                          <div className="w-3 h-3 border border-blue-600 border-t-transparent rounded-full animate-spin mr-1"></div>
-                          Yükleniyor...
-                        </span>
-                      )}
+                        ? "Mevcut tekne/taşıt bilgilerinizi modern form ile güncelleyin."
+                        : "Adım adım ilerleyerek yeni teknenizi ekleyin. Tüm sekmeler tek bir kayıtta saklanır."}
                     </p>
                   </div>
+                  {loading && (
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Yükleniyor
+                    </span>
+                  )}
                 </div>
-
-                {/* Decorative Elements */}
-                <div className="absolute -top-1 -right-1 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl" />
-                <div className="absolute -bottom-1 -left-1 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg" />
               </div>
 
               <form
@@ -880,57 +876,76 @@ const VesselsPage = () => {
                   className="w-full"
                   onValueChange={setFormTab}
                 >
-                  {/* Modern Tab Navigation */}
-                  <div className="bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                  {/* Sekmeler - adım deneyimi ve durum rozetleri */}
+                  <div className="bg-white border-b border-gray-200">
                     <TabsList className="w-full justify-start bg-transparent border-0 rounded-none p-0 h-auto">
-                      <div className="flex flex-wrap gap-1 p-4">
+                      <div className="flex flex-wrap gap-2 p-4">
                         <TabsTrigger
                           value="details"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <FileText size={18} />
-                          <span className="font-medium">Taşıt Detayları</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">1</span>
+                          <FileText size={16} />
+                          <span className="font-medium">Detaylar</span>
                         </TabsTrigger>
                         <TabsTrigger
                           value="terms"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <Shield size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">2</span>
+                          <Shield size={16} />
                           <span className="font-medium">Şartlar</span>
                         </TabsTrigger>
                         <TabsTrigger
                           value="services"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <Utensils size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">3</span>
+                          <Utensils size={16} />
                           <span className="font-medium">Servisler</span>
+                          {formData.boatServices.length > 0 && (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.boatServices.length}</span>
+                          )}
                         </TabsTrigger>
                         <TabsTrigger
                           value="location"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <MapPin size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">4</span>
+                          <MapPin size={16} />
                           <span className="font-medium">Lokasyon</span>
+                          {formData.latitude && formData.longitude && (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">Seçildi</span>
+                          )}
                         </TabsTrigger>
                         <TabsTrigger
                           value="photos"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <Image size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">5</span>
+                          <Image size={16} />
                           <span className="font-medium">Fotoğraflar</span>
+                          {(formData.existingImages.length + formData.images.length) > 0 && (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.existingImages.length + formData.images.length}</span>
+                          )}
                         </TabsTrigger>
                         <TabsTrigger
                           value="features"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <Shield size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">6</span>
+                          <Shield size={16} />
                           <span className="font-medium">Özellikler</span>
+                          {formData.features.length > 0 && (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.features.length}</span>
+                          )}
                         </TabsTrigger>
                         <TabsTrigger
                           value="descriptions"
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/50 hover:bg-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
                         >
-                          <FileText size={18} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">7</span>
+                          <FileText size={16} />
                           <span className="font-medium">Açıklamalar</span>
                         </TabsTrigger>
                       </div>
@@ -1144,58 +1159,13 @@ const VesselsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t border-gray-200">
-                        <div className="text-sm text-gray-500">
-                          <div>* işaretli alanlar zorunludur</div>
-                          <div className="mt-1 text-xs text-blue-600">
-                            💡 Bu kaydet butonu tüm sekmelerdeki bilgileri
-                            kaydeder
-                          </div>
-                        </div>
-                        <div className="flex space-x-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleBackToList}
-                            className="px-6 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 rounded-xl font-medium"
-                            disabled={loading}
-                          >
-                            Geri Dön
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="px-8 py-3 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 rounded-xl font-medium"
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <span className="flex items-center">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Kaydediliyor...
-                              </span>
-                            ) : editingVesselId ? (
-                              "Tüm Bilgileri Güncelle"
-                            ) : (
-                              "Tüm Bilgileri Kaydet"
-                            )}
-                          </Button>
-                        </div>
-                      </div>
+                      <div className="pt-4 text-xs text-gray-500">* işaretli alanlar zorunludur</div>
                     </div>
                   </TabsContent>
 
                   <TabsContent value="terms" className="p-6">
                     <div className="space-y-6">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <div className="flex items-center">
-                          <div className="text-blue-600 mr-2">ℹ️</div>
-                          <p className="text-sm text-blue-800">
-                            Bu sekmedeki bilgileri doldurduktan sonra{" "}
-                            <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                            <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                            basarak tüm bilgilerinizi kaydedin.
-                          </p>
-                        </div>
-                      </div>
+                    
                       <h2 className="text-xl font-medium mb-4">
                         Şartlar ve Koşullar
                       </h2>
@@ -1289,32 +1259,12 @@ const VesselsPage = () => {
                         <Textarea placeholder="Müşterilerinizin bilmesi gereken diğer kuralları veya şartları buraya yazabilirsiniz..." />
                       </div>
 
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                      </div>
+                      
                     </div>
                   </TabsContent>
 
                   <TabsContent value="services" className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center">
-                        <div className="text-blue-600 mr-2">ℹ️</div>
-                        <p className="text-sm text-blue-800">
-                          Bu sekmedeki bilgileri doldurduktan sonra{" "}
-                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                          basarak tüm bilgilerinizi kaydedin.
-                        </p>
-                      </div>
-                    </div>
+                    
                     <h2 className="text-xl font-medium mb-4">Ek Hizmetler</h2>
                     
                     {/* Boat Services Management Component */}
@@ -1322,32 +1272,11 @@ const VesselsPage = () => {
                       services={formData.boatServices}
                       onServicesChange={(services) => setFormData(prev => ({...prev, boatServices: services}))}
                     />
-
-                    <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBackToList}
-                        className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                        disabled={loading}
-                      >
-                        Geri Dön
-                      </Button>
-                    </div>
+                    
                   </TabsContent>
 
                   <TabsContent value="location" className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center">
-                        <div className="text-blue-600 mr-2">ℹ️</div>
-                        <p className="text-sm text-blue-800">
-                          Bu sekmedeki bilgileri doldurduktan sonra{" "}
-                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                          basarak tüm bilgilerinizi kaydedin.
-                        </p>
-                      </div>
-                    </div>
+                    
                     <h2 className="text-xl font-medium mb-4">Lokasyon</h2>
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1415,7 +1344,7 @@ const VesselsPage = () => {
                             </Button>
                             <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
                               <DialogTrigger asChild>
-                                <Button type="button" variant="secondary" className="h-9">Tam Ekran</Button>
+                                <Button type="button" variant="secondary" className="h-9">Haritayı Büyüt</Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-7xl">
                                 <DialogHeader>
@@ -1487,32 +1416,12 @@ const VesselsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                      </div>
+                      
                     </div>
                   </TabsContent>
 
                   <TabsContent value="photos" className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center">
-                        <div className="text-blue-600 mr-2">ℹ️</div>
-                        <p className="text-sm text-blue-800">
-                          Bu sekmedeki fotoğrafları ekledikten sonra{" "}
-                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                          basarak tüm bilgilerinizi kaydedin.
-                        </p>
-                      </div>
-                    </div>
+                    
                     <h2 className="text-xl font-medium mb-4">Fotoğraflar</h2>
                     <div className="space-y-6">
                       {/* Mevcut Fotoğraflar - Düzenleme modunda göster */}
@@ -1556,7 +1465,7 @@ const VesselsPage = () => {
                           </div>
                         )}
 
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center" onDragOver={(e) => { e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer?.files?.length) { handleImageUpload(e.dataTransfer.files); } }}>
                         <Image className="mx-auto h-12 w-12 mb-4 text-gray-400" />
                         <h3 className="text-lg font-medium text-gray-900 mb-1">
                           Fotoğrafları Sürükle & Bırak
@@ -1589,10 +1498,7 @@ const VesselsPage = () => {
                           Dosyaları Seç
                         </Button>
 
-                        <p className="mt-2 text-xs text-gray-500">
-                          PNG, JPG, WEBP formatları desteklenmektedir (maks.
-                          5MB)
-                        </p>
+                        <p className="mt-2 text-xs text-gray-500">PNG, JPG, WEBP formatları desteklenir (maks. 5MB)</p>
                       </div>
 
                       {/* Yeni Eklenen Fotoğraflar */}
@@ -1630,32 +1536,12 @@ const VesselsPage = () => {
                         </div>
                       )}
 
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                      </div>
+                      
                     </div>
                   </TabsContent>
 
                   <TabsContent value="descriptions" className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center">
-                        <div className="text-blue-600 mr-2">ℹ️</div>
-                        <p className="text-sm text-blue-800">
-                          Bu sekmedeki açıklamaları yazdıktan sonra{" "}
-                          <strong>"Taşıt Detayları"</strong> sekmesindeki{" "}
-                          <strong>"Tüm Bilgileri Kaydet"</strong> butonuna
-                          basarak tüm bilgilerinizi kaydedin.
-                        </p>
-                      </div>
-                    </div>
+                    
                     <h2 className="text-xl font-medium mb-4">Açıklamalar</h2>
                     <div className="space-y-6">
                       <div>
@@ -1690,30 +1576,12 @@ const VesselsPage = () => {
                         </p>
                       </div>
 
-                      <div className="flex justify-end space-x-3 pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleBackToList}
-                          className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                          disabled={loading}
-                        >
-                          Geri Dön
-                        </Button>
-                      </div>
+                      
                     </div>
                   </TabsContent>
 
                   <TabsContent value="features" className="p-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <div className="flex items-center">
-                        <div className="text-blue-600 mr-2">ℹ️</div>
-                        <p className="text-sm text-blue-800">
-                          Bu sekmede teknenizin özelliklerini seçin veya özel özellikler ekleyin. Kaydetmek için
-                          <strong> "Taşıt Detayları"</strong> sekmesindeki <strong>"Tüm Bilgileri Kaydet"</strong> butonunu kullanın.
-                        </p>
-                      </div>
-                    </div>
+                    
                     <h2 className="text-xl font-medium mb-4">Özellikler</h2>
 
                     {/* Seçili Özellikler */}
@@ -1804,19 +1672,35 @@ const VesselsPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBackToList}
-                        className="border-[#e74c3c] text-[#e74c3c] hover:bg-[#e74c3c] hover:text-white"
-                        disabled={loading}
-                      >
-                        Geri Dön
-                      </Button>
-                    </div>
+                    
                   </TabsContent>
                 </Tabs>
+                {/* Yapışkan alt aksiyon çubuğu */}
+                <div className="sticky bottom-0 z-20 w-full bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <div className="text-xs text-gray-600 hidden sm:block">Tüm sekmelerdeki bilgiler tek seferde kaydedilir.</div>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBackToList}
+                      disabled={loading}
+                    >
+                      Vazgeç
+                    </Button>
+                    <Button type="submit" className="px-6" disabled={loading}>
+                      {loading ? (
+                        <span className="flex items-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Kaydediliyor...
+                        </span>
+                      ) : editingVesselId ? (
+                        "Güncellemeyi Kaydet"
+                      ) : (
+                        "Kaydet"
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </form>
             </div>
           </TabsContent>
