@@ -66,6 +66,7 @@ import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
 import { BoatDTO } from "@/types/boat.types";
+import MapPicker from "@/components/common/MapPicker";
 
 // Default image helper function for boat detail page
 const getBoatImageUrl = (): string => {
@@ -746,6 +747,28 @@ const BoatListing = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Enhanced Features Section with Corporate Design */}
+                {/* Location Map Section */}
+                {finalBoatData.latitude != null && finalBoatData.longitude != null && (
+                  <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                      <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
+                      Konum
+                    </h2>
+                    <p className="text-gray-600 mb-4 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" /> {finalBoatData.location}
+                    </p>
+                    <div className="rounded-2xl overflow-hidden border border-gray-200">
+                      <MapPicker
+                        value={{ lat: finalBoatData.latitude, lng: finalBoatData.longitude }}
+                        height={360}
+                        zoom={13}
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Enhanced Features Section with Corporate Design */}
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">

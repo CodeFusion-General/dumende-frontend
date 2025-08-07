@@ -38,6 +38,8 @@ import {
   getDefaultImageUrl,
 } from "@/lib/imageUtils";
 import { useAuth } from "@/contexts/AuthContext";
+import MapPicker from "@/components/common/MapPicker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Form data interface
 interface VesselFormData {
@@ -61,6 +63,8 @@ interface VesselFormData {
 
   // Lokasyon
   location: string;
+  latitude?: number;
+  longitude?: number;
   departurePoint: string;
   returnPoint: string;
 
@@ -130,6 +134,8 @@ const VesselsPage = () => {
     dailyPrice: "",
     hourlyPrice: "",
     location: "",
+    latitude: undefined,
+    longitude: undefined,
     departurePoint: "",
     returnPoint: "",
     smokingRule: "",
@@ -151,6 +157,26 @@ const VesselsPage = () => {
     features: [],
     boatServices: [],
   });
+
+  // Harita modalı ve geolocation
+  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: "Konum Kullanılamıyor", description: "Tarayıcınız konum servisini desteklemiyor.", variant: "destructive" });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setFormData((prev) => ({ ...prev, latitude, longitude }));
+        toast({ title: "Konum Seçildi", description: "Mevcut konumunuz haritaya işlendi." });
+      },
+      () => {
+        toast({ title: "Konum İzni Gerekli", description: "Konumunuzu paylaşmayı reddettiniz.", variant: "destructive" });
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
 
   // Component mount'da vessels'ları yükle
   useEffect(() => {
@@ -281,6 +307,8 @@ const VesselsPage = () => {
       dailyPrice: vessel.dailyPrice?.toString() || "",
       hourlyPrice: vessel.hourlyPrice?.toString() || "",
       location: vessel.location || "",
+      latitude: vessel.latitude,
+      longitude: vessel.longitude,
       departurePoint: "",
       returnPoint: "",
       smokingRule: "",
@@ -404,6 +432,8 @@ const VesselsPage = () => {
       dailyPrice: parseFloat(data.dailyPrice) || 0,
       hourlyPrice: parseFloat(data.hourlyPrice) || 0,
       location: data.location.trim(),
+      latitude: data.latitude,
+      longitude: data.longitude,
       type: data.type,
       status: "INACTIVE", // Yeni tekneler inactive olarak başlar
       brandModel: data.brandModel,
@@ -434,6 +464,8 @@ const VesselsPage = () => {
       dailyPrice: parseFloat(data.dailyPrice) || undefined,
       hourlyPrice: parseFloat(data.hourlyPrice) || undefined,
       location: data.location,
+      latitude: data.latitude,
+      longitude: data.longitude,
       type: data.type,
       brandModel: data.brandModel,
       imageIdsToRemove: data.imageIdsToRemove, // Silinecek fotoğraf ID'leri
@@ -1341,14 +1373,87 @@ const VesselsPage = () => {
                           </Select>
                         </div>
                       </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="space-y-1">
+                            <label className="block text-sm font-medium">Harita Üzerinden Konum Seçin</label>
+                            <p className="text-xs text-gray-500">Haritaya tıklayın veya işaretçiyi sürükleyin.</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button type="button" variant="outline" onClick={useCurrentLocation} className="h-9">
+                              Mevcut Konumu Kullan
+                            </Button>
+                            <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+                              <DialogTrigger asChild>
+                                <Button type="button" variant="secondary" className="h-9">Tam Ekran</Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-7xl">
+                                <DialogHeader>
+                                  <DialogTitle>Harita - Konum Seç</DialogTitle>
+                                </DialogHeader>
+                                <div className="mt-2">
+                                  <MapPicker
+                                    value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
+                                    onChange={(coords) => {
+                                      setFormData((prev) => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
+                                    }}
+                                    height={600}
+                                    zoom={12}
+                                  />
+                                  <div className="mt-2 text-sm text-gray-600">Seçilen Koordinatlar: {formData.latitude?.toFixed(5) ?? "-"}, {formData.longitude?.toFixed(5) ?? "-"}</div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
 
-                      <div className="border rounded-lg p-4 bg-gray-50 h-[300px] flex items-center justify-center">
-                        <div className="text-center text-gray-500">
-                          <MapPin className="mx-auto h-12 w-12 mb-2 opacity-50" />
-                          <p>Harita bileşeni burada gösterilecek.</p>
-                          <p className="text-sm">
-                            Konumu harita üzerinde işaretleyebileceksiniz.
-                          </p>
+                        <div className="border rounded-xl p-3 bg-white w-full">
+                          <MapPicker
+                            value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
+                            onChange={(coords) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                latitude: coords.lat,
+                                longitude: coords.lng,
+                              }));
+                            }}
+                            height={420}
+                            zoom={12}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Enlem (Latitude)</label>
+                            <Input
+                              type="number"
+                              step="0.00001"
+                              placeholder="41.0082"
+                              value={formData.latitude ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value ? parseFloat(e.target.value) : undefined;
+                                setFormData((prev) => ({ ...prev, latitude: isNaN(v as number) ? undefined : (v as number) }));
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-1">Boylam (Longitude)</label>
+                            <Input
+                              type="number"
+                              step="0.00001"
+                              placeholder="28.9784"
+                              value={formData.longitude ?? ""}
+                              onChange={(e) => {
+                                const v = e.target.value ? parseFloat(e.target.value) : undefined;
+                                setFormData((prev) => ({ ...prev, longitude: isNaN(v as number) ? undefined : (v as number) }));
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-end">
+                            <Button type="button" variant="outline" className="w-full" onClick={() => setFormData((prev) => ({ ...prev, latitude: undefined, longitude: undefined }))}>
+                              Koordinatları Temizle
+                            </Button>
+                          </div>
                         </div>
                       </div>
 

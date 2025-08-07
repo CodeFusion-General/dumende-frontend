@@ -130,6 +130,8 @@ export interface BoatDTO {
   dailyPrice: number; // BigDecimal -> number
   hourlyPrice: number; // BigDecimal -> number
   location: string;
+  latitude?: number;
+  longitude?: number;
   rating?: number; // Double -> number, nullable
   type: string;
   status: string;
@@ -154,6 +156,8 @@ export interface CreateBoatDTO {
   dailyPrice: number; // BigDecimal -> number
   hourlyPrice: number; // BigDecimal -> number
   location: string;
+  latitude?: number;
+  longitude?: number;
   type: string;
   status?: string;
   brandModel?: string;
@@ -175,6 +179,8 @@ export interface UpdateBoatDTO {
   dailyPrice?: number; // BigDecimal -> number
   hourlyPrice?: number; // BigDecimal -> number
   location?: string;
+  latitude?: number;
+  longitude?: number;
   type?: string;
   status?: string;
   brandModel?: string;

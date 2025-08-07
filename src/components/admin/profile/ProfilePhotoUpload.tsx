@@ -31,24 +31,33 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-  // Size configurations
+  // Size configurations (refined for better visual balance)
   const sizeConfig = {
     sm: {
       avatar: "h-16 w-16",
-      button: "h-6 w-6",
+      uploadButton: "h-6 w-6",
+      removeButton: "h-5 w-5",
       icon: "h-3 w-3",
+      offsetUpload: "-bottom-1 -right-1",
+      offsetRemove: "-top-1 -right-1",
     },
     md: {
       avatar: "h-24 w-24 md:h-32 md:w-32",
-      button: "h-8 w-8",
+      uploadButton: "h-7 w-7",
+      removeButton: "h-6 w-6",
       icon: "h-4 w-4",
+      offsetUpload: "-bottom-1.5 -right-1.5",
+      offsetRemove: "-top-1.5 -right-1.5",
     },
     lg: {
       avatar: "h-32 w-32 md:h-40 md:w-40",
-      button: "h-10 w-10",
+      uploadButton: "h-8 w-8",
+      removeButton: "h-8 w-8",
       icon: "h-5 w-5",
+      offsetUpload: "-bottom-2 -right-2",
+      offsetRemove: "-top-2 -right-2",
     },
-  };
+  } as const;
 
   const validateFile = (file: File): string | null => {
     // Check file type
@@ -176,7 +185,7 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
         <Avatar
           className={cn(
             sizeConfig[size].avatar,
-            "ring-4 ring-[#3498db]/10 transition-all duration-200",
+            "ring-4 ring-white shadow-md transition-all duration-200",
             !disabled && "group-hover:ring-[#3498db]/20 cursor-pointer"
           )}
           onClick={handleUploadClick}
@@ -212,15 +221,17 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           </div>
         )}
 
-        {/* Upload button */}
+        {/* Upload button */
+        }
         {!disabled && (
           <Button
             size="icon"
             variant="secondary"
             className={cn(
-              "absolute -bottom-1 -right-1 rounded-full shadow-lg",
+              "absolute rounded-full shadow-md",
               "bg-white hover:bg-gray-50 border-2 border-white",
-              sizeConfig[size].button
+              sizeConfig[size].offsetUpload,
+              sizeConfig[size].uploadButton
             )}
             onClick={handleUploadClick}
             disabled={isUploading}
@@ -229,14 +240,15 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
           </Button>
         )}
 
-        {/* Remove button - only show if there's a photo and not uploading */}
+        {/* Remove button - only show if there's a photo and not uploading (visible on hover) */}
         {!disabled && displayPhoto && !isUploading && (
           <Button
             size="icon"
             variant="destructive"
             className={cn(
-              "absolute -top-1 -right-1 rounded-full shadow-lg",
-              sizeConfig[size].button
+              "absolute rounded-full shadow-md opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity",
+              sizeConfig[size].offsetRemove,
+              sizeConfig[size].removeButton
             )}
             onClick={handleRemovePhoto}
           >

@@ -36,7 +36,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="bg-white rounded-lg shadow-md border border-gray-100 p-4 sm:p-6 mb-4 sm:mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 sm:gap-6">
           {/* Profile Photo Section */}
-          <div className="flex-shrink-0 self-center lg:self-start">
+          <div className="flex-shrink-0 self-center lg:self-start relative">
             <ProfilePhotoUpload
               currentPhoto={personalInfo.profilePhoto}
               userName={fullName}
@@ -45,6 +45,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 onPhotoUpdated?.(previewUrl ?? null);
               }}
             />
+            {/* Subtle ring to separate from background */}
+            <div className="pointer-events-none absolute inset-0 rounded-full"></div>
           </div>
 
           {/* Basic Info Section */}
