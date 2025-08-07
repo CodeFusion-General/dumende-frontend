@@ -23,6 +23,8 @@ interface AvailabilityCalendarProps {
   onRetry?: () => void;
   language?: string;
   className?: string;
+  month?: Date;
+  onMonthChange?: (month: Date) => void;
 }
 
 interface AvailabilityLegendProps {
@@ -116,6 +118,8 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   onRetry,
   language = "tr",
   className,
+  month,
+  onMonthChange,
 }) => {
   // Create a map for quick availability lookup
   const availabilityMap = React.useMemo(() => {
@@ -274,6 +278,8 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           mode="single"
           selected={selected}
           onSelect={onSelect}
+          month={month}
+          onMonthChange={onMonthChange}
           disabled={disabledDates}
           locale={language === "tr" ? tr : undefined}
           className="w-full"

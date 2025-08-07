@@ -23,6 +23,8 @@ import {
   CreateAvailabilityPeriodCommand,
 } from "@/types/boat.types";
 import { BoatDTO } from "@/types/boat.types";
+import AvailabilityCalendar from "@/components/boats/AvailabilityCalendar";
+import { CalendarAvailability } from "@/types/availability.types";
 import { useAuth } from "@/contexts/AuthContext";
 import { AddAvailabilityModal } from "@/components/admin/AddAvailabilityModal";
 import { EditAvailabilityModal } from "@/components/admin/EditAvailabilityModal";
@@ -58,6 +60,13 @@ const AvailabilityPage = () => {
     null
   );
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Calendar states
+  const [calendarData, setCalendarData] = useState<CalendarAvailability[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState<string | undefined>(undefined);
+  const [calendarSelected, setCalendarSelected] = useState<Date | undefined>(undefined);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const { user, isAuthenticated } = useAuth();
 
@@ -96,8 +105,16 @@ const AvailabilityPage = () => {
   useEffect(() => {
     if (selectedBoat) {
       fetchAvailabilityData();
+      fetchCalendarData();
     }
   }, [selectedBoat]);
+
+  useEffect(() => {
+    if (selectedBoat) {
+      fetchCalendarData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarMonth?.getFullYear(), calendarMonth?.getMonth()]);
 
   const fetchBoats = async () => {
     if (!currentOwnerId) {
@@ -175,11 +192,40 @@ const AvailabilityPage = () => {
     }
   };
 
+  const getCurrentMonthRange = () => {
+    const base = calendarMonth || new Date();
+    const start = new Date(base.getFullYear(), base.getMonth(), 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const toISO = (d: Date) => d.toISOString().split("T")[0];
+    return { start: toISO(start), end: toISO(end) };
+  };
+
+  const fetchCalendarData = async () => {
+    if (!selectedBoat) return;
+    try {
+      setCalendarLoading(true);
+      setCalendarError(undefined);
+      const { start, end } = getCurrentMonthRange();
+      const data = await availabilityService.getCalendarAvailability(
+        selectedBoat.id,
+        start,
+        end
+      );
+      setCalendarData(data);
+    } catch (error: any) {
+      console.error("Takvim verileri yüklenirken hata:", error);
+      setCalendarError(error?.message || "Takvim verileri yüklenemedi");
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
   const handleUpdateAvailability = async (data: {
     id: number;
     date?: string;
     isAvailable?: boolean;
     priceOverride?: number;
+    isInstantConfirmation?: boolean;
   }) => {
     try {
       const updateCommand: UpdateAvailabilityDTO = {
@@ -187,6 +233,7 @@ const AvailabilityPage = () => {
         date: data.date,
         isAvailable: data.isAvailable,
         priceOverride: data.priceOverride,
+        isInstantConfirmation: data.isInstantConfirmation,
       };
 
       const response = await availabilityService.updateAvailability(
@@ -207,6 +254,8 @@ const AvailabilityPage = () => {
       setAvailabilityEntries((prev) =>
         prev.map((entry) => (entry.id === data.id ? updatedEntry : entry))
       );
+      // Refresh calendar
+      fetchCalendarData();
 
       toast({
         title: "Başarılı",
@@ -227,6 +276,8 @@ const AvailabilityPage = () => {
     try {
       await availabilityService.deleteAvailability(id);
       setAvailabilityEntries((prev) => prev.filter((entry) => entry.id !== id));
+      // Refresh calendar
+      fetchCalendarData();
 
       toast({
         title: "Başarılı",
@@ -284,6 +335,8 @@ const AvailabilityPage = () => {
             : e
         )
       );
+      // Refresh calendar
+      fetchCalendarData();
 
       toast({
         title: "Başarılı",
@@ -306,6 +359,7 @@ const AvailabilityPage = () => {
     endDate: string;
     isAvailable: boolean;
     priceOverride?: number;
+    isInstantConfirmation?: boolean;
   }) => {
     if (!selectedBoat) {
       toast({
@@ -322,12 +376,15 @@ const AvailabilityPage = () => {
         startDate: data.startDate,
         endDate: data.endDate,
         isAvailable: data.isAvailable,
+        priceOverride: data.priceOverride,
+        isInstantConfirmation: data.isInstantConfirmation,
       };
 
       await availabilityService.createAvailabilityPeriod(command);
 
       // Refresh data after creating period
       await fetchAvailabilityData();
+      await fetchCalendarData();
 
       toast({
         title: "Başarılı",
@@ -337,6 +394,20 @@ const AvailabilityPage = () => {
       console.error("Failed to create availability period:", error);
       throw error; // Re-throw to let modal handle the error
     }
+  };
+
+  const handleCalendarSelect = async (date?: Date) => {
+    setCalendarSelected(date);
+    if (!date || !selectedBoat) return;
+    const iso = date.toISOString().split("T")[0];
+    // Var olan kayıt varsa düzenleme modalını aç
+    const existing = availabilityEntries.find((e) => e.date === iso);
+    if (existing) {
+      handleOpenEditModal(existing);
+      return;
+    }
+    // Yoksa ekleme modalını aç (kullanıcı tarihleri seçer)
+    setIsAddModalOpen(true);
   };
 
   const handleOpenEditModal = (entry: AvailabilityEntry) => {
@@ -479,14 +550,29 @@ const AvailabilityPage = () => {
 
           {/* Rest of the component remains the same */}
           <div className="bg-white rounded-lg shadow-md border border-gray-100">
-            <Tabs defaultValue="available" className="w-full">
+            <Tabs defaultValue="calendar" className="w-full">
               <TabsList className="w-full justify-start border-b rounded-none">
+                <TabsTrigger value="calendar">Takvim</TabsTrigger>
                 <TabsTrigger value="available">Müsait Günler</TabsTrigger>
                 <TabsTrigger value="unavailable">
                   Müsait Olmayan Günler
                 </TabsTrigger>
                 <TabsTrigger value="all">Tüm Kayıtlar</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="calendar" className="p-6">
+                <AvailabilityCalendar
+                  selected={calendarSelected}
+                  onSelect={handleCalendarSelect}
+                  availabilityData={calendarData}
+                  isLoading={calendarLoading}
+                  error={calendarError}
+                  onRetry={fetchCalendarData}
+                  language="tr"
+                  month={calendarMonth}
+                  onMonthChange={(m)=> setCalendarMonth(m)}
+                />
+              </TabsContent>
 
               <TabsContent value="available" className="p-6">
                 {loading ? (

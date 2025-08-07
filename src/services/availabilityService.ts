@@ -220,6 +220,8 @@ class AvailabilityService extends BaseService {
         date: dateUtils.isISOFormat(data.date)
           ? dateUtils.formatDateForAPI(data.date)
           : data.date,
+        // Make sure instant confirmation flag is forwarded when provided
+        isInstantConfirmation: data.isInstantConfirmation,
       };
 
       return await this.post<any>("", createData);
@@ -239,6 +241,7 @@ class AvailabilityService extends BaseService {
         date: data.date,
         isAvailable: data.isAvailable,
         priceOverride: data.priceOverride,
+        isInstantConfirmation: data.isInstantConfirmation,
       };
 
       return await this.put<any>("", updateData);
