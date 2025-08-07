@@ -115,6 +115,12 @@ const Hero = () => {
             opacity: 0,
             animationFillMode: "forwards",
           }}
+          onClick={() => {
+            const el = document.getElementById("home-search-widget");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }}
         >
           {t.hero.cta}
         </button>
@@ -155,6 +161,7 @@ const Hero = () => {
           opacity: 0,
           animationFillMode: "forwards",
         }}
+        id="home-search-widget"
       >
         <div className="max-w-5xl mx-auto">
           <SearchWidget />

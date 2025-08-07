@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { boatService, AdvancedSearchRequest } from "@/services/boatService";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
-import { createRippleEffect } from "@/lib/animations";
+// import { createRippleEffect } from "@/lib/animations";
 
 interface SearchSuggestion {
   id: string;
@@ -22,28 +22,27 @@ interface SearchSuggestion {
   icon?: React.ReactNode;
 }
 
-// Debounce utility function
+// Debounce utility function (browser-safe type)
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
   };
 }
 
-// Generate search suggestions based on query
+// Generate search suggestions based on query (uses cached locations state)
 const generateSearchSuggestions = async (
-  query: string
+  query: string,
+  allLocations: string[]
 ): Promise<SearchSuggestion[]> => {
   const suggestions: SearchSuggestion[] = [];
 
   try {
-    // Get locations that match the query
-    const locations = await boatService.getAllLocations();
-    const matchingLocations = locations
+    const matchingLocations = allLocations
       .filter((loc) => loc.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 3)
       .map((loc) => ({
@@ -55,7 +54,6 @@ const generateSearchSuggestions = async (
 
     suggestions.push(...matchingLocations);
 
-    // Add some mock boat suggestions (in real app, this would come from boat search)
     if (query.length >= 2) {
       const boatSuggestions = [
         { name: "Luxury Yacht", location: "Bodrum" },
@@ -78,7 +76,6 @@ const generateSearchSuggestions = async (
       suggestions.push(...boatSuggestions);
     }
 
-    // Add recent searches from localStorage
     const recentSearches = JSON.parse(
       localStorage.getItem("recentSearches") || "[]"
     )
@@ -98,7 +95,7 @@ const generateSearchSuggestions = async (
     console.error("Error generating suggestions:", error);
   }
 
-  return suggestions.slice(0, 6); // Limit to 6 suggestions
+  return suggestions.slice(0, 6);
 };
 
 const SearchWidget = () => {
@@ -139,7 +136,7 @@ const SearchWidget = () => {
 
       setSuggestionsLoading(true);
       try {
-        const suggestions = await generateSearchSuggestions(query);
+        const suggestions = await generateSearchSuggestions(query, locations);
         setSuggestions(suggestions);
         setShowSuggestions(true);
       } catch (error) {
@@ -149,7 +146,7 @@ const SearchWidget = () => {
         setSuggestionsLoading(false);
       }
     }, 300),
-    []
+    [locations]
   );
 
   useEffect(() => {
@@ -335,10 +332,7 @@ const SearchWidget = () => {
     searchInputRef.current?.focus();
   };
 
-  // Handle ripple effect on button click
-  const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    createRippleEffect(e.currentTarget, e);
-  };
+  // Ripple effect is globally handled by AnimationUtils (disabled here for type safety)
 
   return (
     <div
@@ -429,6 +423,10 @@ const SearchWidget = () => {
                       ? "rgba(255, 255, 255, 0.15)"
                       : "rgba(255, 255, 255, 0.1)",
                 }}
+                role="combobox"
+                aria-expanded={showSuggestions}
+                aria-controls="search-suggestions"
+                aria-autocomplete="list"
               />
               <Search
                 className="absolute left-3 top-3.5 text-white/60"
@@ -454,6 +452,9 @@ const SearchWidget = () => {
             {showSuggestions && (
               <div
                 ref={suggestionsRef}
+                role="listbox"
+                id="search-suggestions"
+                aria-label={language === "tr" ? "Arama önerileri" : "Search suggestions"}
                 className="absolute top-full left-0 right-0 z-50 glass-card bg-white/10 backdrop-blur-lg border border-white/20 border-t-0 rounded-b-xl shadow-2xl animate-fade-in-up"
                 style={{
                   backdropFilter: "blur(20px)",
@@ -468,6 +469,8 @@ const SearchWidget = () => {
                         key={suggestion.id}
                         type="button"
                         onClick={() => handleSuggestionClick(suggestion)}
+                        role="option"
+                        aria-selected={index === activeSuggestionIndex}
                         className={`w-full px-4 py-3 text-left flex items-center space-x-3 transition-all duration-200 ${
                           index === activeSuggestionIndex
                             ? "bg-white/20 text-white"
@@ -522,8 +525,8 @@ const SearchWidget = () => {
                   className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
+                  onFocus={() => handleFocus("date")}
+                  onBlur={() => handleBlur("date")}
                   min={new Date().toISOString().split("T")[0]}
                   required
                   style={{
@@ -555,8 +558,8 @@ const SearchWidget = () => {
                   className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm appearance-none"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
+                  onFocus={() => handleFocus("location")}
+                  onBlur={() => handleBlur("location")}
                   disabled={locationsLoading}
                   required
                   style={{
@@ -608,8 +611,8 @@ const SearchWidget = () => {
                   className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm appearance-none"
                   value={guests}
                   onChange={(e) => setGuests(e.target.value)}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
+                  onFocus={() => handleFocus("guests")}
+                  onBlur={() => handleBlur("guests")}
                   required
                   style={{
                     background: "rgba(255, 255, 255, 0.1)",

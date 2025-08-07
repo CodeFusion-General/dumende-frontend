@@ -19,6 +19,7 @@ const ContactForm = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [backendMessage, setBackendMessage] = useState<string>("");
+  const [hpToken, setHpToken] = useState<string>(""); // honeypot
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -38,6 +39,32 @@ const ContactForm = () => {
     setSubmitError(null);
 
     try {
+      // Basic client-side validation (kurumsal standart)
+      if (!formData.name || formData.name.trim().length < 2) {
+        throw new Error(
+          language === "tr" ? "Lütfen geçerli bir isim giriniz" : "Please enter a valid name"
+        );
+      }
+      const emailRegex = /[^@\s]+@[^@\s]+\.[^@\s]+/;
+      if (!emailRegex.test(formData.email)) {
+        throw new Error(
+          language === "tr" ? "Lütfen geçerli bir e-posta giriniz" : "Please enter a valid email"
+        );
+      }
+      if (!formData.message || formData.message.trim().length < 10) {
+        throw new Error(
+          language === "tr"
+            ? "Mesaj en az 10 karakter olmalıdır"
+            : "Message must be at least 10 characters"
+        );
+      }
+
+      // Honeypot: eğer doluysa işlemi durdur
+      if (hpToken) {
+        setIsSubmitting(false);
+        return;
+      }
+
       const response = await contactService.submitMessage(formData);
       setSubmitSuccess(true);
       setBackendMessage(response.message);
@@ -146,7 +173,7 @@ const ContactForm = () => {
 
             {/* Error Message */}
             {submitError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" aria-live="polite">
                 <div className="flex items-center">
                   <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
                   <p className="text-red-800">{submitError}</p>
@@ -155,6 +182,17 @@ const ContactForm = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Honeypot alanı (gizli) */}
+              <div className="hidden">
+                <label htmlFor="website">Website</label>
+                <input
+                  id="website"
+                  type="text"
+                  value={hpToken}
+                  onChange={(e) => setHpToken(e.target.value)}
+                  autoComplete="off"
+                />
+              </div>
               <div>
                 <label
                   htmlFor="name"

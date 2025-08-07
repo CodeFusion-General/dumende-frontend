@@ -26,19 +26,12 @@ const Testimonials = () => {
       setReviews(topReviews);
       setError(null);
     } catch (err: any) {
-      console.error("Testimonials API Hatası:", err);
-      console.error("Hata detayları:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        url: err.config?.url,
-      });
+      console.error("Testimonials API Hatası:", err?.message || err);
 
       const errorMessage =
-        err.response?.data?.message ||
-        err.response?.statusText ||
-        err.message ||
+        err?.response?.data?.message ||
+        err?.response?.statusText ||
+        err?.message ||
         "Yorumlar yüklenirken bir hata oluştu.";
 
       // Set error state instead of using mock data

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, Anchor, TrendingUp, DollarSign, Hash } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, TypeStatistic } from "@/services/boatService";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -32,7 +31,7 @@ const BoatTypes = () => {
       setBoatTypes(sortedTypes);
     } catch (error) {
       console.error("BoatTypes istatistik hatası:", error);
-      setError("Veriler yüklenirken bir hata oluştu");
+      setError(t.errors.somethingWentWrong);
 
       // Error occurred - no fallback data used
     } finally {
@@ -145,8 +144,7 @@ const BoatTypes = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className="text-4xl p-2 rounded-full"
-                    style={{ backgroundColor: getTypeColor(index) }}
+                    className={`text-4xl p-2 rounded-full text-white ${getTypeColor(index)}`}
                   >
                     {getTypeIcon(type.type)}
                   </div>

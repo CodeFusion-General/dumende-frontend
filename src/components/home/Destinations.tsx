@@ -90,22 +90,29 @@ const Destinations = () => {
   };
 
   const getDestinationImage = (location: string) => {
+    const normalize = (s: string) =>
+      s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "");
+
     const images: { [key: string]: string } = {
-      İstanbul:
+      istanbul:
         "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      Bodrum:
+      bodrum:
         "https://images.unsplash.com/photo-1594735797933-d0c17737f852?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      Fethiye:
+      fethiye:
         "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      Marmaris:
+      marmaris:
         "https://images.unsplash.com/photo-1544533538-b4ddabca0d11?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      Çeşme:
+      cesme:
         "https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      Antalya:
+      antalya:
         "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     };
+    const key = normalize(location);
     return (
-      images[location] ||
+      images[key] ||
       "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
     );
   };
