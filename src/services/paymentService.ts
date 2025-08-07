@@ -178,17 +178,27 @@ class PaymentService extends BaseService {
    * ✅ Get status display info
    */
   public getStatusDisplayInfo(status: PaymentStatusResponseDto) {
-    const isSuccess = status.paymentCompleted || status.paymentStatus === 'COMPLETED';
+    // PARTIAL (depozito ödendi) durumunu kullanıcı açısından başarı kabul ediyoruz
+    const isDepositPartial = status.paymentStatus === 'PARTIAL';
+    const isSuccess = status.paymentCompleted || status.paymentStatus === 'COMPLETED' || isDepositPartial;
     const isFailed = status.paymentStatus === 'FAILED' || status.paymentStatus === 'CANCELLED';
-    const isPending = status.paymentStatus === 'PENDING' || status.paymentPending;
-    
+    const isPending = (!isSuccess && !isFailed) || status.paymentStatus === 'PENDING' || status.paymentPending;
+
+    const statusText = isFailed
+      ? 'Başarısız'
+      : isDepositPartial
+      ? 'Ön ödeme alındı'
+      : isSuccess
+      ? 'Başarılı'
+      : 'Bekliyor';
+
     return {
       isSuccess,
       isFailed,
       isPending,
-      statusText: isSuccess ? 'Başarılı' : isFailed ? 'Başarısız' : 'Bekliyor',
-      statusColor: isSuccess ? 'text-green-600' : isFailed ? 'text-red-600' : 'text-yellow-600',
-      bgColor: isSuccess ? 'bg-green-50' : isFailed ? 'bg-red-50' : 'bg-yellow-50'
+      statusText,
+      statusColor: isFailed ? 'text-red-600' : isSuccess ? 'text-green-600' : 'text-yellow-600',
+      bgColor: isFailed ? 'bg-red-50' : isSuccess ? 'bg-green-50' : 'bg-yellow-50'
     };
   }
 }

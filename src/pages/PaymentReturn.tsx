@@ -35,6 +35,14 @@ export default function PaymentReturn() {
         console.log('Checking payment status for booking:', bookingId);
         console.log('URL params:', { success, status, token });
 
+        // Small initial delay to allow Iyzico -> Backend -> DB senkronizasyonu
+        const shouldDelay = success === 'true' || status === 'success' || status === 'COMPLETED' || !!token;
+        if (shouldDelay) {
+          const INITIAL_DELAY_MS = 5000; // 5s bekleme
+          console.log(`Initial delay before status check: ${INITIAL_DELAY_MS}ms`);
+          await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY_MS));
+        }
+
         // If URL indicates success, use enhanced polling
         if (success === 'true' || status === 'success' || status === 'COMPLETED') {
           console.log('Payment appears successful, starting enhanced polling...');
