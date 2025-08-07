@@ -10,6 +10,7 @@ const Hero = () => {
   const { language } = useLanguage();
   const t = translations[language];
   const heroRef = useRef<HTMLDivElement>(null);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const slides = [
     {
@@ -119,33 +120,35 @@ const Hero = () => {
           }}
           data-search-widget
         >
-          <SearchWidget />
+          <SearchWidget onDatePickerToggle={setIsDatePickerOpen} />
         </div>
 
         {/* CTA Button */}
-        <div className="w-full mb-8">
-          <button
-            className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-semibold rounded-xl hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300 transform hover:scale-105 animate-fade-in-up"
-            style={{
-              animationDelay: "0.8s",
-              opacity: 0,
-              animationFillMode: "forwards",
-            }}
-            onClick={() => {
-              const searchWidget = document.querySelector(
-                "[data-search-widget]"
-              );
-              if (searchWidget) {
-                searchWidget.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
-              }
-            }}
-          >
-            {t.hero.cta}
-          </button>
-        </div>
+        {!isDatePickerOpen && (
+          <div className="w-full mb-8">
+            <button
+              className="px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 font-semibold rounded-xl hover:from-yellow-500 hover:to-yellow-600 transition-all duration-300 transform hover:scale-105 animate-fade-in-up"
+              style={{
+                animationDelay: "0.8s",
+                opacity: 0,
+                animationFillMode: "forwards",
+              }}
+              onClick={() => {
+                const searchWidget = document.querySelector(
+                  "[data-search-widget]"
+                );
+                if (searchWidget) {
+                  searchWidget.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                }
+              }}
+            >
+              {t.hero.cta}
+            </button>
+          </div>
+        )}
 
         {/* Slide Navigation Dots */}
         <div

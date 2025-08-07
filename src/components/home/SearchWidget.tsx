@@ -79,7 +79,11 @@ const generateSearchSuggestions = async (
   return suggestions.slice(0, 6);
 };
 
-const SearchWidget = () => {
+interface SearchWidgetProps {
+  onDatePickerToggle?: (open: boolean) => void;
+}
+
+const SearchWidget = ({ onDatePickerToggle }: SearchWidgetProps) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [location, setLocation] = useState("");
@@ -161,11 +165,22 @@ const SearchWidget = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Helper: open/close date picker with callback
+  const setDatePickerOpen = (open: boolean) => {
+    setShowDatePicker(open);
+    try {
+      onDatePickerToggle && onDatePickerToggle(open);
+    } catch (err) {
+      // ignore callback errors to avoid UI breakage
+      console.error("onDatePickerToggle error", err);
+    }
+  };
+
   // Close date picker on escape key
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && showDatePicker) {
-        setShowDatePicker(false);
+        setDatePickerOpen(false);
       }
     };
 
@@ -331,7 +346,7 @@ const SearchWidget = () => {
   // Date picker handlers
   const openDatePicker = (type: "start" | "end") => {
     setDatePickerType(type);
-    setShowDatePicker(true);
+    setDatePickerOpen(true);
   };
 
   const handleDateSelect = (selectedDate: string) => {
@@ -344,7 +359,7 @@ const SearchWidget = () => {
     } else {
       setEndDate(selectedDate);
     }
-    setShowDatePicker(false);
+    setDatePickerOpen(false);
   };
 
   const formatDateDisplay = (dateStr: string) => {
@@ -774,7 +789,7 @@ const SearchWidget = () => {
       {showDatePicker && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-lg animate-fade-in"
-          onClick={() => setShowDatePicker(false)}
+          onClick={() => setDatePickerOpen(false)}
           style={{ backdropFilter: "blur(20px)" }}
         >
           <div
@@ -799,7 +814,7 @@ const SearchWidget = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => setShowDatePicker(false)}
+                onClick={() => setDatePickerOpen(false)}
                 className="glass-button p-2 rounded-lg hover:bg-white/10 transition-all duration-300"
               >
                 <X className="text-white/60" size={20} />
@@ -894,7 +909,7 @@ const SearchWidget = () => {
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowDatePicker(false)}
+                  onClick={() => setDatePickerOpen(false)}
                   className="px-4 py-2 glass-button rounded-lg text-white/80 hover:text-white transition-all duration-300"
                 >
                   {language === "tr" ? "İptal" : "Cancel"}
@@ -904,7 +919,7 @@ const SearchWidget = () => {
                     type="button"
                     onClick={() => {
                       setEndDate("");
-                      setShowDatePicker(false);
+                      setDatePickerOpen(false);
                     }}
                     className="px-4 py-2 glass-button rounded-lg text-white/80 hover:text-white transition-all duration-300"
                   >
