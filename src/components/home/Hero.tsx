@@ -62,7 +62,7 @@ const Hero = () => {
       className="relative h-screen w-full overflow-hidden gpu-accelerated z-0"
     >
       {/* Dynamic Multi-Layer Background System (click-through) */}
-      <div className="pointer-events-none">
+      <div className="pointer-events-none z-[1]">
         <DynamicBackground
           images={slideImages}
           currentIndex={currentSlide}
@@ -73,12 +73,12 @@ const Hero = () => {
       </div>
 
       {/* Floating Glass Elements (decorative, no pointer capture) */}
-      <div className="pointer-events-none">
+      <div className="pointer-events-none z-[2]">
         <FloatingGlassElements isVisible={true} />
       </div>
 
       {/* Hero Content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10 pointer-events-auto">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-[10] pointer-events-auto">
         {/* Title */}
         <div className="w-full mb-6">
           <h1

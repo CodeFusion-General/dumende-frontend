@@ -80,9 +80,14 @@ const generateSearchSuggestions = async (
 };
 
 const SearchWidget = () => {
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [location, setLocation] = useState("");
   const [guests, setGuests] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerType, setDatePickerType] = useState<"start" | "end">(
+    "start"
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [locations, setLocations] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
@@ -156,6 +161,18 @@ const SearchWidget = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close date picker on escape key
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && showDatePicker) {
+        setShowDatePicker(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => document.removeEventListener("keydown", handleEscapeKey);
+  }, [showDatePicker]);
+
   const fetchLocations = async () => {
     try {
       setLocationsLoading(true);
@@ -181,7 +198,7 @@ const SearchWidget = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!date || !location || !guests) {
+    if (!startDate || !location || !guests) {
       alert(t.search.errors.fillAllFields);
       return;
     }
@@ -196,8 +213,8 @@ const SearchWidget = () => {
       // Gelişmiş arama parametrelerini hazırla (tarih aralığına uyumlu)
       const searchRequest: AdvancedSearchRequest = {
         locations: [location],
-        startDate: date,
-        endDate: date, // İstenirse tarih aralığına çevrildiğinde ikinci tarih gelecek
+        startDate: startDate,
+        endDate: endDate || startDate, // Eğer bitiş tarihi yoksa başlangıç tarihini kullan
         minCapacity,
       };
 
@@ -233,7 +250,7 @@ const SearchWidget = () => {
       setFocusedField(null);
     }
     // Keep expanded if any field has value
-    if (!date && !location && !guests && !searchQuery) {
+    if (!startDate && !endDate && !location && !guests && !searchQuery) {
       setIsExpanded(false);
     }
   };
@@ -311,6 +328,57 @@ const SearchWidget = () => {
     searchInputRef.current?.focus();
   };
 
+  // Date picker handlers
+  const openDatePicker = (type: "start" | "end") => {
+    setDatePickerType(type);
+    setShowDatePicker(true);
+  };
+
+  const handleDateSelect = (selectedDate: string) => {
+    if (datePickerType === "start") {
+      setStartDate(selectedDate);
+      // Eğer bitiş tarihi başlangıç tarihinden önceyse, bitiş tarihini sıfırla
+      if (endDate && selectedDate > endDate) {
+        setEndDate("");
+      }
+    } else {
+      setEndDate(selectedDate);
+    }
+    setShowDatePicker(false);
+  };
+
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // Generate calendar days for current month
+  const generateCalendarDays = () => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const days = [];
+    const currentDate = new Date(startDate);
+
+    for (let i = 0; i < 42; i++) {
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return days;
+  };
+
   // Ripple effect is globally handled by AnimationUtils (disabled here for type safety)
 
   return (
@@ -347,7 +415,7 @@ const SearchWidget = () => {
       {/* Expanded Form */}
       <div
         className={`transition-all duration-500 ease-glass overflow-hidden ${
-          isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         {/* Collapse Button */}
@@ -437,7 +505,7 @@ const SearchWidget = () => {
                 aria-label={
                   language === "tr" ? "Arama önerileri" : "Search suggestions"
                 }
-                className="absolute top-full left-0 right-0 z-50 glass-card bg-white/10 backdrop-blur-lg border border-white/20 border-t-0 rounded-b-xl shadow-2xl animate-fade-in-up"
+                className="absolute top-full left-0 right-0 z-[100] glass-card bg-white/10 backdrop-blur-lg border border-white/20 border-t-0 rounded-b-xl shadow-2xl animate-fade-in-up"
                 style={{
                   backdropFilter: "blur(20px)",
                   maxHeight: "300px",
@@ -488,34 +556,67 @@ const SearchWidget = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Date */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Start Date */}
             <div
               className="relative animate-fade-in-up"
               style={{ animationDelay: "0.1s" }}
             >
               <label
-                htmlFor="date"
+                htmlFor="startDate"
                 className="block text-sm font-medium text-white/90 mb-2"
               >
-                {t.search.date}
+                {language === "tr" ? "Başlangıç Tarihi" : "Start Date"}
               </label>
               <div className="relative">
-                <input
-                  type="date"
-                  id="date"
-                  className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  onFocus={() => handleFocus("date")}
-                  onBlur={() => handleBlur("date")}
-                  min={new Date().toISOString().split("T")[0]}
-                  required
+                <button
+                  type="button"
+                  onClick={() => openDatePicker("start")}
+                  className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm text-left"
                   style={{
-                    colorScheme: "dark",
                     background: "rgba(255, 255, 255, 0.1)",
                   }}
+                >
+                  {startDate
+                    ? formatDateDisplay(startDate)
+                    : language === "tr"
+                    ? "Tarih seçin"
+                    : "Select date"}
+                </button>
+                <Calendar
+                  className="absolute left-3 top-3.5 text-white/60"
+                  size={18}
                 />
+              </div>
+            </div>
+
+            {/* End Date */}
+            <div
+              className="relative animate-fade-in-up"
+              style={{ animationDelay: "0.15s" }}
+            >
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-white/90 mb-2"
+              >
+                {language === "tr" ? "Bitiş Tarihi" : "End Date"}
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => openDatePicker("end")}
+                  className="w-full pl-10 pr-4 py-3 glass-light rounded-xl border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300 backdrop-blur-sm text-left"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.1)",
+                  }}
+                  disabled={!startDate}
+                >
+                  {endDate
+                    ? formatDateDisplay(endDate)
+                    : language === "tr"
+                    ? "Bitiş tarihi (opsiyonel)"
+                    : "End date (optional)"}
+                </button>
                 <Calendar
                   className="absolute left-3 top-3.5 text-white/60"
                   size={18}
@@ -581,7 +682,7 @@ const SearchWidget = () => {
             {/* Guests */}
             <div
               className="relative animate-fade-in-up"
-              style={{ animationDelay: "0.3s" }}
+              style={{ animationDelay: "0.25s" }}
             >
               <label
                 htmlFor="guests"
@@ -635,7 +736,7 @@ const SearchWidget = () => {
             {/* Search Button */}
             <div
               className="animate-fade-in-up"
-              style={{ animationDelay: "0.4s" }}
+              style={{ animationDelay: "0.3s" }}
             >
               <button
                 type="submit"
@@ -668,6 +769,153 @@ const SearchWidget = () => {
           </div>
         </form>
       </div>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-lg animate-fade-in"
+          onClick={() => setShowDatePicker(false)}
+          style={{ backdropFilter: "blur(20px)" }}
+        >
+          <div
+            className="glass-card bg-white/25 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/40 p-6 max-w-md w-full mx-4 relative z-[10000] animate-fade-in-up"
+            style={{
+              backdropFilter: "blur(30px)",
+              boxShadow:
+                "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-semibold text-lg">
+                {datePickerType === "start"
+                  ? language === "tr"
+                    ? "Başlangıç Tarihi"
+                    : "Start Date"
+                  : language === "tr"
+                  ? "Bitiş Tarihi"
+                  : "End Date"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(false)}
+                className="glass-button p-2 rounded-lg hover:bg-white/10 transition-all duration-300"
+              >
+                <X className="text-white/60" size={20} />
+              </button>
+            </div>
+
+            {/* Calendar */}
+            <div className="space-y-4">
+              {/* Month/Year Header */}
+              <div className="flex justify-between items-center">
+                <h4 className="text-white font-medium">
+                  {new Date().toLocaleDateString(
+                    language === "tr" ? "tr-TR" : "en-US",
+                    {
+                      month: "long",
+                      year: "numeric",
+                    }
+                  )}
+                </h4>
+              </div>
+
+              {/* Days of Week */}
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {(language === "tr"
+                  ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+                  : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                ).map((day) => (
+                  <div
+                    key={day}
+                    className="text-white/60 text-sm font-medium py-2"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7 gap-1">
+                {generateCalendarDays().map((day, index) => {
+                  const dayStr = day.toISOString().split("T")[0];
+                  const today = new Date().toISOString().split("T")[0];
+                  const isToday = dayStr === today;
+                  const isPast = dayStr < today;
+                  const isCurrentMonth =
+                    day.getMonth() === new Date().getMonth();
+                  const isSelected =
+                    dayStr ===
+                    (datePickerType === "start" ? startDate : endDate);
+                  const isInRange =
+                    startDate &&
+                    endDate &&
+                    dayStr >= startDate &&
+                    dayStr <= endDate;
+
+                  // Eğer bitiş tarihi seçiyorsak ve başlangıç tarihinden önceki tarihleri devre dışı bırak
+                  const isDisabled =
+                    isPast ||
+                    (datePickerType === "end" &&
+                      startDate &&
+                      dayStr < startDate);
+
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => !isDisabled && handleDateSelect(dayStr)}
+                      disabled={isDisabled}
+                      className={`
+                        h-10 w-10 rounded-lg text-sm font-medium transition-all duration-200
+                        ${
+                          isDisabled
+                            ? "text-white/30 cursor-not-allowed"
+                            : "text-white hover:bg-white/20 cursor-pointer"
+                        }
+                        ${!isCurrentMonth ? "text-white/40" : ""}
+                        ${isToday ? "ring-2 ring-yellow-400" : ""}
+                        ${
+                          isSelected
+                            ? "bg-yellow-400 text-gray-900 font-bold"
+                            : ""
+                        }
+                        ${isInRange && !isSelected ? "bg-yellow-400/30" : ""}
+                      `}
+                    >
+                      {day.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(false)}
+                  className="px-4 py-2 glass-button rounded-lg text-white/80 hover:text-white transition-all duration-300"
+                >
+                  {language === "tr" ? "İptal" : "Cancel"}
+                </button>
+                {datePickerType === "end" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEndDate("");
+                      setShowDatePicker(false);
+                    }}
+                    className="px-4 py-2 glass-button rounded-lg text-white/80 hover:text-white transition-all duration-300"
+                  >
+                    {language === "tr" ? "Temizle" : "Clear"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

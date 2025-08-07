@@ -115,6 +115,8 @@ const BoatsPage = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([500, 30000]);
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
 
   const [openSections, setOpenSections] = useState({
     boatType: true,
@@ -160,6 +162,8 @@ const BoatsPage = () => {
           : undefined,
         minPrice: debouncedPriceRange[0],
         maxPrice: debouncedPriceRange[1],
+        startDate,
+        endDate,
       };
 
       const sortParam =
@@ -194,6 +198,8 @@ const BoatsPage = () => {
     debouncedPriceRange,
     debouncedSelectedLocations,
     debouncedSelectedFeatures,
+    startDate,
+    endDate,
     sortBy,
   ]);
 
@@ -221,6 +227,9 @@ const BoatsPage = () => {
     const locationFilter = searchParams.get("location");
     const typeFilter = searchParams.get("type");
     const filterType = searchParams.get("filter");
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
+    const guests = searchParams.get("guests");
 
     // Lokasyon filtresi varsa uygula
     if (locationFilter && filterType === "location") {
@@ -231,6 +240,11 @@ const BoatsPage = () => {
     if (typeFilter && filterType === "type") {
       setSelectedTypes([typeFilter]);
     }
+
+    // Tarih ve misafir sayısını URL'den al
+    if (start) setStartDate(start);
+    if (end) setEndDate(end);
+    if (guests) setCapacity(guests);
   };
 
   const fetchBoats = async () => {

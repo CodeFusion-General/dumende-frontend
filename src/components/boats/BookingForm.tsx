@@ -120,6 +120,35 @@ export function BookingForm({
     return date ? format(date, "yyyy-MM-dd") : null;
   }, [date]);
 
+  // Prefill form fields from URL (runs once)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const start = params.get("start");
+    const end = params.get("end");
+    const guestsParam = params.get("guests");
+
+    if (start) {
+      const startD = new Date(start);
+      if (!isNaN(startD.getTime())) setDate(startD);
+    }
+    if (guestsParam) {
+      const min = parseInt(guestsParam.split("-")[0]);
+      if (!isNaN(min)) setGuests(min);
+    }
+    if (end && start) {
+      const startD = new Date(start);
+      const endD = new Date(end);
+      const diffDays = Math.max(
+        1,
+        Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      if (!isNaN(diffDays)) {
+        setIsHourlyMode(false);
+        setDuration(diffDays);
+      }
+    }
+  }, []);
+
   // Fetch available dates for the next 6 months (180 days) - Only run once per boatId
   useEffect(() => {
     let isMounted = true; // Prevent state updates if component unmounts

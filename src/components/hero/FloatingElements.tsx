@@ -22,7 +22,7 @@ const FloatingElement: React.FC<FloatingElementProps> = ({
     if (!element) return;
 
     const handleScroll = () => {
-      const scrollY = window.pageYOffset;
+      const scrollY = window.scrollY;
       const rate = scrollY * speed * (direction === "up" ? -1 : 1);
       element.style.transform = `translateY(${rate}px)`;
     };
@@ -73,7 +73,7 @@ const FloatingGlassElements: React.FC<FloatingGlassElementsProps> = ({
     <div
       ref={containerRef}
       className="absolute inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 5 }}
+      style={{ zIndex: 2 }}
     >
       {/* Floating Glass Orbs */}
       <FloatingElement speed={0.2} delay={0} className="floating-element">

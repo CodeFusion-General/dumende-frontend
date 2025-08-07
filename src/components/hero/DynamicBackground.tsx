@@ -91,7 +91,7 @@ const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
     if (!enableScrollBasedShifting) return;
 
     const handleScroll = () => {
-      scrollY.current = window.pageYOffset;
+      scrollY.current = window.scrollY;
       const scrollProgress = Math.min(scrollY.current / window.innerHeight, 1);
 
       setLayers((prevLayers) =>
