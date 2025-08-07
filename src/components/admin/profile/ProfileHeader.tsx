@@ -11,6 +11,7 @@ interface ProfileHeaderProps {
   statistics?: CaptainStatistics;
   isLoading?: boolean;
   onRetry?: () => void;
+  onPhotoUpdated?: (photoUrl: string | null) => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -18,6 +19,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   statistics,
   isLoading = false,
   onRetry,
+  onPhotoUpdated,
 }) => {
   // Show loading skeleton if loading or data is missing
   if (isLoading || !personalInfo || !statistics) {
@@ -40,8 +42,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               userName={fullName}
               size="md"
               onPhotoChange={(file, previewUrl) => {
-                // TODO: Handle photo upload in parent component
-                console.log("Photo changed:", { file, previewUrl });
+                onPhotoUpdated?.(previewUrl ?? null);
               }}
             />
           </div>

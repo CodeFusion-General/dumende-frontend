@@ -199,10 +199,8 @@ export const professionalInfoFormSchema = z.object({
   licenseNumber: z
     .string()
     .min(1, "Lisans numarası zorunludur")
-    .regex(
-      /^[A-Z]{2}-[A-Z]{3}-\d{4}-\d{6}$/,
-      "Lisans numarası formatı: TR-CAP-YYYY-XXXXXX"
-    ),
+    .regex(/^[A-Z0-9]{6,12}$/i, "Lisans numarası 6-12 karakter olmalı ve yalnızca harf/rakam içermelidir")
+    .transform((val) => val.trim().toUpperCase()),
   licenseExpiry: z
     .string()
     .min(1, "Lisans bitiş tarihi zorunludur")
@@ -211,7 +209,13 @@ export const professionalInfoFormSchema = z.object({
       const expiryDate = new Date(date);
       const today = new Date();
       return expiryDate > today;
-    }, "Lisans bitiş tarihi gelecekte olmalıdır"),
+    }, "Lisans bitiş tarihi gelecekte olmalıdır")
+    .refine((date) => {
+      const expiryDate = new Date(date);
+      const tenYearsAhead = new Date();
+      tenYearsAhead.setFullYear(tenYearsAhead.getFullYear() + 10);
+      return expiryDate <= tenYearsAhead;
+    }, "Lisans bitiş tarihi en fazla 10 yıl ileri olabilir"),
   yearsOfExperience: z
     .number()
     .min(0, "Deneyim yılı negatif olamaz")

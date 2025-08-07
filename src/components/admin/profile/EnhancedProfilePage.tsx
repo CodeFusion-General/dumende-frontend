@@ -112,6 +112,11 @@ const EnhancedProfilePage: React.FC = () => {
           statistics={statistics || undefined}
           isLoading={state.isInitialLoading}
           onRetry={handleRetryLoadProfile}
+          onPhotoUpdated={(photoUrl) => {
+            if (personalInfo && photoUrl !== undefined) {
+              setPersonalInfo({ ...personalInfo, profilePhoto: photoUrl || undefined });
+            }
+          }}
         />
 
         {/* Profile Cards Grid */}

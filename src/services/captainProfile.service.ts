@@ -52,7 +52,17 @@ class CaptainProfileService extends BaseService {
   async uploadProfilePhoto(file: File): Promise<{ photoUrl: string }> {
     const formData = new FormData();
     formData.append('photo', file);
-    return this.upload('/photo', formData);
+    const response = await this.api.post(
+      `${this.baseUrl}/photo`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...this.getAuthHeaders(),
+        },
+      }
+    );
+    return response.data as { photoUrl: string };
   }
 
   // Remove profile photo
@@ -60,12 +70,12 @@ class CaptainProfileService extends BaseService {
     return this.delete('/photo');
   }
 
-  // Get profile photo
-  async getProfilePhoto(userId: number): Promise<Blob> {
+  // Get profile photo URL (backend returns text/plain URL)
+  async getProfilePhoto(userId: number): Promise<string> {
     const response = await this.api.get(`/photo/${userId}`, {
-      responseType: 'blob'
+      responseType: 'text'
     });
-    return response.data;
+    return response.data as string;
   }
 }
 
