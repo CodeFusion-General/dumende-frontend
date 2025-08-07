@@ -111,7 +111,7 @@ const MobileNavigation = () => {
         <Link
           key={item.path}
           to={item.path}
-          className="flex flex-col items-center justify-center flex-1 h-full"
+          className="flex flex-col items-center justify-center flex-1 h-full text-left"
         >
           <span className={isActive(item.path) ? 'text-[#00bfa5]' : 'text-[#000000e6]'}>
             {item.icon}

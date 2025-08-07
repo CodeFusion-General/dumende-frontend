@@ -101,7 +101,7 @@ const CaptainSidebar = () => {
   return (
     <Sidebar
       className={`${
-        isCollapsed ? "w-[60px]" : ""
+        isCollapsed ? "w-[60px]" : "w-[260px]"
       } transition-all duration-300 ease-in-out`}
     >
       <SidebarHeader
@@ -121,7 +121,7 @@ const CaptainSidebar = () => {
           </div>
         ) : (
           <SidebarTrigger
-            className="text-white mx-auto"
+            className="text-white ml-2"
             aria-label={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           />
         )}
@@ -160,7 +160,7 @@ const CaptainSidebar = () => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center px-3 py-2.5 rounded-md transition-colors text-left ${
+                    className={`flex items-center justify-start px-3 py-2.5 rounded-md transition-colors text-left ${
                       isActive
                         ? "bg-[#15847c] text-white"
                         : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -208,7 +208,7 @@ const CaptainSidebar = () => {
 
       <SidebarFooter
         className={`p-4 border-t border-gray-700 bg-[#2c3e50] text-xs text-gray-400 ${
-          isCollapsed ? "px-1 py-2 text-center" : ""
+          isCollapsed ? "px-1 py-2" : ""
         }`}
       >
         {!isCollapsed && <p>© 2025 dümende</p>}
