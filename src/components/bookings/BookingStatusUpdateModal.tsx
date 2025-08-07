@@ -87,6 +87,14 @@ const BookingStatusUpdateModal: React.FC<BookingStatusUpdateModalProps> = ({
     }
   }, [reason, validationErrors.reason]);
 
+  // Kullanıcı iptal gerekçesi yazmaya başlarsa otomatik olarak statüyü CANCELLED yap
+  useEffect(() => {
+    const trimmed = reason.trim();
+    if (trimmed.length > 0 && selectedStatus !== BookingStatus.CANCELLED) {
+      setSelectedStatus(BookingStatus.CANCELLED);
+    }
+  }, [reason, selectedStatus]);
+
   // Enhanced form validation logic
   const validateForm = (): boolean => {
     const errors: { status?: string; reason?: string } = {};

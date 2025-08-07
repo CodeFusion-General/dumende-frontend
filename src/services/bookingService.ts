@@ -88,7 +88,8 @@ class BookingService extends BaseService {
   }
 
   public async updateBooking(data: UpdateBookingDTO): Promise<BookingDTO> {
-    return this.put<BookingDTO>(`/${data.id}`, data);
+    // Backend @PutMapping "/api/bookings" (ID body'de)
+    return this.put<BookingDTO>(``, data);
   }
 
   public async updateBookingStatus(
