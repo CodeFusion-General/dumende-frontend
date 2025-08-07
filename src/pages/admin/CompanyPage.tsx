@@ -17,6 +17,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
 import { companyService } from "@/services/companyService";
+import { userService } from "@/services/userService";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* Backend hazır olduğunda kullanılacak interface:
 interface CompanyDetails {
@@ -139,15 +141,56 @@ const CompanyPage: React.FC = () => {
   */
 
   const [loading, setLoading] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+
+  // Mevcut kullanıcının şirket bilgilerini getir ve formu doldur
+  useEffect(() => {
+    const fetchCompany = async () => {
+      if (!isAuthenticated || !user?.id) return;
+      try {
+        setLoading(true);
+        const backendUser: any = await userService.getUserById(user.id);
+        const company = backendUser?.company;
+        if (company) {
+          form.reset({
+            legalName: company.legalName || "",
+            displayName: company.displayName || "",
+            taxNumber: company.taxNumber || "",
+            taxOffice: company.taxOffice || "",
+            authorizedPerson: company.authorizedPerson || "",
+            companyEmail: company.companyEmail || "",
+            nationalIdNumber: company.nationalIdNumber || "",
+            mobilePhone: company.mobilePhone || "",
+            landlinePhone: company.landlinePhone || "",
+            billingAddress: company.billingAddress || "",
+            iban: company.iban || "",
+          });
+        }
+      } catch (error) {
+        console.error("Şirket bilgileri getirilemedi:", error);
+        toast({
+          title: "Hata",
+          description:
+            "Şirket bilgileri yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompany();
+  }, [isAuthenticated, user?.id, form]);
 
   const onSubmit = async (data: CompanyFormValues) => {
     try {
       setLoading(true);
 
-      // TODO: Replace with actual logged-in user ID
-      const currentUserId = 1; // Geçici olarak sabit değer
+      if (!user?.id) {
+        throw new Error("Oturum bilgisi bulunamadı");
+      }
 
-      await companyService.updateUserCompany(currentUserId, data as any);
+      await companyService.updateUserCompany(user.id, data as any);
 
       toast({
         title: "Başarılı",

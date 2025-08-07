@@ -69,11 +69,7 @@ const CaptainSidebar = () => {
       icon: <Calendar size={20} />,
       path: "/captain/tour-calendar",
     },
-    {
-      label: "Fiyatlar",
-      icon: <DollarSign size={20} />,
-      path: "/captain/pricing",
-    },
+    // Fiyatlar kaldırıldı; Finans bölümü kullanılacak
     {
       label: "Finans",
       icon: <DollarSign size={20} />,

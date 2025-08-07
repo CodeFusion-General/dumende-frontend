@@ -47,7 +47,7 @@ const MobileNavigation = () => {
     { label: 'Taşıtlarım', path: '/captain/vessels', icon: <Clock size={20} /> },
     { label: 'Tekne Turlarım', path: '/captain/tours', icon: <Clock size={20} /> },
     { label: 'Tekne Turu Takvimi', path: '/captain/tour-calendar', icon: <Calendar size={20} /> },
-    { label: 'Fiyatlar', path: '/captain/pricing', icon: <Clock size={20} /> },
+    // Fiyatlar kaldırıldı
     { label: 'Finans', path: '/captain/finance', icon: <Clock size={20} /> },
     { label: 'Şirket', path: '/captain/company', icon: <Clock size={20} /> },
     { label: 'Profil', path: '/captain/profile', icon: <Clock size={20} /> },

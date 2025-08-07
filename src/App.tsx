@@ -36,7 +36,7 @@ import PaymentReturn from "./pages/PaymentReturn";
 import Dashboard from "./pages/admin/Dashboard";
 import VesselsPage from "./pages/admin/VesselsPage";
 import AvailabilityPage from "./pages/admin/AvailabilityPage";
-import PricingPage from "./pages/admin/PricingPage";
+// PricingPage kaldırıldı
 import ToursPage from "./pages/admin/ToursPage";
 import NewTourPage from "./pages/admin/NewTourPage";
 import TourDetailPage from "./pages/TourDetailPage";
@@ -47,6 +47,8 @@ import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 import BookingsPage from "./pages/admin/BookingsPage";
 import ProfilePage from "./pages/admin/ProfilePage";
+import SecurityPage from "./pages/admin/SecurityPage";
+import FinancePage from "./pages/admin/FinancePage";
 import GlassmorphismTest from "./components/test/GlassmorphismTest";
 import MicroAnimationsTest from "./components/test/MicroAnimationsTest";
 import PageTransitionsTest from "./components/test/PageTransitionsTest";
@@ -181,15 +183,16 @@ const App = () => {
                       }
                     />
                     <Route
-                      path="/captain/pricing"
+                      path="/captain/finance"
                       element={
                         <RoleGuard
                           requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
                         >
-                          <PricingPage />
+                          <FinancePage />
                         </RoleGuard>
                       }
                     />
+                    
                     <Route
                       path="/captain/company"
                       element={
@@ -247,6 +250,16 @@ const App = () => {
                           requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
                         >
                           <ProfilePage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/security"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <SecurityPage />
                         </RoleGuard>
                       }
                     />
@@ -308,14 +321,7 @@ const App = () => {
                         </RoleGuard>
                       }
                     />
-                    <Route
-                      path="/admin/pricing"
-                      element={
-                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
-                          <PricingPage />
-                        </RoleGuard>
-                      }
-                    />
+                    
                     <Route
                       path="/admin/company"
                       element={
