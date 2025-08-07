@@ -361,41 +361,62 @@ export function BookingForm({
   }, [lastBooking, isAuthenticated, isCustomer, captain, captainLoading]);
 
   // Payment redirect function
-  const handlePaymentRedirect = useCallback(async (bookingId: number) => {
-    try {
-      setPaymentLoading(true);
+const handlePaymentRedirect = useCallback(async (bookingId: number) => {
+  try {
+    setPaymentLoading(true);
+    
+    // Get payment status from backend
+    const paymentInfo = await paymentService.getPaymentStatus(bookingId);
+    setPaymentStatus(paymentInfo);
+    
+    // If payment is required and we have a payment URL, redirect
+    if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
+      // Show payment info briefly before redirect
+      setShowPaymentInfo(true);
       
-      // Get payment status from backend
-      const paymentInfo = await paymentService.getPaymentStatus(bookingId);
-      setPaymentStatus(paymentInfo);
+      // ✅ Simplified: Let PaymentService handle returnUrl - Don't add it here
+      setTimeout(() => {
+        // Just use the original payment URL, PaymentService will handle returnUrl
+        paymentService.redirectToPayment(paymentInfo.paymentUrl!);
+      }, 2000);
       
-      // If payment is required and we have a payment URL, redirect
-      if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
-        // Show payment info briefly before redirect
-        setShowPaymentInfo(true);
-        
-        // Short delay to show payment info, then redirect
-        setTimeout(() => {
-          paymentService.redirectToPayment(paymentInfo.paymentUrl!);
-        }, 2000);
-      } else {
-        // No payment required or no URL, show success message
-        toast({
-          title: "Rezervasyon tamamlandı",
-          description: "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
-        });
-      }
-    } catch (error) {
-      console.error("Payment redirect failed:", error);
+    } else if (paymentInfo.paymentCompleted) {
+      // Payment already completed
       toast({
-        title: "Ödeme sayfası yüklenemedi",
-        description: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
-        variant: "destructive",
+        title: "Ödeme zaten tamamlanmış",
+        description: "Bu rezervasyon için ödeme zaten tamamlanmış durumda.",
       });
-    } finally {
-      setPaymentLoading(false);
+      
+      // Redirect to bookings page
+      navigate("/my-bookings");
+      
+    } else {
+      // No payment required
+      toast({
+        title: "Rezervasyon tamamlandı",
+        description: "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
+      });
+      
+      // Redirect to bookings page
+      navigate("/my-bookings");
     }
-  }, []);
+  } catch (error) {
+    console.error("Payment redirect failed:", error);
+    toast({
+      title: "Ödeme sayfası yüklenemedi",
+      description: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+      variant: "destructive",
+    });
+    
+    // Still redirect to bookings page so user can see their reservation
+    setTimeout(() => {
+      navigate("/my-bookings");
+    }, 3000);
+  } finally {
+    setPaymentLoading(false);
+    setShowPaymentInfo(false);
+  }
+}, [navigate]);
 
   // Cleanup messaging state when component unmounts
   useEffect(() => {
