@@ -15,6 +15,8 @@ import {
   PaymentStatus,
   BookingWithDetails,
   BookingStatistics,
+  SelectedServiceDTO,
+  BookingServiceDTO,
 } from "@/types/booking.types";
 
 // getUserIdFromToken fonksiyonunu kaldırıyoruz - AuthContext kullanacağız
@@ -247,25 +249,8 @@ class BookingService extends BaseService {
     return this.post("/check-availability", data);
   }
 
-  public async calculatePrice(data: {
-    boatId: number;
-    startDate: string;
-    endDate: string;
-    passengerCount: number;
-    tourId?: number;
-  }): Promise<{
-    basePrice: number;
-    totalPrice: number;
-    breakdown: {
-      dailyRate: number;
-      days: number;
-      tourPrice?: number;
-      taxes: number;
-      fees: number;
-    };
-  }> {
-    return this.post("/calculate-price", data);
-  }
+  // ❌ REMOVED: calculatePrice - Backend artık otomatik hesaplıyor
+  // Frontend'den fiyat hesaplama kaldırıldı, backend CreateBookingDTO ile hesaplıyor
 
   // Pagination support
   public async getBookingsPaginated(

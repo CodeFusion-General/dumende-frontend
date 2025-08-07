@@ -1,5 +1,43 @@
 // Boat ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+// BoatService Types (Yeni eklenen)
+export enum ServiceType {
+  FOOD = "FOOD",
+  PACKAGE = "PACKAGE", 
+  EXTRA = "EXTRA"
+}
+
+export interface BoatServiceDTO {
+  id: number;
+  boatId: number;
+  name: string;
+  description?: string;
+  serviceType: ServiceType;
+  price: number;
+  quantity: number;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBoatServiceDTO {
+  boatId: number;
+  name: string;
+  description?: string;
+  serviceType: ServiceType;
+  price: number;
+  quantity?: number;
+}
+
+export interface UpdateBoatServiceDTO {
+  id: number;
+  name: string;
+  description?: string;
+  serviceType: ServiceType;
+  price: number;
+  quantity?: number;
+}
+
 // Availability (Müsaitlik) Types
 export interface AvailabilityDTO {
   id: number;
@@ -7,6 +45,7 @@ export interface AvailabilityDTO {
   date: string; // LocalDate -> string
   isAvailable: boolean;
   priceOverride?: number; // BigDecimal -> number, nullable
+  isInstantConfirmation?: boolean; // Anında rezervasyon özelliği
   createdAt: string;
   updatedAt: string;
 }
@@ -16,6 +55,7 @@ export interface CreateAvailabilityDTO {
   date: string; // LocalDate -> string
   isAvailable: boolean;
   priceOverride?: number; // BigDecimal -> number, nullable
+  isInstantConfirmation?: boolean; // Anında rezervasyon özelliği
 }
 
 export interface UpdateAvailabilityDTO {
@@ -23,6 +63,7 @@ export interface UpdateAvailabilityDTO {
   date?: string; // LocalDate -> string
   isAvailable?: boolean;
   priceOverride?: number; // BigDecimal -> number, nullable
+  isInstantConfirmation?: boolean; // Anında rezervasyon özelliği
 }
 
 export interface CreateAvailabilityPeriodCommand {
@@ -30,6 +71,8 @@ export interface CreateAvailabilityPeriodCommand {
   startDate: string;
   endDate: string;
   isAvailable: boolean;
+  priceOverride?: number; // Özel fiyat özelliği
+  isInstantConfirmation?: boolean; // Anında rezervasyon özelliği
 }
 
 // Boat Feature (Özellik) Types
@@ -96,6 +139,7 @@ export interface BoatDTO {
   images: BoatImageDTO[];
   features: BoatFeatureDTO[];
   availabilities: AvailabilityDTO[];
+  services: BoatServiceDTO[]; // YENİ: Gemi hizmetleri
   createdAt: string;
   updatedAt: string;
 }

@@ -7,24 +7,24 @@ import { tokenUtils } from "@/lib/utils";
 
 // Date format conversion utilities for API compatibility
 export const dateUtils = {
-  // Convert ISO date (yyyy-MM-dd) to API format (dd-MM-yyyy)
+  // Convert ISO date (yyyy-MM-dd) to API format (yyyy-MM-dd - backend expects ISO format)
   formatDateForAPI: (isoDate: string): string => {
     const date = new Date(isoDate);
     const day = date.getDate().toString().padStart(2, "0");
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${year}-${month}-${day}`;
   },
 
-  // Convert API date format (dd-MM-yyyy) to ISO format (yyyy-MM-dd)
+  // Convert API date format (yyyy-MM-dd) to ISO format (yyyy-MM-dd) - already ISO format
   formatDateFromAPI: (apiDate: string): string => {
-    const [day, month, year] = apiDate.split("-");
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    // Backend now returns ISO format, so no conversion needed
+    return apiDate;
   },
 
-  // Check if date string is in API format (dd-MM-yyyy)
+  // Check if date string is in API format (yyyy-MM-dd)
   isAPIFormat: (dateStr: string): boolean => {
-    return /^\d{2}-\d{2}-\d{4}$/.test(dateStr);
+    return /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
   },
 
   // Check if date string is in ISO format (yyyy-MM-dd)
@@ -347,6 +347,11 @@ class AvailabilityService extends BaseService {
       // Add priceOverride if provided
       if (command.priceOverride !== undefined && command.priceOverride !== null) {
         params.priceOverride = command.priceOverride;
+      }
+
+      // Add isInstantConfirmation if provided
+      if (command.isInstantConfirmation !== undefined && command.isInstantConfirmation !== null) {
+        params.isInstantConfirmation = command.isInstantConfirmation;
       }
 
       // Use POST request with URL parameters using the inherited post method with params

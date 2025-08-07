@@ -44,6 +44,7 @@ interface CreateAvailabilityPeriodData {
   endDate: string;
   isAvailable: boolean;
   priceOverride?: number;
+  isInstantConfirmation?: boolean;
 }
 
 interface FormErrors {
@@ -63,6 +64,7 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
   const [priceOverride, setPriceOverride] = useState<string>("");
+  const [isInstantConfirmation, setIsInstantConfirmation] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<AppError | null>(null);
 
@@ -87,6 +89,7 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
       setEndDate(undefined);
       setIsAvailable(true);
       setPriceOverride("");
+      setIsInstantConfirmation(false);
       setErrors({});
       setApiError(null);
     }
@@ -162,6 +165,7 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
           isAvailable,
           priceOverride:
             priceOverride.trim() !== "" ? parseFloat(priceOverride) : undefined,
+          isInstantConfirmation,
         };
 
         await onSubmit(data);
@@ -338,6 +342,24 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
             )}
             <p className="text-xs text-gray-500">
               Boş bırakırsanız geminin varsayılan fiyatı kullanılacaktır
+            </p>
+          </div>
+
+          {/* Instant Confirmation */}
+          <div className="space-y-2">
+            <Label htmlFor="isInstantConfirmation">Anında Rezervasyon</Label>
+            <div className="flex items-center space-x-3">
+              <Switch
+                id="isInstantConfirmation"
+                checked={isInstantConfirmation}
+                onCheckedChange={setIsInstantConfirmation}
+              />
+              <span className="text-sm text-gray-700">
+                {isInstantConfirmation ? "Anında Onay" : "Manuel Onay"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              Açık olduğunda rezervasyonlar anında onaylanır, kapalı olduğunda manuel onay gerekir
             </p>
           </div>
 

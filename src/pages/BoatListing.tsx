@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BookingForm from "@/components/boats/BookingForm";
 import BoatFeatures from "@/components/boats/BoatFeatures";
+import BoatServices from "@/components/boats/BoatServices";
 import HostInfo from "@/components/boats/HostInfo";
 import SimilarBoats from "@/components/boats/SimilarBoats";
 import Reviews from "@/components/boats/Reviews";
@@ -757,6 +758,11 @@ const BoatListing = () => {
                     Özellikler
                   </h2>
                   <BoatFeatures features={finalBoatData.features} />
+                </div>
+
+                {/* Enhanced Services Section */}
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                  <BoatServices services={finalBoatData.services || []} />
                 </div>
 
                 {/* Enhanced Host Section with Professional Design */}

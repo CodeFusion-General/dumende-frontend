@@ -9,6 +9,10 @@ import {
   UpdateAvailabilityDTO,
   CreateVesselDTO,
   UpdateVesselDTO,
+  BoatServiceDTO,
+  CreateBoatServiceDTO,
+  UpdateBoatServiceDTO,
+  ServiceType,
 } from "@/types/boat.types";
 import { compressImage, validateImageFile } from "@/lib/imageUtils";
 import { availabilityService } from "./availabilityService";
@@ -435,6 +439,144 @@ class BoatService extends BaseService {
 
     // Güncellenmiş tekne bilgilerini getir
     return this.getBoatById(boatId);
+  }
+
+  // ==================== BOAT SERVICES API ====================
+
+  // Boat Services - Query Methods
+  public async getBoatServiceById(id: number): Promise<BoatServiceDTO> {
+    try {
+      const response = await this.api.get(`/boat-services/${id}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async getBoatServicesByBoatId(boatId: number): Promise<BoatServiceDTO[]> {
+    try {
+      const response = await this.api.get(`/boat-services/boat/${boatId}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async getBoatServicesByType(serviceType: ServiceType): Promise<BoatServiceDTO[]> {
+    try {
+      const response = await this.api.get(`/boat-services/type/${serviceType}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async getBoatServicesByBoatIdAndType(boatId: number, serviceType: ServiceType): Promise<BoatServiceDTO[]> {
+    try {
+      const response = await this.api.get(`/boat-services/boat/${boatId}/type/${serviceType}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async searchBoatServicesByName(boatId: number, name: string): Promise<BoatServiceDTO[]> {
+    try {
+      const response = await this.api.get(`/boat-services/boat/${boatId}/search`, {
+        params: { name },
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // Boat Services - Command Methods
+  public async createBoatService(data: CreateBoatServiceDTO): Promise<BoatServiceDTO> {
+    try {
+      const response = await this.api.post("/boat-services", data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async createBoatServices(data: CreateBoatServiceDTO[]): Promise<BoatServiceDTO[]> {
+    try {
+      const response = await this.api.post("/boat-services/batch", data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async updateBoatService(data: UpdateBoatServiceDTO): Promise<BoatServiceDTO> {
+    try {
+      const response = await this.api.put("/boat-services", data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async deleteBoatService(id: number): Promise<void> {
+    try {
+      const response = await this.api.delete(`/boat-services/${id}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async deleteBoatServicesByBoatId(boatId: number): Promise<void> {
+    try {
+      const response = await this.api.delete(`/boat-services/boat/${boatId}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  // Helper method for getting services with price calculation
+  public async getBoatServicesWithPricing(boatId: number): Promise<BoatServiceDTO[]> {
+    const services = await this.getBoatServicesByBoatId(boatId);
+    
+    // Add calculated total prices for each service
+    return services.map(service => ({
+      ...service,
+      totalPrice: service.serviceType === ServiceType.FOOD 
+        ? service.price * service.quantity
+        : service.price
+    }));
   }
 }
 

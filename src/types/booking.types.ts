@@ -1,5 +1,25 @@
 // Booking ve Payment ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+// BoatService ilgili types (yeni eklenen)
+export interface SelectedServiceDTO {
+  boatServiceId: number;
+  quantity: number;
+}
+
+export interface BookingServiceDTO {
+  id: number;
+  bookingId: number;
+  boatServiceId: number;
+  serviceName: string;
+  serviceDescription?: string;
+  serviceType: string; // ServiceType enum: FOOD, PACKAGE, EXTRA
+  quantity: number;
+  unitPrice: number;
+  totalServicePrice: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Booking (Rezervasyon) Types
 export interface BookingDTO {
   id: number;
@@ -12,6 +32,7 @@ export interface BookingDTO {
   totalPrice: number; // ✅ BigDecimal -> number
   passengerCount: number;
   notes?: string; // Opsiyonel
+  services: BookingServiceDTO[]; // YENİ: Seçilen hizmetler
   createdAt: string;
   updatedAt: string;
 }
@@ -22,7 +43,8 @@ export interface CreateBookingDTO {
   tourId?: number; // ✅ Opsiyonel olarak düzeltildi
   startDate: string; // ✅ LocalDateTime -> string (ISO format: "2024-01-15T14:30:00")
   endDate: string; // ✅ LocalDateTime -> string (ISO format: "2024-01-15T18:30:00")
-  totalPrice: number; // ✅ BigDecimal -> number
+  // ❌ totalPrice KALDIRILDI - Backend hesaplıyor
+  selectedServices?: SelectedServiceDTO[]; // YENİ: Seçilen hizmetler (opsiyonel)
   passengerCount: number;
   notes?: string; // Opsiyonel
 }

@@ -33,6 +33,7 @@ interface AvailabilityEntry {
   date: string;
   isAvailable: boolean;
   priceOverride?: number;
+  isInstantConfirmation?: boolean;
   boatId: number;
   displayDate: string;
   status: "available" | "unavailable" | "reserved";
@@ -151,6 +152,7 @@ const AvailabilityPage = () => {
           date: availability.date,
           isAvailable: availability.isAvailable,
           priceOverride: availability.priceOverride,
+          isInstantConfirmation: availability.isInstantConfirmation,
           boatId: availability.boatId,
           displayDate: formatDate(availability.date),
           status: availability.isAvailable ? "available" : "unavailable",
@@ -196,6 +198,7 @@ const AvailabilityPage = () => {
         date: response.date,
         isAvailable: response.isAvailable,
         priceOverride: response.priceOverride,
+        isInstantConfirmation: response.isInstantConfirmation,
         boatId: response.boatId,
         displayDate: formatDate(response.date),
         status: response.isAvailable ? "available" : "unavailable",
@@ -818,19 +821,32 @@ const AvailabilityCard: React.FC<AvailabilityCardProps> = ({
           {/* Status and Price Section */}
           <div className="flex flex-col sm:items-end gap-2">
             {getStatusBadge(entry.status)}
-            {entry.priceOverride && (
-              <Badge
-                variant="outline"
-                className="text-xs font-medium bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border border-amber-200 hover:from-amber-100 hover:to-amber-200 hover:shadow-md transition-all duration-200 shadow-sm"
-              >
-                <div className="flex items-center gap-1">
-                  <span className="text-amber-600">₺</span>
-                  <span className="font-bold">
-                    {entry.priceOverride.toLocaleString("tr-TR")}
-                  </span>
-                </div>
-              </Badge>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {entry.priceOverride && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-medium bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border border-amber-200 hover:from-amber-100 hover:to-amber-200 hover:shadow-md transition-all duration-200 shadow-sm"
+                >
+                  <div className="flex items-center gap-1">
+                    <span className="text-amber-600">₺</span>
+                    <span className="font-bold">
+                      {entry.priceOverride.toLocaleString("tr-TR")}
+                    </span>
+                  </div>
+                </Badge>
+              )}
+              {entry.isInstantConfirmation && (
+                <Badge
+                  variant="outline"
+                  className="text-xs font-medium bg-gradient-to-r from-green-50 to-green-100 text-green-800 border border-green-200 hover:from-green-100 hover:to-green-200 hover:shadow-md transition-all duration-200 shadow-sm"
+                >
+                  <div className="flex items-center gap-1">
+                    <span className="text-green-600">⚡</span>
+                    <span className="font-bold">Anında Onay</span>
+                  </div>
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 

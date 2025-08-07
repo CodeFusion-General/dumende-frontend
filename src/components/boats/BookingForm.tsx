@@ -41,9 +41,10 @@ import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomerCaptainChat } from "./messaging/CustomerCaptainChat";
-import { BookingDTO, BookingStatus } from "@/types/booking.types";
+import { BookingDTO, BookingStatus, SelectedServiceDTO, CreateBookingDTO } from "@/types/booking.types";
 import { Captain } from "@/types/captain.types";
 import { extractCaptainIdFromBooking } from "@/utils/conversationUtils";
+import ServiceSelector from "./ServiceSelector";
 
 interface BookingFormProps {
   dailyPrice: number;
@@ -87,6 +88,10 @@ export function BookingForm({
   >([]);
   const [isDateLoading, setIsDateLoading] = useState<boolean>(false);
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
+
+  // Services state
+  const [selectedServices, setSelectedServices] = useState<SelectedServiceDTO[]>([]);
+  const [servicesPrice, setServicesPrice] = useState<number>(0);
 
   // Memoize the boatId number to prevent unnecessary re-renders
   const boatIdNumber = useMemo(() => Number(boatId), [boatId]);
@@ -359,13 +364,12 @@ export function BookingForm({
   // Dynamic duration options based on mode
   const durationOptions = isHourlyMode ? [2, 4, 6, 8] : [1, 2, 3, 4];
 
-  // Calculate total price
+  // Calculate total price - ℹ️ Bu sadece tahmin, gerçek fiyat backend'de hesaplanacak
   const totalUnits = duration; // hours or days depending on mode
-  const subtotal = isHourlyMode
+  const rentalPrice = isHourlyMode
     ? hourlyPrice * totalUnits
     : dailyPrice * totalUnits;
-  const serviceFee = subtotal * 0.1;
-  const total = subtotal + serviceFee;
+  const estimatedTotal = rentalPrice + servicesPrice; // Tahminî toplam (service fee backend'de)
 
   // Booking function
   const handleBooking = async () => {
@@ -443,12 +447,12 @@ export function BookingForm({
         return;
       }
 
-      const bookingData = {
+      const bookingData: CreateBookingDTO = {
         boatId: Number(boatId),
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         passengerCount: guests,
-        totalPrice: total,
+        selectedServices: selectedServices.length > 0 ? selectedServices : undefined,
         notes: `Booking created on ${new Date().toISOString()}`,
       };
 
@@ -485,10 +489,10 @@ export function BookingForm({
       <div className="flex justify-between items-center">
         <div className="text-left">
           <span className="text-lg font-semibold">
-            ${isHourlyMode ? hourlyPrice : dailyPrice}
+            ₺{isHourlyMode ? hourlyPrice : dailyPrice}
           </span>
           <span className="text-gray-500 ml-1">
-            {isHourlyMode ? "/hour" : "/day"}
+            {isHourlyMode ? "/saat" : "/gün"}
           </span>
         </div>
 
@@ -641,25 +645,40 @@ export function BookingForm({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Service Selection */}
+          <div className="border-t pt-4 mt-4">
+            <ServiceSelector
+              boatId={boatIdNumber}
+              selectedServices={selectedServices}
+              onServicesChange={setSelectedServices}
+              onPriceChange={setServicesPrice}
+            />
+          </div>
         </div>
 
         {/* Price summary */}
         <div className="mt-6 space-y-3 border-t border-b py-4 my-4">
           <div className="flex justify-between">
             <span className="text-gray-600">
-              ${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
-              {isHourlyMode ? "hours" : totalUnits === 1 ? "day" : "days"}
+              ₺{isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
+              {isHourlyMode ? "saat" : totalUnits === 1 ? "gün" : "gün"}
             </span>
-            <span>${subtotal}</span>
+            <span>₺{rentalPrice.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Service fee</span>
-            <span>${serviceFee.toFixed(2)}</span>
-          </div>
+          {servicesPrice > 0 && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Ek hizmetler</span>
+              <span>₺{servicesPrice.toLocaleString()}</span>
+            </div>
+          )}
           <div className="flex justify-between font-semibold pt-3 border-t">
-            <span>Total</span>
-            <span>${total.toFixed(2)}</span>
+            <span>Tahmini Toplam</span>
+            <span>₺{estimatedTotal.toLocaleString()}</span>
           </div>
+          <p className="text-xs text-gray-500 text-center">
+            *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
+          </p>
         </div>
 
         <Button
@@ -719,10 +738,10 @@ export function BookingForm({
           <div className="flex justify-between">
             <div>
               <span className="text-lg font-semibold">
-                ${isHourlyMode ? hourlyPrice : dailyPrice}
+                ₺{isHourlyMode ? hourlyPrice : dailyPrice}
               </span>
               <span className="text-gray-500 ml-1">
-                {isHourlyMode ? "/hour" : "/day"}
+                {isHourlyMode ? "/saat" : "/gün"}
               </span>
             </div>
             {/*<div className="flex items-center">
@@ -825,6 +844,16 @@ export function BookingForm({
             </Select>
           </div>
 
+          {/* Service Selection */}
+          <div className="border-t pt-4">
+            <ServiceSelector
+              boatId={boatIdNumber}
+              selectedServices={selectedServices}
+              onServicesChange={setSelectedServices}
+              onPriceChange={setServicesPrice}
+            />
+          </div>
+
           <Button
             className="w-full"
             onClick={handleBooking}
@@ -855,19 +884,24 @@ export function BookingForm({
           <div className="space-y-3 w-full">
             <div className="flex justify-between">
               <span className="text-gray-600">
-                ${isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
-                {isHourlyMode ? "hours" : totalUnits === 1 ? "day" : "days"}
+                ₺{isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
+                {isHourlyMode ? "saat" : totalUnits === 1 ? "gün" : "gün"}
               </span>
-              <span>${subtotal}</span>
+              <span>₺{rentalPrice.toLocaleString()}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Service fee</span>
-              <span>${serviceFee.toFixed(2)}</span>
-            </div>
+            {servicesPrice > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Ek hizmetler</span>
+                <span>₺{servicesPrice.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold pt-3 border-t">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>Tahmini Toplam</span>
+              <span>₺{estimatedTotal.toLocaleString()}</span>
             </div>
+            <p className="text-xs text-gray-500 text-center">
+              *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
+            </p>
           </div>
         </CardFooter>
       </Card>

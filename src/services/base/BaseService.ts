@@ -30,7 +30,7 @@ export abstract class BaseService {
     this.baseUrl = baseUrl;
   }
 
-  private getAuthHeaders(): Record<string, string> {
+  protected getAuthHeaders(): Record<string, string> {
     const token = tokenUtils.getAuthToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }

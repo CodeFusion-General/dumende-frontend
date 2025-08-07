@@ -37,6 +37,7 @@ interface AvailabilityEntry {
   date: string;
   isAvailable: boolean;
   priceOverride?: number;
+  isInstantConfirmation?: boolean;
   boatId: number;
   displayDate: string;
   status: "available" | "unavailable" | "reserved";
@@ -54,6 +55,7 @@ interface UpdateAvailabilityData {
   date?: string;
   isAvailable?: boolean;
   priceOverride?: number;
+  isInstantConfirmation?: boolean;
 }
 
 interface FormErrors {
@@ -71,6 +73,7 @@ const EditAvailabilityModalContent: React.FC<EditAvailabilityModalProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
   const [priceOverride, setPriceOverride] = useState<string>("");
+  const [isInstantConfirmation, setIsInstantConfirmation] = useState<boolean>(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState<AppError | null>(null);
 
@@ -101,6 +104,9 @@ const EditAvailabilityModalContent: React.FC<EditAvailabilityModalProps> = ({
       // Set price override
       setPriceOverride(availabilityEntry.priceOverride?.toString() || "");
 
+      // Set instant confirmation
+      setIsInstantConfirmation(availabilityEntry.isInstantConfirmation || false);
+
       // Clear errors
       setErrors({});
       setApiError(null);
@@ -113,6 +119,7 @@ const EditAvailabilityModalContent: React.FC<EditAvailabilityModalProps> = ({
       setSelectedDate(undefined);
       setIsAvailable(true);
       setPriceOverride("");
+      setIsInstantConfirmation(false);
       setErrors({});
       setApiError(null);
     }
@@ -168,6 +175,7 @@ const EditAvailabilityModalContent: React.FC<EditAvailabilityModalProps> = ({
           isAvailable,
           priceOverride:
             priceOverride.trim() !== "" ? parseFloat(priceOverride) : undefined,
+          isInstantConfirmation,
         };
 
         await onSubmit(data);
@@ -312,6 +320,24 @@ const EditAvailabilityModalContent: React.FC<EditAvailabilityModalProps> = ({
             )}
             <p className="text-xs text-gray-500">
               Boş bırakırsanız geminin varsayılan fiyatı kullanılacaktır
+            </p>
+          </div>
+
+          {/* Instant Confirmation */}
+          <div className="space-y-2">
+            <Label htmlFor="isInstantConfirmation">Anında Rezervasyon</Label>
+            <div className="flex items-center space-x-3">
+              <Switch
+                id="isInstantConfirmation"
+                checked={isInstantConfirmation}
+                onCheckedChange={setIsInstantConfirmation}
+              />
+              <span className="text-sm text-gray-700">
+                {isInstantConfirmation ? "Anında Onay" : "Manuel Onay"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              Açık olduğunda rezervasyonlar anında onaylanır, kapalı olduğunda manuel onay gerekir
             </p>
           </div>
 
