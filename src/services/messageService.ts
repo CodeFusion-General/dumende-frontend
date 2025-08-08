@@ -28,6 +28,10 @@ class MessageService extends BaseService {
   public async getMessagesByConversationId(
     conversationId: string
   ): Promise<MessageDTO[]> {
+    if (!conversationId || conversationId.trim().length === 0) {
+      // Avoid making a broken request; return empty list for stability
+      return [] as MessageDTO[];
+    }
     return this.get<MessageDTO[]>(`/messages/conversation/${conversationId}`);
   }
 

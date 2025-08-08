@@ -1,4 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
+import * as React from "react";
+import { ToastAction, type ToastActionElement } from "@/components/ui/toast";
 
 // Error types for better error categorization
 export enum ErrorType {
@@ -243,7 +245,14 @@ export function parseApiError(error: any): AppError {
 // Show user-friendly error toast
 export function showErrorToast(
   error: AppError | Error | string,
-  title?: string
+  options?:
+    | string
+    | {
+        title?: string;
+        showRetry?: boolean;
+        onRetry?: () => void;
+        retryLabel?: string;
+      }
 ) {
   let message: string;
   let isRetryable = false;
@@ -255,14 +264,30 @@ export function showErrorToast(
     message = appError.userMessage || appError.message;
     isRetryable = appError.isRetryable || false;
   } else {
-    message = error.message || ERROR_MESSAGES.UNKNOWN.GENERIC;
+    message = (error as any).message || ERROR_MESSAGES.UNKNOWN.GENERIC;
   }
 
+  const titleText =
+    typeof options === "string" ? options : options?.title || "Hata";
+
+  const actionElement: ToastActionElement | undefined =
+    typeof options === "object" && options?.showRetry && options?.onRetry
+      ? (React.createElement(
+          ToastAction as any,
+          {
+            altText: options.retryLabel ?? "Tekrar Dene",
+            onClick: options.onRetry,
+          },
+          options.retryLabel ?? "Tekrar Dene"
+        ) as unknown as ToastActionElement)
+      : undefined;
+
   toast({
-    title: title || "Hata",
+    title: titleText,
     description: message,
     variant: "destructive",
-    duration: isRetryable ? 6000 : 4000, // Show longer for retryable errors
+    duration: isRetryable ? 6000 : 4000,
+    action: actionElement,
   });
 }
 

@@ -107,6 +107,7 @@ export function useMessages(
   const [isOnlineState, setIsOnlineState] = useState(isOnline());
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const conversationIdRef = useRef<string>(conversationId);
   const lastMessageCountRef = useRef(0);
   const optimisticMessagesRef = useRef<MessageDTO[]>([]);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -188,6 +189,9 @@ export function useMessages(
 
   // Initialize performance optimization instances
   useEffect(() => {
+    // Always keep latest conversationId in ref to avoid stale closures
+    conversationIdRef.current = conversationId;
+
     if (enableAdvancedCaching && !messageCache.current) {
       messageCache.current = new MessageCache({
         maxAge: cacheMaxAge,
@@ -208,9 +212,13 @@ export function useMessages(
     if (enableDebouncedPolling && !debouncedPoller.current) {
       const pollFunction = async () => {
         performanceMetrics.current.pollCount++;
+        const currentConversationId = conversationIdRef.current;
+        if (!currentConversationId) {
+          return; // Avoid calling API with empty conversation id
+        }
 
         const latestMessages = await messageService.getMessagesByConversationId(
-          conversationId
+          currentConversationId
         );
         const sortedMessages = latestMessages.sort(
           (a, b) =>
@@ -279,7 +287,7 @@ export function useMessages(
 
     // Handle authentication errors
     if (errorDetails.type === ErrorType.AUTHENTICATION) {
-      handleAuthenticationError();
+      handleAuthenticationError(errorDetails);
       return;
     }
 
@@ -287,7 +295,7 @@ export function useMessages(
     if (context !== "polling") {
       // Don't show toast for polling errors to avoid spam
       showErrorToast(errorDetails, {
-        showRetry: errorDetails.retryable,
+        showRetry: errorDetails.isRetryable,
         onRetry: () => {
           clearError();
           if (context === "load") {
@@ -303,24 +311,13 @@ export function useMessages(
   }, []);
 
   // Load messages with retry logic
-  const loadMessagesWithRetry = useRetry(
-    async () => {
-      const loadedMessages = await messageService.getMessagesByConversationId(
-        conversationId
-      );
-      return loadedMessages.sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
+  const loadMessagesWithRetry = useRetry({
+    maxRetries,
+    baseDelay: 1000,
+    onError: (error) => {
+      handleError(error, "load");
     },
-    {
-      maxAttempts: maxRetries,
-      initialDelay: 1000,
-      onError: (error) => {
-        handleError(error, "load");
-      },
-    }
-  );
+  });
 
   // Load initial messages
   const loadMessages = useCallback(
@@ -343,7 +340,15 @@ export function useMessages(
           }
         }
 
-        const loadedMessages = await loadMessagesWithRetry.execute();
+        const loadedMessages = await loadMessagesWithRetry.execute(async () => {
+          const msgs = await messageService.getMessagesByConversationId(
+            conversationId
+          );
+          return msgs.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        });
         if (loadedMessages) {
           setMessages(loadedMessages);
           setCachedMessages(loadedMessages);
@@ -425,11 +430,13 @@ export function useMessages(
           const securityError = securityValidation.errors[0];
           setError(securityError);
           setErrorType(ErrorType.VALIDATION);
-          showErrorToast({
-            type: ErrorType.VALIDATION,
+        showErrorToast(
+          {
+            name: "ValidationError",
             message: securityError,
-            retryable: false,
-          });
+          } as unknown as Error,
+          { title: "Hata" }
+        );
 
           // Log security event
           logSecurityEvent({
@@ -462,11 +469,13 @@ export function useMessages(
           const validationError = "Mesaj 1000 karakteri geçemez";
           setError(validationError);
           setErrorType(ErrorType.VALIDATION);
-          showErrorToast({
-            type: ErrorType.VALIDATION,
-            message: validationError,
-            retryable: false,
-          });
+          showErrorToast(
+            {
+              name: "ValidationError",
+              message: validationError,
+            } as unknown as Error,
+            { title: "Hata" }
+          );
           return;
         }
       }
@@ -477,11 +486,13 @@ export function useMessages(
           "İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.";
         setError(networkError);
         setErrorType(ErrorType.NETWORK);
-        showErrorToast({
-          type: ErrorType.NETWORK,
-          message: networkError,
-          retryable: true,
-        });
+        showErrorToast(
+          {
+            name: "NetworkError",
+            message: networkError,
+          } as unknown as Error,
+          { title: "Bağlantı Hatası", showRetry: true, onRetry: () => {} }
+        );
         return;
       }
 
@@ -576,11 +587,13 @@ export function useMessages(
       // Check if we've exceeded max retry attempts
       if (failedMessage.attempts >= 3) {
         failedMessagesRef.current.delete(messageId);
-        showErrorToast({
-          type: ErrorType.SERVER,
-          message: "Mesaj gönderilemedi. Maksimum deneme sayısına ulaşıldı.",
-          retryable: false,
-        });
+        showErrorToast(
+          {
+            name: "ServerError",
+            message: "Mesaj gönderilemedi. Maksimum deneme sayısına ulaşıldı.",
+          } as unknown as Error,
+          { title: "Sunucu Hatası" }
+        );
         return;
       }
 
@@ -615,7 +628,7 @@ export function useMessages(
 
         // Only handle authentication errors
         if (errorDetails.type === ErrorType.AUTHENTICATION) {
-          handleAuthenticationError();
+          handleAuthenticationError(errorDetails);
         }
       }
     },
@@ -646,6 +659,9 @@ export function useMessages(
     failedPollCountRef.current = 0;
 
     const pollMessages = async () => {
+      if (!conversationId) {
+        return; // Avoid calling API with empty conversation id
+      }
       try {
         const latestMessages = await messageService.getMessagesByConversationId(
           conversationId
@@ -676,7 +692,7 @@ export function useMessages(
         // Handle authentication errors immediately
         if (errorDetails.type === ErrorType.AUTHENTICATION) {
           stopPolling();
-          handleAuthenticationError();
+          handleAuthenticationError(errorDetails);
           return;
         }
 
@@ -761,10 +777,8 @@ export function useMessages(
 
   // Retry failed operations
   const retry = useCallback(async () => {
-    if (loadMessagesWithRetry.canRetry) {
-      await loadMessages(false);
-    }
-  }, [loadMessagesWithRetry.canRetry, loadMessages]);
+    await loadMessages(false);
+  }, [loadMessages]);
 
   // Clear error
   const clearError = useCallback(() => {
@@ -812,7 +826,8 @@ export function useMessages(
 
   // Handle online/offline events for better connection management
   useEffect(() => {
-    const cleanup = createOfflineHandler((online) => {
+    const cleanup = createOfflineHandler(() => {
+      const online = isOnline();
       setIsOnlineState(online);
 
       if (online) {
