@@ -55,20 +55,16 @@ const CaptainSidebar = () => {
       path: "/captain/availability",
     },
     {
+      label: "Tur Müsaitlik",
+      icon: <Clock size={20} />,
+      path: "/captain/tour-availability",
+    },
+    {
       label: "Mesajlar",
       icon: <MessageSquare size={20} />,
       path: "/captain/messages",
     },
-    {
-      label: "Takvim",
-      icon: <Calendar size={20} />,
-      path: "/captain/calendar",
-    },
-    {
-      label: "Tur Takvimi",
-      icon: <Calendar size={20} />,
-      path: "/captain/tour-calendar",
-    },
+    // Takvim ve Tur Takvimi kaldırıldı
     // Fiyatlar kaldırıldı; Finans bölümü kullanılacak
     {
       label: "Finans",

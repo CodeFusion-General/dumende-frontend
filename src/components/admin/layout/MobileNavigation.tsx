@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, MessageSquare, Calendar, ClipboardList, MoreHorizontal } from 'lucide-react';
+import { Clock, MessageSquare, ClipboardList, MoreHorizontal } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Drawer,
@@ -36,8 +36,8 @@ const MobileNavigation = () => {
   // Navigation items for the bottom bar
   const mainNavItems: NavItem[] = [
     { label: 'Müsaitlik', path: '/captain/availability', icon: <Clock size={20} /> },
+    { label: 'Tur Müsaitlik', path: '/captain/tour-availability', icon: <Clock size={20} /> },
     { label: 'Mesajlar', path: '/captain/messages', icon: <MessageSquare size={20} /> },
-    { label: 'Takvim', path: '/captain/calendar', icon: <Calendar size={20} /> },
     { label: 'Rezervasyonlar', path: '/captain/reservations', icon: <ClipboardList size={20} /> },
   ];
 
@@ -46,7 +46,6 @@ const MobileNavigation = () => {
     { label: 'Anasayfa', path: '/captain', icon: <Clock size={20} /> },
     { label: 'Taşıtlarım', path: '/captain/vessels', icon: <Clock size={20} /> },
     { label: 'Turlarım', path: '/captain/tours', icon: <Clock size={20} /> },
-    { label: 'Tur Takvimi', path: '/captain/tour-calendar', icon: <Calendar size={20} /> },
     // Fiyatlar kaldırıldı
     { label: 'Finans', path: '/captain/finance', icon: <Clock size={20} /> },
     { label: 'Şirket', path: '/captain/company', icon: <Clock size={20} /> },

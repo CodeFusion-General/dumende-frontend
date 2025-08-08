@@ -44,6 +44,7 @@ import TourDetailPage from "./pages/TourDetailPage";
 import CompanyPage from "./pages/admin/CompanyPage";
 import VesselCalendarPage from "./pages/admin/VesselCalendarPage";
 import TourCalendarPage from "./pages/admin/TourCalendarPage";
+import TourAvailabilityPage from "./pages/admin/TourAvailabilityPage";
 import RatingsPage from "./pages/admin/RatingsPage";
 import MessagesPage from "./pages/admin/MessagesPage";
 import BookingsPage from "./pages/admin/BookingsPage";
@@ -216,12 +217,12 @@ const App = () => {
                       }
                     />
                     <Route
-                      path="/captain/tour-calendar"
+                      path="/captain/tour-availability"
                       element={
                         <RoleGuard
                           requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
                         >
-                          <TourCalendarPage />
+                          <TourAvailabilityPage />
                         </RoleGuard>
                       }
                     />

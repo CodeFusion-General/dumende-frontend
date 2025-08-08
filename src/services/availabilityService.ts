@@ -68,6 +68,10 @@ class AvailabilityService extends BaseService {
   }
 
   // ======= TOUR VARIANT ENDPOINTS =======
+  // List by tourId
+  public async getAvailabilitiesByTourId(tourId: number): Promise<AvailabilityData[]> {
+    return this.get<AvailabilityData[]>(`/tour/${tourId}`);
+  }
   public async getTourCalendarAvailability(
     tourId: number,
     startDate: string,
@@ -83,6 +87,100 @@ class AvailabilityService extends BaseService {
     return this.get<CalendarAvailability[]>(`/tour/${tourId}/calendar-availability`, {
       startDate: apiStartDate,
       endDate: apiEndDate,
+    });
+  }
+
+  // Create availability period for Tour
+  public async createTourAvailabilityPeriod(command: {
+    tourId: number;
+    startDate: string;
+    endDate: string;
+    isAvailable: boolean;
+    priceOverride?: number;
+    isInstantConfirmation?: boolean;
+  }): Promise<void> {
+    // Backend'de tur için /tour/period endpoint'i yok. Bunun yerine
+    // POST /api/availabilities/batch ile gün bazlı liste gönderilmeli.
+
+    // Tarihleri gün gün üret
+    const start = new Date(command.startDate + "T00:00:00");
+    const end = new Date(command.endDate + "T00:00:00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error("Geçersiz tarih aralığı");
+    }
+    if (end < start) {
+      throw new Error("Bitiş tarihi başlangıç tarihinden önce olamaz");
+    }
+
+    const payload: Array<{
+      tourId: number;
+      date: string;
+      isAvailable: boolean;
+      priceOverride?: number;
+      isInstantConfirmation?: boolean;
+    }> = [];
+
+    const current = new Date(start);
+    while (current.getTime() <= end.getTime()) {
+      const yyyy = current.getFullYear();
+      const mm = String(current.getMonth() + 1).padStart(2, "0");
+      const dd = String(current.getDate()).padStart(2, "0");
+      const isoDate = `${yyyy}-${mm}-${dd}`;
+      payload.push({
+        tourId: command.tourId,
+        date: isoDate,
+        isAvailable: command.isAvailable,
+        priceOverride: command.priceOverride,
+        isInstantConfirmation: command.isInstantConfirmation,
+      });
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Backend /api/availabilities/batch uç noktası 100 öğe ile sınırlı
+    if (payload.length > 100) {
+      throw new Error("Azami dönem uzunluğu 100 gün ile sınırlıdır. Lütfen daha kısa bir aralık seçiniz.");
+    }
+
+    // Tur için backend batch akışı boatId'ye göre kurgulandığından,
+    // tur özelinde güvenli yol: tekil oluşturma endpoint'ini ardışık çağırmak
+    for (const item of payload) {
+      await this.createAvailability({
+        tourId: item.tourId,
+        date: item.date,
+        isAvailable: item.isAvailable,
+        priceOverride: item.priceOverride,
+        isInstantConfirmation: item.isInstantConfirmation,
+      });
+    }
+  }
+
+  // Update availability period for Tour
+  public async updateTourAvailabilityPeriod(command: {
+    tourId: number;
+    startDate: string;
+    endDate: string;
+    isAvailable?: boolean;
+    priceOverride?: number;
+  }): Promise<void> {
+    const apiStartDate = dateUtils.isISOFormat(command.startDate)
+      ? command.startDate
+      : dateUtils.formatDateFromAPI(command.startDate);
+    const apiEndDate = dateUtils.isISOFormat(command.endDate)
+      ? command.endDate
+      : dateUtils.formatDateFromAPI(command.endDate);
+
+    const params: { [key: string]: any } = {
+      tourId: command.tourId,
+      startDate: apiStartDate,
+      endDate: apiEndDate,
+    };
+    if (command.isAvailable !== undefined) params.isAvailable = command.isAvailable;
+    if (command.priceOverride !== undefined) params.priceOverride = command.priceOverride;
+
+    const token = tokenUtils.getAuthToken();
+    await this.api.put(`${this.baseUrl}/tour/period`, null, {
+      params,
+      headers: { Authorization: `Bearer ${token || ''}`, 'Content-Type': 'application/json' },
     });
   }
 
