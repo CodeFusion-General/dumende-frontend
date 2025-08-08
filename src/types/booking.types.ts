@@ -24,7 +24,7 @@ export interface BookingServiceDTO {
 export interface BookingDTO {
   id: number;
   customerId: number;
-  boatId: number;
+  boatId?: number;
   tourId?: number; // ✅ Backend'de nullable = true, Opsiyonel
   startDate: string; // ✅ LocalDateTime -> string (ISO format)
   endDate: string; // ✅ LocalDateTime -> string (ISO format)
@@ -39,7 +39,7 @@ export interface BookingDTO {
 
 export interface CreateBookingDTO {
   // ❌ customerId KALDIRILDI - JWT'den çekiliyor
-  boatId: number;
+  boatId?: number;
   tourId?: number; // ✅ Opsiyonel olarak düzeltildi
   startDate: string; // ✅ LocalDateTime -> string (ISO format: "2024-01-15T14:30:00")
   endDate: string; // ✅ LocalDateTime -> string (ISO format: "2024-01-15T18:30:00")

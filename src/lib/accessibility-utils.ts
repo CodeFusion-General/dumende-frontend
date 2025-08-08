@@ -456,7 +456,7 @@ export class AccessibilityManager {
       enableKeyboardDetection: true,
       enableFocusTrapping: true,
       enableAriaLiveRegions: true,
-      enableSkipLinks: true,
+      enableSkipLinks: false,
       respectReducedMotion: true,
       ...config,
     };

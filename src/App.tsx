@@ -18,6 +18,7 @@ import {
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import ToursPagePublic from "./pages/ToursPage";
 import BoatListing from "./pages/BoatListing";
 import BoatsPage from "./pages/BoatsPage";
 import CompareBoats from "./pages/CompareBoats";
@@ -108,7 +109,8 @@ const App = () => {
                       element={<NotificationsPage />}
                     />
 
-                    {/* Tour Detail Route */}
+                    {/* Tour Routes */}
+                    <Route path="/tours" element={<ToursPagePublic />} />
                     <Route path="/tours/:id" element={<TourDetailPage />} />
 
                     {/* Captain Panel Routes - Only BOAT_OWNER and ADMIN can access */}

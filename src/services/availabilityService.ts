@@ -67,6 +67,69 @@ class AvailabilityService extends BaseService {
     }
   }
 
+  // ======= TOUR VARIANT ENDPOINTS =======
+  public async getTourCalendarAvailability(
+    tourId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<CalendarAvailability[]> {
+    const apiStartDate = dateUtils.isISOFormat(startDate)
+      ? dateUtils.formatDateForAPI(startDate)
+      : startDate;
+    const apiEndDate = dateUtils.isISOFormat(endDate)
+      ? dateUtils.formatDateForAPI(endDate)
+      : endDate;
+
+    return this.get<CalendarAvailability[]>(`/tour/${tourId}/calendar-availability`, {
+      startDate: apiStartDate,
+      endDate: apiEndDate,
+    });
+  }
+
+  public async isTourAvailableOnDateWithBookings(
+    tourId: number,
+    date: string
+  ): Promise<boolean> {
+    const apiDate = dateUtils.isISOFormat(date)
+      ? dateUtils.formatDateForAPI(date)
+      : date;
+    return this.get<boolean>(`/tour/${tourId}/available-with-bookings`, { date: apiDate });
+  }
+
+  public async isTourAvailableOnDate(tourId: number, date: string): Promise<boolean> {
+    const apiDate = dateUtils.isISOFormat(date)
+      ? dateUtils.formatDateForAPI(date)
+      : date;
+    return this.get<boolean>(`/tour/${tourId}/available`, { date: apiDate });
+  }
+
+  public async getAvailabilityByTourIdAndDate(
+    tourId: number,
+    date: string
+  ): Promise<AvailabilityData> {
+    const apiDate = dateUtils.isISOFormat(date)
+      ? dateUtils.formatDateForAPI(date)
+      : date;
+    return this.get<AvailabilityData>(`/tour/${tourId}/date`, { date: apiDate });
+  }
+
+  public async getAvailabilitiesByTourIdAndDateRange(
+    tourId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<AvailabilityData[]> {
+    const apiStartDate = dateUtils.isISOFormat(startDate)
+      ? dateUtils.formatDateForAPI(startDate)
+      : startDate;
+    const apiEndDate = dateUtils.isISOFormat(endDate)
+      ? dateUtils.formatDateForAPI(endDate)
+      : endDate;
+    return this.get<AvailabilityData[]>(`/tour/${tourId}/range`, {
+      startDate: apiStartDate,
+      endDate: apiEndDate,
+    });
+  }
+
   // Check if boat is available on a specific date (including booking conflicts)
   public async isBoatAvailableOnDateWithBookings(
     boatId: number,

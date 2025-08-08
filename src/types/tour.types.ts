@@ -1,11 +1,34 @@
 // Tour ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+// Guide data interface for tour guides
+export interface GuideData {
+  id: number;
+  name: string;
+  avatar?: string;
+  email?: string;
+  phone?: string;
+  responseRate: number;
+  responseTime: string;
+  isCertified: boolean;
+  isVerified: boolean;
+  joinDate: string;
+  description: string;
+  rating: number;
+  reviewCount: number;
+  totalTours: number;
+  certifications?: string[];
+  languages?: string[];
+  specialties?: string[];
+  experience: number; // years of experience
+  location?: string;
+}
+
 // Tour Date (Tur Tarihleri) Types
 export interface TourDateDTO {
   id: number;
   tourId: number;
   startDate: string; // LocalDateTime -> string
-  endDate: string; // LocalDateTime -> string
+  durationText: string; // Örn: "4 Saat", "2 Gün"
   availabilityStatus: string;
   maxGuests: number;
   createdAt: string;
@@ -15,7 +38,7 @@ export interface TourDateDTO {
 export interface CreateTourDateDTO {
   tourId: number;
   startDate: string; // LocalDateTime -> string
-  endDate: string; // LocalDateTime -> string
+  durationText: string; // Örn: "4 Saat", "2 Gün"
   availabilityStatus: string;
   maxGuests: number;
 }
@@ -24,7 +47,7 @@ export interface UpdateTourDateDTO {
   id: number;
   tourId?: number;
   startDate?: string; // LocalDateTime -> string
-  endDate?: string; // LocalDateTime -> string
+  durationText?: string; // Örn: "4 Saat", "2 Gün"
   availabilityStatus?: string;
   maxGuests?: number;
 }
@@ -40,8 +63,10 @@ export interface TourImageDTO {
 }
 
 export interface CreateTourImageDTO {
-  tourId: number;
-  imageUrl: string; // URL olarak gönderiliyor
+  tourId?: number; // create sırasında backend parametresiyle bağlanır
+  imageData: string; // base64 string olarak gönderilir (backend byte[])
+  fileName?: string;
+  contentType?: string;
   displayOrder: number;
 }
 
@@ -57,17 +82,32 @@ export interface TourDTO {
   id: number;
   name: string;
   description: string;
-  boatId: number;
+  fullDescription?: string;
   guideId: number; // Rehber/Kaptan ID'si
-  seasonStartDate: string; // LocalDateTime -> string
-  seasonEndDate: string; // LocalDateTime -> string
   price: number; // BigDecimal -> number
   capacity: number;
   location: string;
+  latitude?: number;
+  longitude?: number;
   rating?: number; // Double -> number, nullable
   status: string;
+  tourType?: TourType;
   tourDates: TourDateDTO[];
   tourImages: TourImageDTO[];
+  features?: string[];
+  // Terms & Policies
+  cancellationPolicy?: string;
+  // Additional Info
+  includedServices?: string;
+  requirements?: string;
+  notAllowed?: string;
+  notSuitableFor?: string;
+  // Location details
+  routeDescription?: string;
+  locationDescription?: string;
+  // Languages and Highlights
+  languages?: string[];
+  highlights?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -75,36 +115,66 @@ export interface TourDTO {
 export interface CreateTourDTO {
   name: string;
   description: string;
-  boatId: number;
+  fullDescription?: string;
   guideId: number; // Rehber/Kaptan ID'si
-  seasonStartDate: string; // LocalDateTime -> string
-  seasonEndDate: string; // LocalDateTime -> string
   price: number; // BigDecimal -> number
   capacity: number;
   location: string;
+  latitude?: number;
+  longitude?: number;
   status: string;
+  tourType?: TourType;
   tourDates: CreateTourDateDTO[];
   tourImages: CreateTourImageDTO[];
+  features?: string[];
+  // Terms & Policies
+  cancellationPolicy?: string;
+  // Additional Info
+  includedServices?: string;
+  requirements?: string;
+  notAllowed?: string;
+  notSuitableFor?: string;
+  // Location details
+  routeDescription?: string;
+  locationDescription?: string;
+  // Languages and Highlights
+  languages?: string[];
+  highlights?: string[];
 }
 
 export interface UpdateTourDTO {
   id: number;
   name?: string;
   description?: string;
-  boatId?: number;
+  fullDescription?: string;
   guideId?: number; // Rehber/Kaptan ID'si
-  seasonStartDate?: string; // LocalDateTime -> string
-  seasonEndDate?: string; // LocalDateTime -> string
   price?: number; // BigDecimal -> number
   capacity?: number;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   status?: string;
+  tourType?: TourType;
   tourDatesToUpdate?: UpdateTourDateDTO[];
   tourDatesToAdd?: CreateTourDateDTO[];
   tourDateIdsToRemove?: number[]; // List<Long> -> number[]
   tourImagesToUpdate?: UpdateTourImageDTO[];
   tourImagesToAdd?: CreateTourImageDTO[];
   tourImageIdsToRemove?: number[]; // List<Long> -> number[]
+  features?: string[];
+  // Terms & Policies
+  cancellationPolicy?: string;
+  // Additional Info
+  includedServices?: string;
+  requirements?: string;
+  notAllowed?: string;
+  notSuitableFor?: string;
+  // Location details
+  routeDescription?: string;
+  locationDescription?: string;
+  // Languages and Highlights
+  languages?: string[];
+  highlights?: string[];
 }
 
 // Tour Status Enum
@@ -118,21 +188,31 @@ export enum TourStatus {
 // Tour Availability Status Enum
 export enum TourAvailabilityStatus {
   AVAILABLE = "AVAILABLE",
-  FULL = "FULL",
+  FULLY_BOOKED = "FULLY_BOOKED",
   CANCELLED = "CANCELLED",
+}
+
+// Backend TourType ile uyumlu enum
+export enum TourType {
+  HIKING = "HIKING",
+  CULTURAL = "CULTURAL",
+  FOOD = "FOOD",
+  CITY = "CITY",
+  NATURE = "NATURE",
+  BOAT = "BOAT",
+  PHOTOGRAPHY = "PHOTOGRAPHY",
+  DIVING = "DIVING",
 }
 
 // Filtreleme için kullanılan interface
 export interface TourFilters {
   name?: string;
   location?: string;
-  boatId?: number;
   guideId?: number;
   status?: TourStatus;
   minPrice?: number;
   maxPrice?: number;
   startDate?: string;
-  endDate?: string;
   capacity?: number;
   rating?: number;
 }

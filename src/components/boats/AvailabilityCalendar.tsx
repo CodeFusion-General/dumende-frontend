@@ -25,6 +25,7 @@ interface AvailabilityCalendarProps {
   className?: string;
   month?: Date;
   onMonthChange?: (month: Date) => void;
+  context?: "boat" | "tour"; // UI etiketi/legend için bağlam
 }
 
 interface AvailabilityLegendProps {
@@ -120,6 +121,7 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   className,
   month,
   onMonthChange,
+  context = "boat",
 }) => {
   // Create a map for quick availability lookup
   const availabilityMap = React.useMemo(() => {

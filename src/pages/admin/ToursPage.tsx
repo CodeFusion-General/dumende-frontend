@@ -76,15 +76,17 @@ const ToursPage = () => {
     const matchesLocation =
       locationFilter === "all" || tour.location.includes(locationFilter);
 
-    // Duration hesaplama - seasonStartDate ve seasonEndDate arasındaki gün farkı
-    const duration =
-      tour.seasonStartDate && tour.seasonEndDate
-        ? Math.ceil(
-            (new Date(tour.seasonEndDate).getTime() -
-              new Date(tour.seasonStartDate).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        : 0;
+    // Duration hesaplama: ilk tur tarihinin durationText'inden saat/gün çıkarımı
+    const firstDate = tour.tourDates?.[0];
+    const duration = firstDate
+      ? (() => {
+          const text = (firstDate.durationText || "").toLowerCase();
+          const num = parseInt(text.replace(/\D/g, "")) || 0;
+          if (text.includes("gün")) return num * 24; // saat cinsinden
+          if (text.includes("saat")) return num;
+          return 0;
+        })()
+      : 0;
 
     const matchesDuration =
       durationFilter === "all" ||
@@ -145,12 +147,12 @@ const ToursPage = () => {
       <CaptainLayout>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Tekne Turlarım</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Turlarım</h1>
             <Button
               onClick={handleAddTour}
               className="bg-[#15847c] hover:bg-[#0e5c56] text-white"
             >
-              <Plus size={16} className="mr-1" /> Tekne Turu Ekle
+              <Plus size={16} className="mr-1" /> Tur Ekle
             </Button>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-sm text-center">
@@ -167,12 +169,12 @@ const ToursPage = () => {
       <CaptainLayout>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Tekne Turlarım</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Turlarım</h1>
             <Button
               onClick={handleAddTour}
               className="bg-[#15847c] hover:bg-[#0e5c56] text-white"
             >
-              <Plus size={16} className="mr-1" /> Tekne Turu Ekle
+              <Plus size={16} className="mr-1" /> Tur Ekle
             </Button>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-sm text-center">
@@ -193,12 +195,12 @@ const ToursPage = () => {
     <CaptainLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Tekne Turlarım</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Turlarım</h1>
           <Button
             onClick={handleAddTour}
             className="bg-[#15847c] hover:bg-[#0e5c56] text-white"
           >
-            <Plus size={16} className="mr-1" /> Tekne Turu Ekle
+            <Plus size={16} className="mr-1" /> Tur Ekle
           </Button>
         </div>
 

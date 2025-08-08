@@ -298,8 +298,7 @@ export class AccessibleAnimationController {
   }
 
   private addAccessibilityEnhancements() {
-    // Add skip links for better navigation
-    this.addSkipLinks();
+    // Skip links devre dışı bırakıldı (kurumsal karar)
 
     // Enhance keyboard navigation
     this.enhanceKeyboardNavigation();
@@ -308,33 +307,7 @@ export class AccessibleAnimationController {
     this.addScreenReaderAnnouncements();
   }
 
-  private addSkipLinks() {
-    const skipLink = document.createElement("a");
-    skipLink.href = "#main-content";
-    skipLink.textContent = "Skip to main content";
-    skipLink.className = "skip-link";
-    skipLink.style.cssText = `
-      position: absolute;
-      top: -40px;
-      left: 6px;
-      background: #000;
-      color: #fff;
-      padding: 8px;
-      text-decoration: none;
-      z-index: 10000;
-      border-radius: 4px;
-    `;
-
-    skipLink.addEventListener("focus", () => {
-      skipLink.style.top = "6px";
-    });
-
-    skipLink.addEventListener("blur", () => {
-      skipLink.style.top = "-40px";
-    });
-
-    document.body.insertBefore(skipLink, document.body.firstChild);
-  }
+  // Skip links özelliği kurumsal talebe göre kaldırıldı.
 
   private enhanceKeyboardNavigation() {
     // Add visible focus indicators

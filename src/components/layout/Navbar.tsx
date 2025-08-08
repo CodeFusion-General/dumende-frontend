@@ -113,6 +113,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
             {[
               { path: "/", label: t.nav.home },
               { path: "/boats", label: t.nav.boats },
+              { path: "/tours", label: (t as any)?.nav?.tours || "Turlar" },
               { path: "/services", label: t.nav.services },
               { path: "/about", label: t.nav.about },
               { path: "/contact", label: t.nav.contact },

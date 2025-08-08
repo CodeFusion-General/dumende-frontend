@@ -3,8 +3,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Edit, Trash2, Eye, Settings } from "lucide-react";
-import { TourDTO } from "@/types/tour.types";
+import { Edit, Trash2, Eye, Settings, MapPin, Users, Star } from "lucide-react";
+import { TourDTO, TourType } from "@/types/tour.types";
+import { getDefaultImageUrl, getFullImageUrl } from "@/lib/imageUtils";
 
 interface TourCardProps {
   tour: TourDTO;
@@ -52,6 +53,25 @@ const TourCard: React.FC<TourCardProps> = ({
     }
   };
 
+  const getTypeBadge = (type?: TourType) => {
+    if (!type) return null;
+    const labelMap: Record<TourType, string> = {
+      HIKING: "Doğa Yürüyüşü",
+      CULTURAL: "Kültürel",
+      FOOD: "Gastronomi",
+      CITY: "Şehir",
+      NATURE: "Doğa",
+      BOAT: "Tekne",
+      PHOTOGRAPHY: "Fotoğrafçılık",
+      DIVING: "Dalış",
+    };
+    return (
+      <Badge variant="outline" className="text-xs">
+        {labelMap[type]}
+      </Badge>
+    );
+  };
+
   const handleDelete = () => {
     if (window.confirm("Bu turu silmek istediğinize emin misiniz?")) {
       onDelete(tour.id.toString());
@@ -64,21 +84,11 @@ const TourCard: React.FC<TourCardProps> = ({
     }
   };
 
-  // İlk tour image'ını al, yoksa placeholder kullan
+  // İlk tour image'ını al, yoksa placeholder kullan (URL tabanlı)
   const tourImage =
     tour.tourImages && tour.tourImages.length > 0
-      ? `data:image/jpeg;base64,${tour.tourImages[0].imageData}`
-      : "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80";
-
-  // Duration hesaplama (gün cinsinden)
-  const duration =
-    tour.seasonStartDate && tour.seasonEndDate
-      ? Math.ceil(
-          (new Date(tour.seasonEndDate).getTime() -
-            new Date(tour.seasonStartDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      : 0;
+      ? getFullImageUrl(tour.tourImages[0].imageUrl)
+      : getDefaultImageUrl();
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-md">
@@ -89,8 +99,7 @@ const TourCard: React.FC<TourCardProps> = ({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src =
-              "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80";
+            target.src = getDefaultImageUrl();
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
@@ -100,6 +109,7 @@ const TourCard: React.FC<TourCardProps> = ({
         </div>
         <div className="absolute top-3 right-3">
           {getStatusBadge(tour.status)}
+          <div className="mt-1 flex justify-end">{getTypeBadge(tour.tourType)}</div>
         </div>
         <div className="absolute top-0 left-0 w-full h-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Link to={`/captain/tours/${tour.id}`}>
@@ -139,13 +149,9 @@ const TourCard: React.FC<TourCardProps> = ({
       <CardContent className="p-4">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">Tekne ID:</span>
-            <span className="text-sm">{tour.boatId}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">Süre:</span>
-            <span className="text-sm">
-              {duration > 0 ? `${duration} gün` : "Belirtilmemiş"}
+            <span className="text-sm font-medium text-gray-500">Lokasyon:</span>
+            <span className="text-sm flex items-center gap-1">
+              <MapPin className="h-4 w-4 text-gray-500" /> {tour.location}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -156,20 +162,27 @@ const TourCard: React.FC<TourCardProps> = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-500">Kapasite:</span>
-            <span className="text-sm">{tour.capacity} kişi</span>
+            <span className="text-sm flex items-center gap-1">
+              <Users className="h-4 w-4 text-gray-500" /> {tour.capacity} kişi
+            </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">Lokasyon:</span>
-            <span className="text-sm">{tour.location}</span>
-          </div>
-          {tour.rating && (
+          {typeof tour.rating === "number" && (
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-500">Puan:</span>
-              <span className="text-sm font-semibold text-yellow-600">
-                ⭐ {tour.rating.toFixed(1)}
+              <span className="text-sm font-semibold text-yellow-600 flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                {tour.rating.toFixed(1)}
               </span>
             </div>
           )}
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-500">Uygun Tarih:</span>
+            <span className="text-sm">
+              {tour.tourDates && tour.tourDates.length > 0
+                ? new Date(tour.tourDates[0].startDate).toLocaleDateString("tr-TR")
+                : "Belirtilmemiş"}
+            </span>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="bg-gray-50 p-3 flex justify-between">

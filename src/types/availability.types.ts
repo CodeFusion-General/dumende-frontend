@@ -7,10 +7,11 @@ export interface CalendarAvailability {
   bookingCount?: number;
   isInstantConfirmation?: boolean;
 }
-i
+
 export interface AvailabilityData {
   id: number;
   boatId: number;
+  tourId?: number;
   date: string;
   isAvailable: boolean;
   priceOverride?: number;

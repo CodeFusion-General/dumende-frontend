@@ -354,7 +354,7 @@ export const reviewQueryService = {
   },
 
   findAllWithPagination: async (
-    filters?: {
+    filters?: ReviewFilters & {
       page?: number;
       size?: number;
       sort?: string;
@@ -444,19 +444,19 @@ export const reviewQueryService = {
 
   // REPLY QUERY METHODS
   getRepliesByReviewId: async (reviewId: number): Promise<ReplyDTO[]> => {
-    return reviewService.get<ReplyDTO[]>(`/${reviewId}/replies`);
+    return reviewService["get"]<ReplyDTO[]>(`/${reviewId}/replies`);
   },
 
   getRepliesByUserId: async (userId: number): Promise<ReplyDTO[]> => {
-    return reviewService.get<ReplyDTO[]>(`/replies/user/${userId}`);
+    return reviewService["get"]<ReplyDTO[]>(`/replies/user/${userId}`);
   },
 
   getReplyById: async (replyId: number): Promise<ReplyDTO> => {
-    return reviewService.get<ReplyDTO>(`/replies/${replyId}`);
+    return reviewService["get"]<ReplyDTO>(`/replies/${replyId}`);
   },
 
   countRepliesByReviewId: async (reviewId: number): Promise<number> => {
-    return reviewService.get<number>(`/${reviewId}/replies/count`);
+    return reviewService["get"]<number>(`/${reviewId}/replies/count`);
   },
 };
 
@@ -497,12 +497,12 @@ export const reviewCommandService = {
       message: replyMessage,
       isOfficial: true
     };
-    return reviewService.post(`/${reviewId}/reply`, requestBody);
+    return (reviewService as any).post(`/${reviewId}/reply`, requestBody);
   },
 
   // Flag review
   flagReview: async (reviewId: number): Promise<string> => {
-    return reviewService.post(`/${reviewId}/flag`, {});
+    return (reviewService as any).post(`/${reviewId}/flag`, {});
   },
 };
 
@@ -544,31 +544,8 @@ export const reviewHelperService = {
     boatService?: { getBoatsByOwnerId: (ownerId: number) => Promise<any[]> },
     tourService?: { getToursByBoatId: (boatId: number) => Promise<any[]> }
   ): Promise<ReviewDTO[]> => {
-    try {
-      if (!boatService || !tourService) {
-        console.warn("boatService and tourService dependencies required for getReviewsForOwnerTours");
-        return [];
-      }
-
-      // Get owner's boats first
-      const boats = await boatService.getBoatsByOwnerId(ownerId);
-
-      const reviewsPromises: Promise<ReviewDTO[]>[] = [];
-
-      for (const boat of boats) {
-        const tours = await tourService.getToursByBoatId(boat.id);
-
-        tours.forEach((tour: any) => {
-          reviewsPromises.push(reviewService.getTourReviews(tour.id));
-        });
-      }
-
-      const reviewsArrays = await Promise.all(reviewsPromises);
-      return reviewsArrays.flat();
-    } catch (error) {
-      console.error("Error fetching reviews for owner tours:", error);
-      return [];
-    }
+    console.warn("getReviewsForOwnerTours is deprecated: Tour is not linked to Boat anymore.");
+    return [];
   },
 
   // Get all reviews for an owner (boats + tours)
@@ -579,19 +556,8 @@ export const reviewHelperService = {
     tourService?: { getToursByBoatId: (boatId: number) => Promise<any[]> }
   ): Promise<ReviewDTO[]> => {
     try {
-      const [boatReviews, tourReviews] = await Promise.all([
-        reviewHelperService.getReviewsForOwnerBoats(ownerId, boatService),
-        reviewHelperService.getReviewsForOwnerTours(ownerId, boatService, tourService),
-      ]);
-
-      // Combine and deduplicate reviews
-      const allReviews = [...boatReviews, ...tourReviews];
-      const uniqueReviews = allReviews.filter(
-        (review, index, self) =>
-          index === self.findIndex((r) => r.id === review.id)
-      );
-
-      return uniqueReviews;
+      const boatReviews = await reviewHelperService.getReviewsForOwnerBoats(ownerId, boatService);
+      return boatReviews;
     } catch (error) {
       console.error("Error fetching all reviews for owner:", error);
       return [];

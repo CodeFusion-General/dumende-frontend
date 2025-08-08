@@ -45,7 +45,7 @@ const CaptainSidebar = () => {
     },
     { label: "Taşıtlarım", icon: <Ship size={20} />, path: "/captain/vessels" },
     {
-      label: "Tekne Turlarım",
+      label: "Turlarım",
       icon: <Map size={20} />,
       path: "/captain/tours",
     },
@@ -65,7 +65,7 @@ const CaptainSidebar = () => {
       path: "/captain/calendar",
     },
     {
-      label: "Tekne Turu Takvimi",
+      label: "Tur Takvimi",
       icon: <Calendar size={20} />,
       path: "/captain/tour-calendar",
     },

@@ -472,15 +472,12 @@ export const bookingHelperService = {
       // boatService'i kullanarak doğru endpoint'e git
       const boats = await boatService.getBoatsByOwner(ownerId);
       const bookingsPromises: Promise<BookingDTO[]>[] = [];
-      for (const boat of boats) {
-        // tourService'i kullanarak doğru endpoint'e git
-        const tours = await tourService.getToursByBoatId(boat.id);
-        tours.forEach((tour: any) => {
-          bookingsPromises.push(bookingService.getTourBookings(tour.id));
-        });
-      }
-      const bookingsArrays = await Promise.all(bookingsPromises);
-      return bookingsArrays.flat();
+      // Boat → Tours bağı kaldırıldığı için sadece guide veya farklı filtrelerle alınmalı.
+      // Şimdilik boat üzerinden tour çekme kaldırıldı; yalnız boat rezervasyonları döner.
+      const boatBookings = await Promise.all(
+        boats.map((boat: any) => bookingService.getBoatBookings(boat.id))
+      );
+      return boatBookings.flat();
     } catch (error) {
       console.error("Error fetching bookings for owner tours:", error);
       throw error; // Error'ı yukarı fırlat ki BookingsPage'de yakalansın
@@ -541,6 +538,7 @@ export const bookingHelperService = {
 
           const bookingWithDetails: BookingWithDetails = {
             ...booking,
+            boatId: booking.boatId ?? boat.id,
             customerName: customer.fullName,
             customerEmail: customer.email,
             customerPhone: customer.phoneNumber,
@@ -555,11 +553,13 @@ export const bookingHelperService = {
           bookingsWithDetails.push(bookingWithDetails);
         } catch (err) {
           console.error("Error enriching booking data:", err);
-          // Add booking without additional details
-          bookingsWithDetails.push({
+          const minimal: BookingWithDetails = {
             ...booking,
+            // Zorunlu alanları sağlayacak şekilde doldur
+            boatId: booking.boatId ?? 0,
             status: booking.status as any,
-          });
+          } as BookingWithDetails;
+          bookingsWithDetails.push(minimal);
         }
       }
 

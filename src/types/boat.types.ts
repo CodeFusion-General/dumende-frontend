@@ -141,7 +141,7 @@ export interface BoatDTO {
   images: BoatImageDTO[];
   features: BoatFeatureDTO[];
   availabilities: AvailabilityDTO[];
-  services: BoatServiceDTO[]; // YENİ: Gemi hizmetleri
+  services: BoatServiceDTO[]; // Gemi hizmetleri
   createdAt: string;
   updatedAt: string;
 }

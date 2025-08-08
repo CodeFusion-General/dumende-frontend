@@ -14,7 +14,7 @@ interface CalendarEvent {
   id: number;
   date: string;
   title: string;
-  status: "AVAILABLE" | "FULL" | "CANCELLED";
+  status: "AVAILABLE" | "FULLY_BOOKED" | "CANCELLED";
   tourId: number;
   maxGuests: number;
   tourName?: string;
@@ -67,7 +67,7 @@ const TourCalendarPage: React.FC = () => {
             )}`,
             status: tourDate.availabilityStatus as
               | "AVAILABLE"
-              | "FULL"
+              | "FULLY_BOOKED"
               | "CANCELLED",
             tourId: tour.id,
             maxGuests: tourDate.maxGuests,
@@ -141,7 +141,7 @@ const TourCalendarPage: React.FC = () => {
     switch (status) {
       case "AVAILABLE":
         return "bg-green-500";
-      case "FULL":
+      case "FULLY_BOOKED":
         return "bg-orange-500";
       case "CANCELLED":
         return "bg-red-500";
@@ -156,7 +156,7 @@ const TourCalendarPage: React.FC = () => {
     switch (status) {
       case "AVAILABLE":
         return "default";
-      case "FULL":
+      case "FULLY_BOOKED":
         return "secondary";
       case "CANCELLED":
         return "destructive";
@@ -169,7 +169,7 @@ const TourCalendarPage: React.FC = () => {
     switch (status) {
       case "AVAILABLE":
         return "Müsait";
-      case "FULL":
+      case "FULLY_BOOKED":
         return "Dolu";
       case "CANCELLED":
         return "İptal";
@@ -204,7 +204,7 @@ const TourCalendarPage: React.FC = () => {
     return (
       <CaptainLayout>
         <div className="container mx-auto py-8">
-          <h1 className="text-2xl font-bold mb-4">Tur Takvimi</h1>
+      <h1 className="text-2xl font-bold mb-4">Takvim</h1>
           <div className="bg-white rounded-lg shadow-md p-6">
             <p className="text-center text-gray-600">Takvim yükleniyor...</p>
           </div>
@@ -218,7 +218,7 @@ const TourCalendarPage: React.FC = () => {
     return (
       <CaptainLayout>
         <div className="container mx-auto py-8">
-          <h1 className="text-2xl font-bold mb-4">Tur Takvimi</h1>
+            <h1 className="text-2xl font-bold mb-4">Takvim</h1>
           <div className="bg-white rounded-lg shadow-md p-6">
             <p className="text-center text-red-600">{error}</p>
             <div className="text-center mt-4">
@@ -327,10 +327,10 @@ const TourCalendarPage: React.FC = () => {
                             </button>
                             <button
                               onClick={() =>
-                                handleStatusChange(event.id, "FULL")
+                                handleStatusChange(event.id, "FULLY_BOOKED")
                               }
                               className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded"
-                              disabled={event.status === "FULL"}
+                              disabled={event.status === "FULLY_BOOKED"}
                             >
                               Dolu
                             </button>

@@ -57,10 +57,6 @@ class TourService extends BaseService {
   }
 
   // ======= Tour Query Operations =======
-  public async getToursByBoatId(boatId: number): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/tours/boat/${boatId}`);
-  }
-
   public async getToursByGuideId(guideId: number): Promise<TourDTO[]> {
     return this.get<TourDTO[]>(`/tours/guide/${guideId}`);
   }
@@ -69,6 +65,14 @@ class TourService extends BaseService {
     return this.get<TourDTO[]>(
       `/tours/search/name?name=${encodeURIComponent(name)}`
     );
+  }
+
+  public async searchToursByType(type: string): Promise<TourDTO[]> {
+    return this.get<TourDTO[]>(`/tours/search/type?type=${encodeURIComponent(type)}`);
+  }
+
+  public async getTourTypes(): Promise<string[]> {
+    return this.get<string[]>(`/tours/types`);
   }
 
   public async searchToursByLocation(location: string): Promise<TourDTO[]> {
@@ -142,34 +146,7 @@ class TourService extends BaseService {
       .then((res) => res.data);
   }
 
-  public async getTourDatesByEndDate(endDate: string): Promise<TourDateDTO[]> {
-    return this.api
-      .get<TourDateDTO[]>(`/tour-dates/search/end-date?endDate=${endDate}`)
-      .then((res) => res.data);
-  }
-
-  public async getTourDatesByDateRange(
-    startDate: string,
-    endDate: string
-  ): Promise<TourDateDTO[]> {
-    return this.api
-      .get<TourDateDTO[]>(
-        `/tour-dates/search/date-range?startDate=${startDate}&endDate=${endDate}`
-      )
-      .then((res) => res.data);
-  }
-
-  public async getTourDatesByTourIdAndDateRange(
-    tourId: number,
-    startDate: string,
-    endDate: string
-  ): Promise<TourDateDTO[]> {
-    return this.api
-      .get<TourDateDTO[]>(
-        `/tour-dates/tour/${tourId}/date-range?startDate=${startDate}&endDate=${endDate}`
-      )
-      .then((res) => res.data);
-  }
+  // endDate ve date-range tabanlı tour date endpoint'leri backend'de kaldırıldı
 
   public async existsTourDateById(id: number): Promise<boolean> {
     return this.api
@@ -218,17 +195,7 @@ class TourService extends BaseService {
       .then((res) => res.data);
   }
 
-  public async updateTourDateRange(
-    id: number,
-    startDate: string,
-    endDate: string
-  ): Promise<void> {
-    return this.api
-      .patch<void>(
-        `/tour-dates/${id}/date-range?startDate=${startDate}&endDate=${endDate}`
-      )
-      .then((res) => res.data);
-  }
+  // tarih aralığı güncelleme endpoint'i backend'de kaldırıldı
 
   public async updateTourDateMaxGuests(
     id: number,
@@ -354,9 +321,7 @@ class TourService extends BaseService {
     return this.getToursByGuideId(guideId);
   }
 
-  public async getToursByBoat(boatId: number): Promise<TourDTO[]> {
-    return this.getToursByBoatId(boatId);
-  }
+  // getToursByBoat kaldırıldı; boat ile ilişki yok
 
   public async getTourDates(tourId: number): Promise<TourDateDTO[]> {
     return this.getTourDatesByTourId(tourId);
@@ -366,9 +331,7 @@ class TourService extends BaseService {
     return this.getTourImagesByTourIdOrdered(tourId);
   }
 
-  public async deleteToursByBoatId(boatId: number): Promise<void> {
-    return this.delete<void>(`/tours/boat/${boatId}`);
-  }
+  // deleteToursByBoatId kaldırıldı; boat ile ilişki yok
 
   public async deleteToursByGuideId(guideId: number): Promise<void> {
     return this.delete<void>(`/tours/guide/${guideId}`);

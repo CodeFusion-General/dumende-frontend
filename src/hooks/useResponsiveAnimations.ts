@@ -20,7 +20,7 @@ interface ResponsiveAnimationConfig {
   touchOptimizations?: boolean;
 }
 
-interface ViewportInfo {
+export interface ViewportInfo {
   width: number;
   height: number;
   breakpoint: Breakpoint;
@@ -316,6 +316,12 @@ export const useResponsiveAnimations = (
     getTouchFriendlyProps,
     handleOrientationChange,
   };
+};
+
+// Lightweight viewport-only hook for convenience across the app
+export const useViewport = (): ViewportInfo => {
+  const { viewport } = useResponsiveAnimations();
+  return viewport;
 };
 
 // Utility hook for responsive breakpoint detection

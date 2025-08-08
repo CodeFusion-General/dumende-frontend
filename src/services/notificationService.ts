@@ -1,6 +1,8 @@
 // Service for managing notifications and error messages
 
+import * as React from "react";
 import { toast } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 export interface NotificationOptions {
   title?: string;
@@ -14,59 +16,82 @@ export interface NotificationOptions {
 }
 
 class NotificationService {
+  private buildToastPayload(
+    message: string,
+    variant: "default" | "destructive",
+    options: Omit<NotificationOptions, "variant"> = {}
+  ) {
+    const payload: any = {
+      title: options.title || (variant === "destructive" ? "Error" : "Info"),
+      description: message,
+      variant,
+      duration: options.duration ?? (variant === "destructive" ? 7000 : 5000),
+    };
+
+    if (options.action) {
+      payload.action = React.createElement(
+        ToastAction,
+        {
+          altText: options.action.label,
+          onClick: options.action.onClick,
+        } as any,
+        options.action.label
+      );
+    }
+
+    return payload;
+  }
+
   // Show success notification
   success(message: string, options: Omit<NotificationOptions, "variant"> = {}) {
-    toast({
-      title: options.title || "Success",
-      description: message,
-      variant: "default",
-      duration: options.duration || 5000,
-      ...options,
-    });
+    toast(
+      this.buildToastPayload(message, "default", {
+        title: options.title || "Success",
+        ...options,
+      })
+    );
   }
 
   // Show error notification
   error(message: string, options: Omit<NotificationOptions, "variant"> = {}) {
-    toast({
-      title: options.title || "Error",
-      description: message,
-      variant: "destructive",
-      duration: options.duration || 7000,
-      ...options,
-    });
+    toast(
+      this.buildToastPayload(message, "destructive", {
+        title: options.title || "Error",
+        ...options,
+      })
+    );
   }
 
   // Show warning notification
   warning(message: string, options: Omit<NotificationOptions, "variant"> = {}) {
-    toast({
-      title: options.title || "Warning",
-      description: message,
-      variant: "default",
-      duration: options.duration || 6000,
-      ...options,
-    });
+    toast(
+      this.buildToastPayload(message, "default", {
+        title: options.title || "Warning",
+        duration: options.duration ?? 6000,
+        ...options,
+      })
+    );
   }
 
   // Show info notification
   info(message: string, options: Omit<NotificationOptions, "variant"> = {}) {
-    toast({
-      title: options.title || "Information",
-      description: message,
-      variant: "default",
-      duration: options.duration || 5000,
-      ...options,
-    });
+    toast(
+      this.buildToastPayload(message, "default", {
+        title: options.title || "Information",
+        ...options,
+      })
+    );
   }
 
   // Show loading notification
   loading(message: string, options: Omit<NotificationOptions, "variant"> = {}) {
-    toast({
-      title: options.title || "Loading",
-      description: message,
-      variant: "default",
-      duration: options.duration || 0, // Don't auto-dismiss loading notifications
-      ...options,
-    });
+    toast(
+      this.buildToastPayload(message, "default", {
+        title: options.title || "Loading",
+        duration: options.duration ?? 0, // Don't auto-dismiss loading notifications
+        ...options,
+      })
+    );
   }
 
   // Network error notification
