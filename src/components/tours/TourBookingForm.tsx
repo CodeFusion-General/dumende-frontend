@@ -27,6 +27,8 @@ import {
   Shield,
   CheckCircle,
 } from "lucide-react";
+import { paymentService } from "@/services/paymentService";
+import { useNavigate } from "react-router-dom";
 
 interface TourBookingFormProps {
   tour: TourDTO;
@@ -37,6 +39,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
   tour,
   className,
 }) => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [groupSize, setGroupSize] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
@@ -50,12 +53,21 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
 
   const price = Number(tour.price) || 0;
   const maxGuests = Number(tour.capacity) || 1;
+
+  // Fallback vars when TourDate kaydı yoksa (servis takvimi ile uyum)
+  const fallbackDurationHours = useMemo(() => {
+    // Turun herhangi bir tarihindeki süreyi referans al, yoksa 4 saat
+    const anyDurationText = tour.tourDates?.[0]?.durationText || "4 Saat";
+    const match = anyDurationText.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 4;
+  }, [tour.tourDates]);
+  const fallbackStartHour = 10; // 10:00 varsayılan başlama saati
   const totalPrice = price * groupSize;
-  const serviceFee = Math.round(totalPrice * 0.1); // 10% service fee
+  const serviceFee = Math.round(totalPrice * 0.2); // 20% service fee
   const finalPrice = totalPrice + serviceFee;
 
   const handleCreateBooking = async () => {
-    if (!selectedTourDate) {
+    if (!selectedDate) {
       toast({ title: "Tarih seçiniz", variant: "destructive" });
       return;
     }
@@ -68,26 +80,68 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
     }
     setSubmitting(true);
     try {
-      const start = selectedTourDate.startDate;
-      // Duration text ör: "4 Saat" => basit yaklaşım: 4 saat ekle
-      let endDate = start;
-      const match = selectedTourDate.durationText?.match(/(\d+)/);
-      if (match) {
-        const hours = parseInt(match[1], 10);
-        const startDate = new Date(start);
-        const end = new Date(startDate.getTime() + hours * 60 * 60 * 1000);
-        endDate = end.toISOString();
+      let startISO: string;
+      let endISO: string;
+
+      if (selectedTourDate) {
+        const start = selectedTourDate.startDate;
+        // Duration text ör: "4 Saat" => 4 saat ekle
+        let computedEnd = start;
+        const match = selectedTourDate.durationText?.match(/(\d+)/);
+        if (match) {
+          const hours = parseInt(match[1], 10);
+          const startDateObj = new Date(start);
+          const end = new Date(startDateObj.getTime() + hours * 60 * 60 * 1000);
+          computedEnd = end.toISOString();
+        }
+        startISO = start;
+        endISO = computedEnd;
+      } else {
+        // TourDate yoksa: servis takvimi ile müsaitlik seçildi demektir.
+        // Varsayılan 10:00 başlangıç ve turdan türetilen süre (yoksa 4 saat) kullanılır.
+        const startObj = new Date(selectedDate);
+        startObj.setHours(fallbackStartHour, 0, 0, 0);
+        const endObj = new Date(startObj.getTime() + fallbackDurationHours * 60 * 60 * 1000);
+        startISO = startObj.toISOString();
+        endISO = endObj.toISOString();
       }
 
       const command: CreateBookingDTO = {
         tourId: tour.id,
-        startDate: start,
-        endDate,
+        startDate: startISO,
+        endDate: endISO,
         passengerCount: groupSize,
       };
       const created: BookingDTO = await bookingService.createBooking(command);
       toast({ title: "Rezervasyon oluşturuldu" });
       setIsFormOpen(false); // Close mobile form on success
+
+      // Ödeme sayfasına yönlendirme (BookingForm akışına benzer)
+      try {
+        const paymentInfo = await paymentService.getPaymentStatus(created.id);
+
+        if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
+          toast({ title: "Ödeme sayfasına yönlendiriliyorsunuz" });
+          // Backend'in döndürdüğü URL'i doğrudan kullan
+          paymentService.redirectToPayment(paymentInfo.paymentUrl);
+        } else if (paymentInfo.paymentCompleted) {
+          toast({ title: "Ödeme zaten tamamlanmış" });
+          navigate("/my-bookings");
+        } else {
+          // Ödeme gerekmiyorsa rezervasyonlar sayfasına yönlendir
+          navigate("/my-bookings");
+        }
+      } catch (err) {
+        console.error("Payment redirect failed:", err);
+        toast({
+          title: "Ödeme sayfası yüklenemedi",
+          description:
+            "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+          variant: "destructive",
+        });
+        // Yine de rezervasyonlar sayfasına yönlendir
+        navigate("/my-bookings");
+      }
     } catch (e) {
       console.error(e);
       toast({ title: "Rezervasyon başarısız", variant: "destructive" });
@@ -246,7 +300,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <Button
             className="w-full bg-gradient-to-r from-[#3498db] to-[#2c3e50] hover:from-[#2c3e50] hover:to-[#3498db] text-white font-montserrat font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
             onClick={handleCreateBooking}
-            disabled={!selectedTourDate || submitting}
+          disabled={!selectedDate || submitting}
           >
             {submitting ? "İşleniyor..." : "Rezervasyonu Onayla"}
           </Button>
@@ -367,7 +421,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <Button
             className="w-full bg-gradient-to-r from-[#3498db] to-[#2c3e50] hover:from-[#2c3e50] hover:to-[#3498db] text-white font-montserrat font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
             onClick={handleCreateBooking}
-            disabled={!selectedTourDate || submitting}
+            disabled={!selectedDate || submitting}
           >
             {submitting ? (
               <div className="flex items-center gap-2">

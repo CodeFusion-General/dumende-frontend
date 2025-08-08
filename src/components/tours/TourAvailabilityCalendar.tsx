@@ -52,7 +52,6 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
       tourDateMap.set(key, d);
     });
 
-    // Ay görünümüne göre sadece o ayın tur tarihlerini fallback için hazırla
     const monthStart = startOfMonth(effectiveMonth || new Date());
     const monthEnd = endOfMonth(effectiveMonth || new Date());
     const isInVisibleMonth = (dateStr: string) => {
@@ -60,25 +59,19 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
       return d >= monthStart && d <= monthEnd;
     };
 
-    // Eğer servis verisi varsa, sadece hem turDates hem servis available olan günleri AVAILABLE say
     if (serviceAvailability && serviceAvailability.length > 0) {
-      // Tüm günleri döndür; yalnızca tur tarihleri ve uygun statüde olanlar yeşil olsun
       const merged = serviceAvailability.map((sa) => {
         const td = tourDateMap.get(sa.date);
         const status = (td?.availabilityStatus || "").toUpperCase();
-        const isInTourDates = Boolean(td);
-        const tourDateAvailable = !td
-          ? false
-          : status !== "CANCELLED" && status !== "FULLY_BOOKED";
+        const blockedByTourDate = status === "CANCELLED" || status === "FULLY_BOOKED";
         return {
           ...sa,
-          isAvailable: Boolean(sa.isAvailable && isInTourDates && tourDateAvailable),
+          isAvailable: Boolean(sa.isAvailable && !blockedByTourDate),
         } as CalendarAvailability;
       });
       return merged;
     }
 
-    // Fallback: sadece turDates'e göre göster
     return Array.from(tourDateMap.keys())
       .filter(isInVisibleMonth)
       .map((date) => ({
