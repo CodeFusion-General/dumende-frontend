@@ -264,9 +264,11 @@ export const useMicroInteractions = () => {
 };
 
 // Hook for scroll-triggered animations
-export const useScrollAnimation = (threshold: number = 0.1) => {
+export const useScrollAnimation = <T extends HTMLElement = HTMLDivElement>(
+  threshold: number = 0.1
+) => {
   const [isVisible, setIsVisible] = useState(false);
-  const elementRef = useRef<HTMLElement>(null);
+  const elementRef = useRef<T | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

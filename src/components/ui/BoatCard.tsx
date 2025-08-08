@@ -2,7 +2,7 @@ import React from "react";
 import { Star, Users, Anchor } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BoatDTO } from "@/types/boat.types";
-import { getImageUrl, getPrimaryImageUrl } from "@/lib/imageUtils";
+import { getFullImageUrl } from "@/lib/imageUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 
@@ -90,14 +90,8 @@ const BoatCard: React.FC<BoatCardProps> = ({
   const priceLabel = isHourlyMode ? t.pages.boats.card.hourlyPrice : t.pages.boats.card.dailyPrice;
 
   const getImageUrl_component = () => {
-    // Backend henüz hazır olmadığı için API çağrılarını yorum satırına alıyoruz
-    // if (boat?.images?.length > 0) {
-    //   return getPrimaryImageUrl(boat.id); // Düzeltme: boat.images yerine boat.id
-    // }
-    if (boat?.imageUrl || imageUrl) {
-      return boat?.imageUrl || imageUrl;
-    }
-    return "/placeholder-boat.jpg";
+    const candidateUrl = boat?.imageUrl || imageUrl || "";
+    return getFullImageUrl(candidateUrl);
   };
 
   if (viewMode === "list") {

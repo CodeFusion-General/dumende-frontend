@@ -27,7 +27,7 @@ const NoResults: React.FC<NoResultsProps> = ({
   }, []);
 
   const handleResetClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    createRippleEffect(e.currentTarget, e);
+    createRippleEffect(e.currentTarget, e.nativeEvent);
     onReset();
   };
 

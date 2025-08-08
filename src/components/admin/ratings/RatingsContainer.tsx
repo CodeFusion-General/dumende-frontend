@@ -587,7 +587,7 @@ const RatingsContainer: React.FC<RatingsContainerProps> = ({
         onFlag={handleFlag}
         onDelete={handleDelete}
         onRefresh={handleRefresh}
-        showDeleteButton={isAdmin} // Only show delete button for admin users
+        showDeleteButton={isAdmin()} // Only show delete button for admin users
       />
 
       {/* Reply Modal */}

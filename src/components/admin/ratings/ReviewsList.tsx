@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ReviewCard from './ReviewCard';
+import { ReviewData } from '@/types/ratings.types';
 
 interface Review {
   id: string;
@@ -14,9 +15,19 @@ interface Review {
 
 interface ReviewsListProps {
   reviews: Review[];
+  onReply?: (reviewId: string) => void;
+  onFlag?: (reviewId: string) => void;
+  onDelete?: (reviewId: string) => void;
+  showDeleteButton?: boolean;
 }
 
-const ReviewsList: React.FC<ReviewsListProps> = ({ reviews }) => {
+const ReviewsList: React.FC<ReviewsListProps> = ({
+  reviews,
+  onReply,
+  onFlag,
+  onDelete,
+  showDeleteButton = false,
+}) => {
   if (reviews.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
@@ -31,12 +42,26 @@ const ReviewsList: React.FC<ReviewsListProps> = ({ reviews }) => {
       {reviews.map((review) => (
         <ReviewCard
           key={review.id}
-          userName={review.userName}
-          date={review.date}
-          rating={review.rating}
-          comment={review.comment}
-          tourName={review.tourName}
-          boatName={review.boatName}
+          review={{
+            id: Number(review.id),
+            customer: {
+              id: 0,
+              fullName: review.userName,
+              phoneNumber: '',
+            },
+            boatName: review.boatName,
+            tourName: review.tourName,
+            rating: review.rating,
+            comment: review.comment,
+            reviewDate: review.date,
+            isActive: true,
+            createdAt: review.date,
+            updatedAt: review.date,
+          } as ReviewData}
+          onReply={onReply ?? (() => {})}
+          onFlag={onFlag ?? (() => {})}
+          onDelete={onDelete ?? (() => {})}
+          showDeleteButton={showDeleteButton}
         />
       ))}
     </div>
