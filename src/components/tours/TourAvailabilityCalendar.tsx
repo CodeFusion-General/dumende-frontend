@@ -23,13 +23,16 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
   isLoading = false,
   className,
   tourId,
-  month,
-  onMonthChange,
+  month: controlledMonth,
+  onMonthChange: onMonthChangeProp,
 }) => {
   const [serviceAvailability, setServiceAvailability] = useState<CalendarAvailability[] | null>(null);
+  const [internalMonth, setInternalMonth] = useState<Date>(selected || new Date());
+
+  const effectiveMonth = controlledMonth || internalMonth;
 
   useEffect(() => {
-    const m = month || selected || new Date();
+    const m = effectiveMonth || selected || new Date();
     if (!tourId) {
       setServiceAvailability(null);
       return;
@@ -40,7 +43,7 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
       .getTourCalendarAvailability(tourId, format(start, "yyyy-MM-dd"), format(end, "yyyy-MM-dd"))
       .then((data) => setServiceAvailability(data))
       .catch(() => setServiceAvailability(null));
-  }, [tourId, month, selected]);
+  }, [tourId, effectiveMonth, selected]);
 
   const availabilityData: CalendarAvailability[] = useMemo(() => {
     const tourDateMap = new Map<string, TourDateDTO>();
@@ -49,34 +52,49 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
       tourDateMap.set(key, d);
     });
 
+    // Ay görünümüne göre sadece o ayın tur tarihlerini fallback için hazırla
+    const monthStart = startOfMonth(effectiveMonth || new Date());
+    const monthEnd = endOfMonth(effectiveMonth || new Date());
+    const isInVisibleMonth = (dateStr: string) => {
+      const d = new Date(dateStr + "T00:00:00");
+      return d >= monthStart && d <= monthEnd;
+    };
+
     // Eğer servis verisi varsa, sadece hem turDates hem servis available olan günleri AVAILABLE say
     if (serviceAvailability && serviceAvailability.length > 0) {
-      return serviceAvailability.map((sa) => {
+      // Tüm günleri döndür; yalnızca tur tarihleri ve uygun statüde olanlar yeşil olsun
+      const merged = serviceAvailability.map((sa) => {
         const td = tourDateMap.get(sa.date);
-        const dateIsInTourDates = !!td;
-        const tourDateAvailable = td
-          ? (td.availabilityStatus || "").toUpperCase() === "AVAILABLE"
-          : false;
+        const status = (td?.availabilityStatus || "").toUpperCase();
+        const isInTourDates = Boolean(td);
+        const tourDateAvailable = !td
+          ? false
+          : status !== "CANCELLED" && status !== "FULLY_BOOKED";
         return {
           ...sa,
-          isAvailable: Boolean(dateIsInTourDates && tourDateAvailable && sa.isAvailable),
+          isAvailable: Boolean(sa.isAvailable && isInTourDates && tourDateAvailable),
         } as CalendarAvailability;
       });
+      return merged;
     }
 
     // Fallback: sadece turDates'e göre göster
-    return Array.from(tourDateMap.keys()).map((date) => ({
-      date,
-      isAvailable:
-        (tourDateMap.get(date)?.availabilityStatus || "").toUpperCase() ===
-        "AVAILABLE",
-      isOverride: false,
-      price: undefined,
-      hasBookings: false,
-      bookingCount: 0,
-      isInstantConfirmation: true,
-    }));
-  }, [tourDates, serviceAvailability]);
+    return Array.from(tourDateMap.keys())
+      .filter(isInVisibleMonth)
+      .map((date) => ({
+        date,
+        isAvailable:
+          (tourDateMap.get(date)?.availabilityStatus || "AVAILABLE").toUpperCase() !==
+          "CANCELLED" &&
+          (tourDateMap.get(date)?.availabilityStatus || "AVAILABLE").toUpperCase() !==
+          "FULLY_BOOKED",
+        isOverride: false,
+        price: undefined,
+        hasBookings: false,
+        bookingCount: 0,
+        isInstantConfirmation: true,
+      }));
+  }, [tourDates, serviceAvailability, effectiveMonth]);
 
   return (
     <AvailabilityCalendar
@@ -86,8 +104,11 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
       isLoading={isLoading}
       language="tr"
       className={className}
-      month={month}
-      onMonthChange={onMonthChange}
+      month={effectiveMonth}
+      onMonthChange={(m) => {
+        setInternalMonth(m);
+        onMonthChangeProp && onMonthChangeProp(m);
+      }}
       context="tour"
     />
   );

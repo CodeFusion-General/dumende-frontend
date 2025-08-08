@@ -10,17 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { tr } from "date-fns/locale";
-import { BoatDTO, CreateAvailabilityPeriodCommand } from "@/types/boat.types";
+import { BoatDTO } from "@/types/boat.types";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { useRetry } from "@/hooks/useRetry";
@@ -28,7 +20,6 @@ import {
   validators,
   formatValidationErrors,
   ValidationError,
-  parseApiError,
   AppError,
 } from "@/utils/errorHandling";
 
@@ -37,6 +28,8 @@ interface AddAvailabilityModalProps {
   onClose: () => void;
   onSubmit: (data: CreateAvailabilityPeriodData) => Promise<void>;
   selectedBoat: BoatDTO | null;
+  initialStartDate?: Date;
+  initialEndDate?: Date;
 }
 
 interface CreateAvailabilityPeriodData {
@@ -59,9 +52,41 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
   onClose,
   onSubmit,
   selectedBoat,
+  initialStartDate,
+  initialEndDate,
 }) => {
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  // Format date for HTML input (yyyy-MM-dd)
+  const formatDateForInput = (date?: Date): string => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  // Format date for display (Turkish format)
+  const formatDateForDisplay = (dateString: string): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("tr-TR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Get today's date in yyyy-MM-dd format for min attribute
+  const getTodayString = (): string => {
+    const today = new Date();
+    return formatDateForInput(today);
+  };
+
+  const [startDate, setStartDate] = useState<string>(
+    formatDateForInput(initialStartDate)
+  );
+  const [endDate, setEndDate] = useState<string>(
+    formatDateForInput(initialEndDate)
+  );
   const [isAvailable, setIsAvailable] = useState<boolean>(true);
   const [priceOverride, setPriceOverride] = useState<string>("");
   const [isInstantConfirmation, setIsInstantConfirmation] = useState<boolean>(false);
@@ -85,36 +110,41 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
   // Reset form when modal opens/closes
   React.useEffect(() => {
     if (isOpen) {
-      setStartDate(undefined);
-      setEndDate(undefined);
+      setStartDate(formatDateForInput(initialStartDate));
+      setEndDate(formatDateForInput(initialEndDate));
       setIsAvailable(true);
       setPriceOverride("");
       setIsInstantConfirmation(false);
       setErrors({});
       setApiError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStartDate, initialEndDate]);
 
   const validateForm = (): boolean => {
     const validationErrors: ValidationError[] = [];
 
     // Validate start date
-    const startDateError = validators.required(startDate, "startDate");
-    if (startDateError) {
+    if (!startDate) {
       validationErrors.push({
         field: "startDate",
         message: "Başlangıç tarihi seçilmelidir",
       });
-    } else if (startDate) {
-      const pastDateError = validators.pastDate(startDate, "startDate");
-      if (pastDateError) {
-        validationErrors.push(pastDateError);
+    } else {
+      const startDateObj = new Date(startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      startDateObj.setHours(0, 0, 0, 0);
+      
+      if (startDateObj < today) {
+        validationErrors.push({
+          field: "startDate",
+          message: "Başlangıç tarihi bugünden önce olamaz",
+        });
       }
     }
 
     // Validate end date
-    const endDateError = validators.required(endDate, "endDate");
-    if (endDateError) {
+    if (!endDate) {
       validationErrors.push({
         field: "endDate",
         message: "Bitiş tarihi seçilmelidir",
@@ -123,17 +153,25 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
 
     // Validate date range
     if (startDate && endDate) {
-      const dateRangeError = validators.dateRange(startDate, endDate);
-      if (dateRangeError) {
-        validationErrors.push(dateRangeError);
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      if (endDateObj <= startDateObj) {
+        validationErrors.push({
+          field: "endDate",
+          message: "Bitiş tarihi başlangıç tarihinden sonra olmalıdır",
+        });
       }
     }
 
     // Validate price override
     if (priceOverride.trim() !== "") {
-      const priceError = validators.price(priceOverride, "priceOverride");
-      if (priceError) {
-        validationErrors.push(priceError);
+      const price = parseFloat(priceOverride);
+      if (isNaN(price) || price < 0) {
+        validationErrors.push({
+          field: "priceOverride",
+          message: "Geçerli bir fiyat giriniz",
+        });
       }
     }
 
@@ -160,8 +198,8 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
     try {
       await executeSubmit(async () => {
         const data: CreateAvailabilityPeriodData = {
-          startDate: startDate!.toISOString().split("T")[0], // Convert to yyyy-MM-dd format
-          endDate: endDate!.toISOString().split("T")[0], // Convert to yyyy-MM-dd format
+          startDate: startDate, // Already in yyyy-MM-dd format
+          endDate: endDate, // Already in yyyy-MM-dd format
           isAvailable,
           priceOverride:
             priceOverride.trim() !== "" ? parseFloat(priceOverride) : undefined,
@@ -187,6 +225,20 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
   const handleRetry = () => {
     setApiError(null);
     handleSubmit(new Event("submit") as any);
+  };
+
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStartDate = e.target.value;
+    setStartDate(newStartDate);
+    
+    // If end date is before or equal to new start date, clear it
+    if (endDate && endDate <= newStartDate) {
+      setEndDate("");
+    }
+  };
+
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEndDate(e.target.value);
   };
 
   return (
@@ -237,32 +289,26 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
           {/* Start Date */}
           <div className="space-y-2">
             <Label htmlFor="startDate">Başlangıç Tarihi</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground",
-                    errors.startDate && "border-red-500"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate
-                    ? format(startDate, "dd MMMM yyyy", { locale: tr })
-                    : "Başlangıç tarihi seçin"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={handleStartDateChange}
+                min={getTodayString()}
+                className={cn(
+                  "pl-10 w-full",
+                  errors.startDate && "border-red-500 focus:border-red-500"
+                )}
+                required
+              />
+            </div>
+            {startDate && (
+              <p className="text-sm text-gray-600">
+                Seçilen: {formatDateForDisplay(startDate)}
+              </p>
+            )}
             {errors.startDate && (
               <p className="text-sm text-red-600">{errors.startDate}</p>
             )}
@@ -271,34 +317,26 @@ const AddAvailabilityModalContent: React.FC<AddAvailabilityModalProps> = ({
           {/* End Date */}
           <div className="space-y-2">
             <Label htmlFor="endDate">Bitiş Tarihi</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground",
-                    errors.endDate && "border-red-500"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate
-                    ? format(endDate, "dd MMMM yyyy", { locale: tr })
-                    : "Bitiş tarihi seçin"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  disabled={(date) =>
-                    date < new Date() || (startDate && date <= startDate)
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="relative">
+              <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={handleEndDateChange}
+                min={startDate || getTodayString()}
+                className={cn(
+                  "pl-10 w-full",
+                  errors.endDate && "border-red-500 focus:border-red-500"
+                )}
+                required
+              />
+            </div>
+            {endDate && (
+              <p className="text-sm text-gray-600">
+                Seçilen: {formatDateForDisplay(endDate)}
+              </p>
+            )}
             {errors.endDate && (
               <p className="text-sm text-red-600">{errors.endDate}</p>
             )}
