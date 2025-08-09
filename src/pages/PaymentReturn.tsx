@@ -15,12 +15,14 @@ export default function PaymentReturn() {
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [pollingCount, setPollingCount] = useState(0);
+  const [isPolling, setIsPolling] = useState(false);
 
   // Extract booking ID from URL params
   const bookingId = searchParams.get('bookingId');
   const success = searchParams.get('success');
   const status = searchParams.get('status');
   const token = searchParams.get('token'); // Iyzico callback token
+  const retryParam = searchParams.get('retry');
 
   useEffect(() => {
     if (!bookingId) {
@@ -117,6 +119,95 @@ export default function PaymentReturn() {
     checkPaymentStatus();
   }, [bookingId, success, status, token, navigate]);
 
+  // ✅ Yeni: Backend callback status endpoint'ine polling (status pending ise)
+  useEffect(() => {
+    if (!bookingId) return;
+    const shouldStartPolling = !success && (status === 'pending' || !status);
+    if (!shouldStartPolling) return;
+
+    let cancelled = false;
+    const MAX_RETRIES = 10;
+    const RETRY_INTERVAL = 2000;
+
+    type CallbackStatus = {
+      bookingId: number;
+      paymentStatus: string;
+      isComplete: boolean;
+      isPending: boolean;
+      message?: string;
+      shouldRetry?: boolean;
+    };
+
+    const poll = async () => {
+      setIsPolling(true);
+      setPollingCount(0);
+      let attempt = 0;
+
+      const doAttempt = async (): Promise<void> => {
+        if (cancelled) return;
+        if (attempt >= MAX_RETRIES) {
+          setIsPolling(false);
+          // Zaman aşımı: pending görünümünde bırak
+          return;
+        }
+        try {
+          const resp = await fetch(`/api/payments/callback/status?bookingId=${bookingId}`);
+          const data: CallbackStatus = await resp.json();
+          if (cancelled) return;
+
+          // Başarı/başarısız kontrolü
+          const isSuccess = data.isComplete || data.paymentStatus === 'COMPLETED' || data.paymentStatus === 'PARTIAL';
+          const isFailed = data.paymentStatus === 'FAILED' || data.paymentStatus === 'CANCELLED';
+
+          if (isSuccess) {
+            // Güncel durumu da yansıt
+            try {
+              const latest = await paymentService.getPaymentStatus(parseInt(bookingId));
+              setPaymentStatus(latest);
+            } catch (_) {}
+            setIsPolling(false);
+            toast({ title: 'Ödeme Onaylandı!', description: 'Rezervasyonunuz başarıyla tamamlandı.' });
+            setTimeout(() => navigate('/my-bookings'), 3000);
+            return;
+          }
+          if (isFailed) {
+            try {
+              const latest = await paymentService.getPaymentStatus(parseInt(bookingId));
+              setPaymentStatus(latest);
+            } catch (_) {}
+            setIsPolling(false);
+            toast({ title: 'Ödeme Başarısız', description: 'Ödeme işlemi başarısız oldu.', variant: 'destructive' });
+            return;
+          }
+
+          // Devam: pending
+          attempt += 1;
+          setPollingCount(attempt);
+          setTimeout(doAttempt, RETRY_INTERVAL);
+        } catch (e) {
+          attempt += 1;
+          setPollingCount(attempt);
+          if (attempt >= MAX_RETRIES) {
+            setIsPolling(false);
+          } else {
+            setTimeout(doAttempt, RETRY_INTERVAL);
+          }
+        }
+      };
+
+      // İlk deneme, küçük bir bekleme ile (retry param geldiyse bekleme yok)
+      const initialDelay = retryParam ? 0 : 1000;
+      setTimeout(doAttempt, initialDelay);
+    };
+
+    poll();
+
+    return () => {
+      cancelled = true;
+      setIsPolling(false);
+    };
+  }, [bookingId, status, success, retryParam, navigate]);
+
   const handleGoToBookings = () => {
     navigate('/my-bookings');
   };
@@ -208,7 +299,7 @@ export default function PaymentReturn() {
     }
   };
 
-  if (loading) {
+  if (loading || isPolling) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <Card className="w-full max-w-md">

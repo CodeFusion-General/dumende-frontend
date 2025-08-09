@@ -96,11 +96,11 @@ const TourAvailabilityPage: React.FC = () => {
   }, [calendarMonth?.getFullYear(), calendarMonth?.getMonth()]);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("tr-TR", { 
-      day: "numeric", 
-      month: "long", 
+    return new Date(dateStr).toLocaleDateString("tr-TR", {
+      day: "numeric",
+      month: "long",
       year: "numeric",
-      weekday: "long"
+      weekday: "long",
     });
   };
 
@@ -138,7 +138,11 @@ const TourAvailabilityPage: React.FC = () => {
       setCalendarLoading(true);
       setCalendarError(undefined);
       const { start, end } = getMonthRange();
-      const data = await availabilityService.getTourCalendarAvailability(selectedTour.id, start, end);
+      const data = await availabilityService.getTourCalendarAvailability(
+        selectedTour.id,
+        start,
+        end
+      );
       setCalendarData(data);
     } catch (e: any) {
       setCalendarError(e?.message || "Takvim verileri yüklenemedi");

@@ -34,11 +34,7 @@ import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  isValidImageUrl,
-  getDefaultImageUrl,
-  getFullImageUrl,
-} from "@/lib/imageUtils";
+import { isValidImageUrl, getFullImageUrl } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import { CustomerCaptainChat } from "@/components/boats/messaging/CustomerCaptainChat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,10 +64,7 @@ import { notificationService } from "@/services/notificationService";
 import { BoatDTO } from "@/types/boat.types";
 import MapPicker from "@/components/common/MapPicker";
 
-// Default image helper function for boat detail page
-const getBoatImageUrl = (): string => {
-  return getDefaultImageUrl();
-};
+// Default image kaldırıldı: geçerli görsel yoksa boş durum gösterilecek
 
 const BoatListing = () => {
   const { id } = useParams();
@@ -260,14 +253,14 @@ const BoatListing = () => {
   // Memoize image URLs to prevent re-processing
   const processedImageUrls = useMemo(() => {
     if (!boatData?.images || boatData.images.length === 0) {
-      return [getBoatImageUrl()];
+      return [];
     }
 
     const validImageUrls = boatData.images
       .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
       .map((img) => img.imageUrl);
 
-    return validImageUrls.length > 0 ? validImageUrls : [getBoatImageUrl()];
+    return validImageUrls.length > 0 ? validImageUrls : [];
   }, [boatData?.images]);
 
   // Process images with caching - optimized to prevent unnecessary processing

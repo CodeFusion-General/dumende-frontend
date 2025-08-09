@@ -80,6 +80,9 @@ const ToursPage = () => {
     const firstDate = tour.tourDates?.[0];
     const duration = firstDate
       ? (() => {
+          if (firstDate.durationMinutes && firstDate.durationMinutes > 0) {
+            return Math.round(firstDate.durationMinutes / 60);
+          }
           const text = (firstDate.durationText || "").toLowerCase();
           const num = parseInt(text.replace(/\D/g, "")) || 0;
           if (text.includes("gün")) return num * 24; // saat cinsinden

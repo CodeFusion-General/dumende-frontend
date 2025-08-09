@@ -58,13 +58,19 @@ const TourCalendarPage: React.FC = () => {
         const tourDates = await tourService.getTourDatesByTourId(tour.id);
 
         for (const tourDate of tourDates) {
+          const start = parseISO(tourDate.startDate);
+          let endLabel = "";
+          if (tourDate.endDate) {
+            endLabel = `-${format(parseISO(tourDate.endDate), "HH:mm")}`;
+          } else if (tourDate.durationMinutes && tourDate.durationMinutes > 0) {
+            // Sadece etiket amaçlı gösterim
+            const end = new Date(start.getTime() + tourDate.durationMinutes * 60000);
+            endLabel = `-${format(end, "HH:mm")}`;
+          }
           allEvents.push({
             id: tourDate.id,
-            date: format(parseISO(tourDate.startDate), "yyyy-MM-dd"),
-            title: `${tour.name} - ${format(
-              parseISO(tourDate.startDate),
-              "HH:mm"
-            )}`,
+            date: format(start, "yyyy-MM-dd"),
+            title: `${tour.name} - ${format(start, "HH:mm")}${endLabel}`,
             status: tourDate.availabilityStatus as
               | "AVAILABLE"
               | "FULLY_BOOKED"

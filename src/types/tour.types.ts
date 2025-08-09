@@ -28,7 +28,9 @@ export interface TourDateDTO {
   id: number;
   tourId: number;
   startDate: string; // LocalDateTime -> string
+  endDate?: string; // LocalDateTime -> string (opsiyonel)
   durationText: string; // Örn: "4 Saat", "2 Gün"
+  durationMinutes?: number;
   availabilityStatus: string;
   maxGuests: number;
   createdAt: string;
@@ -38,7 +40,9 @@ export interface TourDateDTO {
 export interface CreateTourDateDTO {
   tourId: number;
   startDate: string; // LocalDateTime -> string
+  endDate?: string; // LocalDateTime -> string (opsiyonel)
   durationText: string; // Örn: "4 Saat", "2 Gün"
+  durationMinutes?: number;
   availabilityStatus: string;
   maxGuests: number;
 }
@@ -47,7 +51,9 @@ export interface UpdateTourDateDTO {
   id: number;
   tourId?: number;
   startDate?: string; // LocalDateTime -> string
+  endDate?: string; // LocalDateTime -> string (opsiyonel)
   durationText?: string; // Örn: "4 Saat", "2 Gün"
+  durationMinutes?: number;
   availabilityStatus?: string;
   maxGuests?: number;
 }

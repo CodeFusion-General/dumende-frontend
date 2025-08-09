@@ -175,7 +175,9 @@ interface PullToRefreshOptions {
   releaseText?: string;
 }
 
-export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
+export const usePullToRefresh = <T extends HTMLElement = HTMLDivElement>(
+  options: PullToRefreshOptions = {}
+) => {
   const {
     threshold = 80,
     resistance = 2.5,
@@ -188,7 +190,7 @@ export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [canRefresh, setCanRefresh] = useState(false);
-  const elementRef = useRef<HTMLElement>(null);
+  const elementRef = useRef<T | null>(null);
   const startY = useRef(0);
   const currentY = useRef(0);
 

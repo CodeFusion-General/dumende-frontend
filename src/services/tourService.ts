@@ -154,6 +154,17 @@ class TourService extends BaseService {
       .then((res) => res.data);
   }
 
+  public async getOverlappingTourDates(
+    tourId: number,
+    start: string,
+    end: string
+  ): Promise<TourDateDTO[]> {
+    const params = new URLSearchParams({ start, end });
+    return this.api
+      .get<TourDateDTO[]>(`/tour-dates/tour/${tourId}/overlapping?${params.toString()}`)
+      .then((res) => res.data);
+  }
+
   // ======= Tour Date Command Operations =======
   public async createTourDate(data: CreateTourDateDTO): Promise<TourDateDTO> {
     return this.api
