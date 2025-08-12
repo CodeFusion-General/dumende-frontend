@@ -1,0 +1,400 @@
+/* Profile Completion Form Accessibility and Mobile Enhancements */
+
+@layer components {
+  /* Enhanced focus management for form sections */
+  .profile-section {
+    scroll-margin-top: 2rem;
+  }
+
+  .profile-section:focus-within {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 4px;
+    border-radius: 0.5rem;
+  }
+
+  /* Mobile-first responsive form layouts */
+  .profile-form-container {
+    padding: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .profile-form-container {
+      padding: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .profile-form-container {
+      padding: 2rem;
+    }
+  }
+
+  /* Enhanced mobile form field spacing */
+  .profile-form-field {
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .profile-form-field {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  /* Mobile-optimized input fields */
+  .profile-input-mobile {
+    min-height: 44px; /* iOS accessibility minimum */
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .profile-input-mobile {
+      min-height: auto;
+      font-size: 14px;
+      padding: 0.5rem 0.75rem;
+    }
+  }
+
+  /* Enhanced touch targets for mobile */
+  .profile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Progress indicator enhancements */
+  .profile-progress-bar {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: hsl(var(--muted));
+    position: relative;
+  }
+
+  .profile-progress-fill {
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)),
+      hsl(var(--primary) / 0.8)
+    );
+    border-radius: 4px;
+    transition: width 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-progress-fill::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    animation: progress-shimmer 2s infinite;
+  }
+
+  @keyframes progress-shimmer {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+
+  /* Auto-save indicator */
+  .auto-save-indicator {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  .auto-save-indicator.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 640px) {
+    .auto-save-indicator {
+      bottom: 0.5rem;
+      right: 0.5rem;
+      left: 0.5rem;
+      text-align: center;
+    }
+  }
+
+  /* Enhanced error states for mobile */
+  .profile-error-mobile {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    background-color: hsl(var(--destructive) / 0.1);
+    border: 1px solid hsl(var(--destructive) / 0.3);
+    margin-top: 0.5rem;
+  }
+
+  /* Improved file upload area for mobile */
+  .profile-upload-mobile {
+    min-height: 200px;
+    border: 2px dashed hsl(var(--border));
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .profile-upload-mobile:hover,
+  .profile-upload-mobile:focus-within {
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary) / 0.05);
+  }
+
+  .profile-upload-mobile.drag-over {
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary) / 0.1);
+    transform: scale(1.02);
+  }
+
+  @media (max-width: 640px) {
+    .profile-upload-mobile {
+      min-height: 150px;
+      padding: 1rem;
+    }
+  }
+
+  /* Enhanced keyboard navigation indicators */
+  .profile-keyboard-focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Skip link for keyboard navigation */
+  .profile-skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 0.25rem;
+    z-index: 100;
+    transition: top 0.3s ease;
+  }
+
+  .profile-skip-link:focus {
+    top: 6px;
+  }
+
+  /* Enhanced form section headers */
+  .profile-section-header {
+    position: sticky;
+    top: 0;
+    background: hsl(var(--background));
+    z-index: 10;
+    padding: 1rem 0;
+    border-bottom: 1px solid hsl(var(--border));
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .profile-section-header {
+      position: static;
+      border-bottom: none;
+      padding: 0.5rem 0;
+    }
+  }
+
+  /* Mobile-optimized button layouts */
+  .profile-button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .profile-button-group {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .profile-button-primary {
+    order: 1;
+    width: 100%;
+  }
+
+  .profile-button-secondary {
+    order: 2;
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .profile-button-primary {
+      order: 2;
+      width: auto;
+      min-width: 200px;
+    }
+
+    .profile-button-secondary {
+      order: 1;
+      width: auto;
+    }
+  }
+
+  /* Enhanced loading states */
+  .profile-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    z-index: 10;
+  }
+
+  .profile-loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid hsl(var(--muted));
+    border-top: 2px solid hsl(var(--primary));
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Improved form validation feedback */
+  .profile-validation-summary {
+    background: hsl(var(--muted) / 0.5);
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-validation-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+  }
+
+  .profile-validation-item.valid {
+    color: hsl(var(--primary));
+  }
+
+  .profile-validation-item.invalid {
+    color: hsl(var(--destructive));
+  }
+
+  /* Enhanced accessibility for screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .profile-progress-bar {
+      border: 2px solid;
+    }
+
+    .profile-input-mobile {
+      border: 2px solid;
+    }
+
+    .profile-upload-mobile {
+      border-width: 3px;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .profile-progress-fill,
+    .profile-upload-mobile,
+    .auto-save-indicator {
+      transition: none;
+    }
+
+    .profile-progress-fill::after {
+      animation: none;
+    }
+
+    .profile-loading-spinner {
+      animation: none;
+      border-top-color: hsl(var(--primary));
+    }
+  }
+
+  /* Dark mode enhancements */
+  @media (prefers-color-scheme: dark) {
+    .auto-save-indicator {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .profile-upload-mobile {
+      background-color: hsl(var(--background));
+    }
+
+    .profile-upload-mobile:hover,
+    .profile-upload-mobile:focus-within {
+      background-color: hsl(var(--muted) / 0.5);
+    }
+  }
+}
+
+/* Print styles for form completion */
+@media print {
+  .profile-form-container {
+    background: white;
+    color: black;
+  }
+
+  .auto-save-indicator,
+  .profile-loading-overlay,
+  .profile-button-group {
+    display: none;
+  }
+
+  .profile-section {
+    break-inside: avoid;
+    margin-bottom: 2rem;
+  }
+}

@@ -1,10 +1,12 @@
 // Auth ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+import { UserDTO } from "./contact.types";
+
 // Backend UserType enum
 export enum UserType {
-  CUSTOMER = 'CUSTOMER',
-  BOAT_OWNER = 'BOAT_OWNER',
-  ADMIN = 'ADMIN'
+  CUSTOMER = "CUSTOMER",
+  BOAT_OWNER = "BOAT_OWNER",
+  ADMIN = "ADMIN",
 }
 
 // Backend'deki LoginRequest ile uyumlu
@@ -32,6 +34,7 @@ export interface LoginResponse {
   email: string;
   username: string;
   role: UserType;
+  accountId?: number; // Account ID for profile completion
 }
 
 // AuthContext için user state
@@ -42,6 +45,12 @@ export interface AuthUser {
   role: UserType;
   fullName?: string;
   phoneNumber?: string;
+  profileImage?: string;
+  accountId?: number;
+  isProfileComplete?: boolean;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
 }
 
 // AuthContext state type
@@ -51,7 +60,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<LoginResponse>;
   logout: () => void;
   refreshToken: () => Promise<void>;
   // Helper methods
@@ -59,6 +68,12 @@ export interface AuthContextType {
   isAdmin: () => boolean;
   isBoatOwner: () => boolean;
   isCustomer: () => boolean;
+  // Profile completion methods
+  isProfileComplete: () => boolean;
+  updateUserData: (userData: Partial<AuthUser>) => void;
+  updateUserFromProfile: (userDto: UserDTO) => void;
+  needsProfileCompletion: () => boolean;
+  getProfileCompletionRedirectPath: () => string | null;
 }
 
 // Account yönetimi için (backend AccountDTO)

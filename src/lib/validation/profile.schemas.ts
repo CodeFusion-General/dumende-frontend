@@ -199,7 +199,10 @@ export const professionalInfoFormSchema = z.object({
   licenseNumber: z
     .string()
     .min(1, "Lisans numarası zorunludur")
-    .regex(/^[A-Z0-9]{6,12}$/i, "Lisans numarası 6-12 karakter olmalı ve yalnızca harf/rakam içermelidir")
+    .regex(
+      /^[A-Z0-9]{6,12}$/i,
+      "Lisans numarası 6-12 karakter olmalı ve yalnızca harf/rakam içermelidir"
+    )
     .transform((val) => val.trim().toUpperCase()),
   licenseExpiry: z
     .string()
@@ -252,4 +255,45 @@ export const photoUploadSchema = z.object({
         ),
       "File must be a valid image (JPEG, PNG, or WebP)"
     ),
+});
+
+// Profile Completion Validation Schemas
+export const addressFormDataSchema = z.object({
+  street: z.string().min(5, "Sokak adresi en az 5 karakter olmalıdır"),
+  city: z.string().min(2, "Şehir en az 2 karakter olmalıdır"),
+  district: z.string().min(2, "İlçe en az 2 karakter olmalıdır"),
+  postalCode: z.string().regex(/^[0-9]{5}$/, "Posta kodu 5 haneli olmalıdır"),
+  country: z.string().default("Türkiye"),
+});
+
+export const profileCompletionSchema = z.object({
+  firstName: z
+    .string()
+    .min(2, "Ad en az 2 karakter olmalıdır")
+    .max(50, "Ad en fazla 50 karakter olabilir"),
+  lastName: z
+    .string()
+    .min(2, "Soyad en az 2 karakter olmalıdır")
+    .max(50, "Soyad en fazla 50 karakter olabilir"),
+  phoneNumber: z
+    .string()
+    .regex(/^(\+90|0)?[0-9]{10}$/, "Geçerli bir telefon numarası giriniz"),
+  dateOfBirth: z.string().refine((date) => {
+    const birthDate = new Date(date);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    return age >= 18 && age <= 100;
+  }, "Yaş 18-100 arasında olmalıdır"),
+  address: addressFormDataSchema,
+  profileImage: z
+    .instanceof(File)
+    .refine(
+      (file) => file.size <= 5 * 1024 * 1024,
+      "Dosya boyutu 5MB'dan küçük olmalıdır"
+    )
+    .refine(
+      (file) => ["image/jpeg", "image/png", "image/gif"].includes(file.type),
+      "Sadece JPG, PNG ve GIF formatları desteklenir"
+    )
+    .optional(),
 });

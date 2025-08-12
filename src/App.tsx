@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AuthNotificationsProvider from "./components/auth/AuthNotificationsProvider";
 import { RoleGuard } from "@/components/auth/RoleGuard";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { UserType } from "@/types/auth.types";
 import { accessibilityManager } from "@/lib/accessibility-utils";
 import { accessibleAnimationController } from "@/lib/reduced-motion";
@@ -32,6 +33,8 @@ import MyBookings from "./pages/MyBookings";
 import BoatOwnerApplication from "./pages/BoatOwnerApplication";
 import NotificationsPage from "./pages/NotificationsPage";
 import PaymentReturn from "./pages/PaymentReturn";
+import ProfileCompletionPage from "./pages/ProfileCompletionPage";
+import MyProfile from "./pages/MyProfile";
 
 // Captain Panel pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -97,6 +100,34 @@ const App = () => {
                     <Route path="/about" element={<AboutUs />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/register" element={<Register />} />
+                    <Route
+                      path="/profile-completion/:accountId"
+                      element={
+                        <ProtectedRoute
+                          requiredRoles={[
+                            UserType.CUSTOMER,
+                            UserType.BOAT_OWNER,
+                            UserType.ADMIN,
+                          ]}
+                        >
+                          <ProfileCompletionPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/my-profile"
+                      element={
+                        <ProtectedRoute
+                          requiredRoles={[
+                            UserType.CUSTOMER,
+                            UserType.BOAT_OWNER,
+                            UserType.ADMIN,
+                          ]}
+                        >
+                          <MyProfile />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/blog/:id" element={<BlogPost />} />
                     <Route path="/my-bookings" element={<MyBookings />} />
@@ -195,7 +226,7 @@ const App = () => {
                         </RoleGuard>
                       }
                     />
-                    
+
                     <Route
                       path="/captain/company"
                       element={
@@ -324,7 +355,7 @@ const App = () => {
                         </RoleGuard>
                       }
                     />
-                    
+
                     <Route
                       path="/admin/company"
                       element={

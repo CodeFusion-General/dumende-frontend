@@ -203,6 +203,13 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                     </p>
                   </div>
                   <DropdownMenuItem
+                    onClick={() => (window.location.href = "/my-profile")}
+                    className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
+                  >
+                    <User className="mr-2 h-4 w-4" strokeWidth={2.5} />
+                    Profilim
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => (window.location.href = "/my-bookings")}
                     className="relative hover:bg-[#3498db]/10 cursor-pointer text-[#2c3e50] transition-all duration-200 rounded-lg px-3 py-2 focus:bg-[#3498db]/10 focus:text-[#2c3e50] font-roboto"
                   >

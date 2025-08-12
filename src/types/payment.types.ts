@@ -29,3 +29,41 @@ export enum PaymentStatus {
   CANCELLED = 'CANCELLED',
   PARTIAL = 'PARTIAL'
 }
+
+// 3DS DTOs
+export interface ThreeDSInitializeRequestDto {
+  bookingId: number;
+  cardHolderName: string;
+  cardNumber: string;
+  expireMonth: string;
+  expireYear: string;
+  cvc: string;
+  installment?: number;
+}
+
+export interface ThreeDSInitializeResponseDto {
+  status: string;
+  threeDSHtmlContent?: string;
+  paymentId?: string;
+  conversationId?: string;
+  bookingId?: number;
+  errorCode?: string;
+  errorMessage?: string;
+  errorGroup?: string;
+  systemTime?: number;
+}
+
+export interface ThreeDSCompleteRequestDto {
+  paymentId: string;
+  conversationData?: string | null;
+  bookingId: number;
+}
+
+export interface BinCheckResponseDto {
+  binNumber?: string;
+  bankName?: string;
+  cardType?: string;
+  cardAssociation?: string;
+  force3ds?: number;
+  installmentPrices?: Array<{ installmentNumber: number; totalPrice: number }>;
+}

@@ -163,14 +163,14 @@ const BoatListing = () => {
       setUserBooking(booking);
 
       if (booking) {
-        console.log("✅ User has booking with this boat:", booking);
+        // console.debug("User has booking with this boat:", booking);
         // Load captain info
         setCaptainLoading(true);
         try {
           const captainId = await extractCaptainIdFromBooking(booking);
           const captainData = await captainService.getCaptainById(captainId);
           setCaptain(captainData);
-          console.log("👨‍✈️ Captain data loaded:", captainData);
+        // console.debug("Captain data loaded:", captainData);
         } catch (error) {
           console.error("❌ Failed to load captain info:", error);
         } finally {

@@ -3,17 +3,30 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/contexts/AuthContext";
+import { authService } from "@/services/authService";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { UserType } from "@/types/auth.types";
+import { toast } from "@/components/ui/use-toast";
 
 const Register = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const { register: registerUser, getProfileCompletionRedirectPath, updateUserData } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const translations = {
     tr: {
@@ -30,8 +43,8 @@ const Register = () => {
         required: "Bu alan zorunludur",
         email: "Geçerli bir e-posta adresi giriniz",
         password: "Şifre en az 6 karakter olmalıdır",
-        passwordMatch: "Şifreler eşleşmiyor"
-      }
+        passwordMatch: "Şifreler eşleşmiyor",
+      },
     },
     en: {
       title: "Register",
@@ -47,24 +60,26 @@ const Register = () => {
         required: "This field is required",
         email: "Please enter a valid email",
         password: "Password must be at least 6 characters",
-        passwordMatch: "Passwords do not match"
-      }
-    }
+        passwordMatch: "Passwords do not match",
+      },
+    },
   };
 
   const t = translations[language];
 
-  const formSchema = z.object({
-    firstName: z.string().min(1, { message: t.validation.required }),
-    lastName: z.string().min(1, { message: t.validation.required }),
-    username: z.string().min(1, { message: t.validation.required }),
-    email: z.string().email({ message: t.validation.email }),
-    password: z.string().min(6, { message: t.validation.password }),
-    confirmPassword: z.string()
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: t.validation.passwordMatch,
-    path: ["confirmPassword"],
-  });
+  const formSchema = z
+    .object({
+      firstName: z.string().min(1, { message: t.validation.required }),
+      lastName: z.string().min(1, { message: t.validation.required }),
+      username: z.string().min(1, { message: t.validation.required }),
+      email: z.string().email({ message: t.validation.email }),
+      password: z.string().min(6, { message: t.validation.password }),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t.validation.passwordMatch,
+      path: ["confirmPassword"],
+    });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,29 +89,69 @@ const Register = () => {
       username: "",
       email: "",
       password: "",
-      confirmPassword: ""
+      confirmPassword: "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    /* Backend hazır olduğunda kullanılacak kod:
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      setIsLoading(true);
+
       const registerData = {
         email: values.email,
         password: values.password,
-        name: `${values.firstName} ${values.lastName}`,
-        username: values.username
+        fullName: `${values.firstName} ${values.lastName}`,
+        username: values.username,
+        userType: UserType.CUSTOMER,
+        phoneNumber: "", // Will be collected in profile completion
       };
-      const response = await authService.register(registerData);
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        navigate('/dashboard');
+
+      const response = await registerUser(registerData);
+
+      // Show success message
+      toast({
+        title: language === "tr" ? "Kayıt Başarılı" : "Registration Successful",
+        description:
+          language === "tr"
+            ? "Hesabınız oluşturuldu. Şimdi profilinizi tamamlayın."
+            : "Your account has been created. Please complete your profile.",
+      });
+
+      // Account oluşturulduktan sonra profile completion'a yönlendir
+      const targetId = response?.accountId ?? response?.userId;
+      if (targetId) {
+        // Auth state'e hesapId bilgisini işle (fallback olarak userId de olabilir)
+        updateUserData({ accountId: targetId });
+        navigate(`/profile-completion/${targetId}`);
+      } else {
+        // Yedek: Auth state üzerinden yönlendirme yolu hesapla
+        const redirectPath = getProfileCompletionRedirectPath();
+        if (redirectPath) {
+          navigate(redirectPath);
+        } else {
+          toast({
+            title: language === "tr" ? "Yönlendirme Hatası" : "Redirect Error",
+            description:
+              language === "tr"
+                ? "Hesap bilgileri alınamadı. Lütfen tekrar giriş yapın."
+                : "Account info not available. Please log in again.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
-      console.error('Registration failed:', error);
-      // Hata mesajını kullanıcıya göster
+      console.error("Registration failed:", error);
+      toast({
+        title: language === "tr" ? "Kayıt Hatası" : "Registration Error",
+        description:
+          language === "tr"
+            ? "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
+            : "An error occurred during registration. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    */
   };
 
   return (
@@ -177,16 +232,20 @@ const Register = () => {
                     <FormLabel>{t.password}</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input 
-                          type={showPassword ? "text" : "password"} 
-                          {...field} 
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          {...field}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-2.5"
                         >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {showPassword ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
                         </button>
                       </div>
                     </FormControl>
@@ -203,16 +262,22 @@ const Register = () => {
                     <FormLabel>{t.confirmPassword}</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input 
-                          type={showConfirmPassword ? "text" : "password"} 
-                          {...field} 
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          {...field}
                         />
                         <button
                           type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                           className="absolute right-3 top-2.5"
                         >
-                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {showConfirmPassword ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
                         </button>
                       </div>
                     </FormControl>
@@ -222,13 +287,18 @@ const Register = () => {
               />
 
               <div className="flex flex-col space-y-4">
-                <Button type="submit" size="lg">
-                  {t.register}
+                <Button type="submit" size="lg" disabled={isLoading}>
+                  {isLoading
+                    ? language === "tr"
+                      ? "Kayıt Oluşturuluyor..."
+                      : "Creating Account..."
+                    : t.register}
                 </Button>
                 <Button
                   type="button"
                   variant="link"
                   onClick={() => navigate(-1)}
+                  disabled={isLoading}
                 >
                   {t.backToLogin}
                 </Button>

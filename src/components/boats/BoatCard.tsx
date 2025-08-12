@@ -15,6 +15,8 @@ interface BoatCardProps {
   isCompared?: boolean;
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
+  // Detay sayfası linkini özelleştirmek için (örn. arama parametrelerini korumak)
+  detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
 // Default image helper function
@@ -46,6 +48,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
   isCompared = false,
   onCompareToggle,
   variant = "listing",
+  detailLinkBuilder,
 }) => {
   if (viewMode === "grid") {
     return (
@@ -55,6 +58,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
         isCompared={isCompared}
         onCompareToggle={onCompareToggle}
         variant={variant}
+        detailLinkBuilder={detailLinkBuilder}
       />
     );
   }
@@ -65,6 +69,7 @@ export const BoatCard: React.FC<BoatCardProps> = ({
       isCompared={isCompared}
       onCompareToggle={onCompareToggle}
       variant={variant}
+      detailLinkBuilder={detailLinkBuilder}
     />
   );
 };
@@ -75,12 +80,14 @@ const BoatCardGrid: React.FC<{
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
+  detailLinkBuilder?: (boat: BoatDTO) => string;
 }> = ({
   boat,
   isHourlyMode,
   isCompared,
   onCompareToggle,
   variant = "listing",
+  detailLinkBuilder,
 }) => {
   const { language } = useLanguage();
   const t = translations[language];
@@ -234,7 +241,7 @@ const BoatCardGrid: React.FC<{
               /{priceUnit}
             </span>
           </div>
-          <Link to={`/boats/${boat.id}`}>
+          <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
             <Button className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
               İncele
             </Button>
@@ -251,12 +258,14 @@ const BoatCardList: React.FC<{
   isCompared: boolean;
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
+  detailLinkBuilder?: (boat: BoatDTO) => string;
 }> = ({
   boat,
   isHourlyMode,
   isCompared,
   onCompareToggle,
   variant = "listing",
+  detailLinkBuilder,
 }) => {
   const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
@@ -393,7 +402,7 @@ const BoatCardList: React.FC<{
             </span>
           </div>
           <div className="flex space-x-2">
-            <Link to={`/boats/${boat.id}`}>
+            <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
               <Button className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-4 py-2 rounded-xl transition-all duration-300 font-montserrat">
                 Detaylar
               </Button>

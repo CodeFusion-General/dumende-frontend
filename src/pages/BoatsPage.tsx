@@ -379,6 +379,19 @@ const BoatsPage = () => {
                   isHourlyMode={isHourlyMode}
                   comparedBoats={comparedBoats}
                   loading={loading}
+                  // Detay sayfasına geçerken mevcut arama parametrelerini koru
+                  detailLinkBuilder={(boat) => {
+                    const params = new URLSearchParams(location.search);
+                    // Arama sonuçlarından gelen temel parametreleri taşıyalım
+                    const allowed = ["location", "start", "end", "guests", "filter", "type"]; 
+                    const forwardParams = new URLSearchParams();
+                    allowed.forEach((key) => {
+                      const value = params.get(key);
+                      if (value) forwardParams.set(key, value);
+                    });
+                    const qs = forwardParams.toString();
+                    return qs ? `/boats/${boat.id}?${qs}` : `/boats/${boat.id}`;
+                  }}
                   onCompareToggle={(id) => {
                     if (comparedBoats.includes(id)) {
                       setComparedBoats(

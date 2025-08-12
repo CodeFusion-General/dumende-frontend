@@ -1,5 +1,5 @@
 import { BaseService } from './base/BaseService';
-import { PaymentStatusResponseDto } from '@/types/payment.types';
+import { PaymentStatusResponseDto, ThreeDSInitializeRequestDto, ThreeDSInitializeResponseDto, ThreeDSCompleteRequestDto, BinCheckResponseDto } from '@/types/payment.types';
 
 class PaymentService extends BaseService {
   constructor() {
@@ -25,6 +25,43 @@ class PaymentService extends BaseService {
    */
   public async checkAndUpdatePaymentStatus(bookingId: number): Promise<PaymentStatusResponseDto> {
     return this.post<PaymentStatusResponseDto>(`/${bookingId}/payment/check-status`, {});
+  }
+
+  /** 3DS: Initialize */
+  public async initialize3DS(data: ThreeDSInitializeRequestDto): Promise<ThreeDSInitializeResponseDto> {
+    // Backend base URL uses /api/payments root, not /bookings
+    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
+    const resp = await fetch(`/api/payments/3ds/initialize`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!resp.ok) throw new Error('3DS initialize failed');
+    return resp.json();
+  }
+
+  /** 3DS: Complete (manual test) */
+  public async complete3DS(data: ThreeDSCompleteRequestDto): Promise<PaymentStatusResponseDto> {
+    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
+    const resp = await fetch(`/api/payments/3ds/complete`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(data)
+    });
+    if (!resp.ok) throw new Error('3DS complete failed');
+    return resp.json();
+  }
+
+  /** 3DS: BIN Check (optional) */
+  public async binCheck(binNumber: string, amount: number): Promise<BinCheckResponseDto> {
+    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
+    const resp = await fetch(`/api/payments/3ds/bin-check`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ binNumber, amount })
+    });
+    if (!resp.ok) throw new Error('BIN check failed');
+    return resp.json();
   }
 
   /**

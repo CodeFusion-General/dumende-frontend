@@ -93,3 +93,32 @@ export interface AccountSettingsFormData {
   language: string;
   timezone: string;
 }
+
+// Profile Completion Types
+export interface AddressFormData {
+  street: string;
+  city: string;
+  district: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface ProfileFormData {
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dateOfBirth: string; // ISO format
+  address: AddressFormData;
+  profileImage?: File;
+}
+
+export interface CreateUserMultipartCommand {
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  dateOfBirth: string;
+  addressJson: string; // JSON serialized AddressDto
+  profileImageFile?: File;
+  accountId: number;
+}

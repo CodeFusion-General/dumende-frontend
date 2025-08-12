@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Loader2, Clock, RefreshCcw } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
-import { PaymentStatusResponseDto } from '@/types/payment.types';
+import { PaymentStatusResponseDto, ThreeDSInitializeRequestDto, ThreeDSInitializeResponseDto } from '@/types/payment.types';
+import ThreeDSPaymentFlow from './ThreeDSPaymentFlow';
 import { toast } from '@/components/ui/use-toast';
 
 export default function PaymentReturn() {
@@ -16,6 +17,7 @@ export default function PaymentReturn() {
   const [checking, setChecking] = useState(false);
   const [pollingCount, setPollingCount] = useState(0);
   const [isPolling, setIsPolling] = useState(false);
+  const [showCardFlow, setShowCardFlow] = useState(false);
 
   // Extract booking ID from URL params
   const bookingId = searchParams.get('bookingId');
@@ -23,6 +25,15 @@ export default function PaymentReturn() {
   const status = searchParams.get('status');
   const token = searchParams.get('token'); // Iyzico callback token
   const retryParam = searchParams.get('retry');
+  const startParam = searchParams.get('start');
+  const amountParam = searchParams.get('amount');
+
+  // Direkt 3DS akışını başlatmak için opsiyonel parametre
+  useEffect(() => {
+    if (startParam === '3ds' && bookingId) {
+      setShowCardFlow(true);
+    }
+  }, [startParam, bookingId]);
 
   useEffect(() => {
     if (!bookingId) {
@@ -36,6 +47,9 @@ export default function PaymentReturn() {
         setLoading(true);
         console.log('Checking payment status for booking:', bookingId);
         console.log('URL params:', { success, status, token });
+
+        // Eksik parametreleri (paymentId, status) backend callback'ine takviye et
+        await sendSupplementaryCallbackIfNeeded(bookingId, status);
 
         // Small initial delay to allow Iyzico -> Backend -> DB senkronizasyonu
         const shouldDelay = success === 'true' || status === 'success' || status === 'COMPLETED' || !!token;
@@ -119,9 +133,36 @@ export default function PaymentReturn() {
     checkPaymentStatus();
   }, [bookingId, success, status, token, navigate]);
 
+  // 3DS callback'i güçlendiren ek istek: init'te alınan paymentId'yi backend'e iletir
+  const sendSupplementaryCallbackIfNeeded = async (bookingIdStr: string, statusParam: string | null) => {
+    try {
+      const key = `threeds:init:${bookingIdStr}`;
+      const persisted = sessionStorage.getItem(key);
+      if (!persisted) return;
+      const info = JSON.parse(persisted) as { paymentId?: string; conversationId?: string };
+      if (!info?.paymentId) return;
+      // URL zaten paymentId içeriyorsa veya daha önce gönderdiysek atla
+      if (new URLSearchParams(window.location.search).get('paymentId')) return;
+      const sentKey = `${key}:sent-return`;
+      if (sessionStorage.getItem(sentKey)) return;
+      sessionStorage.setItem(sentKey, '1');
+
+      const qs = new URLSearchParams({
+        bookingId: bookingIdStr,
+        conversationId: info.conversationId || bookingIdStr,
+        paymentId: info.paymentId,
+        status: statusParam || 'success'
+      }).toString();
+      console.log('Supplementary callback (return page):', qs);
+      await fetch(`/api/payments/callback?${qs}`, { method: 'GET', credentials: 'include' });
+    } catch (e) {
+      console.warn('Supplementary callback (return page) failed:', e);
+    }
+  };
+
   // ✅ Yeni: Backend callback status endpoint'ine polling (status pending ise)
   useEffect(() => {
-    if (!bookingId) return;
+    if (!bookingId || showCardFlow) return;
     const shouldStartPolling = !success && (status === 'pending' || !status);
     if (!shouldStartPolling) return;
 
@@ -206,7 +247,7 @@ export default function PaymentReturn() {
       cancelled = true;
       setIsPolling(false);
     };
-  }, [bookingId, status, success, retryParam, navigate]);
+  }, [bookingId, status, success, retryParam, navigate, showCardFlow]);
 
   const handleGoToBookings = () => {
     navigate('/my-bookings');
@@ -279,13 +320,8 @@ export default function PaymentReturn() {
         // Existing payment URL available
         paymentService.redirectToPayment(currentStatus.paymentUrl);
       } else {
-        // Initialize new payment
-        const newPayment = await paymentService.initializeDepositPayment(parseInt(bookingId));
-        if (newPayment.paymentUrl) {
-          paymentService.redirectToPayment(newPayment.paymentUrl);
-        } else {
-          throw new Error('Payment URL could not be generated');
-        }
+        // 3DS akışı: kart bilgileri ile ödeme başlat
+        setShowCardFlow(true);
       }
     } catch (error) {
       console.error('Retry payment failed:', error);
@@ -298,6 +334,12 @@ export default function PaymentReturn() {
       setLoading(false);
     }
   };
+
+  if (showCardFlow && bookingId) {
+    const amountFromParam = amountParam ? parseFloat(amountParam) : undefined;
+    const amount = amountFromParam ?? paymentStatus?.depositAmount ?? paymentStatus?.totalAmount ?? 0;
+    return <ThreeDSPaymentFlow bookingId={parseInt(bookingId)} totalAmount={amount} />;
+  }
 
   if (loading || isPolling) {
     return (
@@ -492,6 +534,15 @@ export default function PaymentReturn() {
                     variant="default"
                   >
                     Ödemeyi Tekrar Dene
+                  </Button>
+                )}
+                {!statusInfo.isSuccess && (
+                  <Button 
+                    onClick={() => setShowCardFlow(true)}
+                    className="w-full"
+                    variant="default"
+                  >
+                    Kart Bilgileriyle Öde (3DS)
                   </Button>
                 )}
                 

@@ -409,6 +409,10 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
         paymentService.redirectToPayment(paymentInfo.paymentUrl!);
       }, 2000);
       
+    } else if (paymentInfo.paymentRequired && !paymentInfo.paymentUrl) {
+      // 3DS akışı: ödeme linki yoksa kart bilgisi akışına yönlendir
+      navigate(`/payment/return?bookingId=${bookingId}&start=3ds`);
+      return;
     } else if (paymentInfo.paymentCompleted) {
       // Payment already completed
       toast({
@@ -601,11 +605,22 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
         description: "Ödeme sayfasına yönlendiriliyorsunuz...",
       });
 
-      // Get payment status and redirect to payment
+      // Get payment status and redirect to payment (3DS fallback yoksa PaymentReturn'da başlatılacak)
       await handlePaymentRedirect(response.id);
 
-      // Don't navigate immediately, let user complete payment
-      // navigate("/my-bookings");
+      try {
+        const status = await paymentService.getPaymentStatus(response.id);
+        const hasLink = !!status.paymentUrl;
+        if (!hasLink) {
+          // PaymentReturn sayfasında start=3ds parametresi ile kart formu gösterilecek
+          const amount = status.depositAmount ?? status.totalAmount ?? 0;
+          navigate(`/payment/return?bookingId=${response.id}&start=3ds&amount=${amount}`);
+        }
+      } catch (e) {
+        // Sessiz geç, kullanıcı zaten ödeme modali/redirect deneyimini gördü
+      }
+
+
     } catch (error) {
       console.error("Booking failed:", error);
       toast({

@@ -1,45 +1,59 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { RegisterRequest, UserType } from '@/types/auth.types';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { RegisterRequest, UserType } from "@/types/auth.types";
 
-const registerSchema = z.object({
-  email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-  username: z.string().min(3, 'Kullanıcı adı en az 3 karakter olmalıdır').max(50, 'Kullanıcı adı en fazla 50 karakter olabilir'),
-  password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
-  confirmPassword: z.string().min(6, 'Şifre tekrarı en az 6 karakter olmalıdır'),
-  fullName: z.string().min(3, 'Ad soyad en az 3 karakter olmalıdır').max(100, 'Ad soyad en fazla 100 karakter olabilir'),
-  phoneNumber: z.string().min(10, 'Geçerli bir telefon numarası giriniz'),
-  agreeToTerms: z.boolean().refine((value) => value === true, {
-    message: 'Kullanım koşullarını kabul etmelisiniz',
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Şifreler eşleşmiyor',
-  path: ['confirmPassword'],
-});
+const registerSchema = z
+  .object({
+    email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+    username: z
+      .string()
+      .min(3, "Kullanıcı adı en az 3 karakter olmalıdır")
+      .max(50, "Kullanıcı adı en fazla 50 karakter olabilir"),
+    password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
+    confirmPassword: z
+      .string()
+      .min(6, "Şifre tekrarı en az 6 karakter olmalıdır"),
+    fullName: z
+      .string()
+      .min(3, "Ad soyad en az 3 karakter olmalıdır")
+      .max(100, "Ad soyad en fazla 100 karakter olabilir"),
+    phoneNumber: z.string().min(10, "Geçerli bir telefon numarası giriniz"),
+    agreeToTerms: z.boolean().refine((value) => value === true, {
+      message: "Kullanım koşullarını kabul etmelisiniz",
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Şifreler eşleşmiyor",
+    path: ["confirmPassword"],
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
+  onProfileCompletionRedirect?: (accountId: number) => void;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ 
-  onSuccess, 
-  onSwitchToLogin 
+export const RegisterForm: React.FC<RegisterFormProps> = ({
+  onSuccess,
+  onSwitchToLogin,
+  onProfileCompletionRedirect,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { register: registerUser, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -48,12 +62,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: '',
-      username: '',
-      password: '',
-      confirmPassword: '',
-      fullName: '',
-      phoneNumber: '',
+      email: "",
+      username: "",
+      password: "",
+      confirmPassword: "",
+      fullName: "",
+      phoneNumber: "",
       agreeToTerms: false,
     },
   });
@@ -61,7 +75,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError(null);
-      
+
       // Otomatik olarak CUSTOMER olarak kayıt ol
       const registerData: RegisterRequest = {
         email: data.email,
@@ -72,13 +86,25 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         phoneNumber: data.phoneNumber,
       };
 
-      await registerUser(registerData);
-      onSuccess?.();
+      const response = await registerUser(registerData);
+
+      // Check if accountId is available for profile completion redirect
+      if (response.accountId) {
+        if (onProfileCompletionRedirect) {
+          onProfileCompletionRedirect(response.accountId);
+        } else {
+          // Fallback to direct navigation if no callback provided
+          navigate(`/profile-completion/${response.accountId}`);
+        }
+      } else {
+        // Fallback to original success handler if no accountId
+        onSuccess?.();
+      }
     } catch (err: any) {
       setError(
-        err.response?.data?.message || 
-        err.message || 
-        'Kayıt olurken bir hata oluştu'
+        err.response?.data?.message ||
+          err.message ||
+          "Kayıt olurken bir hata oluştu"
       );
     }
   };
@@ -86,9 +112,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Hesap Oluştur
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Hesap Oluştur</h1>
         <p className="text-sm text-muted-foreground">
           Yeni hesabınızı oluşturun
         </p>
@@ -109,7 +133,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="text"
             placeholder="Adınız ve soyadınız"
             disabled={isSubmitting || isLoading}
-            {...register('fullName')}
+            {...register("fullName")}
           />
           {errors.fullName && (
             <p className="text-sm text-destructive">
@@ -126,12 +150,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="email"
             placeholder="E-posta adresiniz"
             disabled={isSubmitting || isLoading}
-            {...register('email')}
+            {...register("email")}
           />
           {errors.email && (
-            <p className="text-sm text-destructive">
-              {errors.email.message}
-            </p>
+            <p className="text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
 
@@ -143,7 +165,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="text"
             placeholder="Kullanıcı adınız"
             disabled={isSubmitting || isLoading}
-            {...register('username')}
+            {...register("username")}
           />
           {errors.username && (
             <p className="text-sm text-destructive">
@@ -160,7 +182,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             type="tel"
             placeholder="Telefon numaranız"
             disabled={isSubmitting || isLoading}
-            {...register('phoneNumber')}
+            {...register("phoneNumber")}
           />
           {errors.phoneNumber && (
             <p className="text-sm text-destructive">
@@ -175,10 +197,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           <div className="relative">
             <Input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="Şifreniz"
               disabled={isSubmitting || isLoading}
-              {...register('password')}
+              {...register("password")}
             />
             <Button
               type="button"
@@ -207,10 +229,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           <div className="relative">
             <Input
               id="confirmPassword"
-              type={showConfirmPassword ? 'text' : 'password'}
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Şifrenizi tekrar giriniz"
               disabled={isSubmitting || isLoading}
-              {...register('confirmPassword')}
+              {...register("confirmPassword")}
             />
             <Button
               type="button"
@@ -239,7 +261,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             id="agreeToTerms"
             type="checkbox"
             className="h-4 w-4 rounded border-gray-300"
-            {...register('agreeToTerms')}
+            {...register("agreeToTerms")}
           />
           <Label htmlFor="agreeToTerms" className="text-sm">
             <span className="text-muted-foreground">
@@ -256,8 +278,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         {/* Bilgilendirme */}
         <div className="bg-blue-50 p-3 rounded-lg">
           <p className="text-sm text-blue-700">
-            <strong>Bilgi:</strong> Hesabınız müşteri olarak oluşturulacaktır. 
-            Tekne sahibi olmak için başvurunuzu tamamladıktan sonra destek ekibimizle iletişime geçebilirsiniz.
+            <strong>Bilgi:</strong> Hesabınız müşteri olarak oluşturulacaktır.
+            Kayıt işlemi tamamlandıktan sonra profil bilgilerinizi tamamlamanız
+            için yönlendirileceksiniz. Tekne sahibi olmak için başvurunuzu
+            tamamladıktan sonra destek ekibimizle iletişime geçebilirsiniz.
           </p>
         </div>
 
@@ -272,15 +296,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               Hesap oluşturuluyor...
             </>
           ) : (
-            'Hesap Oluştur'
+            "Hesap Oluştur"
           )}
         </Button>
       </form>
 
       <div className="text-center text-sm">
-        <span className="text-muted-foreground">
-          Zaten hesabınız var mı?{' '}
-        </span>
+        <span className="text-muted-foreground">Zaten hesabınız var mı? </span>
         <Button
           variant="link"
           className="p-0 h-auto font-normal"
@@ -291,4 +313,4 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       </div>
     </div>
   );
-}; 
+};

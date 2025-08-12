@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -20,7 +22,22 @@ import {
   Shield,
   Utensils,
   MapPin,
-    Image,
+  Image,
+  Info,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  X,
+  Camera,
+  Anchor,
+  Calendar,
+  DollarSign,
+  Ruler,
+  Users,
+  Navigation,
+  Globe,
+  Tag,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { boatService } from "@/services/boatService";
@@ -90,8 +107,8 @@ interface VesselFormData {
 
   // Dosyalar
   images: File[];
-  existingImages: BoatImageDTO[]; // Mevcut fotoğraflar
-  imageIdsToRemove: number[]; // Silinecek fotoğraf ID'leri
+  existingImages: BoatImageDTO[];
+  imageIdsToRemove: number[];
   features: string[];
 
   // Boat Services
@@ -105,11 +122,11 @@ interface VesselFormData {
 }
 
 const VesselsPage = () => {
-  const { user, isAuthenticated, isBoatOwner, isAdmin } = useAuth(); // Auth context'i kullan
+  const { user, isAuthenticated, isBoatOwner, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("list");
   const [editingVesselId, setEditingVesselId] = useState<number | null>(null);
   const [formTab, setFormTab] = useState("details");
-    const [newFeature, setNewFeature] = useState("");
+  const [newFeature, setNewFeature] = useState("");
 
   // Backend state
   const [loading, setLoading] = useState(false);
@@ -178,12 +195,10 @@ const VesselsPage = () => {
     );
   };
 
-  // Component mount'da vessels'ları yükle
   useEffect(() => {
     fetchVessels();
   }, []);
 
-  // Editing vessel değiştiğinde form'u doldur
   useEffect(() => {
     if (editingVesselId && currentVessel) {
       populateFormWithVessel(currentVessel);
@@ -194,26 +209,22 @@ const VesselsPage = () => {
 
   // API Calls
   const fetchVessels = async () => {
-    // AuthContext'ten user ve authentication durumunu kontrol et
     if (!user?.id) {
       console.error("User ID bulunamadı:", { user, isAuthenticated });
       setError("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.");
       toast({
         title: "Kimlik Doğrulama Hatası",
-        description:
-          "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
+        description: "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
         variant: "destructive",
       });
       return;
     }
 
-    // Kullanıcının BOAT_OWNER veya ADMIN rolü olup olmadığını kontrol et
     if (!isBoatOwner() && !isAdmin()) {
       setError("Bu sayfaya erişim yetkiniz bulunmamaktadır.");
       toast({
         title: "Yetki Hatası",
-        description:
-          "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
+        description: "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
         variant: "destructive",
       });
       return;
@@ -224,7 +235,7 @@ const VesselsPage = () => {
       setError(null);
 
       console.log("Fetching vessels for user ID:", user.id);
-      const ownerId = user.id; // Giriş yapmış kullanıcının ID'sini kullan
+      const ownerId = user.id;
       const data = await boatService.getVesselsByOwner(ownerId);
 
       console.log("Vessels fetched successfully:", data.length);
@@ -232,30 +243,26 @@ const VesselsPage = () => {
     } catch (err) {
       console.error("Vessels yükleme hatası:", err);
 
-      // Daha detaylı error handling
       if (err instanceof Error) {
         if (err.message.includes("401") || err.message.includes("token")) {
           setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
           toast({
             title: "Oturum Süresi Doldu",
-            description:
-              "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
+            description: "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
             variant: "destructive",
           });
         } else if (err.message.includes("403")) {
           setError("Bu işlem için yetkiniz bulunmamaktadır.");
           toast({
             title: "Yetki Hatası",
-            description:
-              "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
+            description: "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
             variant: "destructive",
           });
         } else {
           setError(`Tekneler yüklenirken hata: ${err.message}`);
           toast({
             title: "Yükleme Hatası",
-            description:
-              "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+            description: "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
             variant: "destructive",
           });
         }
@@ -325,7 +332,7 @@ const VesselsPage = () => {
       organizationTypes: [],
       organizationDetails: "",
       images: [],
-      existingImages: vessel.images || [], // Mevcut fotoğrafları yükle
+      existingImages: vessel.images || [],
       imageIdsToRemove: [],
       features: vessel.features?.map((f) => f.featureName) || [],
       boatServices: vessel.services?.map((s) => ({
@@ -400,18 +407,16 @@ const VesselsPage = () => {
   const formDataToCreateDTO = async (
     data: VesselFormData
   ): Promise<CreateVesselDTO> => {
-    // Fotoğrafları base64'e dönüştür
     const imagePromises = data.images.map(async (file, index) => {
       return new Promise<any>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => {
           const base64String = reader.result as string;
-          // Data URL prefix'ini kaldır (data:image/jpeg;base64, -> sadece base64 verisi)
           const base64Data = base64String.split(",")[1];
 
           resolve({
-            imageData: base64Data, // Sadece base64 verisi, prefix yok
-            isPrimary: index === 0, // İlk fotoğraf primary
+            imageData: base64Data,
+            isPrimary: index === 0,
             displayOrder: index + 1,
           });
         };
@@ -435,17 +440,17 @@ const VesselsPage = () => {
       latitude: data.latitude,
       longitude: data.longitude,
       type: data.type,
-      status: "INACTIVE", // Yeni tekneler inactive olarak başlar
+      status: "INACTIVE",
       brandModel: data.brandModel,
       buildYear: parseInt(data.buildYear) || new Date().getFullYear(),
-      captainIncluded: false, // Default false
-      images: imagesDTOs, // Base64 formatında fotoğraflar (prefix'siz)
+      captainIncluded: false,
+      images: imagesDTOs,
       features: data.features.map((name) => ({ featureName: name })),
       services: data.boatServices.map((service) => ({
-        boatId: 0, // Will be set by backend after boat creation
+        boatId: 0,
         name: service.name,
         description: service.description,
-        serviceType: service.serviceType as any, // ServiceType enum
+        serviceType: service.serviceType as any,
         price: service.price,
         quantity: service.quantity,
       })),
@@ -468,7 +473,7 @@ const VesselsPage = () => {
       longitude: data.longitude,
       type: data.type,
       brandModel: data.brandModel,
-      imageIdsToRemove: data.imageIdsToRemove, // Silinecek fotoğraf ID'leri
+      imageIdsToRemove: data.imageIdsToRemove,
     };
   };
 
@@ -485,8 +490,6 @@ const VesselsPage = () => {
     setEditingVesselId(vesselId);
     setActiveTab("form");
     setFormTab("details");
-
-    // Vessel detayını getir
     fetchVesselById(vesselId);
   };
 
@@ -497,7 +500,6 @@ const VesselsPage = () => {
     resetForm();
   };
 
-  // Mevcut fotoğrafı kaldırma
   const handleRemoveExistingImage = (imageId: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -511,7 +513,6 @@ const VesselsPage = () => {
     });
   };
 
-  // Yeni fotoğrafı kaldırma
   const handleRemoveNewImage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
@@ -519,7 +520,6 @@ const VesselsPage = () => {
     }));
   };
 
-  // Optimize edilmiş resim yükleme fonksiyonu
   const handleImageUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
 
@@ -529,7 +529,6 @@ const VesselsPage = () => {
       const validFiles: File[] = [];
       const errors: string[] = [];
 
-      // Dosya validasyonu
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const validation = validateImageFile(file);
@@ -551,7 +550,6 @@ const VesselsPage = () => {
 
       if (validFiles.length === 0) return;
 
-      // Resimleri compress et ve form'a ekle
       const compressedImages: File[] = [];
 
       for (const file of validFiles) {
@@ -563,7 +561,6 @@ const VesselsPage = () => {
             outputFormat: "image/jpeg",
           });
 
-          // Base64'ü tekrar File objesine dönüştür (preview için)
           const byteCharacters = atob(compressedBase64);
           const byteNumbers = new Array(byteCharacters.length);
           for (let i = 0; i < byteCharacters.length; i++) {
@@ -602,8 +599,7 @@ const VesselsPage = () => {
       console.error("Fotoğraf ekleme hatası:", error);
       toast({
         title: "Hata",
-        description:
-          "Fotoğraflar eklenemedi. Lütfen daha sonra tekrar deneyin.",
+        description: "Fotoğraflar eklenemedi. Lütfen daha sonra tekrar deneyin.",
         variant: "destructive",
       });
     } finally {
@@ -611,11 +607,9 @@ const VesselsPage = () => {
     }
   };
 
-  // Optimize edilmiş form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     const validation = validateForm();
     if (!validation.isValid) {
       toast({
@@ -630,19 +624,15 @@ const VesselsPage = () => {
       setLoading(true);
 
       if (editingVesselId && currentVessel) {
-        // Update existing vessel - resim güncellemesi ayrı handle edilir
         const updateDTO = formDataToUpdateDTO(formData);
         await boatService.updateVessel(updateDTO);
 
-        // Özellik farklılıklarını uygula
         try {
           const originalFeatures = currentVessel.features || [];
           const originalNames = new Set(originalFeatures.map((f) => f.featureName));
           const currentNames = new Set(formData.features);
 
-          // Eklenecekler
           const featuresToAdd = formData.features.filter((name) => !originalNames.has(name));
-          // Silinecekler
           const featuresToRemove = originalFeatures.filter((f) => !currentNames.has(f.featureName));
 
           for (const name of featuresToAdd) {
@@ -664,7 +654,6 @@ const VesselsPage = () => {
           console.error("Özellik güncelleme hatası:", e);
         }
 
-        // Silinecek fotoğrafları sil
         if (formData.imageIdsToRemove.length > 0) {
           for (const imageId of formData.imageIdsToRemove) {
             try {
@@ -675,7 +664,6 @@ const VesselsPage = () => {
           }
         }
 
-        // Eğer yeni resimler eklendiyse, onları da yükle
         if (formData.images.length > 0) {
           await boatService.compressAndUploadImages(
             editingVesselId,
@@ -688,9 +676,7 @@ const VesselsPage = () => {
           description: "Tekne bilgileri güncellendi.",
         });
       } else {
-        // Create new vessel with optimized images
         if (formData.images.length > 0) {
-          // Resimleri compress et
           const imagePromises = formData.images.map(async (file, index) => {
             const compressedBase64 = await compressImage(file, {
               maxWidth: 1200,
@@ -713,7 +699,6 @@ const VesselsPage = () => {
             images: imagesDTOs,
           };
 
-          // Optimize edilmiş yükleme metodunu kullan
           const newVessel = await boatService.createVesselWithOptimizedImages(
             createDTO
           );
@@ -723,7 +708,6 @@ const VesselsPage = () => {
             description: "Yeni tekne eklendi.",
           });
         } else {
-          // Resim olmadan tekne oluştur
           const createDTO = await formDataToCreateDTO(formData);
           const newVessel = await boatService.createVessel(createDTO);
 
@@ -734,7 +718,6 @@ const VesselsPage = () => {
         }
       }
 
-      // Liste sayfasına dön ve verileri yenile
       await fetchVessels();
       handleBackToList();
     } catch (error) {
@@ -749,7 +732,6 @@ const VesselsPage = () => {
     }
   };
 
-  // Helper function to create FileList from File array
   const createFileListFromFiles = (files: File[]): FileList => {
     const dt = new DataTransfer();
     files.forEach((file) => dt.items.add(file));
@@ -772,10 +754,8 @@ const VesselsPage = () => {
         description: "Tekne silindi.",
       });
 
-      // Liste güncelle
       await fetchVessels();
 
-      // Eğer silinen tekne düzenleniyorsa liste sayfasına dön
       if (editingVesselId === vesselId) {
         handleBackToList();
       }
@@ -791,7 +771,6 @@ const VesselsPage = () => {
     }
   };
 
-  // Form field handlers
   const handleInputChange =
     (field: keyof VesselFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -828,7 +807,7 @@ const VesselsPage = () => {
 
   return (
     <CaptainLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="space-y-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsContent value="list" className="mt-0">
             <VesselsList
@@ -844,867 +823,1030 @@ const VesselsPage = () => {
 
           <TabsContent value="form" className="mt-0">
             <div className="space-y-8">
-              {/* Başlık */}
-              <div className="rounded-2xl border border-gray-200 bg-white px-6 py-5 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-                      <Ship className="text-primary" size={24} />
-                      {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
-                    </h1>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {editingVesselId
-                        ? "Mevcut tekne/taşıt bilgilerinizi modern form ile güncelleyin."
-                        : "Adım adım ilerleyerek yeni teknenizi ekleyin. Tüm sekmeler tek bir kayıtta saklanır."}
-                    </p>
+              {/* Modern Header Section */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                <div className="relative p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleBackToList}
+                        className="hover:bg-primary/10"
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                      </Button>
+                      <div className="p-2 bg-primary rounded-lg">
+                        <Ship className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold text-gray-800">
+                          {editingVesselId ? "Taşıt Düzenle" : "Yeni Taşıt Ekle"}
+                        </h1>
+                        <p className="text-gray-600 text-sm mt-1">
+                          {editingVesselId
+                            ? "Mevcut tekne bilgilerinizi güncelleyin"
+                            : "Adım adım ilerleyerek yeni teknenizi ekleyin"}
+                        </p>
+                      </div>
+                    </div>
+                    {loading && (
+                      <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                        <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Yükleniyor
+                      </Badge>
+                    )}
                   </div>
-                  {loading && (
-                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs bg-blue-50 text-blue-700 border border-blue-200">
-                      <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Yükleniyor
-                    </span>
-                  )}
                 </div>
               </div>
 
-              <form
-                onSubmit={handleSubmit}
-                className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-              >
+              <form onSubmit={handleSubmit}>
                 <Tabs
                   defaultValue={formTab}
                   className="w-full"
                   onValueChange={setFormTab}
                 >
-                  {/* Sekmeler - adım deneyimi ve durum rozetleri */}
-                  <div className="bg-white border-b border-gray-200">
-                    <TabsList className="w-full justify-start bg-transparent border-0 rounded-none p-0 h-auto">
-                      <div className="flex flex-wrap gap-2 p-4">
+                  {/* Modern Tab Navigation */}
+                  <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <TabsList className="w-full justify-start bg-gradient-to-r from-gray-50 to-white border-0 rounded-none p-0 h-auto">
+                      <div className="flex flex-wrap gap-2 p-6">
                         <TabsTrigger
                           value="details"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">1</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            1
+                          </span>
                           <FileText size={16} />
                           <span className="font-medium">Detaylar</span>
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="terms"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">2</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            2
+                          </span>
                           <Shield size={16} />
                           <span className="font-medium">Şartlar</span>
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="services"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">3</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            3
+                          </span>
                           <Utensils size={16} />
                           <span className="font-medium">Servisler</span>
                           {formData.boatServices.length > 0 && (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.boatServices.length}</span>
+                            <Badge className="ml-1 bg-primary/10 text-primary border-primary/20">
+                              {formData.boatServices.length}
+                            </Badge>
                           )}
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="location"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">4</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            4
+                          </span>
                           <MapPin size={16} />
                           <span className="font-medium">Lokasyon</span>
                           {formData.latitude && formData.longitude && (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">Seçildi</span>
+                            <Badge className="ml-1 bg-emerald-50 text-emerald-700 border-emerald-200">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Seçildi
+                            </Badge>
                           )}
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="photos"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">5</span>
-                          <Image size={16} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            5
+                          </span>
+                          <Camera size={16} />
                           <span className="font-medium">Fotoğraflar</span>
                           {(formData.existingImages.length + formData.images.length) > 0 && (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.existingImages.length + formData.images.length}</span>
+                            <Badge className="ml-1 bg-primary/10 text-primary border-primary/20">
+                              {formData.existingImages.length + formData.images.length}
+                            </Badge>
                           )}
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="features"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">6</span>
-                          <Shield size={16} />
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            6
+                          </span>
+                          <Sparkles size={16} />
                           <span className="font-medium">Özellikler</span>
                           {formData.features.length > 0 && (
-                            <span className="ml-1 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-xs">{formData.features.length}</span>
+                            <Badge className="ml-1 bg-primary/10 text-primary border-primary/20">
+                              {formData.features.length}
+                            </Badge>
                           )}
                         </TabsTrigger>
+                        
                         <TabsTrigger
                           value="descriptions"
-                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 data-[state=active]:bg-primary data-[state=active]:text-white transition border border-gray-200 data-[state=active]:border-primary"
+                          className="group flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/90 data-[state=active]:text-white transition-all duration-300 border border-gray-200 data-[state=active]:border-primary shadow-sm hover:shadow-md"
                         >
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">7</span>
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-[11px] font-semibold text-gray-700 group-data-[state=active]:bg-white group-data-[state=active]:text-primary">
+                            7
+                          </span>
                           <FileText size={16} />
                           <span className="font-medium">Açıklamalar</span>
                         </TabsTrigger>
                       </div>
                     </TabsList>
-                  </div>
 
-                  <TabsContent value="details" className="p-8">
-                    <div className="space-y-8">
-                      {/* Section Header */}
-                      <div className="border-b border-gray-200 pb-4">
-                        <h2 className="text-2xl font-semibold text-gray-900 flex items-center">
-                          <FileText className="mr-3 text-primary" size={24} />
-                          Temel Bilgiler
-                        </h2>
-                        <p className="text-gray-600 mt-1">
-                          Teknenizin temel özelliklerini ve detaylarını girin
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                          <label
-                            className="block text-sm font-semibold text-gray-700 mb-2"
-                            htmlFor="vesselType"
-                          >
-                            Taşıt Tipi *
-                          </label>
-                          <Select
-                            value={formData.type}
-                            onValueChange={handleSelectChange("type")}
-                          >
-                            <SelectTrigger
-                              id="vesselType"
-                              className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
-                            >
-                              <SelectValue placeholder="Tekne tipini seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="SAILBOAT">Yelkenli</SelectItem>
-                              <SelectItem value="MOTORBOAT">
-                                Motor Bot
-                              </SelectItem>
-                              <SelectItem value="YACHT">Yat</SelectItem>
-                              <SelectItem value="SPEEDBOAT">
-                                Hız Teknesi
-                              </SelectItem>
-                              <SelectItem value="CATAMARAN">
-                                Katamaran
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-gray-500">
-                            Teknenizin kategorisini belirleyin
-                          </p>
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="brandModel"
-                          >
-                            Marka / Model
-                          </label>
-                          <Input
-                            id="brandModel"
-                            placeholder="Örn: Azimut 55"
-                            value={formData.brandModel}
-                            onChange={handleInputChange("brandModel")}
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label
-                            className="block text-sm font-semibold text-gray-700 mb-2"
-                            htmlFor="vesselName"
-                          >
-                            Tekne İsmi *
-                          </label>
-                          <Input
-                            id="vesselName"
-                            placeholder="Tekne ismi giriniz"
-                            value={formData.name}
-                            onChange={handleInputChange("name")}
-                            required
-                            className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
-                          />
-                          <p className="text-xs text-gray-500">
-                            Müşterilerinizin göreceği tekne ismi
-                          </p>
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="buildYear"
-                          >
-                            Yapım Yılı
-                          </label>
-                          <Input
-                            id="buildYear"
-                            type="number"
-                            placeholder="Örn: 2015"
-                            value={formData.buildYear}
-                            onChange={handleInputChange("buildYear")}
-                            min="1970"
-                            max={new Date().getFullYear()}
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="fullCapacity"
-                          >
-                            Kapasite *
-                          </label>
-                          <Input
-                            id="fullCapacity"
-                            type="number"
-                            placeholder="Örn: 12"
-                            value={formData.fullCapacity}
-                            onChange={handleInputChange("fullCapacity")}
-                            min="1"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="length"
-                          >
-                            Uzunluk (metre)
-                          </label>
-                          <Input
-                            id="length"
-                            type="number"
-                            step="0.1"
-                            placeholder="Örn: 15.5"
-                            value={formData.length}
-                            onChange={handleInputChange("length")}
-                            min="0"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label
-                            className="block text-sm font-semibold text-gray-700 mb-2"
-                            htmlFor="dailyPrice"
-                          >
-                            Günlük Fiyat (₺) *
-                          </label>
-                          <Input
-                            id="dailyPrice"
-                            type="number"
-                            step="0.01"
-                            placeholder="Örn: 2500"
-                            value={formData.dailyPrice}
-                            onChange={handleInputChange("dailyPrice")}
-                            min="0"
-                            required
-                            className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
-                          />
-                          <p className="text-xs text-gray-500">
-                            Günlük kiralama ücreti
-                          </p>
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="hourlyPrice"
-                          >
-                            Saatlik Fiyat (₺)
-                          </label>
-                          <Input
-                            id="hourlyPrice"
-                            type="number"
-                            step="0.01"
-                            placeholder="Örn: 300"
-                            value={formData.hourlyPrice}
-                            onChange={handleInputChange("hourlyPrice")}
-                            min="0"
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            className="block text-sm font-medium mb-1"
-                            htmlFor="location"
-                          >
-                            Lokasyon *
-                          </label>
-                          <Select
-                            value={formData.location}
-                            onValueChange={handleSelectChange("location")}
-                          >
-                            <SelectTrigger id="location">
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="İstanbul">İstanbul</SelectItem>
-                              <SelectItem value="Bodrum">Bodrum</SelectItem>
-                              <SelectItem value="Fethiye">Fethiye</SelectItem>
-                              <SelectItem value="Marmaris">Marmaris</SelectItem>
-                              <SelectItem value="Çeşme">Çeşme</SelectItem>
-                              <SelectItem value="Antalya">Antalya</SelectItem>
-                              <SelectItem value="Göcek">Göcek</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 text-xs text-gray-500">* işaretli alanlar zorunludur</div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="terms" className="p-6">
-                    <div className="space-y-6">
-                    
-                      <h2 className="text-xl font-medium mb-4">
-                        Şartlar ve Koşullar
-                      </h2>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Sigara İçme Kuralı
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="allowed">
-                                İzin Verilir
-                              </SelectItem>
-                              <SelectItem value="restricted">
-                                Belirli Alanlarda
-                              </SelectItem>
-                              <SelectItem value="prohibited">
-                                Yasaktır
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Evcil Hayvan
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="allowed">
-                                İzin Verilir
-                              </SelectItem>
-                              <SelectItem value="prohibited">
-                                İzin Verilmez
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Alkol
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="allowed">
-                                İzin Verilir
-                              </SelectItem>
-                              <SelectItem value="prohibited">
-                                İzin Verilmez
-                              </SelectItem>
-                              <SelectItem value="byo">Kendi Getir</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Müzik
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="allowed">
-                                İzin Verilir
-                              </SelectItem>
-                              <SelectItem value="restricted">
-                                Belirli Saatlerde
-                              </SelectItem>
-                              <SelectItem value="prohibited">
-                                İzin Verilmez
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Ek Kurallar
-                        </label>
-                        <Textarea placeholder="Müşterilerinizin bilmesi gereken diğer kuralları veya şartları buraya yazabilirsiniz..." />
-                      </div>
-
-                      
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="services" className="p-6">
-                    
-                    <h2 className="text-xl font-medium mb-4">Ek Hizmetler</h2>
-                    
-                    {/* Boat Services Management Component */}
-                    <BoatServicesManager 
-                      services={formData.boatServices}
-                      onServicesChange={(services) => setFormData(prev => ({...prev, boatServices: services}))}
-                    />
-                    
-                  </TabsContent>
-
-                  <TabsContent value="location" className="p-6">
-                    
-                    <h2 className="text-xl font-medium mb-4">Lokasyon</h2>
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Kalkış Noktası
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bodrum">
-                                Bodrum Marina
-                              </SelectItem>
-                              <SelectItem value="fethiye">
-                                Fethiye Limanı
-                              </SelectItem>
-                              <SelectItem value="marmaris">
-                                Marmaris Marina
-                              </SelectItem>
-                              <SelectItem value="gocek">
-                                Göcek Marina
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">
-                            Dönüş Noktası
-                          </label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seçiniz" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="same">
-                                Kalkış ile Aynı
-                              </SelectItem>
-                              <SelectItem value="bodrum">
-                                Bodrum Marina
-                              </SelectItem>
-                              <SelectItem value="fethiye">
-                                Fethiye Limanı
-                              </SelectItem>
-                              <SelectItem value="marmaris">
-                                Marmaris Marina
-                              </SelectItem>
-                              <SelectItem value="gocek">
-                                Göcek Marina
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="space-y-1">
-                            <label className="block text-sm font-medium">Harita Üzerinden Konum Seçin</label>
-                            <p className="text-xs text-gray-500">Haritaya tıklayın veya işaretçiyi sürükleyin.</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button type="button" variant="outline" onClick={useCurrentLocation} className="h-9">
-                              Mevcut Konumu Kullan
-                            </Button>
-                            <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
-                              <DialogTrigger asChild>
-                                <Button type="button" variant="secondary" className="h-9">Haritayı Büyüt</Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-7xl">
-                                <DialogHeader>
-                                  <DialogTitle>Harita - Konum Seç</DialogTitle>
-                                </DialogHeader>
-                                <div className="mt-2">
-                                  <MapPicker
-                                    value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
-                                    onChange={(coords) => {
-                                      setFormData((prev) => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
-                                    }}
-                                    height={600}
-                                    zoom={12}
-                                  />
-                                  <div className="mt-2 text-sm text-gray-600">Seçilen Koordinatlar: {formData.latitude?.toFixed(5) ?? "-"}, {formData.longitude?.toFixed(5) ?? "-"}</div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
+                    {/* Tab Contents with Modern Design */}
+                    <TabsContent value="details" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <Anchor className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Temel Bilgiler</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizin temel özelliklerini ve detaylarını girin
+                            </p>
                           </div>
                         </div>
 
-                        <div className="border rounded-xl p-3 bg-white w-full">
-                          <MapPicker
-                            value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
-                            onChange={(coords) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                latitude: coords.lat,
-                                longitude: coords.lng,
-                              }));
-                            }}
-                            height={420}
-                            zoom={12}
-                          />
+                        {/* Form Cards */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 mb-4">
+                                <Ship className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold">Tekne Bilgileri</h3>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Taşıt Tipi *
+                                </label>
+                                <Select
+                                  value={formData.type}
+                                  onValueChange={handleSelectChange("type")}
+                                >
+                                  <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                    <SelectValue placeholder="Tekne tipini seçiniz" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="SAILBOAT">Yelkenli</SelectItem>
+                                    <SelectItem value="MOTORBOAT">Motor Bot</SelectItem>
+                                    <SelectItem value="YACHT">Yat</SelectItem>
+                                    <SelectItem value="SPEEDBOAT">Hız Teknesi</SelectItem>
+                                    <SelectItem value="CATAMARAN">Katamaran</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Tekne İsmi *
+                                </label>
+                                <Input
+                                  placeholder="Tekne ismi giriniz"
+                                  value={formData.name}
+                                  onChange={handleInputChange("name")}
+                                  required
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Marka / Model
+                                </label>
+                                <Input
+                                  placeholder="Örn: Azimut 55"
+                                  value={formData.brandModel}
+                                  onChange={handleInputChange("brandModel")}
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </Card>
+
+                          <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 mb-4">
+                                <Calendar className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold">Teknik Detaylar</h3>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Yapım Yılı
+                                </label>
+                                <Input
+                                  type="number"
+                                  placeholder="Örn: 2015"
+                                  value={formData.buildYear}
+                                  onChange={handleInputChange("buildYear")}
+                                  min="1970"
+                                  max={new Date().getFullYear()}
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <Users className="inline h-4 w-4 mr-1" />
+                                  Kapasite *
+                                </label>
+                                <Input
+                                  type="number"
+                                  placeholder="Örn: 12"
+                                  value={formData.fullCapacity}
+                                  onChange={handleInputChange("fullCapacity")}
+                                  min="1"
+                                  required
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <Ruler className="inline h-4 w-4 mr-1" />
+                                  Uzunluk (metre)
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  placeholder="Örn: 15.5"
+                                  value={formData.length}
+                                  onChange={handleInputChange("length")}
+                                  min="0"
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </Card>
+
+                          <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 mb-4">
+                                <DollarSign className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold">Fiyatlandırma</h3>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Günlük Fiyat (₺) *
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Örn: 2500"
+                                  value={formData.dailyPrice}
+                                  onChange={handleInputChange("dailyPrice")}
+                                  min="0"
+                                  required
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Saatlik Fiyat (₺)
+                                </label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Örn: 300"
+                                  value={formData.hourlyPrice}
+                                  onChange={handleInputChange("hourlyPrice")}
+                                  min="0"
+                                  className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </Card>
+
+                          <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 mb-4">
+                                <Globe className="h-5 w-5 text-primary" />
+                                <h3 className="font-semibold">Bölge</h3>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Lokasyon *
+                                </label>
+                                <Select
+                                  value={formData.location}
+                                  onValueChange={handleSelectChange("location")}
+                                >
+                                  <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                    <SelectValue placeholder="Seçiniz" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="İstanbul">İstanbul</SelectItem>
+                                    <SelectItem value="Bodrum">Bodrum</SelectItem>
+                                    <SelectItem value="Fethiye">Fethiye</SelectItem>
+                                    <SelectItem value="Marmaris">Marmaris</SelectItem>
+                                    <SelectItem value="Çeşme">Çeşme</SelectItem>
+                                    <SelectItem value="Antalya">Antalya</SelectItem>
+                                    <SelectItem value="Göcek">Göcek</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </Card>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Enlem (Latitude)</label>
-                            <Input
-                              type="number"
-                              step="0.00001"
-                              placeholder="41.0082"
-                              value={formData.latitude ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.value ? parseFloat(e.target.value) : undefined;
-                                setFormData((prev) => ({ ...prev, latitude: isNaN(v as number) ? undefined : (v as number) }));
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Boylam (Longitude)</label>
-                            <Input
-                              type="number"
-                              step="0.00001"
-                              placeholder="28.9784"
-                              value={formData.longitude ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.value ? parseFloat(e.target.value) : undefined;
-                                setFormData((prev) => ({ ...prev, longitude: isNaN(v as number) ? undefined : (v as number) }));
-                              }}
-                            />
-                          </div>
-                          <div className="flex items-end">
-                            <Button type="button" variant="outline" className="w-full" onClick={() => setFormData((prev) => ({ ...prev, latitude: undefined, longitude: undefined }))}>
-                              Koordinatları Temizle
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="photos" className="p-6">
-                    
-                    <h2 className="text-xl font-medium mb-4">Fotoğraflar</h2>
-                    <div className="space-y-6">
-                      {/* Mevcut Fotoğraflar - Düzenleme modunda göster */}
-                      {editingVesselId &&
-                        formData.existingImages.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-700 mb-3">
-                              Mevcut Fotoğraflar (
-                              {formData.existingImages.length})
-                            </h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                              {formData.existingImages.map((image, index) => (
-                                <div key={image.id} className="relative group">
-                                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                    <img
-                                      src={image.imageUrl}
-                                      alt={`Mevcut fotoğraf ${index + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleRemoveExistingImage(image.id)
-                                    }
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    ×
-                                  </button>
-                                  {image.isPrimary && (
-                                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                                      Ana
-                                    </div>
-                                  )}
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Mevcut #{image.displayOrder}
-                                  </p>
-                                </div>
-                              ))}
+                        {/* Info Box */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
+                          <div className="flex gap-3">
+                            <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-blue-800">
+                              <p className="font-semibold mb-1">İpucu:</p>
+                              <p>* işaretli alanlar zorunludur. Detaylı bilgi girmek müşterilerinizin doğru seçim yapmasına yardımcı olur.</p>
                             </div>
                           </div>
-                        )}
-
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center" onDragOver={(e) => { e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (e.dataTransfer?.files?.length) { handleImageUpload(e.dataTransfer.files); } }}>
-                        <Image className="mx-auto h-12 w-12 mb-4 text-gray-400" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">
-                          Fotoğrafları Sürükle & Bırak
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          veya fotoğraf seçmek için tıklayın
-                        </p>
-
-                        {/* Hidden file input */}
-                        <input
-                          type="file"
-                          id="image-upload"
-                          multiple
-                          accept="image/png,image/jpg,image/jpeg,image/webp"
-                          className="hidden"
-                          onChange={(e) => {
-                            if (e.target.files) {
-                              handleImageUpload(e.target.files);
-                            }
-                          }}
-                        />
-
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() =>
-                            document.getElementById("image-upload")?.click()
-                          }
-                        >
-                          Dosyaları Seç
-                        </Button>
-
-                        <p className="mt-2 text-xs text-gray-500">PNG, JPG, WEBP formatları desteklenir (maks. 5MB)</p>
+                        </div>
                       </div>
+                    </TabsContent>
 
-                      {/* Yeni Eklenen Fotoğraflar */}
-                      {formData.images.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-3">
-                            Yeni Eklenen Fotoğraflar ({formData.images.length})
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {formData.images.map((file, index) => (
-                              <div key={index} className="relative group">
-                                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                                  <img
-                                    src={URL.createObjectURL(file)}
-                                    alt={`Yeni fotoğraf ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveNewImage(index)}
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  ×
-                                </button>
-                                <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                                  Yeni
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1 truncate">
-                                  {file.name}
-                                </p>
+                    <TabsContent value="terms" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <Shield className="h-6 w-6 text-white" />
                               </div>
-                            ))}
+                              <h2 className="text-2xl font-bold text-gray-800">Şartlar ve Koşullar</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizde uygulanacak kuralları ve politikaları belirleyin
+                            </p>
                           </div>
                         </div>
-                      )}
 
-                      
-                    </div>
-                  </TabsContent>
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Sigara İçme Kuralı
+                              </label>
+                              <Select>
+                                <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                  <SelectValue placeholder="Seçiniz" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="allowed">İzin Verilir</SelectItem>
+                                  <SelectItem value="restricted">Belirli Alanlarda</SelectItem>
+                                  <SelectItem value="prohibited">Yasaktır</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Evcil Hayvan
+                              </label>
+                              <Select>
+                                <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                  <SelectValue placeholder="Seçiniz" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="allowed">İzin Verilir</SelectItem>
+                                  <SelectItem value="prohibited">İzin Verilmez</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Alkol
+                              </label>
+                              <Select>
+                                <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                  <SelectValue placeholder="Seçiniz" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="allowed">İzin Verilir</SelectItem>
+                                  <SelectItem value="prohibited">İzin Verilmez</SelectItem>
+                                  <SelectItem value="byo">Kendi Getir</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Müzik
+                              </label>
+                              <Select>
+                                <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                  <SelectValue placeholder="Seçiniz" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="allowed">İzin Verilir</SelectItem>
+                                  <SelectItem value="restricted">Belirli Saatlerde</SelectItem>
+                                  <SelectItem value="prohibited">İzin Verilmez</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
 
-                  <TabsContent value="descriptions" className="p-6">
-                    
-                    <h2 className="text-xl font-medium mb-4">Açıklamalar</h2>
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Kısa Açıklama
-                        </label>
-                        <Textarea
-                          placeholder="Teknenizin kısa bir özetini yazın (maksimum 200 karakter)"
-                          maxLength={200}
-                          value={formData.shortDescription}
-                          onChange={handleInputChange("shortDescription")}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Bu açıklama tekne listelerinde ve arama sonuçlarında
-                          gösterilecektir.
-                        </p>
+                          <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Ek Kurallar
+                            </label>
+                            <Textarea 
+                              placeholder="Müşterilerinizin bilmesi gereken diğer kuralları veya şartları buraya yazabilirsiniz..." 
+                              className="min-h-[120px] border-2 hover:border-primary focus:border-primary transition-colors resize-none"
+                            />
+                          </div>
+                        </Card>
                       </div>
+                    </TabsContent>
 
-                      <div>
-                        <label className="block text-sm font-medium mb-1">
-                          Detaylı Açıklama
-                        </label>
-                        <Textarea
-                          placeholder="Teknenizin detaylı tanıtımını yapın..."
-                          className="min-h-[200px]"
-                          value={formData.detailedDescription}
-                          onChange={handleInputChange("detailedDescription")}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Teknenizin özellikleri, avantajları ve diğer
-                          özelliklerini detaylandırın.
-                        </p>
+                    <TabsContent value="services" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <Utensils className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Ek Hizmetler</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizde sunduğunuz ek hizmetleri ve fiyatlarını belirleyin
+                            </p>
+                          </div>
+                        </div>
+
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <BoatServicesManager 
+                            services={formData.boatServices}
+                            onServicesChange={(services) => setFormData(prev => ({...prev, boatServices: services}))}
+                          />
+                        </Card>
                       </div>
+                    </TabsContent>
 
-                      
-                    </div>
-                  </TabsContent>
+                    <TabsContent value="location" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <MapPin className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Lokasyon</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizin konumunu ve kalkış/dönüş noktalarını belirleyin
+                            </p>
+                          </div>
+                        </div>
 
-                  <TabsContent value="features" className="p-6">
-                    
-                    <h2 className="text-xl font-medium mb-4">Özellikler</h2>
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <Navigation className="inline h-4 w-4 mr-1" />
+                                  Kalkış Noktası
+                                </label>
+                                <Select>
+                                  <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                    <SelectValue placeholder="Seçiniz" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="bodrum">Bodrum Marina</SelectItem>
+                                    <SelectItem value="fethiye">Fethiye Limanı</SelectItem>
+                                    <SelectItem value="marmaris">Marmaris Marina</SelectItem>
+                                    <SelectItem value="gocek">Göcek Marina</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  <Navigation className="inline h-4 w-4 mr-1" />
+                                  Dönüş Noktası
+                                </label>
+                                <Select>
+                                  <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
+                                    <SelectValue placeholder="Seçiniz" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="same">Kalkış ile Aynı</SelectItem>
+                                    <SelectItem value="bodrum">Bodrum Marina</SelectItem>
+                                    <SelectItem value="fethiye">Fethiye Limanı</SelectItem>
+                                    <SelectItem value="marmaris">Marmaris Marina</SelectItem>
+                                    <SelectItem value="gocek">Göcek Marina</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
 
-                    {/* Seçili Özellikler */}
-                    {formData.features.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Seçili Özellikler</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {formData.features.map((f) => (
-                            <span key={f} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                              {f}
-                              <button
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                  <label className="block text-sm font-medium text-gray-700">
+                                    Harita Üzerinden Konum Seçin
+                                  </label>
+                                  <p className="text-xs text-gray-500">Haritaya tıklayın veya işaretçiyi sürükleyin.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button type="button" variant="outline" onClick={useCurrentLocation} className="h-9">
+                                    <Navigation className="h-4 w-4 mr-2" />
+                                    Mevcut Konum
+                                  </Button>
+                                  <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+                                    <DialogTrigger asChild>
+                                      <Button type="button" variant="secondary" className="h-9">
+                                        Haritayı Büyüt
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-7xl">
+                                      <DialogHeader>
+                                        <DialogTitle>Harita - Konum Seç</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="mt-2">
+                                        <MapPicker
+                                          value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
+                                          onChange={(coords) => {
+                                            setFormData((prev) => ({ ...prev, latitude: coords.lat, longitude: coords.lng }));
+                                          }}
+                                          height={600}
+                                          zoom={12}
+                                        />
+                                        <div className="mt-2 text-sm text-gray-600">
+                                          Seçilen Koordinatlar: {formData.latitude?.toFixed(5) ?? "-"}, {formData.longitude?.toFixed(5) ?? "-"}
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                </div>
+                              </div>
+
+                              <div className="border-2 rounded-xl p-2 bg-white hover:border-primary transition-colors">
+                                <MapPicker
+                                  value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : undefined}
+                                  onChange={(coords) => {
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      latitude: coords.lat,
+                                      longitude: coords.lng,
+                                    }));
+                                  }}
+                                  height={420}
+                                  zoom={12}
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Enlem (Latitude)
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    placeholder="41.0082"
+                                    value={formData.latitude ?? ""}
+                                    onChange={(e) => {
+                                      const v = e.target.value ? parseFloat(e.target.value) : undefined;
+                                      setFormData((prev) => ({ ...prev, latitude: isNaN(v as number) ? undefined : (v as number) }));
+                                    }}
+                                    className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Boylam (Longitude)
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    step="0.00001"
+                                    placeholder="28.9784"
+                                    value={formData.longitude ?? ""}
+                                    onChange={(e) => {
+                                      const v = e.target.value ? parseFloat(e.target.value) : undefined;
+                                      setFormData((prev) => ({ ...prev, longitude: isNaN(v as number) ? undefined : (v as number) }));
+                                    }}
+                                    className="h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                                  />
+                                </div>
+                                <div className="flex items-end">
+                                  <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    className="w-full h-12" 
+                                    onClick={() => setFormData((prev) => ({ ...prev, latitude: undefined, longitude: undefined }))}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Temizle
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="photos" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <Camera className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Fotoğraflar</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizin en iyi fotoğraflarını ekleyin. İlk fotoğraf ana görsel olarak kullanılacaktır.
+                            </p>
+                          </div>
+                        </div>
+
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="space-y-6">
+                            {/* Existing Images */}
+                            {editingVesselId && formData.existingImages.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                  Mevcut Fotoğraflar ({formData.existingImages.length})
+                                </h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                  {formData.existingImages.map((image, index) => (
+                                    <div key={image.id} className="relative group">
+                                      <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors">
+                                        <img
+                                          src={image.imageUrl}
+                                          alt={`Mevcut fotoğraf ${index + 1}`}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveExistingImage(image.id)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                      >
+                                        ×
+                                      </button>
+                                      {image.isPrimary && (
+                                        <Badge className="absolute top-2 left-2 bg-primary text-white">
+                                          Ana
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Upload Area */}
+                            <div 
+                              className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-primary transition-colors bg-gradient-to-br from-gray-50 to-white"
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                if (e.dataTransfer?.files?.length) {
+                                  handleImageUpload(e.dataTransfer.files);
+                                }
+                              }}
+                            >
+                              <div className="inline-flex p-4 rounded-full bg-primary/10 mb-4">
+                                <Camera className="h-8 w-8 text-primary" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                Fotoğrafları Sürükle & Bırak
+                              </h3>
+                              <p className="text-gray-600 mb-6">
+                                veya fotoğraf seçmek için tıklayın
+                              </p>
+
+                              <input
+                                type="file"
+                                id="image-upload"
+                                multiple
+                                accept="image/png,image/jpg,image/jpeg,image/webp"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files) {
+                                    handleImageUpload(e.target.files);
+                                  }
+                                }}
+                              />
+
+                              <Button
                                 type="button"
-                                className="ml-1 text-primary hover:text-primary/80"
-                                onClick={() => handleMultiSelectToggle("features", f)}
+                                onClick={() => document.getElementById("image-upload")?.click()}
+                                className="bg-primary hover:bg-primary/90 text-white"
                               >
-                                ×
-                              </button>
-                            </span>
-                          ))}
+                                <Plus className="h-4 w-4 mr-2" />
+                                Fotoğraf Seç
+                              </Button>
+
+                              <p className="mt-4 text-xs text-gray-500">
+                                PNG, JPG, WEBP formatları desteklenir (maks. 5MB)
+                              </p>
+                            </div>
+
+                            {/* New Images */}
+                            {formData.images.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                  Yeni Eklenen Fotoğraflar ({formData.images.length})
+                                </h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                  {formData.images.map((file, index) => (
+                                    <div key={index} className="relative group">
+                                      <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors">
+                                        <img
+                                          src={URL.createObjectURL(file)}
+                                          alt={`Yeni fotoğraf ${index + 1}`}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveNewImage(index)}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                      >
+                                        ×
+                                      </button>
+                                      <Badge className="absolute top-2 left-2 bg-green-500 text-white">
+                                        Yeni
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="features" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <Sparkles className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Özellikler</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizin öne çıkan özelliklerini seçin veya ekleyin
+                            </p>
+                          </div>
+                        </div>
+
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          {/* Selected Features */}
+                          {formData.features.length > 0 && (
+                            <div className="mb-6">
+                              <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                Seçili Özellikler ({formData.features.length})
+                              </h4>
+                              <div className="flex flex-wrap gap-2">
+                                {formData.features.map((f) => (
+                                  <Badge
+                                    key={f}
+                                    className="bg-primary/10 text-primary border-primary/20 px-3 py-1.5 text-sm hover:bg-primary/20 transition-colors"
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    {f}
+                                    <button
+                                      type="button"
+                                      className="ml-2 hover:text-red-600 transition-colors"
+                                      onClick={() => handleMultiSelectToggle("features", f)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Suggested Features */}
+                          <div className="mb-6">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">
+                              Önerilen Özellikler
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                "GPS Navigation",
+                                "Air Conditioning",
+                                "Sound System",
+                                "Wi-Fi",
+                                "Safety Equipment",
+                                "Fishing Gear",
+                                "Sunshade",
+                                "Kitchenette",
+                              ].map((feature) => {
+                                const selected = formData.features.includes(feature);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={feature}
+                                    onClick={() => handleMultiSelectToggle("features", feature)}
+                                    className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-300 ${
+                                      selected
+                                        ? "bg-primary text-white border-primary shadow-md transform scale-105"
+                                        : "bg-white text-gray-700 border-gray-200 hover:border-primary hover:bg-primary/5"
+                                    }`}
+                                  >
+                                    {selected && <CheckCircle className="inline h-3 w-3 mr-1" />}
+                                    {feature}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Custom Feature Add */}
+                          <div className="border-t pt-6">
+                            <h4 className="text-sm font-medium text-gray-700 mb-3">
+                              Özel Özellik Ekle
+                            </h4>
+                            <div className="flex gap-3">
+                              <Input
+                                placeholder="Örn: Underwater Lights"
+                                value={newFeature}
+                                onChange={(e) => setNewFeature(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const value = newFeature.trim();
+                                    if (value && !formData.features.includes(value)) {
+                                      setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
+                                      setNewFeature("");
+                                    }
+                                  }
+                                }}
+                                className="flex-1 h-12 border-2 hover:border-primary focus:border-primary transition-colors"
+                              />
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const value = newFeature.trim();
+                                  if (value && !formData.features.includes(value)) {
+                                    setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
+                                    setNewFeature("");
+                                  }
+                                }}
+                                className="h-12 px-6 bg-primary hover:bg-primary/90 text-white"
+                                disabled={loading}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Ekle
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="descriptions" className="p-8">
+                      <div className="space-y-8">
+                        {/* Section Header */}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>
+                          <div className="relative p-6">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="p-2 bg-primary rounded-lg">
+                                <FileText className="h-6 w-6 text-white" />
+                              </div>
+                              <h2 className="text-2xl font-bold text-gray-800">Açıklamalar</h2>
+                            </div>
+                            <p className="text-gray-600 ml-11">
+                              Teknenizi detaylı bir şekilde tanıtın
+                            </p>
+                          </div>
+                        </div>
+
+                        <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                          <div className="space-y-6">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Kısa Açıklama
+                              </label>
+                              <Textarea
+                                placeholder="Teknenizin kısa bir özetini yazın (maksimum 200 karakter)"
+                                maxLength={200}
+                                value={formData.shortDescription}
+                                onChange={handleInputChange("shortDescription")}
+                                className="min-h-[100px] border-2 hover:border-primary focus:border-primary transition-colors resize-none"
+                              />
+                              <p className="text-xs text-gray-500 mt-2">
+                                Bu açıklama tekne listelerinde ve arama sonuçlarında gösterilecektir.
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Detaylı Açıklama
+                              </label>
+                              <Textarea
+                                placeholder="Teknenizin detaylı tanıtımını yapın..."
+                                className="min-h-[200px] border-2 hover:border-primary focus:border-primary transition-colors resize-none"
+                                value={formData.detailedDescription}
+                                onChange={handleInputChange("detailedDescription")}
+                              />
+                              <p className="text-xs text-gray-500 mt-2">
+                                Teknenizin özellikleri, avantajları ve diğer özelliklerini detaylandırın.
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
+
+                    {/* Modern Bottom Action Bar */}
+                    <div className="sticky bottom-0 z-20 w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 px-8 py-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 hidden sm:block">
+                          <Info className="inline h-4 w-4 mr-1" />
+                          Tüm sekmelerdeki bilgiler tek seferde kaydedilir.
+                        </p>
+                        <div className="flex gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleBackToList}
+                            disabled={loading}
+                            className="hover:bg-gray-50"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Vazgeç
+                          </Button>
+                          <Button 
+                            type="submit" 
+                            className="px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300" 
+                            disabled={loading}
+                          >
+                            {loading ? (
+                              <span className="flex items-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Kaydediliyor...
+                              </span>
+                            ) : editingVesselId ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Güncellemeyi Kaydet
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Tekneyi Kaydet
+                              </>
+                            )}
+                          </Button>
                         </div>
                       </div>
-                    )}
-
-                    {/* Önerilen Özellikler */}
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Önerilen Özellikler</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          "GPS Navigation",
-                          "Air Conditioning",
-                          "Sound System",
-                          "Wi-Fi",
-                          "Safety Equipment",
-                          "Fishing Gear",
-                          "Sunshade",
-                          "Kitchenette",
-                        ].map((feature) => {
-                          const selected = formData.features.includes(feature);
-                          return (
-                            <button
-                              type="button"
-                              key={feature}
-                              onClick={() => handleMultiSelectToggle("features", feature)}
-                              className={`px-3 py-1 rounded-full border text-sm transition ${selected ? "bg-primary text-white border-primary" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
-                            >
-                              {feature}
-                            </button>
-                          );
-                        })}
-                      </div>
                     </div>
-
-                    {/* Özel Özellik Ekle */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                      <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium mb-1">Özel Özellik Ekle</label>
-                        <Input
-                          placeholder="Örn: Underwater Lights"
-                          value={newFeature}
-                          onChange={(e) => setNewFeature(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const value = newFeature.trim();
-                              if (value && !formData.features.includes(value)) {
-                                setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
-                                setNewFeature("");
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            const value = newFeature.trim();
-                            if (value && !formData.features.includes(value)) {
-                              setFormData((prev) => ({ ...prev, features: [...prev.features, value] }));
-                              setNewFeature("");
-                            }
-                          }}
-                          className="w-full"
-                          disabled={loading}
-                        >
-                          Özellik Ekle
-                        </Button>
-                      </div>
-                    </div>
-
-                    
-                  </TabsContent>
-                </Tabs>
-                {/* Yapışkan alt aksiyon çubuğu */}
-                <div className="sticky bottom-0 z-20 w-full bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <div className="text-xs text-gray-600 hidden sm:block">Tüm sekmelerdeki bilgiler tek seferde kaydedilir.</div>
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleBackToList}
-                      disabled={loading}
-                    >
-                      Vazgeç
-                    </Button>
-                    <Button type="submit" className="px-6" disabled={loading}>
-                      {loading ? (
-                        <span className="flex items-center">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Kaydediliyor...
-                        </span>
-                      ) : editingVesselId ? (
-                        "Güncellemeyi Kaydet"
-                      ) : (
-                        "Kaydet"
-                      )}
-                    </Button>
                   </div>
-                </div>
+                </Tabs>
               </form>
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Decorative Elements */}
+        <div className="fixed -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl pointer-events-none" />
+        <div className="fixed -bottom-4 -left-4 w-16 h-16 bg-gradient-to-tr from-primary/5 to-transparent rounded-full blur-lg pointer-events-none" />
       </div>
     </CaptainLayout>
   );

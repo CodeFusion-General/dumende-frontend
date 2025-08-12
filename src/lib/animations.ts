@@ -114,7 +114,7 @@ export class AnimationPerformanceMonitor {
         isOptimized: this.fps >= 55 && this.frameTime <= 18,
       };
 
-      this.callbacks.forEach((callback) => callback(metrics));
+      // this.callbacks.forEach((callback) => callback(metrics));
 
       this.frameCount = 0;
       this.lastTime = currentTime;
@@ -513,11 +513,7 @@ export const AnimationUtils = {
     // Track performance and apply optimizations
     this.performanceMonitor.onMetricsUpdate((metrics) => {
       if (!metrics.isOptimized) {
-        console.warn(
-          `Animation performance: ${
-            metrics.fps
-          }fps, ${metrics.frameTime.toFixed(2)}ms frame time`
-        );
+        // Suppressed noisy performance logs in production
 
         // Apply performance optimizations if needed
         if (metrics.fps < 30) {

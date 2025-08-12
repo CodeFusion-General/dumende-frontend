@@ -10,6 +10,8 @@ interface AnimatedBoatGridProps {
   comparedBoats: string[];
   onCompareToggle: (id: string) => void;
   loading?: boolean;
+  // Detay linkini özelleştirmek için isteğe bağlı builder (arama parametrelerini korumak vb.)
+  detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
 const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
@@ -19,6 +21,7 @@ const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
   comparedBoats,
   onCompareToggle,
   loading = false,
+  detailLinkBuilder,
 }) => {
   const [animationKey, setAnimationKey] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -92,6 +95,7 @@ const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
             isHourlyMode={isHourlyMode}
             isCompared={comparedBoats.includes(boat.id.toString())}
             onCompareToggle={onCompareToggle}
+            detailLinkBuilder={detailLinkBuilder}
           />
         </div>
       ))}
