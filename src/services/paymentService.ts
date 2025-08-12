@@ -82,7 +82,7 @@ class PaymentService extends BaseService {
   /**
    * Poll payment status until completion or timeout
    */
-  public async pollPaymentStatus(bookingId: number, maxRetries: number = 30, intervalMs: number = 2000): Promise<PaymentStatusResponseDto> {
+  public async pollPaymentStatus(bookingId: number, maxRetries: number = 3, intervalMs: number = 6000): Promise<PaymentStatusResponseDto> {
     let lastStatus: PaymentStatusResponseDto | null = null;
     
     for (let i = 0; i < maxRetries; i++) {
@@ -138,8 +138,8 @@ class PaymentService extends BaseService {
   public async pollPaymentStatusWithCallback(
     bookingId: number, 
     onStatusUpdate: (status: PaymentStatusResponseDto) => void,
-    maxRetries: number = 30, 
-    intervalMs: number = 2000
+    maxRetries: number = 3, 
+    intervalMs: number = 4000
   ): Promise<PaymentStatusResponseDto> {
     let lastStatus: PaymentStatusResponseDto | null = null;
     

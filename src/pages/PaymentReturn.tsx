@@ -79,8 +79,8 @@ export default function PaymentReturn() {
                 });
               }
             },
-            30, // 30 retries (1 minute)
-            2000 // 2 seconds interval
+            3, // max 3 deneme
+            6000 // istekler arası 4 saniye
           );
           
           setPaymentStatus(finalStatus);
@@ -167,8 +167,8 @@ export default function PaymentReturn() {
     if (!shouldStartPolling) return;
 
     let cancelled = false;
-    const MAX_RETRIES = 10;
-    const RETRY_INTERVAL = 2000;
+    const MAX_RETRIES = 3;
+    const RETRY_INTERVAL = 4000;
 
     type CallbackStatus = {
       bookingId: number;
@@ -237,7 +237,7 @@ export default function PaymentReturn() {
       };
 
       // İlk deneme, küçük bir bekleme ile (retry param geldiyse bekleme yok)
-      const initialDelay = retryParam ? 0 : 1000;
+      const initialDelay = retryParam ? 0 : 2000;
       setTimeout(doAttempt, initialDelay);
     };
 
