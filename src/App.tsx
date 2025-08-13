@@ -54,6 +54,8 @@ import BookingsPage from "./pages/admin/BookingsPage";
 import ProfilePage from "./pages/admin/ProfilePage";
 import SecurityPage from "./pages/admin/SecurityPage";
 import FinancePage from "./pages/admin/FinancePage";
+import CaptainApplicationsPage from "./pages/admin/CaptainApplicationsPage";
+import CaptainApplicationDetailPage from "./pages/admin/CaptainApplicationDetailPage";
 import GlassmorphismTest from "./components/test/GlassmorphismTest";
 import MicroAnimationsTest from "./components/test/MicroAnimationsTest";
 import PageTransitionsTest from "./components/test/PageTransitionsTest";
@@ -304,6 +306,22 @@ const App = () => {
                       element={
                         <RoleGuard requiredRoles={[UserType.ADMIN]}>
                           <Dashboard />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/captain-applications"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <CaptainApplicationsPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin/captain-applications/:id"
+                      element={
+                        <RoleGuard requiredRoles={[UserType.ADMIN]}>
+                          <CaptainApplicationDetailPage />
                         </RoleGuard>
                       }
                     />

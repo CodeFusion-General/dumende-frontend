@@ -10,13 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Ship, Upload, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Loader2, Ship, Upload, CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { authService } from '@/services/authService';
 import { UserType } from '@/types/auth.types';
 import Layout from '@/components/layout/Layout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/locales/translations';
+import { captainApplicationService } from '@/services/captainApplicationService';
+import type { CaptainApplication, CaptainApplicationStatus, CompanyInfo } from '@/types/captain.types';
 
 const BoatOwnerApplication = () => {
   const navigate = useNavigate();
@@ -25,10 +26,23 @@ const BoatOwnerApplication = () => {
   const t = translations[language];
 
   const applicationSchema = z.object({
-    companyName: z.string().min(2, t.boatOwnerApplication.validation.companyNameMin).optional(),
-    taxNumber: z.string().min(10, t.boatOwnerApplication.validation.taxNumberMin).optional(),
-    address: z.string().min(10, t.boatOwnerApplication.validation.addressMin).optional(),
-    description: z.string().min(50, t.boatOwnerApplication.validation.descriptionMin),
+    licenseNumber: z.string().min(3, 'Lisans numarası en az 3 karakter olmalıdır'),
+    licenseExpiry: z.string().min(10, 'Lisans bitiş tarihi zorunludur'),
+    yearsOfExperience: z.coerce.number().min(0, 'Deneyim yılı 0 veya daha büyük olmalıdır'),
+    specializationsInput: z.string().optional(), // virgülle ayrılmış
+    bio: z.string().min(30, 'Biyografi en az 30 karakter olmalıdır'),
+    // Şirket alanları opsiyonel; toggle açık ise kontrol edilecek
+    includeCompany: z.boolean().optional(),
+    company_legalName: z.string().optional(),
+    company_taxNumber: z.string().optional(),
+    company_taxOffice: z.string().optional(),
+    company_authorizedPerson: z.string().optional(),
+    company_companyEmail: z.string().email('Geçerli bir e-posta giriniz').optional(),
+    company_nationalIdNumber: z.string().optional(),
+    company_mobilePhone: z.string().optional(),
+    company_landlinePhone: z.string().optional(),
+    company_billingAddress: z.string().optional(),
+    company_iban: z.string().optional(),
   });
 
   type ApplicationFormData = z.infer<typeof applicationSchema>;
@@ -36,7 +50,7 @@ const BoatOwnerApplication = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [documents, setDocuments] = useState<FileList | null>(null);
-  const [existingApplication, setExistingApplication] = useState<any>(null);
+  const [existingApplication, setExistingApplication] = useState<CaptainApplication | null>(null);
 
   const {
     register,
@@ -45,10 +59,22 @@ const BoatOwnerApplication = () => {
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
-      companyName: '',
-      taxNumber: '',
-      address: '',
-      description: '',
+      licenseNumber: '',
+      licenseExpiry: '',
+      yearsOfExperience: 0,
+      specializationsInput: '',
+      bio: '',
+      includeCompany: false,
+      company_legalName: '',
+      company_taxNumber: '',
+      company_taxOffice: '',
+      company_authorizedPerson: '',
+      company_companyEmail: '',
+      company_nationalIdNumber: '',
+      company_mobilePhone: '',
+      company_landlinePhone: '',
+      company_billingAddress: '',
+      company_iban: '',
     },
   });
 
@@ -69,7 +95,7 @@ const BoatOwnerApplication = () => {
     // Mevcut başvuruyu kontrol et
     const checkExistingApplication = async () => {
       try {
-        const application = await authService.getMyBoatOwnerApplication();
+        const application = await captainApplicationService.getMyLatest();
         setExistingApplication(application);
       } catch (error) {
         console.error('Application check error:', error);
@@ -84,19 +110,49 @@ const BoatOwnerApplication = () => {
       setIsLoading(true);
       setError(null);
 
-      await authService.submitBoatOwnerApplication({
-        companyName: data.companyName,
-        taxNumber: data.taxNumber,
-        address: data.address,
-        description: data.description,
+      if (!user?.id) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      const specializations = (data.specializationsInput || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      let company: CompanyInfo | undefined = undefined;
+      if (data.includeCompany) {
+        company = {
+          legalName: data.company_legalName || '',
+          displayName: data.company_legalName || '',
+          taxNumber: data.company_taxNumber || '',
+          taxOffice: data.company_taxOffice || '',
+          authorizedPerson: data.company_authorizedPerson || '',
+          companyEmail: data.company_companyEmail || '',
+          nationalIdNumber: data.company_nationalIdNumber || '',
+          mobilePhone: data.company_mobilePhone || '',
+          landlinePhone: data.company_landlinePhone || '',
+          billingAddress: data.company_billingAddress || '',
+          iban: data.company_iban || '',
+        };
+      }
+
+      const payload = {
+        userId: user.id,
+        licenseNumber: data.licenseNumber,
+        licenseExpiry: data.licenseExpiry,
+        yearsOfExperience: data.yearsOfExperience,
+        specializations,
+        bio: data.bio,
         documents: documents ? Array.from(documents) : undefined,
-      });
+        company,
+      };
+
+      const created = await captainApplicationService.createMultipart(payload);
 
       setSuccess(true);
       
       // Başvuru durumunu yeniden kontrol et
-      const application = await authService.getMyBoatOwnerApplication();
-      setExistingApplication(application);
+      setExistingApplication(created);
       
     } catch (err: any) {
       setError(
@@ -115,7 +171,7 @@ const BoatOwnerApplication = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: CaptainApplicationStatus) => {
     switch (status) {
       case 'PENDING':
         return <Badge variant="secondary"><Clock className="w-4 h-4 mr-1" />{t.boatOwnerApplication.status.pending}</Badge>;
@@ -159,10 +215,10 @@ const BoatOwnerApplication = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{t.boatOwnerApplication.applicationStatus.applicationDate}: {new Date(existingApplication.applicationDate).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}</p>
-                    {existingApplication.reviewDate && (
+                    <p className="font-medium">{t.boatOwnerApplication.applicationStatus.applicationDate}: {new Date(existingApplication.createdAt).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}</p>
+                    {existingApplication.updatedAt && existingApplication.status !== 'PENDING' && (
                       <p className="text-sm text-muted-foreground">
-                        {t.boatOwnerApplication.applicationStatus.reviewDate}: {new Date(existingApplication.reviewDate).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
+                        {t.boatOwnerApplication.applicationStatus.reviewDate}: {new Date(existingApplication.updatedAt).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
                       </p>
                     )}
                   </div>
@@ -184,6 +240,17 @@ const BoatOwnerApplication = () => {
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {existingApplication.documentFilePaths?.length ? (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2 flex items-center gap-2"><FileText className="w-4 h-4"/> Yüklenen Belgeler</p>
+                    <div className="flex flex-wrap gap-2">
+                      {existingApplication.documentFilePaths.map((p, idx) => (
+                        <Badge key={idx} variant="outline" className="truncate max-w-xs" title={p}>{p.split('/').pop()}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           )}
@@ -240,70 +307,125 @@ const BoatOwnerApplication = () => {
                     </Alert>
                   )}
 
+                  {/* Profesyonel Bilgiler */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="companyName">{t.boatOwnerApplication.form.companyNameOptional}</Label>
+                      <Label htmlFor="licenseNumber">Lisans Numarası</Label>
                       <Input
-                        id="companyName"
+                        id="licenseNumber"
                         type="text"
-                        placeholder={t.boatOwnerApplication.form.companyNamePlaceholder}
+                        placeholder="Örn: ABC-12345"
                         disabled={isSubmitting || isLoading}
-                        {...register('companyName')}
+                        {...register('licenseNumber')}
                       />
-                      {errors.companyName && (
-                        <p className="text-sm text-destructive">
-                          {errors.companyName.message}
-                        </p>
+                      {errors.licenseNumber && (
+                        <p className="text-sm text-destructive">{errors.licenseNumber.message}</p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="taxNumber">{t.boatOwnerApplication.form.taxNumberOptional}</Label>
+                      <Label htmlFor="licenseExpiry">Lisans Bitiş Tarihi</Label>
                       <Input
-                        id="taxNumber"
-                        type="text"
-                        placeholder={t.boatOwnerApplication.form.taxNumberPlaceholder}
+                        id="licenseExpiry"
+                        type="date"
                         disabled={isSubmitting || isLoading}
-                        {...register('taxNumber')}
+                        {...register('licenseExpiry')}
                       />
-                      {errors.taxNumber && (
-                        <p className="text-sm text-destructive">
-                          {errors.taxNumber.message}
-                        </p>
+                      {errors.licenseExpiry && (
+                        <p className="text-sm text-destructive">{errors.licenseExpiry.message}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">{t.boatOwnerApplication.form.addressOptional}</Label>
-                    <Input
-                      id="address"
-                      type="text"
-                      placeholder={t.boatOwnerApplication.form.addressPlaceholder}
-                      disabled={isSubmitting || isLoading}
-                      {...register('address')}
-                    />
-                    {errors.address && (
-                      <p className="text-sm text-destructive">
-                        {errors.address.message}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="yearsOfExperience">Deneyim Yılı</Label>
+                      <Input
+                        id="yearsOfExperience"
+                        type="number"
+                        min={0}
+                        placeholder="Örn: 5"
+                        disabled={isSubmitting || isLoading}
+                        {...register('yearsOfExperience')}
+                      />
+                      {errors.yearsOfExperience && (
+                        <p className="text-sm text-destructive">{errors.yearsOfExperience.message as string}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="specializationsInput">Uzmanlıklar (virgülle ayırın)</Label>
+                      <Input
+                        id="specializationsInput"
+                        type="text"
+                        placeholder="Örn: Yat, Gulet, Balıkçılık"
+                        disabled={isSubmitting || isLoading}
+                        {...register('specializationsInput')}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">{t.boatOwnerApplication.form.descriptionRequired}</Label>
+                    <Label htmlFor="bio">Biyografi</Label>
                     <Textarea
-                      id="description"
-                      placeholder={t.boatOwnerApplication.form.descriptionPlaceholder}
+                      id="bio"
+                      placeholder="Kendiniz ve tecrübeleriniz hakkında bilgi verin"
                       disabled={isSubmitting || isLoading}
-                      {...register('description')}
+                      {...register('bio')}
                       rows={4}
                     />
-                    {errors.description && (
-                      <p className="text-sm text-destructive">
-                        {errors.description.message}
-                      </p>
+                    {errors.bio && (
+                      <p className="text-sm text-destructive">{errors.bio.message}</p>
                     )}
+                  </div>
+
+                  {/* Şirket Bilgileri (opsiyonel) */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input id="includeCompany" type="checkbox" {...register('includeCompany')} />
+                      <Label htmlFor="includeCompany">Şirket Bilgilerini Eklemek İstiyorum (opsiyonel)</Label>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="company_legalName">Cari Ünvan</Label>
+                        <Input id="company_legalName" type="text" placeholder="Örn: ABC Turizm Ltd. Şti." disabled={isSubmitting || isLoading} {...register('company_legalName')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_taxNumber">Vergi No</Label>
+                        <Input id="company_taxNumber" type="text" placeholder="Vergi numarası" disabled={isSubmitting || isLoading} {...register('company_taxNumber')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_taxOffice">Vergi Dairesi</Label>
+                        <Input id="company_taxOffice" type="text" placeholder="Vergi dairesi" disabled={isSubmitting || isLoading} {...register('company_taxOffice')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_authorizedPerson">Yetkili Kişi</Label>
+                        <Input id="company_authorizedPerson" type="text" placeholder="Ad Soyad" disabled={isSubmitting || isLoading} {...register('company_authorizedPerson')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_companyEmail">Şirket E-postası</Label>
+                        <Input id="company_companyEmail" type="email" placeholder="ornek@firma.com" disabled={isSubmitting || isLoading} {...register('company_companyEmail')} />
+                        {errors.company_companyEmail && (
+                          <p className="text-sm text-destructive">{errors.company_companyEmail.message}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_mobilePhone">Cep Telefonu</Label>
+                        <Input id="company_mobilePhone" type="text" placeholder="05xx xxx xx xx" disabled={isSubmitting || isLoading} {...register('company_mobilePhone')} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company_landlinePhone">Sabit Telefon (opsiyonel)</Label>
+                        <Input id="company_landlinePhone" type="text" placeholder="0xxx xxx xx xx" disabled={isSubmitting || isLoading} {...register('company_landlinePhone')} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="company_billingAddress">Fatura Adresi</Label>
+                        <Input id="company_billingAddress" type="text" placeholder="Adres" disabled={isSubmitting || isLoading} {...register('company_billingAddress')} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="company_iban">IBAN</Label>
+                        <Input id="company_iban" type="text" placeholder="TR.." disabled={isSubmitting || isLoading} {...register('company_iban')} />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

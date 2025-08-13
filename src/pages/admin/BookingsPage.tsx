@@ -364,6 +364,7 @@ const BookingsPage: React.FC = () => {
       totalPrice: 0, // Not available in current Booking interface
       passengerCount: booking.passengerCount,
       notes: booking.notes,
+      services: [],
       createdAt: booking.createdAt,
       updatedAt: booking.createdAt, // Using createdAt as fallback
     };
@@ -752,6 +753,7 @@ const BookingsPage: React.FC = () => {
             totalPrice: 0, // Not available in current Booking interface
             passengerCount: selectedBooking.passengerCount,
             notes: selectedBooking.notes,
+            services: [],
             createdAt: selectedBooking.createdAt,
             updatedAt: selectedBooking.createdAt, // Using createdAt as fallback
           }}
