@@ -19,21 +19,14 @@ interface TourCardProps {
 
 // Default image helper function
 const getTourImageUrl = (tour: TourDTO): string => {
-  console.log("🎯 Loading image for tour:", tour.name, tour.id);
-  console.log("🖼️ Tour images:", tour.tourImages);
-
   // Backend'den gelen URL'i tam URL'e çevir
   if (tour.tourImages && tour.tourImages.length > 0) {
     const firstImage = tour.tourImages[0];
     if (firstImage && firstImage.imageUrl) {
-      console.log("✅ Using tour's own image URL:", firstImage.imageUrl);
-      const fullUrl = getFullImageUrl(firstImage.imageUrl);
-      console.log("🔗 Full image URL:", fullUrl);
-      return fullUrl;
+      return getFullImageUrl(firstImage.imageUrl);
     }
   }
 
-  console.log("🔄 Using default image");
   // Fallback to default image
   return getDefaultImageUrl();
 };

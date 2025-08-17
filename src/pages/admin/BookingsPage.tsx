@@ -293,7 +293,6 @@ const BookingsPage: React.FC = () => {
       setError(null);
 
       try {
-        console.log("Fetching bookings for user ID:", user.id);
         // AuthContext'ten gelen user.id'yi bookingHelperService'e geç
         const data = await bookingHelperService.getAllBookingsForOwner(user.id);
 
@@ -311,7 +310,7 @@ const BookingsPage: React.FC = () => {
           createdAt: b.createdAt,
         }));
 
-        console.log("Bookings fetched successfully:", mapped.length);
+        // Bookings mapped successfully
         setBookings(mapped);
       } catch (err: any) {
         console.error("Bookings yükleme hatası:", err);

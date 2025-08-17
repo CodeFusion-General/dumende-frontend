@@ -180,11 +180,7 @@ export abstract class BaseService {
       // Check if error is retryable
       if (this.isRetryableError(error) && attempt < this.maxRetries) {
         const delay = this.calculateRetryDelay(attempt);
-        console.log(
-          `Retrying ${operationName} in ${delay}ms (attempt ${attempt + 1}/${
-            this.maxRetries
-          })`
-        );
+        // Retrying operation (could add proper logging here if needed)
 
         await this.sleep(delay);
         return this.executeWithRetry(operation, operationName, attempt + 1);

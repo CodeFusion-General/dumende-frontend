@@ -301,7 +301,6 @@ class AuthService extends BaseService {
     
     // Mock onay işlemi
     await new Promise(resolve => setTimeout(resolve, 500));
-    console.log(`Mock boat owner application ${applicationId} approved`);
   }
 
   // Boat owner başvurusunu reddet (Admin only)
@@ -311,7 +310,6 @@ class AuthService extends BaseService {
     
     // Mock red işlemi
     await new Promise(resolve => setTimeout(resolve, 500));
-    console.log(`Mock boat owner application ${applicationId} rejected with reason:`, reason);
   }
 
   // Kullanıcıyı ID ile getir (Admin only)
@@ -376,7 +374,6 @@ class AuthService extends BaseService {
     
     // Mock başvuru gönderme simülasyonu
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Mock boat owner application submitted:', applicationData);
   }
 
   // Kullanıcının boat owner başvuru durumunu kontrol et
@@ -416,7 +413,6 @@ class AuthService extends BaseService {
     
     // Mock başvuru iptal etme simülasyonu
     await new Promise(resolve => setTimeout(resolve, 500));
-    console.log('Mock boat owner application cancelled');
   }
 }
 

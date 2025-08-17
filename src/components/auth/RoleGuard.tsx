@@ -37,21 +37,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles })
 
   useEffect(() => {
     // Eğer kullanıcı giriş yapmamışsa veya uygun role sahip değilse
-    console.log('RoleGuard kontrolü:', { 
-      isAuthenticated, 
-      user: user ? { id: user.id, role: user.role } : null, 
-      requiredRoles, 
-      currentPath: location.pathname 
-    });
-    
     if (!isAuthenticated || !user || !requiredRoles.includes(user.role)) {
-      console.warn('RoleGuard: Erişim reddedildi', {
-        isAuthenticated,
-        hasUser: !!user,
-        userRole: user?.role,
-        requiredRoles,
-        path: location.pathname
-      });
       
       // Hangi sayfadan geldiğini kontrol et
       const isAdminPage = location.pathname.startsWith('/admin');
@@ -102,10 +88,6 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRoles })
 
   // Eğer kullanıcı yetkili ise children'ı render et
   if (isAuthenticated && user && requiredRoles.includes(user.role)) {
-    console.log('RoleGuard: Erişim onaylandı', {
-      user: { id: user.id, role: user.role },
-      path: location.pathname
-    });
     return <>{children}</>;
   }
 

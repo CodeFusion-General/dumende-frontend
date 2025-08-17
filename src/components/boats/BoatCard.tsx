@@ -21,22 +21,15 @@ interface BoatCardProps {
 
 // Default image helper function
 const getBoatImageUrl = (boat: BoatDTO): string => {
-  console.log("🚤 Loading image for boat:", boat.name, boat.id);
-  console.log("🖼️ Boat images:", boat.images);
-
   // Backend'den gelen URL'i tam URL'e çevir
   if (boat.images && boat.images.length > 0) {
     const primaryImage =
       boat.images.find((img) => img.isPrimary) || boat.images[0];
     if (primaryImage && primaryImage.imageUrl) {
-      console.log("✅ Using boat's own image URL:", primaryImage.imageUrl);
-      const fullUrl = getFullImageUrl(primaryImage.imageUrl);
-      console.log("🔗 Full image URL:", fullUrl);
-      return fullUrl;
+      return getFullImageUrl(primaryImage.imageUrl);
     }
   }
 
-  console.log("🔄 Using default image");
   // Fallback to default image
   return getDefaultImageUrl();
 };
