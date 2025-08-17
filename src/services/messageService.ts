@@ -9,12 +9,12 @@ import {
 
 class MessageService extends BaseService {
   constructor() {
-    super("");
+    super("/messages");
   }
 
   // ======= Message Query Operations =======
   public async getMessageById(id: number): Promise<MessageDTO> {
-    return this.get<MessageDTO>(`/messages/${id}`);
+    return this.get<MessageDTO>(`/${id}`);
   }
 
   public async getAllMessages(): Promise<MessageDTO[]> {
@@ -22,7 +22,7 @@ class MessageService extends BaseService {
   }
 
   public async queryMessages(query: MessageQuery): Promise<MessageDTO[]> {
-    return this.post<MessageDTO[]>("/messages/query", query);
+    return this.post<MessageDTO[]>("/query", query);
   }
 
   public async getMessagesByConversationId(
@@ -32,33 +32,33 @@ class MessageService extends BaseService {
       // Avoid making a broken request; return empty list for stability
       return [] as MessageDTO[];
     }
-    return this.get<MessageDTO[]>(`/messages/conversation/${conversationId}`);
+    return this.get<MessageDTO[]>(`/conversation/${conversationId}`);
   }
 
   public async getMessagesBySenderId(senderId: number): Promise<MessageDTO[]> {
-    return this.get<MessageDTO[]>(`/messages/sender/${senderId}`);
+    return this.get<MessageDTO[]>(`/sender/${senderId}`);
   }
 
   public async getMessagesByRecipientId(
     recipientId: number
   ): Promise<MessageDTO[]> {
-    return this.get<MessageDTO[]>(`/messages/recipient/${recipientId}`);
+    return this.get<MessageDTO[]>(`/recipient/${recipientId}`);
   }
 
   public async getMessagesByUserId(userId: number): Promise<MessageDTO[]> {
-    return this.get<MessageDTO[]>(`/messages/user/${userId}`);
+    return this.get<MessageDTO[]>(`/user/${userId}`);
   }
 
   public async getUnreadMessagesByRecipientId(
     recipientId: number
   ): Promise<MessageDTO[]> {
-    return this.get<MessageDTO[]>(`/messages/unread/recipient/${recipientId}`);
+    return this.get<MessageDTO[]>(`/unread/recipient/${recipientId}`);
   }
 
   public async getConversationIdsByUserId(userId: number): Promise<string[]> {
     try {
       const result = await this.get<string[]>(
-        `/messages/conversations/user/${userId}`
+        `/conversations/user/${userId}`
       );
       return result;
     } catch (error) {
@@ -78,15 +78,15 @@ class MessageService extends BaseService {
   public async updateMessageReadStatus(
     command: UpdateMessageReadStatusCommand
   ): Promise<MessageDTO> {
-    return this.put<MessageDTO>("/messages/read-status", command);
+    return this.put<MessageDTO>("/read-status", command);
   }
 
   public async deleteMessage(id: number): Promise<void> {
-    return this.delete<void>(`/messages/${id}`);
+    return this.delete<void>(`/${id}`);
   }
 
   public async deleteConversation(conversationId: string): Promise<void> {
-    return this.delete<void>(`/messages/conversation/${conversationId}`);
+    return this.delete<void>(`/conversation/${conversationId}`);
   }
 
   // ======= Helper Methods =======

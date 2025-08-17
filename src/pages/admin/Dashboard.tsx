@@ -6,9 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { bookingHelperService } from "@/services/bookingService";
 import { BookingStatistics } from "@/types/booking.types";
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+import { boatService } from "@/services/boatService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -60,10 +58,8 @@ const Dashboard = () => {
         setStats(bookingStats);
 
         // Load boat count
-        const boatsResponse = await axios.get(
-          `${API_BASE_URL}/boats/owner/${ownerId}`
-        );
-        setBoatCount(boatsResponse.data.length);
+        const boats = await boatService.getBoatsByOwner(ownerId);
+        setBoatCount(boats.length);
       } catch (error) {
         console.error("Error loading dashboard data:", error);
       } finally {

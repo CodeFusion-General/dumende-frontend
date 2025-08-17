@@ -16,16 +16,16 @@ import {
 
 class TourService extends BaseService {
   constructor() {
-    super("");
+    super("/tours");
   }
 
   // ======= Tour CRUD Operations =======
   public async getTours(): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>("/tours");
+    return this.get<TourDTO[]>("");
   }
 
   public async getTourById(id: number): Promise<TourDTO> {
-    return this.get<TourDTO>(`/tours/${id}`);
+    return this.get<TourDTO>(`/${id}`);
   }
 
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
@@ -45,39 +45,39 @@ class TourService extends BaseService {
   }
 
   public async deleteTour(id: number): Promise<void> {
-    return this.delete<void>(`/tours/${id}`);
+    return this.delete<void>(`/${id}`);
   }
 
   public async updateTourStatus(id: number, status: string): Promise<void> {
-    return this.patch<void>(`/tours/${id}/status?status=${status}`);
+    return this.patch<void>(`/${id}/status?status=${status}`);
   }
 
   public async updateTourRating(id: number, rating: number): Promise<void> {
-    return this.patch<void>(`/tours/${id}/rating?rating=${rating}`);
+    return this.patch<void>(`/${id}/rating?rating=${rating}`);
   }
 
   // ======= Tour Query Operations =======
   public async getToursByGuideId(guideId: number): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/tours/guide/${guideId}`);
+    return this.get<TourDTO[]>(`/guide/${guideId}`);
   }
 
   public async searchToursByName(name: string): Promise<TourDTO[]> {
     return this.get<TourDTO[]>(
-      `/tours/search/name?name=${encodeURIComponent(name)}`
+      `/search/name?name=${encodeURIComponent(name)}`
     );
   }
 
   public async searchToursByType(type: string): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(`/tours/search/type?type=${encodeURIComponent(type)}`);
+    return this.get<TourDTO[]>(`/search/type?type=${encodeURIComponent(type)}`);
   }
 
   public async getTourTypes(): Promise<string[]> {
-    return this.get<string[]>(`/tours/types`);
+    return this.get<string[]>(`/types`);
   }
 
   public async searchToursByLocation(location: string): Promise<TourDTO[]> {
     return this.get<TourDTO[]>(
-      `/tours/search/location?location=${encodeURIComponent(location)}`
+      `/search/location?location=${encodeURIComponent(location)}`
     );
   }
 
@@ -86,18 +86,18 @@ class TourService extends BaseService {
     maxPrice: number
   ): Promise<TourDTO[]> {
     return this.get<TourDTO[]>(
-      `/tours/search/price-range?minPrice=${minPrice}&maxPrice=${maxPrice}`
+      `/search/price-range?minPrice=${minPrice}&maxPrice=${maxPrice}`
     );
   }
 
   public async searchToursByCapacity(minCapacity: number): Promise<TourDTO[]> {
     return this.get<TourDTO[]>(
-      `/tours/search/capacity?minCapacity=${minCapacity}`
+      `/search/capacity?minCapacity=${minCapacity}`
     );
   }
 
   public async existsTourById(id: number): Promise<boolean> {
-    return this.get<boolean>(`/tours/exists/${id}`);
+    return this.get<boolean>(`/exists/${id}`);
   }
 
   // ======= Tour Date Operations =======
@@ -345,7 +345,7 @@ class TourService extends BaseService {
   // deleteToursByBoatId kaldırıldı; boat ile ilişki yok
 
   public async deleteToursByGuideId(guideId: number): Promise<void> {
-    return this.delete<void>(`/tours/guide/${guideId}`);
+    return this.delete<void>(`/guide/${guideId}`);
   }
 }
 
