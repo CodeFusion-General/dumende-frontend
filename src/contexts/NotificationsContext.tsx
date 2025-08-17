@@ -37,7 +37,9 @@ export function NotificationsProvider({ children, userId }: NotificationsProvide
   };
 
   useEffect(() => {
-    refreshUnreadCount();
+    if (userId) {
+      refreshUnreadCount();
+    }
   }, [userId]);
 
   const value = {

@@ -38,17 +38,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Sayfa yüklendiğinde cookie'den auth state'i yükle
   useEffect(() => {
+    let isMounted = true;
+
     const initializeAuth = async () => {
+      if (!isMounted) return;
+      
       try {
         const storedToken = tokenUtils.getAuthToken();
         const storedUser = tokenUtils.getUserData();
+
+        if (!isMounted) return; // Double check
 
         // Token ve user bilgilerinin ikisi de varsa ve tutarlıysa state'i güncelle
         if (storedToken && storedUser) {
           // Token'ın geçerli olup olmadığını kontrol et (basit format kontrolü)
           if (storedToken.includes(".") && storedUser.id && storedUser.role) {
-            setToken(storedToken);
-            setUser(storedUser);
+            if (isMounted) {
+              setToken(storedToken);
+              setUser(storedUser);
+            }
           } else {
             // Geçersiz data varsa temizle
             tokenUtils.clearAllAuthData();
@@ -61,11 +69,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Hatalı data varsa temizle
         tokenUtils.clearAllAuthData();
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Login fonksiyonu

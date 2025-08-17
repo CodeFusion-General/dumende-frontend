@@ -17,7 +17,18 @@ const FeaturedBoats = () => {
   // const { getStaggeredStyle } = useStaggeredClasses(6, 150);
 
   useEffect(() => {
-    fetchFeaturedBoats();
+    let isMounted = true;
+    
+    const loadBoats = async () => {
+      if (!isMounted) return;
+      await fetchFeaturedBoats();
+    };
+    
+    loadBoats();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchFeaturedBoats = async () => {

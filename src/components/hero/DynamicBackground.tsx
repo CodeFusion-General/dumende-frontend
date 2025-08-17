@@ -75,37 +75,45 @@ const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
     );
   }, [currentIndex]);
 
-  // Time-based gradient shifting
+  // Time-based gradient shifting - Optimized to reduce frequency
   useEffect(() => {
     if (!enableTimeBasedShifting) return;
 
     const interval = setInterval(() => {
       setGradientShift((prev) => (prev + 1) % 360);
-    }, 50); // Update every 50ms for smooth animation
+    }, 500); // Reduced frequency: Update every 500ms instead of 50ms for better performance
 
     return () => clearInterval(interval);
   }, [enableTimeBasedShifting]);
 
-  // Scroll-based gradient shifting
+  // Scroll-based gradient shifting - Throttled for better performance
   useEffect(() => {
     if (!enableScrollBasedShifting) return;
 
-    const handleScroll = () => {
-      scrollY.current = window.scrollY;
-      const scrollProgress = Math.min(scrollY.current / window.innerHeight, 1);
+    let ticking = false;
 
-      setLayers((prevLayers) =>
-        prevLayers.map((layer, index) => ({
-          ...layer,
-          blurAmount: scrollProgress * 3, // Increase blur on scroll
-          gradient:
-            index === currentIndex
-              ? `linear-gradient(${135 + scrollProgress * 45}deg, 
-                rgba(26, 95, 122, ${0.8 - scrollProgress * 0.2}) 0%, 
-                rgba(0, 43, 91, ${0.9 - scrollProgress * 0.1}) 100%)`
-              : layer.gradient,
-        }))
-      );
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          scrollY.current = window.scrollY;
+          const scrollProgress = Math.min(scrollY.current / window.innerHeight, 1);
+
+          setLayers((prevLayers) =>
+            prevLayers.map((layer, index) => ({
+              ...layer,
+              blurAmount: scrollProgress * 3, // Increase blur on scroll
+              gradient:
+                index === currentIndex
+                  ? `linear-gradient(${135 + scrollProgress * 45}deg, 
+                    rgba(26, 95, 122, ${0.8 - scrollProgress * 0.2}) 0%, 
+                    rgba(0, 43, 91, ${0.9 - scrollProgress * 0.1}) 100%)`
+                  : layer.gradient,
+            }))
+          );
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
