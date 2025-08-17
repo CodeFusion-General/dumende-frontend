@@ -76,14 +76,14 @@ set_environment() {
             export VITE_ENABLE_SOURCE_MAP="true"
             ;;
         staging)
-            export VITE_API_BASE_URL="https://staging-api.dumende.com/api"
+            export VITE_API_BASE_URL="https://dumenden-backend-pliz2d45kq-ew.a.run.app/api"
             export VITE_APP_ENVIRONMENT="staging"
             export VITE_ENABLE_DEBUG_MODE="true"
             export VITE_ENABLE_ANALYTICS="false"
             export VITE_ENABLE_SOURCE_MAP="true"
             ;;
         production)
-            export VITE_API_BASE_URL="https://api.dumende.com/api"
+            export VITE_API_BASE_URL="https://dumenden-backend-pliz2d45kq-ew.a.run.app/api"
             export VITE_APP_ENVIRONMENT="production"
             export VITE_ENABLE_DEBUG_MODE="false"
             export VITE_ENABLE_ANALYTICS="true"

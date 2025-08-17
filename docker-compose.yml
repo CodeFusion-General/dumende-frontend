@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.dumende.com/api}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://dumenden-backend-pliz2d45kq-ew.a.run.app/api}
         - VITE_APP_ENVIRONMENT=${VITE_APP_ENVIRONMENT:-production}
         - VITE_ENABLE_ANALYTICS=${VITE_ENABLE_ANALYTICS:-true}
     container_name: dumende-frontend
