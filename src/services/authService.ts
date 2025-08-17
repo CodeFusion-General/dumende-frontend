@@ -11,109 +11,20 @@ import {
   UserType,
 } from "@/types/auth.types";
 import { tokenUtils } from "@/lib/utils";
-import axios, { AxiosInstance } from "axios";
+// No longer need separate axios instance
 
 class AuthService extends BaseService {
-  protected authApi: AxiosInstance;
-
   constructor() {
     super("/auth");
-    // Auth için tamamen ayrı axios instance - /api prefix kullanarak
-    this.authApi = axios.create({
-      baseURL: "/api", // /api prefix ile backend'e yönlendirme
-      headers: {
-        "Content-Type": "application/json",
-      },
-      withCredentials: true,
-    });
-
-    // Auth API için ayrı interceptors
-    this.setupAuthInterceptors();
+    // Now uses BaseService methods which already use the correct API URL from HttpClient
   }
 
-  private setupAuthInterceptors(): void {
-    // Request interceptor - JWT token'ı otomatik header'a ekle
-    this.authApi.interceptors.request.use(
-      (config) => {
-        const token = tokenUtils.getAuthToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
+  // Auth service now uses BaseService methods which use correct API URL
 
-    // Response interceptor - Token expiry ve error handling
-    this.authApi.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (error.response?.status === 401) {
-          // Token expired veya invalid - auth verilerini temizle
-          tokenUtils.clearAllAuthData();
-          
-          // Captain panelindeyse captain login'e, normal sayfadaysa ana sayfaya yönlendir
-          const currentPath = window.location.pathname;
-          if (currentPath.startsWith('/captain')) {
-            window.location.href = "/?auth=true"; // Auth modal'ı açmak için
-          } else if (currentPath.startsWith('/admin')) {
-            window.location.href = "/?auth=true"; // Auth modal'ı açmak için  
-          } else {
-            // Normal sayfalarda auth modal'ı aç
-            window.location.href = "/?auth=true";
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // Override base methods to use direct auth endpoints
-  protected async authGet<T>(url: string, params?: any): Promise<T> {
-    try {
-      const response = await this.authApi.get(`/auth${url}`, { params });
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
-
-  protected async authPost<T>(url: string, data?: any): Promise<T> {
-    try {
-      const response = await this.authApi.post(`/auth${url}`, data);
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
-
-  protected async authPut<T>(url: string, data?: any): Promise<T> {
-    try {
-      const response = await this.authApi.put(`/auth${url}`, data);
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
-
-  protected async authDelete<T>(url: string): Promise<T> {
-    try {
-      const response = await this.authApi.delete(`/auth${url}`);
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
 
   // Yeni backend API'sine uygun register
   public async register(data: RegisterRequest): Promise<LoginResponse> {
-    const response = await this.authPost<LoginResponse>("/register", data);
+    const response = await this.post<LoginResponse>("/register", data);
     
     // Token ve user bilgilerini cookie'ye kaydet
     if (response.token) {
@@ -131,7 +42,7 @@ class AuthService extends BaseService {
 
   // Yeni backend API'sine uygun login
   public async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await this.authPost<LoginResponse>("/login", data);
+    const response = await this.post<LoginResponse>("/login", data);
     
     // Token ve user bilgilerini cookie'ye kaydet
     if (response.token) {
@@ -200,29 +111,29 @@ class AuthService extends BaseService {
 
   // Account yönetimi (backend'deki diğer endpoints için)
   public async getCurrentAccount(): Promise<AccountDTO> {
-    return this.authGet<AccountDTO>("/account");
+    return this.get<AccountDTO>("/account");
   }
 
   public async createAccount(data: CreateAccountRequest): Promise<AccountDTO> {
-    return this.authPost<AccountDTO>("/account", data);
+    return this.post<AccountDTO>("/account", data);
   }
 
   public async updateAccount(data: UpdateAccountRequest): Promise<AccountDTO> {
-    return this.authPut<AccountDTO>("/account", data);
+    return this.put<AccountDTO>("/account", data);
   }
 
   public async updatePassword(data: UpdatePasswordRequest): Promise<void> {
-    return this.authPut<void>("/account/password", data);
+    return this.put<void>("/account/password", data);
   }
 
   public async deleteAccount(): Promise<void> {
-    await this.authDelete<void>("/account");
+    await this.delete<void>("/account");
     this.logout();
   }
 
   // Token refresh (eğer backend'de varsa)
   public async refreshToken(): Promise<LoginResponse> {
-    const response = await this.authPost<LoginResponse>("/refresh");
+    const response = await this.post<LoginResponse>("/refresh");
     
     if (response.token) {
       tokenUtils.setAuthToken(response.token, response.expiresIn);
@@ -241,17 +152,17 @@ class AuthService extends BaseService {
   
   // Tüm kullanıcıları getir (Admin only)
   public async getAllUsers(): Promise<AuthUser[]> {
-    return this.authGet<AuthUser[]>("/admin/users");
+    return this.get<AuthUser[]>("/admin/users");
   }
 
   // Kullanıcı rolünü güncelle (Admin only)
   public async updateUserRole(userId: number, newRole: UserType): Promise<void> {
-    return this.authPut<void>(`/admin/users/${userId}/role`, { role: newRole });
+    return this.put<void>(`/admin/users/${userId}/role`, { role: newRole });
   }
 
   // Kullanıcıyı aktif/pasif et (Admin only)
   public async toggleUserStatus(userId: number, isActive: boolean): Promise<void> {
-    return this.authPut<void>(`/admin/users/${userId}/status`, { isActive });
+    return this.put<void>(`/admin/users/${userId}/status`, { isActive });
   }
 
   // Boat owner başvurularını getir (Admin only)
@@ -266,7 +177,7 @@ class AuthService extends BaseService {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
   }[]> {
     // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.authGet<any[]>("/admin/boat-owner-applications");
+    // return this.get<any[]>("/admin/boat-owner-applications");
     
     // Mock data - örnek boat owner başvuruları
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -297,7 +208,7 @@ class AuthService extends BaseService {
   // Boat owner başvurusunu onayla (Admin only)
   public async approveBoatOwnerApplication(applicationId: number): Promise<void> {
     // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
+    // return this.put<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
     
     // Mock onay işlemi
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -306,7 +217,7 @@ class AuthService extends BaseService {
   // Boat owner başvurusunu reddet (Admin only)
   public async rejectBoatOwnerApplication(applicationId: number, reason?: string): Promise<void> {
     // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.authPut<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
+    // return this.put<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
     
     // Mock red işlemi
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -314,17 +225,17 @@ class AuthService extends BaseService {
 
   // Kullanıcıyı ID ile getir (Admin only)
   public async getUserById(userId: number): Promise<AuthUser> {
-    return this.authGet<AuthUser>(`/admin/users/${userId}`);
+    return this.get<AuthUser>(`/admin/users/${userId}`);
   }
 
   // Kullanıcı arama (Admin only)
   public async searchUsers(query: string): Promise<AuthUser[]> {
-    return this.authGet<AuthUser[]>(`/admin/users/search?q=${encodeURIComponent(query)}`);
+    return this.get<AuthUser[]>(`/admin/users/search?q=${encodeURIComponent(query)}`);
   }
 
   // Role göre kullanıcıları filtrele (Admin only)
   public async getUsersByRole(role: UserType): Promise<AuthUser[]> {
-    return this.authGet<AuthUser[]>(`/admin/users?role=${role}`);
+    return this.get<AuthUser[]>(`/admin/users?role=${role}`);
   }
 
   // **BOAT OWNER BAŞVURU FONKSİYONLARI**
@@ -386,7 +297,7 @@ class AuthService extends BaseService {
   } | null> {
     // Backend henüz hazır olmadığı için mock data kullanıyoruz
     // try {
-    //   return await this.authGet<any>("/boat-owner-application/my");
+    //   return await this.get<any>("/boat-owner-application/my");
     // } catch (error) {
     //   // Başvuru yoksa null döner
     //   return null;
@@ -409,7 +320,7 @@ class AuthService extends BaseService {
   // Boat owner başvurusu iptal et
   public async cancelBoatOwnerApplication(): Promise<void> {
     // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.authDelete<void>("/boat-owner-application/my");
+    // return this.delete<void>("/boat-owner-application/my");
     
     // Mock başvuru iptal etme simülasyonu
     await new Promise(resolve => setTimeout(resolve, 500));
