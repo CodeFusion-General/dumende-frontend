@@ -10,8 +10,13 @@ class HttpClient {
   private api: AxiosInstance;
 
   private constructor() {
+    // Use environment variable for API base URL, fallback to /api for development proxy
+    const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+    const timeout = parseInt(import.meta.env.VITE_API_TIMEOUT || "30000");
+    
     this.api = axios.create({
-      baseURL: "/api",
+      baseURL,
+      timeout,
       headers: {
         "Content-Type": "application/json",
       },

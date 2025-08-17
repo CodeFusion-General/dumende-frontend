@@ -1,0 +1,57 @@
+# Docker Compose for Dumende Frontend
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://api.dumende.com/api}
+        - VITE_APP_ENVIRONMENT=${VITE_APP_ENVIRONMENT:-production}
+        - VITE_ENABLE_ANALYTICS=${VITE_ENABLE_ANALYTICS:-true}
+    container_name: dumende-frontend
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dumende-frontend.rule=Host(`dumende.com`)"
+      - "traefik.http.routers.dumende-frontend.tls=true"
+      - "traefik.http.routers.dumende-frontend.tls.certresolver=letsencrypt"
+    networks:
+      - dumende-network
+
+  # Optional: Development override
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8080/api}
+        - VITE_APP_ENVIRONMENT=development
+        - VITE_ENABLE_DEBUG_MODE=true
+    container_name: dumende-frontend-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev
+    networks:
+      - dumende-network
+
+networks:
+  dumende-network:
+    external: true

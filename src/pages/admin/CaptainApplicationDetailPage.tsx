@@ -163,3 +163,4 @@ const CaptainApplicationDetailPage: React.FC = () => {
 export default CaptainApplicationDetailPage;
 
 
+
