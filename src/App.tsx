@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AuthNotificationsProvider from "./components/auth/AuthNotificationsProvider";
+import { Analytics } from "@vercel/analytics/react";
 import { RoleGuard } from "@/components/auth/RoleGuard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { UserType } from "@/types/auth.types";
@@ -440,6 +441,7 @@ const App = () => {
                 </main>
                 <Toaster />
                 <Sonner />
+                <Analytics />
               </TooltipProvider>
             </BrowserRouter>
           </AuthNotificationsProvider>
