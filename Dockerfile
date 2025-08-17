@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Dumende Frontend
 # Stage 1: Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
