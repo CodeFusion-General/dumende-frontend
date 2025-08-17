@@ -53,18 +53,29 @@ class HttpClient {
       (response) => response,
       async (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Token expired veya invalid - auth verilerini temizle
-          tokenUtils.clearAllAuthData();
+          // Check if this is a public endpoint that doesn't require auth
+          const requestUrl = error.config?.url || '';
+          const publicEndpoints = ['/boats', '/tours', '/auth/register', '/auth/login'];
+          const isPublicEndpoint = publicEndpoints.some(endpoint => 
+            requestUrl.includes(endpoint) && !requestUrl.includes('/my-') && !requestUrl.includes('/owner')
+          );
           
-          // Captain panelindeyse captain login'e, normal sayfadaysa ana sayfaya yönlendir
-          const currentPath = window.location.pathname;
-          if (currentPath.startsWith('/captain')) {
-            window.location.href = "/?auth=true"; // Auth modal'ı açmak için
-          } else if (currentPath.startsWith('/admin')) {
-            window.location.href = "/?auth=true"; // Auth modal'ı açmak için  
-          } else {
-            // Normal sayfalarda auth modal'ı aç
-            window.location.href = "/?auth=true";
+          // Only redirect if this is not a public endpoint or if we have auth token
+          if (!isPublicEndpoint || tokenUtils.hasAuthToken()) {
+            // Token expired veya invalid - auth verilerini temizle
+            tokenUtils.clearAllAuthData();
+            
+            // Only redirect if we're not already on auth page
+            const currentPath = window.location.pathname;
+            const currentSearch = window.location.search;
+            
+            if (!currentSearch.includes('auth=true')) {
+              if (currentPath.startsWith('/captain') || currentPath.startsWith('/admin')) {
+                window.location.href = "/?auth=true";
+              } else if (currentPath !== '/') {
+                window.location.href = "/?auth=true";
+              }
+            }
           }
         }
         return Promise.reject(error);
