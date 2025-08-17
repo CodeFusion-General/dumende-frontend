@@ -102,8 +102,9 @@ class ReviewService extends BaseService {
     return this.get<number>(`/tour/${tourId}/count`);
   }
 
+  // Ana sayfa testimonials için public endpoint
   public async getReviewsByMinRating(minRating: number): Promise<ReviewDTO[]> {
-    return this.get<ReviewDTO[]>(`/rating/${minRating}`);
+    return this.getPublic<ReviewDTO[]>(`/rating/${minRating}`);
   }
 
   public async deleteReviewsByBoatId(boatId: number): Promise<void> {

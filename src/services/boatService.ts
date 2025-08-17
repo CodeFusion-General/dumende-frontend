@@ -65,7 +65,7 @@ class BoatService extends BaseService {
   }
 
   public async getBoats(): Promise<BoatDTO[]> {
-    return this.get<BoatDTO[]>("");
+    return this.getPublic<BoatDTO[]>("");
   }
 
   public async getBoatById(id: number): Promise<BoatDTO> {
@@ -188,18 +188,18 @@ class BoatService extends BaseService {
 
   // *** YENİ API'LER - Backend Entegrasyonu ***
 
-  // Lokasyonlar
+  // Lokasyonlar (Ana sayfa için public)
   public async getAllLocations(): Promise<string[]> {
-    return this.get<string[]>("/locations");
+    return this.getPublic<string[]>("/locations");
   }
 
-  // İstatistikler
+  // İstatistikler (Ana sayfa için public)
   public async getLocationStatistics(): Promise<LocationStatistic[]> {
-    return this.get<LocationStatistic[]>("/statistics/by-location");
+    return this.getPublic<LocationStatistic[]>("/statistics/by-location");
   }
 
   public async getTypeStatistics(): Promise<TypeStatistic[]> {
-    return this.get<TypeStatistic[]>("/statistics/by-type");
+    return this.getPublic<TypeStatistic[]>("/statistics/by-type");
   }
 
   public async countBoatsByLocation(location: string): Promise<number> {
@@ -210,14 +210,14 @@ class BoatService extends BaseService {
     return this.get<number>(`/count/type/${encodeURIComponent(type)}`);
   }
 
-  // Gelişmiş arama
+  // Gelişmiş arama (Ana sayfa için public)
   public async advancedSearch(
     searchRequest: AdvancedSearchRequest
   ): Promise<BoatDTO[]> {
-    return this.post<BoatDTO[]>("/search/advanced", searchRequest);
+    return this.postPublic<BoatDTO[]>("/search/advanced", searchRequest);
   }
 
-  // Gelişmiş arama + sayfalama (POST)
+  // Gelişmiş arama + sayfalama (Ana sayfa için public POST)
   public async advancedSearchPaginated(
     searchRequest: AdvancedSearchRequest,
     params?: { page?: number; size?: number; sort?: string }
@@ -236,15 +236,18 @@ class BoatService extends BaseService {
       searchRequest,
       {
         params: { page, size, sort },
-        headers: this.getAuthHeaders(),
+        // No auth headers for public endpoint
+        headers: {
+          "Content-Type": "application/json",
+        }
       }
     );
     return response.data;
   }
 
-  // Arama önerileri (GET)
+  // Arama önerileri (Ana sayfa için public)
   public async getSuggestions(query: string, limit: number = 6): Promise<SearchSuggestion[]> {
-    return this.get<SearchSuggestion[]>(`/suggestions`, { query, limit });
+    return this.getPublic<SearchSuggestion[]>(`/suggestions`, { query, limit });
   }
 
   // Pagination support

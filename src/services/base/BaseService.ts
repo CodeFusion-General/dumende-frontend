@@ -46,6 +46,18 @@ export abstract class BaseService {
     }, `GET ${this.baseUrl}${url}`);
   }
 
+  // Public GET method without auth headers (for homepage/public APIs)
+  protected async getPublic<T>(url: string, params?: any): Promise<T> {
+    return this.executeWithRetry(async () => {
+      const fullUrl = `${this.baseUrl}${url}`;
+      const response: AxiosResponse<T> = await this.api.get(fullUrl, {
+        params,
+        // No auth headers for public endpoints
+      });
+      return response.data;
+    }, `GET_PUBLIC ${this.baseUrl}${url}`);
+  }
+
   protected async post<T>(url: string, data?: any): Promise<T> {
     return this.executeWithRetry(async () => {
       const response: AxiosResponse<T> = await this.api.post(
@@ -55,6 +67,23 @@ export abstract class BaseService {
       );
       return response.data;
     }, `POST ${this.baseUrl}${url}`);
+  }
+
+  // Public POST method without auth headers (for homepage/public APIs)
+  protected async postPublic<T>(url: string, data?: any): Promise<T> {
+    return this.executeWithRetry(async () => {
+      const response: AxiosResponse<T> = await this.api.post(
+        `${this.baseUrl}${url}`,
+        data,
+        {
+          // No auth headers for public endpoints
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+      return response.data;
+    }, `POST_PUBLIC ${this.baseUrl}${url}`);
   }
 
   protected async put<T>(url: string, data?: any): Promise<T> {

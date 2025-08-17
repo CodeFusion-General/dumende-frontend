@@ -217,8 +217,9 @@ class ContactService extends BaseService {
     return this.get("/statistics");
   }
 
+  // Ana sayfa contact form için public endpoint
   public async submitMessage(data: ContactMessage): Promise<ContactResponse> {
-    return this.post<ContactResponse>("/message", data);
+    return this.postPublic<ContactResponse>("/message", data);
   }
 }
 
