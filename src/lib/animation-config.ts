@@ -320,8 +320,6 @@ export class AnimationPerformanceMonitor {
     document.documentElement.style.setProperty("--duration-normal", "100ms");
     document.documentElement.style.setProperty("--duration-slow", "150ms");
     document.body.classList.add("emergency-performance-mode");
-
-    console.warn("Emergency performance mode activated - animations reduced");
   }
 
   getFPS(): number {

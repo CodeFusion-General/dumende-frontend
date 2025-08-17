@@ -39,7 +39,6 @@ export class FineTuningManager {
     this.applyAccessibilityEnhancements();
 
     this.isInitialized = true;
-    console.log("🎨 Fine-tuning system initialized with optimized values");
   }
 
   /**
@@ -172,14 +171,9 @@ export class FineTuningManager {
       const ratio = ColorContrast.getContrastRatio(foreground, background);
 
       if (!ColorContrast.meetsWCAGAA(foreground, background)) {
-        console.warn(
-          `⚠️ Color contrast issue detected for ${name}: ${ratio.toFixed(2)}:1`
-        );
-
         // Store adjustment for potential future use
         this.contrastAdjustments.set(name, `${ratio.toFixed(2)}:1`);
       } else {
-        console.log(`✅ Good contrast for ${name}: ${ratio.toFixed(2)}:1`);
       }
     });
   }
@@ -262,10 +256,6 @@ export class FineTuningManager {
 
     // Add performance optimization class
     document.body.classList.add("performance-optimized");
-
-    console.warn(
-      "🚀 Performance optimizations applied - reduced animation complexity"
-    );
   }
 
   /**

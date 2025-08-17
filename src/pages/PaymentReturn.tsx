@@ -45,9 +45,6 @@ export default function PaymentReturn() {
     const checkPaymentStatus = async () => {
       try {
         setLoading(true);
-        console.log('Checking payment status for booking:', bookingId);
-        console.log('URL params:', { success, status, token });
-
         // Eksik parametreleri (paymentId, status) backend callback'ine takviye et
         await sendSupplementaryCallbackIfNeeded(bookingId, status);
 
@@ -55,19 +52,15 @@ export default function PaymentReturn() {
         const shouldDelay = success === 'true' || status === 'success' || status === 'COMPLETED' || !!token;
         if (shouldDelay) {
           const INITIAL_DELAY_MS = 5000; // 5s bekleme
-          console.log(`Initial delay before status check: ${INITIAL_DELAY_MS}ms`);
           await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY_MS));
         }
 
         // If URL indicates success, use enhanced polling
         if (success === 'true' || status === 'success' || status === 'COMPLETED') {
-          console.log('Payment appears successful, starting enhanced polling...');
-          
           // Use enhanced polling with status updates
           const finalStatus = await paymentService.pollPaymentStatusWithCallback(
             parseInt(bookingId),
             (currentStatus) => {
-              console.log('Polling update:', currentStatus);
               setPaymentStatus(currentStatus);
               setPollingCount(prev => prev + 1);
               
@@ -98,7 +91,6 @@ export default function PaymentReturn() {
           }
         } else {
           // Just check current status once, but use manual check for accuracy
-          console.log('Checking current payment status...');
           const currentStatus = await paymentService.checkAndUpdatePaymentStatus(parseInt(bookingId));
           setPaymentStatus(currentStatus);
           
@@ -153,10 +145,8 @@ export default function PaymentReturn() {
         paymentId: info.paymentId,
         status: statusParam || 'success'
       }).toString();
-      console.log('Supplementary callback (return page):', qs);
       await fetch(`/api/payments/callback?${qs}`, { method: 'GET', credentials: 'include' });
     } catch (e) {
-      console.warn('Supplementary callback (return page) failed:', e);
     }
   };
 
@@ -263,8 +253,6 @@ export default function PaymentReturn() {
     
     setChecking(true);
     try {
-      console.log('Manual payment status check for booking:', bookingId);
-      
       // Use the enhanced check method
       const updatedStatus = await paymentService.checkAndUpdatePaymentStatus(parseInt(bookingId));
       setPaymentStatus(updatedStatus);

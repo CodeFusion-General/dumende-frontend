@@ -25,7 +25,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
 
   useEffect(() => {
     const handlePopState = () => {
-      console.log('🔄 Browser navigation detected:', window.location.href);
+
       checkForCallbackResult();
     };
     window.addEventListener('popstate', handlePopState);
@@ -39,7 +39,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
       const status = urlParams.get('status');
       const returnedBookingId = urlParams.get('bookingId');
       const errorText = urlParams.get('error');
-      console.log('🔍 Checking URL params:', { status, returnedBookingId, error: errorText });
+
       // Backend'e eksik paramları (paymentId, status) tamamlayan ek callback isteği gönder
       if (status && returnedBookingId === String(bookingId)) {
         sendSupplementaryCallbackIfNeeded(status);
@@ -59,7 +59,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
         setStep('card-input');
       }
     } catch (e) {
-      console.warn('URL parse failed:', e);
+
     }
   };
 
@@ -83,7 +83,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
       // GET ile çağır; yönlendirme fetch kapsamında kalacak, sayfa konumunu değiştirmez
       await fetch(`/api/payments/callback?${qs}`, { method: 'GET', credentials: 'include' });
     } catch (e) {
-      console.warn('Supplementary callback failed:', e);
+
     }
   };
 
@@ -101,7 +101,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
       setBinInfo(data);
       setInstallmentOptions(data.installmentPrices || []);
     } catch (err) {
-      console.warn('BIN check error:', err);
+
     }
   };
 
@@ -231,7 +231,7 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
     } catch {}
 
     if (typeof window !== 'undefined' && html.includes('action=') && html.includes('mdStatus')) {
-      console.debug('3DS form içerik doğrulandı');
+
     }
 
     try {
@@ -461,5 +461,4 @@ const ThreeDSPaymentFlow: React.FC<Props> = ({ bookingId, totalAmount }) => {
 };
 
 export default ThreeDSPaymentFlow;
-
 

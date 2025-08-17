@@ -299,7 +299,7 @@ const BoatListing = () => {
               signedUrlCacheRef.current[imageUrl] = imageUrl;
               newValidImages.push(imageUrl);
             } catch (error) {
-              console.warn('Failed to get signed URL for:', imageUrl, error);
+
               signedUrlCacheRef.current[imageUrl] = imageUrl; // Fallback to original
               newValidImages.push(imageUrl);
             } finally {

@@ -225,7 +225,6 @@ export class DebouncedPoller {
 
       // Stop polling if max retries exceeded
       if (this.state.retryCount >= this.options.maxRetries) {
-        console.warn("Max polling retries exceeded, stopping polling");
         this.stop();
         return;
       }

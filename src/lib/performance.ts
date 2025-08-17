@@ -394,9 +394,6 @@ export class AnimationOptimizer {
         // Downgrade to medium performance if struggling
         this.optimizationLevel = "medium";
         this.applyOptimizations();
-        console.warn(
-          "Animation performance degraded, applying medium optimizations"
-        );
       }
     });
   }
@@ -501,9 +498,6 @@ export class GlobalPerformanceManager {
         performanceIssueCount++;
 
         if (performanceIssueCount >= 3) {
-          console.warn(
-            "Persistent performance issues detected, applying fallbacks"
-          );
           this.fallbackSystem.applyFallbacksToDocument();
           performanceIssueCount = 0;
         }

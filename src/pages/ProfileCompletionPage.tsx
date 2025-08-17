@@ -133,7 +133,6 @@ const ProfileCompletionPage: React.FC = () => {
 
           setInitialFormData(prefill);
         } catch (e) {
-          console.warn("Kullanıcı bilgileri alınamadı, boş form gösteriliyor.", e);
         } finally {
           setIsInitializing(false);
         }

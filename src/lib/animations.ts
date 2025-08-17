@@ -558,10 +558,6 @@ export const AnimationUtils = {
 
     // Disable complex animations
     root.classList.add("emergency-performance-mode");
-
-    console.warn(
-      "Emergency performance mode activated - complex animations disabled"
-    );
   },
 
   // Cleanup

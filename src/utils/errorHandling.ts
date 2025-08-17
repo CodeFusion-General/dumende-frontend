@@ -322,11 +322,6 @@ export async function retryOperation<T>(
       const delay = baseDelay * Math.pow(2, attempt - 1);
       const jitter = Math.random() * 0.1 * delay;
       const totalDelay = Math.min(delay + jitter, 10000); // Cap at 10 seconds
-
-      console.log(
-        `Retrying operation in ${totalDelay}ms (attempt ${attempt}/${maxRetries})`
-      );
-
       await new Promise((resolve) => setTimeout(resolve, totalDelay));
     }
   }

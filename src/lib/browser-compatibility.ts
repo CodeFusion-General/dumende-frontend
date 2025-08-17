@@ -584,9 +584,6 @@ export class BrowserCompatibilityManager {
    */
   logCompatibilityInfo() {
     console.group("Browser Compatibility Information");
-    console.log("Browser:", this.browserInfo);
-    console.log("Feature Support:", this.featureSupport);
-    console.log("Fallbacks Applied:", this.fallbacksApplied);
     console.groupEnd();
   }
 }

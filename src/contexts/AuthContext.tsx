@@ -49,25 +49,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (storedToken.includes(".") && storedUser.id && storedUser.role) {
             setToken(storedToken);
             setUser(storedUser);
-            console.log("Auth state initialized from cookies:", {
-              hasToken: !!storedToken,
-              userId: storedUser.id,
-              role: storedUser.role,
-              isProfileComplete: storedUser.isProfileComplete,
-              accountId: storedUser.accountId,
-            });
           } else {
             // Geçersiz data varsa temizle
-            console.warn("Invalid auth data found in cookies, clearing...");
             tokenUtils.clearAllAuthData();
           }
         } else if (storedToken || storedUser) {
           // Eksik data varsa (sadece token veya sadece user) temizle
-          console.warn("Incomplete auth data found in cookies, clearing...");
           tokenUtils.clearAllAuthData();
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
         // Hatalı data varsa temizle
         tokenUtils.clearAllAuthData();
       } finally {
@@ -99,7 +89,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Çifte kayıt problemini önlemek için tokenUtils'i tekrar çağırmıyoruz
     } catch (error) {
-      console.error("Login error:", error);
       // Hata durumunda auth verilerini temizle
       tokenUtils.clearAllAuthData();
       setToken(null);
@@ -132,7 +121,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Çifte kayıt problemini önlemek için tokenUtils'i tekrar çağırmıyoruz
       return response;
     } catch (error) {
-      console.error("Register error:", error);
       // Hata durumunda auth verilerini temizle
       tokenUtils.clearAllAuthData();
       setToken(null);
@@ -173,7 +161,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         dateOfBirth: user?.dateOfBirth,
       });
     } catch (error) {
-      console.error("Token refresh error:", error);
       // Refresh token başarısız olursa tüm auth verilerini temizle
       tokenUtils.clearAllAuthData();
       setToken(null);
@@ -250,11 +237,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(updatedUser);
       tokenUtils.setUserData(updatedUser);
 
-      console.log("User profile updated after completion:", {
-        userId: updatedUser.id,
-        isComplete: updatedUser.isProfileComplete,
-        hasProfileImage: !!updatedUser.profileImage,
-      });
     }
   };
 

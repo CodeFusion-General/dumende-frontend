@@ -24,6 +24,10 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      // Prevent console statements in production
+      "no-console": ["warn", { 
+        "allow": ["error"] // Only allow console.error for critical errors
+      }],
     },
   }
 );
