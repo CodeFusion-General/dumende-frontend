@@ -13,10 +13,17 @@ class HttpClient {
     // Use environment variable for API base URL
     // In production, should be set to https://dumenden-backend-pliz2d45kq-ew.a.run.app/api
     // In development, fallback to /api for development proxy
-    const baseURL = import.meta.env.VITE_API_BASE_URL || 
+    let baseURL = import.meta.env.VITE_API_BASE_URL || 
       (import.meta.env.MODE === 'production' 
-        ? "https://dumenden-backend-pliz2d45kq-ew.a.run.app/api"
-        : "/api");
+        ? "https://dumenden-backend-pliz2d45kq-ew.a.run.app"
+        : "");
+    
+    // Ensure /api suffix is always present
+    if (baseURL && !baseURL.endsWith('/api')) {
+      baseURL = baseURL.replace(/\/$/, '') + '/api';
+    } else if (!baseURL) {
+      baseURL = '/api';
+    }
     const timeout = parseInt(import.meta.env.VITE_API_TIMEOUT || "30000");
     
     this.api = axios.create({
