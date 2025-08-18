@@ -8,17 +8,24 @@ import {
 } from "../../hooks/useLowEndOptimization";
 
 // Lazy load components for better performance
-const RegularTestimonials = lazy(() => import("../home/Testimonials"));
+const RegularTestimonials = lazy(() =>
+  import("../home/Testimonials").catch(
+    () => import("../simplified/SimplifiedTestimonials")
+  )
+);
 const SimplifiedTestimonials = lazy(
   () => import("../simplified/SimplifiedTestimonials")
 );
 
-const RegularImageGallery = lazy(() => import("../ui/ImageGallery"));
+// Use simplified components as fallbacks for missing regular components
+const RegularImageGallery = lazy(
+  () => import("../simplified/SimplifiedImageGallery")
+);
 const SimplifiedImageGallery = lazy(
   () => import("../simplified/SimplifiedImageGallery")
 );
 
-const RegularBoatCard = lazy(() => import("../boats/BoatCard"));
+const RegularBoatCard = lazy(() => import("../simplified/SimplifiedBoatCard"));
 const SimplifiedBoatCard = lazy(
   () => import("../simplified/SimplifiedBoatCard")
 );
