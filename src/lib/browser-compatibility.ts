@@ -2,6 +2,32 @@
  * Browser Compatibility and Feature Detection Utilities
  */
 
+export interface MobileFeatureFlags {
+  enableTouchOptimizations: boolean;
+  enableViewportFixes: boolean;
+  enableSafariWorkarounds: boolean;
+  enableAndroidOptimizations: boolean;
+  enableReducedMotion: boolean;
+  enableLowEndDeviceMode: boolean;
+  enableOfflineSupport: boolean;
+  enablePWAFeatures: boolean;
+  enableAdaptiveLoading: boolean;
+  enableMemoryOptimizations: boolean;
+}
+
+export interface MobileBrowserQuirks {
+  safariAddressBarResize: boolean;
+  safariViewportBugs: boolean;
+  safariScrollBounce: boolean;
+  safariInputZoom: boolean;
+  androidKeyboardResize: boolean;
+  androidBackButtonHandling: boolean;
+  androidChromeTabSwitching: boolean;
+  touchDelayIssues: boolean;
+  orientationChangeDelay: boolean;
+  memoryLimitations: boolean;
+}
+
 export interface BrowserInfo {
   name: string;
   version: string;
@@ -13,6 +39,19 @@ export interface BrowserInfo {
   supportsIntersectionObserver: boolean;
   supportsWebAnimations: boolean;
   supportsES6: boolean;
+  // Mobile-specific properties
+  isMobile: boolean;
+  isMobileSafari: boolean;
+  isAndroidChrome: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+  platform: string;
+  deviceType: "mobile" | "tablet" | "desktop";
+  hasNotch: boolean;
+  supportsViewportUnits: boolean;
+  supportsTouch: boolean;
+  supportsOrientationChange: boolean;
+  hasAddressBarIssues: boolean;
 }
 
 export interface FeatureSupport {
@@ -30,6 +69,27 @@ export interface FeatureSupport {
   boxShadow: boolean;
   opacity: boolean;
   rgba: boolean;
+  // Mobile-specific features
+  touchEvents: boolean;
+  pointerEvents: boolean;
+  deviceMotion: boolean;
+  deviceOrientation: boolean;
+  vibration: boolean;
+  webGL: boolean;
+  webGL2: boolean;
+  serviceWorker: boolean;
+  pushNotifications: boolean;
+  webShare: boolean;
+  fullscreen: boolean;
+  pictureInPicture: boolean;
+  webRTC: boolean;
+  geolocation: boolean;
+  camera: boolean;
+  microphone: boolean;
+  battery: boolean;
+  networkInformation: boolean;
+  paymentRequest: boolean;
+  webAuthn: boolean;
 }
 
 /**
@@ -38,11 +98,15 @@ export interface FeatureSupport {
 export class BrowserCompatibilityManager {
   private browserInfo: BrowserInfo;
   private featureSupport: FeatureSupport;
+  private mobileFeatureFlags: MobileFeatureFlags;
+  private mobileBrowserQuirks: MobileBrowserQuirks;
   private fallbacksApplied = false;
 
   constructor() {
     this.browserInfo = this.detectBrowser();
     this.featureSupport = this.detectFeatureSupport();
+    this.mobileFeatureFlags = this.initializeMobileFeatureFlags();
+    this.mobileBrowserQuirks = this.detectMobileBrowserQuirks();
     this.init();
   }
 
@@ -68,30 +132,58 @@ export class BrowserCompatibilityManager {
     let version = "0";
     let isModern = false;
 
+    // Mobile detection
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        userAgent
+      );
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+    const isMobileSafari =
+      isIOS && /Safari/.test(userAgent) && !/CriOS|FxiOS/.test(userAgent);
+    const isAndroidChrome =
+      isAndroid && /Chrome/.test(userAgent) && !/Edge/.test(userAgent);
+
+    // Platform detection
+    let platform = "unknown";
+    if (isIOS) platform = "ios";
+    else if (isAndroid) platform = "android";
+    else if (userAgent.includes("Windows")) platform = "windows";
+    else if (userAgent.includes("Mac")) platform = "macos";
+    else if (userAgent.includes("Linux")) platform = "linux";
+
+    // Device type detection
+    let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+    if (isMobile) {
+      deviceType = /iPad|Android(?!.*Mobile)/.test(userAgent)
+        ? "tablet"
+        : "mobile";
+    }
+
     // Chrome
     if (userAgent.includes("Chrome") && !userAgent.includes("Edg")) {
-      name = "Chrome";
+      name = isAndroidChrome ? "Chrome Mobile" : "Chrome";
       const match = userAgent.match(/Chrome\/(\d+)/);
       version = match ? match[1] : "0";
-      isModern = parseInt(version) >= 80;
+      isModern = parseInt(version) >= (isMobile ? 70 : 80);
     }
     // Firefox
     else if (userAgent.includes("Firefox")) {
-      name = "Firefox";
+      name = isMobile ? "Firefox Mobile" : "Firefox";
       const match = userAgent.match(/Firefox\/(\d+)/);
       version = match ? match[1] : "0";
-      isModern = parseInt(version) >= 75;
+      isModern = parseInt(version) >= (isMobile ? 68 : 75);
     }
     // Safari
     else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
-      name = "Safari";
+      name = isMobileSafari ? "Mobile Safari" : "Safari";
       const match = userAgent.match(/Version\/(\d+)/);
       version = match ? match[1] : "0";
-      isModern = parseInt(version) >= 13;
+      isModern = parseInt(version) >= (isMobile ? 12 : 13);
     }
     // Edge
     else if (userAgent.includes("Edg")) {
-      name = "Edge";
+      name = isMobile ? "Edge Mobile" : "Edge";
       const match = userAgent.match(/Edg\/(\d+)/);
       version = match ? match[1] : "0";
       isModern = parseInt(version) >= 80;
@@ -104,10 +196,37 @@ export class BrowserCompatibilityManager {
       isModern = false; // IE is never considered modern for our purposes
     }
 
-    return {
+    // Create basic browser info first
+    const basicInfo = {
       name,
       version,
       isModern,
+      isMobile,
+      isMobileSafari,
+      isAndroidChrome,
+      isIOS,
+      isAndroid,
+      platform,
+      deviceType,
+    };
+
+    // Then add feature tests that don't depend on this.browserInfo
+    return {
+      ...basicInfo,
+      hasNotch:
+        CSS.supports("padding-top", "env(safe-area-inset-top)") ||
+        CSS.supports("padding-top", "constant(safe-area-inset-top)"),
+      supportsViewportUnits: (() => {
+        const testEl = document.createElement("div");
+        testEl.style.height = "100vh";
+        testEl.style.width = "100vw";
+        return testEl.style.height !== "" && testEl.style.width !== "";
+      })(),
+      supportsTouch: "ontouchstart" in window || navigator.maxTouchPoints > 0,
+      supportsOrientationChange: "onorientationchange" in window,
+      hasAddressBarIssues:
+        isMobileSafari ||
+        (isIOS && window.innerHeight !== document.documentElement.clientHeight),
       supportsBackdropFilter: this.testBackdropFilter(),
       supportsGridLayout: this.testCSSGrid(),
       supportsFlexbox: this.testFlexbox(),
@@ -137,6 +256,27 @@ export class BrowserCompatibilityManager {
       boxShadow: this.testBoxShadow(),
       opacity: this.testOpacity(),
       rgba: this.testRGBA(),
+      // Mobile-specific features
+      touchEvents: this.testTouchEvents(),
+      pointerEvents: this.testPointerEvents(),
+      deviceMotion: this.testDeviceMotion(),
+      deviceOrientation: this.testDeviceOrientation(),
+      vibration: this.testVibration(),
+      webGL: this.testWebGL(),
+      webGL2: this.testWebGL2(),
+      serviceWorker: this.testServiceWorker(),
+      pushNotifications: this.testPushNotifications(),
+      webShare: this.testWebShare(),
+      fullscreen: this.testFullscreen(),
+      pictureInPicture: this.testPictureInPicture(),
+      webRTC: this.testWebRTC(),
+      geolocation: this.testGeolocation(),
+      camera: this.testCamera(),
+      microphone: this.testMicrophone(),
+      battery: this.testBattery(),
+      networkInformation: this.testNetworkInformation(),
+      paymentRequest: this.testPaymentRequest(),
+      webAuthn: this.testWebAuthn(),
     };
   }
 
@@ -219,6 +359,228 @@ export class BrowserCompatibilityManager {
   }
 
   /**
+   * Mobile-specific detection methods
+   */
+  private detectNotch(): boolean {
+    // Check for iPhone X and newer with notch
+    return (
+      CSS.supports("padding-top", "env(safe-area-inset-top)") ||
+      CSS.supports("padding-top", "constant(safe-area-inset-top)")
+    );
+  }
+
+  private testViewportUnits(): boolean {
+    // Test if vh/vw units work properly (Safari has issues)
+    const testEl = document.createElement("div");
+    testEl.style.height = "100vh";
+    testEl.style.width = "100vw";
+    return testEl.style.height !== "" && testEl.style.width !== "";
+  }
+
+  private testTouchSupport(): boolean {
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }
+
+  private testOrientationChange(): boolean {
+    return "onorientationchange" in window;
+  }
+
+  private detectAddressBarIssues(): boolean {
+    // Safari on iOS has address bar that affects viewport height
+    return (
+      this.browserInfo?.isMobileSafari ||
+      (this.browserInfo?.isIOS &&
+        window.innerHeight !== document.documentElement.clientHeight)
+    );
+  }
+
+  private testTouchEvents(): boolean {
+    return "ontouchstart" in window;
+  }
+
+  private testPointerEvents(): boolean {
+    return "onpointerdown" in window;
+  }
+
+  private testDeviceMotion(): boolean {
+    return "DeviceMotionEvent" in window;
+  }
+
+  private testDeviceOrientation(): boolean {
+    return "DeviceOrientationEvent" in window;
+  }
+
+  private testVibration(): boolean {
+    return "vibrate" in navigator;
+  }
+
+  private testWebGL(): boolean {
+    try {
+      const canvas = document.createElement("canvas");
+      return !!(
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl")
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private testWebGL2(): boolean {
+    try {
+      const canvas = document.createElement("canvas");
+      return !!canvas.getContext("webgl2");
+    } catch {
+      return false;
+    }
+  }
+
+  private testServiceWorker(): boolean {
+    return "serviceWorker" in navigator;
+  }
+
+  private testPushNotifications(): boolean {
+    return "PushManager" in window && "Notification" in window;
+  }
+
+  private testWebShare(): boolean {
+    return "share" in navigator;
+  }
+
+  private testFullscreen(): boolean {
+    return (
+      "requestFullscreen" in document.documentElement ||
+      "webkitRequestFullscreen" in document.documentElement ||
+      "mozRequestFullScreen" in document.documentElement
+    );
+  }
+
+  private testPictureInPicture(): boolean {
+    return "pictureInPictureEnabled" in document;
+  }
+
+  private testWebRTC(): boolean {
+    return "RTCPeerConnection" in window || "webkitRTCPeerConnection" in window;
+  }
+
+  private testGeolocation(): boolean {
+    return "geolocation" in navigator;
+  }
+
+  private testCamera(): boolean {
+    return (
+      "mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices
+    );
+  }
+
+  private testMicrophone(): boolean {
+    return (
+      "mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices
+    );
+  }
+
+  private testBattery(): boolean {
+    return "getBattery" in navigator;
+  }
+
+  private testNetworkInformation(): boolean {
+    return (
+      "connection" in navigator ||
+      "mozConnection" in navigator ||
+      "webkitConnection" in navigator
+    );
+  }
+
+  private testPaymentRequest(): boolean {
+    return "PaymentRequest" in window;
+  }
+
+  private testWebAuthn(): boolean {
+    return "credentials" in navigator && "create" in navigator.credentials;
+  }
+
+  /**
+   * Initialize mobile feature flags
+   */
+  private initializeMobileFeatureFlags(): MobileFeatureFlags {
+    const isLowEndDevice = this.detectLowEndDevice();
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    return {
+      enableTouchOptimizations:
+        this.browserInfo.isMobile && this.featureSupport.touchEvents,
+      enableViewportFixes:
+        this.browserInfo.isMobileSafari || this.browserInfo.hasAddressBarIssues,
+      enableSafariWorkarounds: this.browserInfo.isMobileSafari,
+      enableAndroidOptimizations: this.browserInfo.isAndroidChrome,
+      enableReducedMotion: prefersReducedMotion || isLowEndDevice,
+      enableLowEndDeviceMode: isLowEndDevice,
+      enableOfflineSupport: this.featureSupport.serviceWorker,
+      enablePWAFeatures:
+        this.browserInfo.isMobile && this.featureSupport.serviceWorker,
+      enableAdaptiveLoading: this.browserInfo.isMobile,
+      enableMemoryOptimizations: this.browserInfo.isMobile || isLowEndDevice,
+    };
+  }
+
+  /**
+   * Detect mobile browser quirks
+   */
+  private detectMobileBrowserQuirks(): MobileBrowserQuirks {
+    return {
+      safariAddressBarResize: this.browserInfo.isMobileSafari,
+      safariViewportBugs: this.browserInfo.isMobileSafari,
+      safariScrollBounce: this.browserInfo.isMobileSafari,
+      safariInputZoom: this.browserInfo.isMobileSafari,
+      androidKeyboardResize: this.browserInfo.isAndroidChrome,
+      androidBackButtonHandling: this.browserInfo.isAndroid,
+      androidChromeTabSwitching: this.browserInfo.isAndroidChrome,
+      touchDelayIssues:
+        this.browserInfo.isMobile && !this.featureSupport.pointerEvents,
+      orientationChangeDelay: this.browserInfo.isMobile,
+      memoryLimitations: this.browserInfo.isMobile || this.detectLowEndDevice(),
+    };
+  }
+
+  /**
+   * Detect low-end device
+   */
+  private detectLowEndDevice(): boolean {
+    // Check device memory (if available)
+    const deviceMemory = (navigator as any).deviceMemory;
+    if (deviceMemory && deviceMemory <= 2) {
+      return true;
+    }
+
+    // Check hardware concurrency (CPU cores)
+    const hardwareConcurrency = navigator.hardwareConcurrency;
+    if (hardwareConcurrency && hardwareConcurrency <= 2) {
+      return true;
+    }
+
+    // Check connection type
+    const connection =
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
+    if (
+      connection &&
+      (connection.effectiveType === "slow-2g" ||
+        connection.effectiveType === "2g")
+    ) {
+      return true;
+    }
+
+    // Fallback: assume older mobile browsers are on low-end devices
+    if (this.browserInfo.isMobile && !this.browserInfo.isModern) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Apply browser-specific CSS classes
    */
   private applyBrowserClasses() {
@@ -233,6 +595,51 @@ export class BrowserCompatibilityManager {
     } else {
       body.classList.add("legacy-browser");
     }
+
+    // Mobile-specific classes
+    if (this.browserInfo.isMobile) {
+      body.classList.add("mobile-device");
+      body.classList.add(`device-${this.browserInfo.deviceType}`);
+      body.classList.add(`platform-${this.browserInfo.platform}`);
+    }
+
+    if (this.browserInfo.isMobileSafari) {
+      body.classList.add("mobile-safari");
+    }
+
+    if (this.browserInfo.isAndroidChrome) {
+      body.classList.add("android-chrome");
+    }
+
+    if (this.browserInfo.hasNotch) {
+      body.classList.add("has-notch");
+    }
+
+    if (this.browserInfo.hasAddressBarIssues) {
+      body.classList.add("has-address-bar-issues");
+    }
+
+    if (this.detectLowEndDevice()) {
+      body.classList.add("low-end-device");
+    }
+
+    // Feature flag classes
+    Object.entries(this.mobileFeatureFlags).forEach(([flag, enabled]) => {
+      if (enabled) {
+        body.classList.add(
+          `feature-${flag.replace(/([A-Z])/g, "-$1").toLowerCase()}`
+        );
+      }
+    });
+
+    // Quirk classes
+    Object.entries(this.mobileBrowserQuirks).forEach(([quirk, hasQuirk]) => {
+      if (hasQuirk) {
+        body.classList.add(
+          `quirk-${quirk.replace(/([A-Z])/g, "-$1").toLowerCase()}`
+        );
+      }
+    });
   }
 
   /**
@@ -580,10 +987,80 @@ export class BrowserCompatibilityManager {
   }
 
   /**
+   * Get mobile feature flags
+   */
+  getMobileFeatureFlags(): MobileFeatureFlags {
+    return this.mobileFeatureFlags;
+  }
+
+  /**
+   * Get mobile browser quirks
+   */
+  getMobileBrowserQuirks(): MobileBrowserQuirks {
+    return this.mobileBrowserQuirks;
+  }
+
+  /**
+   * Check if a mobile feature flag is enabled
+   */
+  isMobileFeatureEnabled(flag: keyof MobileFeatureFlags): boolean {
+    return this.mobileFeatureFlags[flag];
+  }
+
+  /**
+   * Check if browser has a specific mobile quirk
+   */
+  hasMobileQuirk(quirk: keyof MobileBrowserQuirks): boolean {
+    return this.mobileBrowserQuirks[quirk];
+  }
+
+  /**
+   * Enable/disable mobile feature flag
+   */
+  setMobileFeatureFlag(flag: keyof MobileFeatureFlags, enabled: boolean): void {
+    this.mobileFeatureFlags[flag] = enabled;
+
+    // Update CSS class
+    const body = document.body;
+    const className = `feature-${flag
+      .replace(/([A-Z])/g, "-$1")
+      .toLowerCase()}`;
+
+    if (enabled) {
+      body.classList.add(className);
+    } else {
+      body.classList.remove(className);
+    }
+  }
+
+  /**
+   * Get device performance classification
+   */
+  getDevicePerformanceClass(): "low" | "medium" | "high" {
+    if (this.detectLowEndDevice()) {
+      return "low";
+    }
+
+    const deviceMemory = (navigator as any).deviceMemory;
+    const hardwareConcurrency = navigator.hardwareConcurrency;
+
+    if (deviceMemory >= 8 || hardwareConcurrency >= 8) {
+      return "high";
+    }
+
+    return "medium";
+  }
+
+  /**
    * Log browser compatibility information
    */
   logCompatibilityInfo() {
     console.group("Browser Compatibility Information");
+    console.log("Browser Info:", this.browserInfo);
+    console.log("Feature Support:", this.featureSupport);
+    console.log("Mobile Feature Flags:", this.mobileFeatureFlags);
+    console.log("Mobile Browser Quirks:", this.mobileBrowserQuirks);
+    console.log("Device Performance Class:", this.getDevicePerformanceClass());
     console.groupEnd();
   }
 }
@@ -593,6 +1070,11 @@ export class BrowserCompatibilityManager {
  */
 export class PolyfillManager {
   private polyfillsLoaded = new Set<string>();
+  private browserManager: BrowserCompatibilityManager;
+
+  constructor(browserManager?: BrowserCompatibilityManager) {
+    this.browserManager = browserManager || browserCompatibilityManager;
+  }
 
   /**
    * Load polyfill for Intersection Observer
@@ -687,19 +1169,408 @@ export class PolyfillManager {
   }
 
   /**
+   * Load touch event polyfills for older mobile browsers
+   */
+  async loadTouchEventPolyfills(): Promise<void> {
+    if (this.polyfillsLoaded.has("touch-events")) {
+      return;
+    }
+
+    // Add touch event polyfills for browsers that don't support them
+    if (!("ontouchstart" in window) && navigator.maxTouchPoints === 0) {
+      // Create synthetic touch events from mouse events
+      const createTouchEvent = (mouseEvent: MouseEvent, touchType: string) => {
+        const touch = {
+          identifier: 0,
+          target: mouseEvent.target,
+          clientX: mouseEvent.clientX,
+          clientY: mouseEvent.clientY,
+          pageX: mouseEvent.pageX,
+          pageY: mouseEvent.pageY,
+          screenX: mouseEvent.screenX,
+          screenY: mouseEvent.screenY,
+          radiusX: 0,
+          radiusY: 0,
+          rotationAngle: 0,
+          force: 1,
+        };
+
+        const touchEvent = new CustomEvent(touchType, {
+          bubbles: true,
+          cancelable: true,
+        });
+
+        Object.defineProperty(touchEvent, "touches", {
+          value: touchType === "touchend" ? [] : [touch],
+          writable: false,
+        });
+
+        Object.defineProperty(touchEvent, "targetTouches", {
+          value: touchType === "touchend" ? [] : [touch],
+          writable: false,
+        });
+
+        Object.defineProperty(touchEvent, "changedTouches", {
+          value: [touch],
+          writable: false,
+        });
+
+        return touchEvent;
+      };
+
+      // Map mouse events to touch events
+      document.addEventListener("mousedown", (e) => {
+        const touchEvent = createTouchEvent(e, "touchstart");
+        e.target?.dispatchEvent(touchEvent);
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (e.buttons > 0) {
+          const touchEvent = createTouchEvent(e, "touchmove");
+          e.target?.dispatchEvent(touchEvent);
+        }
+      });
+
+      document.addEventListener("mouseup", (e) => {
+        const touchEvent = createTouchEvent(e, "touchend");
+        e.target?.dispatchEvent(touchEvent);
+      });
+    }
+
+    this.polyfillsLoaded.add("touch-events");
+  }
+
+  /**
+   * Load viewport handling polyfills for mobile Safari
+   */
+  async loadViewportPolyfills(): Promise<void> {
+    if (this.polyfillsLoaded.has("viewport-fixes")) {
+      return;
+    }
+
+    const browserInfo = this.browserManager.getBrowserInfo();
+
+    // Safari viewport height fix
+    if (browserInfo.isMobileSafari || browserInfo.hasAddressBarIssues) {
+      const setViewportHeight = () => {
+        // Use the actual viewport height instead of 100vh
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty("--vh", `${vh}px`);
+      };
+
+      // Set initial value
+      setViewportHeight();
+
+      // Update on resize and orientation change
+      window.addEventListener("resize", setViewportHeight);
+      window.addEventListener("orientationchange", () => {
+        // Delay to account for address bar animation
+        setTimeout(setViewportHeight, 500);
+      });
+
+      // Add CSS custom property fallback
+      const style = document.createElement("style");
+      style.textContent = `
+        .viewport-height-fix {
+          height: 100vh; /* Fallback for browsers that don't support custom properties */
+          height: calc(var(--vh, 1vh) * 100);
+        }
+        
+        .full-height {
+          min-height: 100vh;
+          min-height: calc(var(--vh, 1vh) * 100);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Handle safe area insets for devices with notches
+    if (browserInfo.hasNotch) {
+      const style = document.createElement("style");
+      style.textContent = `
+        .safe-area-inset-top {
+          padding-top: env(safe-area-inset-top, 0);
+          padding-top: constant(safe-area-inset-top, 0); /* iOS 11.0-11.2 */
+        }
+        
+        .safe-area-inset-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0);
+          padding-bottom: constant(safe-area-inset-bottom, 0);
+        }
+        
+        .safe-area-inset-left {
+          padding-left: env(safe-area-inset-left, 0);
+          padding-left: constant(safe-area-inset-left, 0);
+        }
+        
+        .safe-area-inset-right {
+          padding-right: env(safe-area-inset-right, 0);
+          padding-right: constant(safe-area-inset-right, 0);
+        }
+        
+        .safe-area-insets {
+          padding-top: env(safe-area-inset-top, 0);
+          padding-bottom: env(safe-area-inset-bottom, 0);
+          padding-left: env(safe-area-inset-left, 0);
+          padding-right: env(safe-area-inset-right, 0);
+          padding-top: constant(safe-area-inset-top, 0);
+          padding-bottom: constant(safe-area-inset-bottom, 0);
+          padding-left: constant(safe-area-inset-left, 0);
+          padding-right: constant(safe-area-inset-right, 0);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    this.polyfillsLoaded.add("viewport-fixes");
+  }
+
+  /**
+   * Load gesture handling polyfills
+   */
+  async loadGesturePolyfills(): Promise<void> {
+    if (this.polyfillsLoaded.has("gesture-handling")) {
+      return;
+    }
+
+    // Add passive event listener support detection and polyfill
+    let supportsPassive = false;
+    try {
+      const opts = Object.defineProperty({}, "passive", {
+        get: function () {
+          supportsPassive = true;
+          return false;
+        },
+      });
+      window.addEventListener("testPassive", () => {}, opts);
+      window.removeEventListener("testPassive", () => {}, opts);
+    } catch (e) {}
+
+    // Store the result globally for use in event listeners
+    (window as any).supportsPassive = supportsPassive;
+
+    // Add touch action polyfill for older browsers
+    if (!CSS.supports("touch-action", "manipulation")) {
+      const style = document.createElement("style");
+      style.textContent = `
+        .touch-action-manipulation {
+          -ms-touch-action: manipulation;
+          touch-action: manipulation;
+        }
+        
+        .touch-action-none {
+          -ms-touch-action: none;
+          touch-action: none;
+        }
+        
+        .touch-action-pan-x {
+          -ms-touch-action: pan-x;
+          touch-action: pan-x;
+        }
+        
+        .touch-action-pan-y {
+          -ms-touch-action: pan-y;
+          touch-action: pan-y;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Add 300ms tap delay fix for older mobile browsers
+    const browserInfo = this.browserManager.getBrowserInfo();
+    if (browserInfo.isMobile && !browserInfo.isModern) {
+      const style = document.createElement("style");
+      style.textContent = `
+        a, button, input, select, textarea, [role="button"], [tabindex] {
+          touch-action: manipulation;
+          -ms-touch-action: manipulation;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Add meta viewport tag if not present
+      if (!document.querySelector('meta[name="viewport"]')) {
+        const viewport = document.createElement("meta");
+        viewport.name = "viewport";
+        viewport.content =
+          "width=device-width, initial-scale=1, user-scalable=no";
+        document.head.appendChild(viewport);
+      }
+    }
+
+    this.polyfillsLoaded.add("gesture-handling");
+  }
+
+  /**
+   * Load ResizeObserver polyfill for older mobile browsers
+   */
+  async loadResizeObserverPolyfill(): Promise<void> {
+    if (
+      "ResizeObserver" in window ||
+      this.polyfillsLoaded.has("resize-observer")
+    ) {
+      return;
+    }
+
+    // Simple ResizeObserver polyfill
+    (window as any).ResizeObserver = class {
+      private callback: Function;
+      private elements = new Set<Element>();
+      private observer?: MutationObserver;
+
+      constructor(callback: Function) {
+        this.callback = callback;
+        this.setupObserver();
+      }
+
+      observe(element: Element) {
+        this.elements.add(element);
+        this.checkResize();
+      }
+
+      unobserve(element: Element) {
+        this.elements.delete(element);
+      }
+
+      disconnect() {
+        this.elements.clear();
+        if (this.observer) {
+          this.observer.disconnect();
+        }
+      }
+
+      private setupObserver() {
+        // Use MutationObserver as fallback
+        this.observer = new MutationObserver(() => {
+          this.checkResize();
+        });
+
+        this.observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["style", "class"],
+        });
+
+        // Also listen to window resize
+        window.addEventListener("resize", () => {
+          this.checkResize();
+        });
+      }
+
+      private checkResize() {
+        const entries: any[] = [];
+        this.elements.forEach((element) => {
+          const rect = element.getBoundingClientRect();
+          entries.push({
+            target: element,
+            contentRect: {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+              top: rect.top,
+              right: rect.right,
+              bottom: rect.bottom,
+              left: rect.left,
+            },
+          });
+        });
+
+        if (entries.length > 0) {
+          this.callback(entries);
+        }
+      }
+    };
+
+    this.polyfillsLoaded.add("resize-observer");
+  }
+
+  /**
+   * Load Web Share API polyfill
+   */
+  async loadWebSharePolyfill(): Promise<void> {
+    if ("share" in navigator || this.polyfillsLoaded.has("web-share")) {
+      return;
+    }
+
+    // Simple Web Share API polyfill
+    (navigator as any).share = async (data: {
+      title?: string;
+      text?: string;
+      url?: string;
+    }) => {
+      // Fallback to copying to clipboard or opening share dialog
+      const shareText = `${data.title || ""}\n${data.text || ""}\n${
+        data.url || ""
+      }`.trim();
+
+      if ("clipboard" in navigator) {
+        try {
+          await navigator.clipboard.writeText(shareText);
+          // Show a simple notification
+          const notification = document.createElement("div");
+          notification.textContent = "Copied to clipboard!";
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 10000;
+            font-size: 14px;
+          `;
+          document.body.appendChild(notification);
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 2000);
+        } catch (err) {
+          // Fallback to prompt
+          prompt("Copy this text to share:", shareText);
+        }
+      } else {
+        // Fallback to prompt
+        prompt("Copy this text to share:", shareText);
+      }
+    };
+
+    this.polyfillsLoaded.add("web-share");
+  }
+
+  /**
+   * Load all mobile-specific polyfills
+   */
+  async loadMobilePolyfills(): Promise<void> {
+    const browserInfo = this.browserManager.getBrowserInfo();
+
+    if (browserInfo.isMobile) {
+      await Promise.all([
+        this.loadTouchEventPolyfills(),
+        this.loadViewportPolyfills(),
+        this.loadGesturePolyfills(),
+        this.loadResizeObserverPolyfill(),
+        this.loadWebSharePolyfill(),
+      ]);
+    }
+  }
+
+  /**
    * Load all necessary polyfills
    */
   async loadAllPolyfills(): Promise<void> {
     await Promise.all([
       this.loadIntersectionObserverPolyfill(),
       this.loadCustomPropertiesPolyfill(),
+      this.loadMobilePolyfills(),
     ]);
   }
 }
 
 // Export singleton instances
 export const browserCompatibilityManager = new BrowserCompatibilityManager();
-export const polyfillManager = new PolyfillManager();
+export const polyfillManager = new PolyfillManager(browserCompatibilityManager);
 
 // Auto-initialize
 if (typeof window !== "undefined") {

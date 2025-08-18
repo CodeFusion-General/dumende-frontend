@@ -295,12 +295,22 @@ export function useResponsiveImage(
 }
 
 /**
- * Hook for image format detection and optimization
+ * Hook for image format detection and optimization with mobile-specific enhancements
+ * Implements Requirements 2.4, 5.3 for format optimization and mobile compression
  */
 export function useImageFormatOptimization() {
   const [supportedFormats, setSupportedFormats] = useState({
     webp: false,
     avif: false,
+    heic: false,
+    jxl: false,
+  });
+
+  const [deviceCapabilities, setDeviceCapabilities] = useState({
+    isMobile: false,
+    isLowEndDevice: false,
+    connectionType: "unknown" as "slow-2g" | "2g" | "3g" | "4g" | "unknown",
+    memoryLimit: 0,
   });
 
   useEffect(() => {
@@ -322,44 +332,256 @@ export function useImageFormatOptimization() {
       }
     };
 
-    setSupportedFormats({
+    const checkHEICSupport = () => {
+      // HEIC support detection (mainly for iOS Safari)
+      const img = new Image();
+      img.src = "data:image/heic;base64,";
+      return img.complete && img.naturalWidth > 0;
+    };
+
+    const checkJXLSupport = () => {
+      // JPEG XL support detection
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      try {
+        return canvas.toDataURL("image/jxl").indexOf("data:image/jxl") === 0;
+      } catch {
+        return false;
+      }
+    };
+
+    const detectDeviceCapabilities = () => {
+      const isMobile =
+        window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+
+      // Detect low-end device based on various factors
+      const isLowEndDevice =
+        ((navigator as any).deviceMemory &&
+          (navigator as any).deviceMemory <= 2) ||
+        ((navigator as any).hardwareConcurrency &&
+          (navigator as any).hardwareConcurrency <= 2) ||
+        /Android.*[2-4]\./i.test(navigator.userAgent);
+
+      // Detect connection type
+      const connection = (navigator as any).connection;
+      const connectionType = connection ? connection.effectiveType : "unknown";
+
+      // Estimate memory limit
+      const memoryLimit = (navigator as any).deviceMemory
+        ? (navigator as any).deviceMemory * 1024 * 1024 * 1024 // Convert GB to bytes
+        : isMobile
+        ? 2 * 1024 * 1024 * 1024
+        : 4 * 1024 * 1024 * 1024; // Default estimates
+
+      return {
+        isMobile,
+        isLowEndDevice,
+        connectionType,
+        memoryLimit,
+      };
+    };
+
+    const formats = {
       webp: checkWebPSupport(),
       avif: checkAVIFSupport(),
-    });
+      heic: checkHEICSupport(),
+      jxl: checkJXLSupport(),
+    };
+
+    setSupportedFormats(formats);
+    setDeviceCapabilities(detectDeviceCapabilities());
 
     // Add classes to document for CSS targeting
     const root = document.documentElement;
-    if (supportedFormats.webp) {
-      root.classList.add("webp");
-    } else {
-      root.classList.add("no-webp");
-    }
+    Object.entries(formats).forEach(([format, supported]) => {
+      if (supported) {
+        root.classList.add(format);
+      } else {
+        root.classList.add(`no-${format}`);
+      }
+    });
 
-    if (supportedFormats.avif) {
-      root.classList.add("avif");
-    } else {
-      root.classList.add("no-avif");
-    }
+    // Add device capability classes
+    const capabilities = detectDeviceCapabilities();
+    if (capabilities.isMobile) root.classList.add("mobile-device");
+    if (capabilities.isLowEndDevice) root.classList.add("low-end-device");
+    root.classList.add(`connection-${capabilities.connectionType}`);
   }, []);
 
   const getOptimizedSrc = useCallback(
-    (originalSrc: string) => {
-      if (supportedFormats.avif) {
-        return originalSrc.replace(/\.(jpg|jpeg|png|webp)$/i, ".avif");
+    (
+      originalSrc: string,
+      options: {
+        quality?: number;
+        width?: number;
+        mobileOptimized?: boolean;
+        compressionLevel?: "low" | "medium" | "high";
+      } = {}
+    ) => {
+      const {
+        quality = 85,
+        width,
+        mobileOptimized = true,
+        compressionLevel = "medium",
+      } = options;
+
+      // Determine optimal format based on support and device capabilities
+      let targetFormat = getOptimalFormat();
+      let targetQuality = quality;
+      let targetWidth = width;
+
+      // Mobile-specific optimizations
+      if (mobileOptimized && deviceCapabilities.isMobile) {
+        // Reduce quality for mobile devices with slow connections
+        if (
+          deviceCapabilities.connectionType === "slow-2g" ||
+          deviceCapabilities.connectionType === "2g"
+        ) {
+          targetQuality = Math.min(targetQuality, 60);
+        } else if (deviceCapabilities.connectionType === "3g") {
+          targetQuality = Math.min(targetQuality, 75);
+        }
+
+        // Reduce size for low-end devices
+        if (deviceCapabilities.isLowEndDevice) {
+          targetQuality = Math.min(targetQuality, 70);
+          if (!targetWidth) {
+            targetWidth = Math.min(window.innerWidth * 2, 1024); // 2x for retina, max 1024
+          }
+        }
+
+        // Apply compression level
+        switch (compressionLevel) {
+          case "high":
+            targetQuality = Math.min(targetQuality, 50);
+            break;
+          case "medium":
+            targetQuality = Math.min(targetQuality, 75);
+            break;
+          case "low":
+            // Keep original quality
+            break;
+        }
       }
 
-      if (supportedFormats.webp) {
-        return originalSrc.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+      // Build optimized URL
+      const url = new URL(originalSrc, window.location.origin);
+
+      // Set format
+      if (targetFormat !== "original") {
+        const extension = `.${targetFormat}`;
+        const currentExtension = originalSrc.match(
+          /\.(jpg|jpeg|png|webp|avif|heic|jxl)$/i
+        );
+        if (currentExtension) {
+          url.pathname = url.pathname.replace(currentExtension[0], extension);
+        }
       }
 
-      return originalSrc;
+      // Set quality
+      url.searchParams.set("q", targetQuality.toString());
+
+      // Set width if specified
+      if (targetWidth) {
+        url.searchParams.set("w", targetWidth.toString());
+      }
+
+      // Add mobile optimization flag
+      if (mobileOptimized && deviceCapabilities.isMobile) {
+        url.searchParams.set("mobile", "1");
+      }
+
+      return url.toString();
     },
-    [supportedFormats]
+    [supportedFormats, deviceCapabilities]
+  );
+
+  const getOptimalFormat = useCallback(() => {
+    // Priority order: AVIF > WebP > HEIC > JXL > Original
+    if (supportedFormats.avif) return "avif";
+    if (supportedFormats.webp) return "webp";
+    if (supportedFormats.heic) return "heic";
+    if (supportedFormats.jxl) return "jxl";
+    return "original";
+  }, [supportedFormats]);
+
+  const getCompressionRecommendation = useCallback(
+    (fileSize: number) => {
+      const { isMobile, isLowEndDevice, connectionType } = deviceCapabilities;
+
+      // File size thresholds (in bytes)
+      const SMALL_FILE = 100 * 1024; // 100KB
+      const MEDIUM_FILE = 500 * 1024; // 500KB
+      const LARGE_FILE = 1024 * 1024; // 1MB
+
+      if (fileSize <= SMALL_FILE) {
+        return "low"; // Minimal compression for small files
+      }
+
+      if (isMobile || isLowEndDevice) {
+        if (connectionType === "slow-2g" || connectionType === "2g") {
+          return "high"; // Aggressive compression for slow connections
+        }
+        if (fileSize >= LARGE_FILE) {
+          return "high"; // Compress large files on mobile
+        }
+        return "medium";
+      }
+
+      if (fileSize >= LARGE_FILE) {
+        return "medium"; // Moderate compression for large files on desktop
+      }
+
+      return "low"; // Minimal compression for desktop
+    },
+    [deviceCapabilities]
+  );
+
+  const generateSrcSet = useCallback(
+    (
+      baseSrc: string,
+      breakpoints: number[] = [320, 480, 640, 768, 1024, 1280, 1536],
+      options: { quality?: number; mobileOptimized?: boolean } = {}
+    ) => {
+      return breakpoints
+        .map((width) => {
+          const optimizedSrc = getOptimizedSrc(baseSrc, {
+            ...options,
+            width,
+          });
+          return `${optimizedSrc} ${width}w`;
+        })
+        .join(", ");
+    },
+    [getOptimizedSrc]
+  );
+
+  const generateSizes = useCallback(
+    (breakpoints: number[] = [320, 480, 640, 768, 1024, 1280, 1536]) => {
+      const sizeRules = breakpoints
+        .reverse()
+        .map((width, index) => {
+          if (index === breakpoints.length - 1) {
+            return `${width}px`;
+          }
+          return `(min-width: ${width}px) ${width}px`;
+        })
+        .join(", ");
+
+      return `${sizeRules}, 100vw`;
+    },
+    []
   );
 
   return {
     supportedFormats,
+    deviceCapabilities,
     getOptimizedSrc,
+    getOptimalFormat,
+    getCompressionRecommendation,
+    generateSrcSet,
+    generateSizes,
   };
 }
 

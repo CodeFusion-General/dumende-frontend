@@ -59,19 +59,26 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
             <TabsTrigger value="register">Hesap Oluştur</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="login" className="space-y-4">
-            <LoginForm
-              onSuccess={handleSuccess}
-              onSwitchToRegister={handleSwitchToRegister}
-            />
+          <TabsContent value="login" className="space-y-4 flex justify-center">
+            <div className="w-full max-w-sm">
+              <LoginForm
+                onSuccess={handleSuccess}
+                onSwitchToRegister={handleSwitchToRegister}
+              />
+            </div>
           </TabsContent>
 
-          <TabsContent value="register" className="space-y-4">
-            <RegisterForm
-              onSuccess={handleSuccess}
-              onSwitchToLogin={handleSwitchToLogin}
-              onProfileCompletionRedirect={handleProfileCompletionRedirect}
-            />
+          <TabsContent
+            value="register"
+            className="space-y-4 flex justify-center"
+          >
+            <div className="w-full max-w-sm">
+              <RegisterForm
+                onSuccess={handleSuccess}
+                onSwitchToLogin={handleSwitchToLogin}
+                onProfileCompletionRedirect={handleProfileCompletionRedirect}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

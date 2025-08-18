@@ -1,13 +1,24 @@
 /**
- * Optimized Image Component with Progressive Loading and Lazy Loading
+ * Mobile-First Optimized Image Component with Progressive Loading and Lazy Loading
+ * Implements Requirements 2.1, 2.2, 2.3, 2.4 for mobile performance optimization
  */
 
-import React, { forwardRef, ImgHTMLAttributes } from "react";
+import React, {
+  forwardRef,
+  ImgHTMLAttributes,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import {
   useImageOptimization,
   useResponsiveImage,
   useImageFormatOptimization,
 } from "../../hooks/useImageOptimization";
+import {
+  useLazyLoading,
+  useProgressiveImageLoading,
+} from "../../hooks/useLazyLoading";
 
 export interface OptimizedImageProps
   extends Omit<
@@ -23,15 +34,21 @@ export interface OptimizedImageProps
   enableResponsive?: boolean;
   enableFormatOptimization?: boolean;
   placeholder?: string;
+  lowQualityPlaceholder?: string;
   breakpoints?: number[];
   quality?: number;
+  priority?: boolean; // For above-the-fold images
+  mobileOptimized?: boolean; // Enable mobile-specific optimizations
+  aspectRatio?: string; // CSS aspect-ratio value
+  objectFit?: "cover" | "contain" | "fill" | "scale-down" | "none";
   onLoad?: () => void;
   onError?: (error: Error) => void;
   className?: string;
 }
 
 /**
- * Optimized Image Component
+ * Mobile-First Optimized Image Component
+ * Implements mobile-specific optimizations for better performance on mobile devices
  */
 export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
   (
@@ -42,11 +59,16 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
       height,
       enableLazyLoading = true,
       enableProgressiveLoading = true,
-      enableResponsive = false,
+      enableResponsive = true, // Default to true for mobile optimization
       enableFormatOptimization = true,
       placeholder,
-      breakpoints = [320, 640, 768, 1024, 1280, 1536],
+      lowQualityPlaceholder,
+      breakpoints = [320, 480, 640, 768, 1024, 1280, 1536], // Mobile-first breakpoints
       quality = 85,
+      priority = false,
+      mobileOptimized = true,
+      aspectRatio,
+      objectFit = "cover",
       onLoad,
       onError,
       className = "",
@@ -54,55 +76,208 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
     },
     ref
   ) => {
+    const [isIntersecting, setIsIntersecting] = useState(
+      !enableLazyLoading || priority
+    );
+    const [loadingState, setLoadingState] = useState<
+      "idle" | "loading" | "loaded" | "error"
+    >("idle");
+    const [currentSrc, setCurrentSrc] = useState<string | null>(null);
+    const imgRef = useRef<HTMLImageElement>(null);
+    const observerRef = useRef<IntersectionObserver | null>(null);
+
+    // Mobile device detection
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+    const isSlowConnection =
+      (typeof navigator !== "undefined" &&
+        "connection" in navigator &&
+        (navigator as any).connection?.effectiveType === "slow-2g") ||
+      (navigator as any).connection?.effectiveType === "2g";
+
     // Format optimization
-    const { getOptimizedSrc } = useImageFormatOptimization();
+    const { getOptimizedSrc, supportedFormats } = useImageFormatOptimization();
     const optimizedSrc = enableFormatOptimization ? getOptimizedSrc(src) : src;
 
-    // Responsive image handling
-    const { srcSet, sizes } = useResponsiveImage(optimizedSrc, breakpoints);
+    // Mobile-optimized responsive image handling
+    const mobileBreakpoints = mobileOptimized
+      ? [320, 480, 640, 768, 1024] // Smaller set for mobile
+      : breakpoints;
 
-    // Progressive and lazy loading
-    const { imageProps, state } = useImageOptimization(optimizedSrc, {
-      enableLazyLoading,
-      enableProgressiveLoading,
+    const { srcSet, sizes } = useResponsiveImage(
+      optimizedSrc,
+      mobileBreakpoints
+    );
+
+    // Generate mobile-optimized placeholder
+    const getPlaceholderSrc = () => {
+      if (lowQualityPlaceholder) return lowQualityPlaceholder;
+      if (placeholder) return placeholder;
+      return generateMobilePlaceholder(width, height, isMobile);
+    };
+
+    // Intersection Observer for lazy loading
+    useEffect(() => {
+      if (!enableLazyLoading || priority) {
+        setIsIntersecting(true);
+        return;
+      }
+
+      const currentImgRef = imgRef.current;
+      if (!currentImgRef) return;
+
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setIsIntersecting(true);
+              observerRef.current?.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: 0.1,
+          rootMargin: mobileOptimized ? "100px" : "50px", // Larger margin for mobile
+        }
+      );
+
+      observerRef.current.observe(currentImgRef);
+
+      return () => {
+        observerRef.current?.disconnect();
+      };
+    }, [enableLazyLoading, priority, mobileOptimized]);
+
+    // Image loading logic
+    useEffect(() => {
+      if (!isIntersecting || loadingState === "loaded") return;
+
+      const loadImage = async () => {
+        setLoadingState("loading");
+
+        try {
+          // For mobile optimization, load lower quality first if slow connection
+          const targetSrc =
+            isSlowConnection && mobileOptimized
+              ? getOptimizedSrcForConnection(optimizedSrc, "slow")
+              : optimizedSrc;
+
+          const img = new Image();
+
+          // Set up responsive attributes
+          if (enableResponsive) {
+            img.srcset = srcSet;
+            img.sizes = sizes;
+          }
+
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Failed to load image"));
+          });
+
+          img.src = targetSrc;
+          setCurrentSrc(targetSrc);
+          setLoadingState("loaded");
+          onLoad?.();
+        } catch (error) {
+          setLoadingState("error");
+          onError?.(error as Error);
+        }
+      };
+
+      loadImage();
+    }, [
+      isIntersecting,
+      optimizedSrc,
+      srcSet,
+      sizes,
       enableResponsive,
-      placeholder,
+      isSlowConnection,
+      mobileOptimized,
       onLoad,
       onError,
-    });
+    ]);
 
-    // Generate placeholder if not provided
-    const placeholderSrc = placeholder || generatePlaceholder(width, height);
+    // Progressive loading effect
+    const getImageStyles = () => {
+      const baseStyles: React.CSSProperties = {
+        width: width ? `${width}px` : "100%",
+        height: height ? `${height}px` : "auto",
+        aspectRatio: aspectRatio,
+        objectFit: objectFit,
+        transition: enableProgressiveLoading ? "all 0.3s ease" : "none",
+        ...props.style,
+      };
+
+      switch (loadingState) {
+        case "loading":
+          return {
+            ...baseStyles,
+            filter: enableProgressiveLoading ? "blur(5px)" : "none",
+            transform: enableProgressiveLoading ? "scale(1.02)" : "none",
+            opacity: 0.8,
+          };
+        case "loaded":
+          return {
+            ...baseStyles,
+            filter: "none",
+            transform: "scale(1)",
+            opacity: 1,
+          };
+        case "error":
+          return {
+            ...baseStyles,
+            opacity: 0.5,
+            filter: "grayscale(100%)",
+          };
+        default:
+          return baseStyles;
+      }
+    };
+
+    const getImageClasses = () => {
+      const classes = [
+        "optimized-image",
+        className,
+        loadingState === "loading" && "image-loading",
+        loadingState === "loaded" && "image-loaded",
+        loadingState === "error" && "image-error",
+        enableProgressiveLoading && "progressive-image",
+        enableLazyLoading && "lazy-image",
+        enableResponsive && "responsive-image",
+        mobileOptimized && "mobile-optimized",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      return classes;
+    };
 
     return (
       <img
         {...props}
-        {...imageProps}
-        ref={ref}
+        ref={(node) => {
+          imgRef.current = node;
+          if (typeof ref === "function") {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+        }}
+        src={currentSrc || getPlaceholderSrc()}
+        srcSet={
+          enableResponsive && loadingState === "loaded" ? srcSet : undefined
+        }
+        sizes={
+          enableResponsive && loadingState === "loaded" ? sizes : undefined
+        }
         alt={alt}
         width={width}
         height={height}
-        srcSet={enableResponsive ? srcSet : undefined}
-        sizes={enableResponsive ? sizes : undefined}
-        className={`optimized-image ${className} ${imageProps.className}`.trim()}
-        loading={enableLazyLoading ? "lazy" : "eager"}
+        className={getImageClasses()}
+        style={getImageStyles()}
+        loading={priority ? "eager" : "lazy"}
         decoding="async"
-        style={{
-          ...props.style,
-          transition: "all 0.3s ease",
-          ...(state.isLoading && {
-            filter: "blur(5px)",
-            transform: "scale(1.02)",
-          }),
-          ...(state.isLoaded && {
-            filter: "none",
-            transform: "scale(1)",
-          }),
-          ...(state.hasError && {
-            opacity: 0.5,
-            filter: "grayscale(100%)",
-          }),
-        }}
+        fetchPriority={priority ? "high" : "auto"}
       />
     );
   }
@@ -310,23 +485,64 @@ export const OptimizedHeroImage: React.FC<OptimizedHeroImageProps> = ({
 };
 
 /**
- * Utility function to generate placeholder
+ * Utility function to generate mobile-optimized placeholder
  */
-function generatePlaceholder(width?: number, height?: number): string {
-  const w = width || 300;
-  const h = height || 200;
+function generateMobilePlaceholder(
+  width?: number,
+  height?: number,
+  isMobile: boolean = false
+): string {
+  const w = width || (isMobile ? 320 : 300);
+  const h = height || (isMobile ? 240 : 200);
 
-  // Generate a simple SVG placeholder
+  // Generate a simple SVG placeholder optimized for mobile
   const svg = `
     <svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#f3f4f6"/>
-      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle" dy=".3em">
-        Loading...
-      </text>
+      <defs>
+        <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#f3f4f6;stop-opacity:1" />
+          <stop offset="50%" style="stop-color:#e5e7eb;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#f3f4f6;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#shimmer)"/>
+      ${
+        !isMobile
+          ? `<text x="50%" y="50%" font-family="Arial, sans-serif" font-size="12" fill="#9ca3af" text-anchor="middle" dy=".3em">Loading...</text>`
+          : ""
+      }
     </svg>
   `;
 
   return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
+/**
+ * Utility function to get optimized source for connection speed
+ */
+function getOptimizedSrcForConnection(
+  src: string,
+  connectionType: "slow" | "fast"
+): string {
+  const url = new URL(src, window.location.origin);
+
+  if (connectionType === "slow") {
+    // Lower quality and smaller size for slow connections
+    url.searchParams.set("q", "60");
+    url.searchParams.set("w", "640");
+  } else {
+    // Higher quality for fast connections
+    url.searchParams.set("q", "85");
+  }
+
+  return url.toString();
+}
+
+/**
+ * Utility function to generate placeholder (legacy support)
+ */
+function generatePlaceholder(width?: number, height?: number): string {
+  return generateMobilePlaceholder(width, height, false);
 }
 
 /**
