@@ -1,4 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+
+// Mobile detection utility
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || window.innerWidth < 768;
+};
 import SearchWidget from "./SearchWidget";
 import DynamicBackground from "../hero/DynamicBackground";
 import FloatingGlassElements from "../hero/FloatingElements";
@@ -11,6 +18,15 @@ const Hero = () => {
   const t = translations[language];
   const heroRef = useRef<HTMLDivElement>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(isMobileDevice());
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const slides = [
     {
@@ -67,15 +83,15 @@ const Hero = () => {
         <DynamicBackground
           images={slideImages}
           currentIndex={currentSlide}
-          transitionDuration={1000}
-          enableTimeBasedShifting={true}
-          enableScrollBasedShifting={true}
+          transitionDuration={isMobile ? 1500 : 1000}
+          enableTimeBasedShifting={!isMobile}
+          enableScrollBasedShifting={!isMobile}
         />
       </div>
 
       {/* Floating Glass Elements (decorative, no pointer capture) */}
       <div className="pointer-events-none z-[2]">
-        <FloatingGlassElements isVisible={true} />
+        <FloatingGlassElements isVisible={!isMobile} />
       </div>
 
       {/* Hero Content */}
