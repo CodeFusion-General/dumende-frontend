@@ -101,11 +101,54 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         onSuccess?.();
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Kayıt olurken bir hata oluştu"
-      );
+      console.error("Registration error:", err);
+
+      // Handle specific validation errors
+      if (err.response?.status === 400) {
+        const errorData = err.response?.data;
+
+        // Check for specific field errors
+        if (errorData?.message) {
+          if (
+            errorData.message.includes("email") ||
+            errorData.message.includes("e-posta")
+          ) {
+            setError(
+              "Bu e-posta adresi zaten kullanılıyor. Lütfen farklı bir e-posta deneyin."
+            );
+          } else if (
+            errorData.message.includes("username") ||
+            errorData.message.includes("kullanıcı")
+          ) {
+            setError(
+              "Bu kullanıcı adı zaten alınmış. Lütfen farklı bir kullanıcı adı deneyin."
+            );
+          } else if (
+            errorData.message.includes("phone") ||
+            errorData.message.includes("telefon")
+          ) {
+            setError(
+              "Bu telefon numarası zaten kayıtlı. Lütfen farklı bir numara deneyin."
+            );
+          } else {
+            setError(errorData.message);
+          }
+        } else if (errorData?.errors) {
+          // Handle field-specific errors if backend returns them
+          const fieldErrors = Object.values(errorData.errors).join(", ");
+          setError(fieldErrors);
+        } else {
+          setError(
+            "Girdiğiniz bilgiler geçersiz. Lütfen kontrol edip tekrar deneyin."
+          );
+        }
+      } else {
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin."
+        );
+      }
     }
   };
 

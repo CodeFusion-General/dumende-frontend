@@ -100,9 +100,52 @@ export const isValidImageUrl = (url: string): boolean => {
   }
 };
 
-// Default image URL for fallback
-export const getDefaultImageUrl = (): string => {
-  return "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
+// Default image URLs for fallback (multiple options)
+const DEFAULT_BOAT_IMAGES = [
+  "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+];
+
+export const getDefaultImageUrl = (index: number = 0): string => {
+  return DEFAULT_BOAT_IMAGES[index % DEFAULT_BOAT_IMAGES.length];
+};
+
+// Test if an image URL is accessible
+export const testImageUrl = (url: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+
+    // Timeout after 5 seconds
+    setTimeout(() => resolve(false), 5000);
+  });
+};
+
+// Get a working image URL with fallback
+export const getWorkingImageUrl = async (
+  primaryUrl: string,
+  fallbackIndex: number = 0
+): Promise<string> => {
+  // First try the primary URL
+  if (await testImageUrl(primaryUrl)) {
+    return primaryUrl;
+  }
+
+  // If primary fails, try default images
+  for (let i = 0; i < DEFAULT_BOAT_IMAGES.length; i++) {
+    const fallbackUrl =
+      DEFAULT_BOAT_IMAGES[(fallbackIndex + i) % DEFAULT_BOAT_IMAGES.length];
+    if (await testImageUrl(fallbackUrl)) {
+      return fallbackUrl;
+    }
+  }
+
+  // If all fail, return a data URL placeholder
+  return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI4MDAiIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iODAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik01ODAgMzgwSDYyMFY0MjBINTgwVjM4MFoiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K";
 };
 
 // Convert backend image URL to full URL

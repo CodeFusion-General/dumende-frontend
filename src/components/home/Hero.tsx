@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react";
 
 // Mobile detection utility
 const isMobileDevice = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  ) || window.innerWidth < 768;
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    ) || window.innerWidth < 768
+  );
 };
 import SearchWidget from "./SearchWidget";
 import DynamicBackground from "../hero/DynamicBackground";
@@ -19,13 +21,13 @@ const Hero = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(isMobileDevice());
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const slides = [
@@ -46,12 +48,12 @@ const Hero = () => {
     },
     {
       image:
-        "https://images.unsplash.com/photo-1586456074778-f3825fde4a70?q=80&w=1920&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?q=80&w=1920&auto=format&fit=crop",
       title: t.hero.slides.corporateEvents,
     },
     {
       image:
-        "https://images.unsplash.com/photo-1595351475754-8a520df0c350?q=80&w=1920&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?q=80&w=1920&auto=format&fit=crop",
       title: t.hero.slides.specialCelebrations,
     },
   ];

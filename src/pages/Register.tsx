@@ -23,7 +23,11 @@ import { toast } from "@/components/ui/use-toast";
 const Register = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const { register: registerUser, getProfileCompletionRedirectPath, updateUserData } = useAuth();
+  const {
+    register: registerUser,
+    getProfileCompletionRedirectPath,
+    updateUserData,
+  } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,14 +143,52 @@ const Register = () => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration failed:", error);
+
+      let errorMessage =
+        language === "tr"
+          ? "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
+          : "An error occurred during registration. Please try again.";
+
+      // Handle specific validation errors
+      if (error.response?.status === 400) {
+        const errorData = error.response?.data;
+
+        if (errorData?.message) {
+          if (
+            errorData.message.includes("email") ||
+            errorData.message.includes("e-posta")
+          ) {
+            errorMessage =
+              language === "tr"
+                ? "Bu e-posta adresi zaten kullanılıyor. Lütfen farklı bir e-posta deneyin."
+                : "This email address is already in use. Please try a different email.";
+          } else if (
+            errorData.message.includes("username") ||
+            errorData.message.includes("kullanıcı")
+          ) {
+            errorMessage =
+              language === "tr"
+                ? "Bu kullanıcı adı zaten alınmış. Lütfen farklı bir kullanıcı adı deneyin."
+                : "This username is already taken. Please try a different username.";
+          } else if (
+            errorData.message.includes("phone") ||
+            errorData.message.includes("telefon")
+          ) {
+            errorMessage =
+              language === "tr"
+                ? "Bu telefon numarası zaten kayıtlı. Lütfen farklı bir numara deneyin."
+                : "This phone number is already registered. Please try a different number.";
+          } else {
+            errorMessage = errorData.message;
+          }
+        }
+      }
+
       toast({
         title: language === "tr" ? "Kayıt Hatası" : "Registration Error",
-        description:
-          language === "tr"
-            ? "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin."
-            : "An error occurred during registration. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
