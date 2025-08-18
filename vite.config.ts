@@ -27,17 +27,8 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: (id) => {
           // Mobile-optimized chunk splitting strategy
-
-          // Keep ALL React ecosystem together to prevent loading issues
-          if (
-            id.includes("react") ||
-            id.includes("@radix-ui/") ||
-            id.includes("react-router-dom") ||
-            id.includes("react-hook-form") ||
-            id.includes("react-dom")
-          ) {
-            return "react-ecosystem";
-          }
+          
+          // Let React ecosystem go to vendor chunk naturally - don't separate it
 
           // Admin/Dashboard - lazy loaded (heavy components)
           if (
@@ -103,7 +94,7 @@ export default defineConfig(({ mode }) => ({
             return "utils";
           }
 
-          // Node modules vendor chunk (fallback)
+          // Node modules vendor chunk (fallback) - include React
           if (id.includes("node_modules")) {
             return "vendor";
           }
@@ -154,7 +145,6 @@ export default defineConfig(({ mode }) => ({
       "axios",
       "framer-motion",
     ],
-    // Force React to be treated as external dependency
     force: true,
   },
 
