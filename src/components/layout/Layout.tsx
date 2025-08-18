@@ -10,10 +10,12 @@ interface LayoutProps {
 
 const Layout = ({ children, isHomePage = false }: LayoutProps) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       <Navbar isHomePage={isHomePage} />
-      <main className={`flex-grow ${isHomePage ? '' : 'pt-16'}`}>
-        {children}
+      <main className={`flex-grow w-full ${isHomePage ? 'pt-0' : 'pt-16 sm:pt-20'} px-0`}>
+        <div className="w-full max-w-full">
+          {children}
+        </div>
       </main>
       <Footer />
     </div>

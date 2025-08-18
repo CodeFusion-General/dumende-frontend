@@ -91,17 +91,17 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
 
   return (
     <header className={getNavbarClasses()}>
-      <div className="container mx-auto px-4 lg:px-6">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-2">
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 w-full max-w-full">
+        <div className="flex items-center justify-between h-14 sm:h-16 w-full">
+          <Link to="/" className="flex items-center space-x-1 sm:space-x-2 min-w-0 flex-shrink-0">
             <Anchor
               strokeWidth={2.5}
-              className={`w-10 h-10 transition-colors duration-300 ${
+              className={`w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-300 ${
                 isScrolled ? "text-[#2c3e50]" : "text-white"
               }`}
             />
             <span
-              className={`font-bold text-xl font-montserrat tracking-wide transition-colors duration-300 ${
+              className={`font-bold text-lg sm:text-xl font-montserrat tracking-wide transition-colors duration-300 truncate ${
                 isScrolled ? "text-[#2c3e50]" : "text-white"
               }`}
             >
@@ -109,7 +109,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-2">
+          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2 flex-1 justify-center max-w-2xl mx-4">
             {[
               { path: "/", label: t.nav.home },
               { path: "/boats", label: t.nav.boats },
@@ -123,7 +123,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
                 key={item.path}
                 to={item.path}
                 className={`
-                  relative px-4 py-2 rounded-xl font-montserrat font-medium tracking-wide
+                  relative px-2 xl:px-4 py-2 rounded-xl font-montserrat font-medium tracking-wide text-sm xl:text-base
                   transition-all duration-300 ease-glass animate-ripple
                   hover:backdrop-blur-sm hover:shadow-lg hover:scale-105
                   ${
@@ -149,16 +149,16 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
             ))}
           </nav>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger
-                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                className={`p-1.5 sm:p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
                   isScrolled
                     ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
                     : "text-white hover:text-accent hover:bg-white/10"
                 }`}
               >
-                <Globe size={20} strokeWidth={2.5} />
+                <Globe size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="border-none mt-2 min-w-[140px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
@@ -178,19 +178,21 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
             </DropdownMenu>
 
             {isAuthenticated && (
-              <NavbarNotification userId={user!.id} isScrolled={isScrolled} />
+              <div className="hidden sm:block">
+                <NavbarNotification userId={user!.id} isScrolled={isScrolled} />
+              </div>
             )}
 
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger
-                  className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                  className={`p-1.5 sm:p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
                     isScrolled
                       ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
                       : "text-white hover:text-accent hover:bg-white/10"
                   }`}
                 >
-                  <User size={20} strokeWidth={2.5} />
+                  <User size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="border-none mt-2 min-w-[200px] p-3 bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 to-indigo-50/80 rounded-2xl" />
@@ -257,14 +259,14 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
               </DropdownMenu>
             ) : (
               <button
-                className={`p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+                className={`p-1.5 sm:p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
                   isScrolled
                     ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
                     : "text-white hover:text-accent hover:bg-white/10"
                 }`}
                 onClick={() => setIsAuthOpen(true)}
               >
-                <User size={20} strokeWidth={2.5} />
+                <User size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               </button>
             )}
 
@@ -275,7 +277,7 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
 
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`md:hidden p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
+              className={`lg:hidden p-1.5 sm:p-2 rounded-xl transition-all duration-300 hover:scale-105 ${
                 isScrolled
                   ? "text-[#2c3e50] hover:text-[#3498db] hover:bg-[#3498db]/10"
                   : "text-white hover:text-accent hover:bg-white/10"
@@ -283,9 +285,9 @@ const Navbar = ({ isHomePage = false }: NavbarProps) => {
               aria-label="Toggle menu"
             >
               {isOpen ? (
-                <X size={20} strokeWidth={2.5} />
+                <X size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               ) : (
-                <Menu size={20} strokeWidth={2.5} />
+                <Menu size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
               )}
             </button>
           </div>

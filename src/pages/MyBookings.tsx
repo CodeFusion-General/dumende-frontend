@@ -181,7 +181,7 @@ const BookingCard: React.FC<{ booking: Booking; language: string; t: any }> = ({
               </div>
               <div>
                 <span className="font-montserrat font-bold text-xl text-[#2c3e50] block">
-                  ${booking.totalPrice.toFixed(2)}
+                  ₺{booking.totalPrice.toFixed(2)}
                 </span>
                 <span className="font-roboto text-xs text-gray-600 uppercase tracking-wide">
                   {t.myBookings.card.totalPrice || 'Total Price'}
