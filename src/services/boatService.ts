@@ -69,7 +69,7 @@ class BoatService extends BaseService {
   }
 
   public async getBoatById(id: number): Promise<BoatDTO> {
-    return this.get<BoatDTO>(`/${id}`);
+    return this.getPublic<BoatDTO>(`/${id}`);
   }
 
   public async createBoat(data: CreateBoatDTO): Promise<BoatDTO> {
@@ -158,7 +158,7 @@ class BoatService extends BaseService {
     return this.delete<void>(`/boat-features/${featureId}`);
   }
 
-  // Search and Filter
+  // Search and Filter (BoatListing sayfası için public)
   public async searchBoats(params: {
     name?: string;
     location?: string;
@@ -183,7 +183,7 @@ class BoatService extends BaseService {
     if (params.startDate) queryParams.append("startDate", params.startDate);
     if (params.endDate) queryParams.append("endDate", params.endDate);
 
-    return this.get<BoatDTO[]>(`/search?${queryParams.toString()}`);
+    return this.getPublic<BoatDTO[]>(`/search?${queryParams.toString()}`);
   }
 
   // *** YENİ API'LER - Backend Entegrasyonu ***

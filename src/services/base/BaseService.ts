@@ -195,6 +195,33 @@ export abstract class BaseService {
     }, `GET_PAGINATED ${this.baseUrl}${url}`);
   }
 
+  // Public pagination support (without auth headers)
+  protected async getPaginatedPublic<T>(
+    url: string,
+    params?: {
+      page?: number;
+      size?: number;
+      sort?: string;
+      [key: string]: any;
+    }
+  ): Promise<{
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+    first: boolean;
+    last: boolean;
+  }> {
+    return this.executeWithRetry(async () => {
+      const response = await this.api.get(`${this.baseUrl}${url}`, {
+        params,
+        // No auth headers for public endpoints
+      });
+      return response.data;
+    }, `GET_PAGINATED_PUBLIC ${this.baseUrl}${url}`);
+  }
+
   // Retry logic for network and server errors
   private async executeWithRetry<T>(
     operation: () => Promise<T>,

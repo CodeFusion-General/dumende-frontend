@@ -14,8 +14,9 @@ class CaptainService extends BaseService {
         return this.get<Captain[]>('', params);
     }
 
+    // BoatListing sayfası için public endpoint
     public async getCaptainById(id: number): Promise<Captain> {
-        return this.get<Captain>(`/${id}`);
+        return this.getPublic<Captain>(`/${id}`);
     }
 
     public async createCaptain(data: CaptainCreateRequest): Promise<Captain> {

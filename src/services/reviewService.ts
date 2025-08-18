@@ -38,13 +38,14 @@ class ReviewService extends BaseService {
     return this.delete<void>(`/${id}`);
   }
 
-  // Boat Reviews
+  // Boat Reviews (BoatListing sayfası için public)
   public async getBoatReviews(boatId: number): Promise<ReviewDTO[]> {
-    return this.get<ReviewDTO[]>(`/boat/${boatId}`);
+    return this.getPublic<ReviewDTO[]>(`/boat/${boatId}`);
   }
 
+  // Boat Rating (BoatListing sayfası için public)
   public async getBoatRating(boatId: number): Promise<number> {
-    return this.get(`/boat/${boatId}/average-rating`);
+    return this.getPublic(`/boat/${boatId}/average-rating`);
   }
 
   // Tour Reviews
@@ -115,7 +116,7 @@ class ReviewService extends BaseService {
     return this.delete<void>(`/tour/${tourId}`);
   }
 
-  // PAGINATION ENDPOINTS
+  // PAGINATION ENDPOINTS (BoatListing sayfası için public)
   public async getBoatReviewsPaginated(
     boatId: number,
     params?: {
@@ -126,7 +127,7 @@ class ReviewService extends BaseService {
     }
   ) {
     const queryString = params ? this.buildQueryString(params) : "";
-    return this.getPaginated<ReviewDTO>(`/boat/${boatId}/paginated?${queryString}`);
+    return this.getPaginatedPublic<ReviewDTO>(`/boat/${boatId}/paginated?${queryString}`);
   }
 
   public async getTourReviewsPaginated(
