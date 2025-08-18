@@ -28,17 +28,15 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Mobile-optimized chunk splitting strategy
 
-          // Critical React - keep React core together with dependents
-          if (id.includes("react/") || id.includes("react-dom/")) {
-            return "critical-react";
-          }
-          
-          // React-dependent UI libraries should stay with React ecosystem
-          if (id.includes("@radix-ui/")) {
-            return "critical-react"; // Keep with React to avoid forwardRef issues
-          }
-          if (id.includes("react-router-dom")) {
-            return "critical-router";
+          // Keep ALL React ecosystem together to prevent loading issues
+          if (
+            id.includes("react") ||
+            id.includes("@radix-ui/") ||
+            id.includes("react-router-dom") ||
+            id.includes("react-hook-form") ||
+            id.includes("react-dom")
+          ) {
+            return "react-ecosystem";
           }
 
           // Admin/Dashboard - lazy loaded (heavy components)
@@ -117,6 +115,9 @@ export default defineConfig(({ mode }) => ({
         chunkFileNames: (chunkInfo) => {
           // Add priority indicators for mobile loading
           const name = chunkInfo.name;
+          if (name?.includes("react-ecosystem")) {
+            return "assets/js/critical/[name]-[hash].js";
+          }
           if (name?.includes("critical")) {
             return "assets/js/critical/[name]-[hash].js";
           }
@@ -142,16 +143,19 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 500, // Reduced to 500kb for mobile awareness
   },
 
-  // Performance optimizations
+  // Performance optimizations - ensure React ecosystem is pre-bundled
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
       "react-router-dom",
+      "react-hook-form",
       "@tanstack/react-query",
       "axios",
       "framer-motion",
     ],
+    // Force React to be treated as external dependency
+    force: true,
   },
 
   plugins: [
