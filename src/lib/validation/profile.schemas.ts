@@ -259,10 +259,10 @@ export const photoUploadSchema = z.object({
 
 // Profile Completion Validation Schemas
 export const addressFormDataSchema = z.object({
-  street: z.string().min(5, "Sokak adresi en az 5 karakter olmalıdır"),
-  city: z.string().min(2, "Şehir en az 2 karakter olmalıdır"),
-  district: z.string().min(2, "İlçe en az 2 karakter olmalıdır"),
-  postalCode: z.string().regex(/^[0-9]{5}$/, "Posta kodu 5 haneli olmalıdır"),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  postalCode: z.string().optional(),
   country: z.string().default("Türkiye"),
 });
 
@@ -279,12 +279,13 @@ export const profileCompletionSchema = z.object({
     .string()
     .regex(/^(\+90|0)?[0-9]{10}$/, "Geçerli bir telefon numarası giriniz"),
   dateOfBirth: z.string().refine((date) => {
+    if (!date || date.trim() === "") return true; // Optional field
     const birthDate = new Date(date);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     return age >= 18 && age <= 100;
-  }, "Yaş 18-100 arasında olmalıdır"),
-  address: addressFormDataSchema,
+  }, "Yaş 18-100 arasında olmalıdır").optional(),
+  address: addressFormDataSchema.optional(),
   profileImage: z
     .instanceof(File)
     .refine(

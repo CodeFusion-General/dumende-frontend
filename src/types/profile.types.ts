@@ -96,10 +96,10 @@ export interface AccountSettingsFormData {
 
 // Profile Completion Types
 export interface AddressFormData {
-  street: string;
-  city: string;
-  district: string;
-  postalCode: string;
+  street?: string;
+  city?: string;
+  district?: string;
+  postalCode?: string;
   country: string;
 }
 
@@ -107,8 +107,8 @@ export interface ProfileFormData {
   firstName: string;
   lastName: string;
   phoneNumber: string;
-  dateOfBirth: string; // ISO format
-  address: AddressFormData;
+  dateOfBirth?: string; // ISO format - optional
+  address?: AddressFormData; // optional
   profileImage?: File;
 }
 

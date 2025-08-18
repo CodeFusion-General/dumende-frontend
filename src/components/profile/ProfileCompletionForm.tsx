@@ -83,7 +83,7 @@ export const ProfileCompletionForm: React.FC<ProfileCompletionFormProps> = ({
       lastName: savedData?.lastName || initialData?.lastName || "",
       phoneNumber: savedData?.phoneNumber || initialData?.phoneNumber || "",
       dateOfBirth: savedData?.dateOfBirth || initialData?.dateOfBirth || "",
-      address: {
+      address: savedData?.address || initialData?.address ? {
         street:
           savedData?.address?.street || initialData?.address?.street || "",
         city: savedData?.address?.city || initialData?.address?.city || "",
@@ -97,7 +97,7 @@ export const ProfileCompletionForm: React.FC<ProfileCompletionFormProps> = ({
           savedData?.address?.country ||
           initialData?.address?.country ||
           "Türkiye",
-      },
+      } : undefined,
       profileImage: initialData?.profileImage || undefined, // Don't restore files from localStorage
     },
     mode: "onChange",
@@ -376,21 +376,15 @@ export const ProfileCompletionForm: React.FC<ProfileCompletionFormProps> = ({
     );
   }
 
-  // Calculate overall progress
-  const totalFields = 9; // firstName, lastName, phoneNumber, dateOfBirth, street, city, district, postalCode, country
-  const completedFields = [
+  // Calculate overall progress (only required fields)
+  const totalRequiredFields = 3; // firstName, lastName, phoneNumber
+  const completedRequiredFields = [
     watchedFormData.firstName,
     watchedFormData.lastName,
     watchedFormData.phoneNumber,
-    watchedFormData.dateOfBirth,
-    watchedFormData.address?.street,
-    watchedFormData.address?.city,
-    watchedFormData.address?.district,
-    watchedFormData.address?.postalCode,
-    watchedFormData.address?.country,
   ].filter((field) => field && field.toString().trim() !== "").length;
 
-  const overallProgress = Math.round((completedFields / totalFields) * 100);
+  const overallProgress = Math.round((completedRequiredFields / totalRequiredFields) * 100);
 
   return (
     <div
