@@ -28,9 +28,14 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Mobile-optimized chunk splitting strategy
 
-          // Critical path - loaded immediately (keep small)
+          // Critical React - keep React core together with dependents
           if (id.includes("react/") || id.includes("react-dom/")) {
             return "critical-react";
+          }
+          
+          // React-dependent UI libraries should stay with React ecosystem
+          if (id.includes("@radix-ui/")) {
+            return "critical-react"; // Keep with React to avoid forwardRef issues
           }
           if (id.includes("react-router-dom")) {
             return "critical-router";
@@ -70,9 +75,9 @@ export default defineConfig(({ mode }) => ({
             return "testimonials";
           }
 
-          // Heavy UI libraries - lazy loaded
-          if (id.includes("@radix-ui/") || id.includes("lucide-react")) {
-            return "ui-heavy";
+          // Icon libraries - can be separate since they don't depend on React internals
+          if (id.includes("lucide-react")) {
+            return "ui-icons";
           }
 
           // Animation libraries - non-critical
