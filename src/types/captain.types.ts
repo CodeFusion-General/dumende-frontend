@@ -81,6 +81,8 @@ export interface CreateCaptainApplicationRequest {
   specializations?: string[];
   bio?: string;
   company?: CompanyInfo;
+  contractApproved: boolean;
+  contractVersion: string;
 }
 
 export interface CreateCaptainApplicationMultipartRequest {
@@ -92,9 +94,38 @@ export interface CreateCaptainApplicationMultipartRequest {
   bio?: string;
   documents?: File[];
   company?: CompanyInfo | string; // string (JSON) veya obje kabul edelim
+  contractApproved: boolean;
+  contractVersion: string;
 }
 
 export interface ReviewCaptainApplicationRequest {
   status: Exclude<CaptainApplicationStatus, "PENDING">; // APPROVED | REJECTED
   rejectionReason?: string; // REJECTED ise zorunlu
+}
+
+// Contract Approval types
+export interface ContractApproval {
+  id: number;
+  accountId: number;
+  userName: string;
+  companyName?: string;
+  userEmail: string;
+  ipAddress: string;
+  approvalDateTime: string;
+  contractVersion: string;
+  browserInfo: string;
+  contractType: string;
+  applicationType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContractApprovalRequest {
+  accountId: number;
+  userName: string;
+  companyName?: string;
+  userEmail: string;
+  contractVersion: string;
+  contractType: string;
+  applicationType?: string;
 }

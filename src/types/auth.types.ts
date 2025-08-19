@@ -23,6 +23,8 @@ export interface RegisterRequest {
   userType: UserType;
   fullName: string;
   phoneNumber: string;
+  contractApproved: boolean;
+  contractVersion: string;
 }
 
 // Backend'deki LoginResponse ile uyumlu

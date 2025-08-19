@@ -18,6 +18,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/locales/translations';
 import { captainApplicationService } from '@/services/captainApplicationService';
 import type { CaptainApplication, CaptainApplicationStatus, CompanyInfo } from '@/types/captain.types';
+import { BOAT_OWNER_SERVICE_CONTRACT, ADDITIONAL_PROTOCOL, CONTRACT_APPROVAL_TEXT, CONTRACT_VERSION } from '@/utils/contractTexts';
+import { getBrowserInfo } from '@/utils/browserInfo';
 
 const BoatOwnerApplication = () => {
   const navigate = useNavigate();
@@ -43,6 +45,10 @@ const BoatOwnerApplication = () => {
     company_landlinePhone: z.string().optional(),
     company_billingAddress: z.string().optional(),
     company_iban: z.string().optional(),
+    // Sözleşme onayı (zorunlu)
+    contractApproved: z.boolean().refine((val) => val === true, {
+      message: 'Sözleşmeyi kabul etmelisiniz'
+    }),
   });
 
   type ApplicationFormData = z.infer<typeof applicationSchema>;
@@ -75,6 +81,7 @@ const BoatOwnerApplication = () => {
       company_landlinePhone: '',
       company_billingAddress: '',
       company_iban: '',
+      contractApproved: false,
     },
   });
 
@@ -145,6 +152,8 @@ const BoatOwnerApplication = () => {
         bio: data.bio,
         documents: documents ? Array.from(documents) : undefined,
         company,
+        contractApproved: data.contractApproved,
+        contractVersion: CONTRACT_VERSION,
       };
 
       const created = await captainApplicationService.createMultipart(payload);
@@ -425,6 +434,50 @@ const BoatOwnerApplication = () => {
                         <Label htmlFor="company_iban">IBAN</Label>
                         <Input id="company_iban" type="text" placeholder="TR.." disabled={isSubmitting || isLoading} {...register('company_iban')} />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Sözleşme Metni ve Onay */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
+                    <h3 className="text-lg font-semibold">Hizmet Sözleşmesi</h3>
+                    
+                    {/* Ana Sözleşme */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Tekne Sahibi ile Platform Arasında Hizmet Sözleşmesi</h4>
+                      <div className="max-h-64 overflow-y-auto border rounded p-3 bg-white text-sm">
+                        <pre className="whitespace-pre-wrap font-sans">{BOAT_OWNER_SERVICE_CONTRACT}</pre>
+                      </div>
+                    </div>
+                    
+                    {/* Ek Protokol */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Ek Protokol / Sözleşme Eki</h4>
+                      <div className="max-h-32 overflow-y-auto border rounded p-3 bg-white text-sm">
+                        <pre className="whitespace-pre-wrap font-sans">{ADDITIONAL_PROTOCOL}</pre>
+                      </div>
+                    </div>
+                    
+                    {/* Onay Kutusu */}
+                    <div className="space-y-3 pt-3 border-t">
+                      <div className="flex items-start gap-3">
+                        <input
+                          id="contractApproved"
+                          type="checkbox"
+                          className="mt-1"
+                          disabled={isSubmitting || isLoading}
+                          {...register('contractApproved')}
+                        />
+                        <Label htmlFor="contractApproved" className="text-sm leading-relaxed">
+                          {CONTRACT_APPROVAL_TEXT}
+                        </Label>
+                      </div>
+                      {errors.contractApproved && (
+                        <p className="text-sm text-destructive">{errors.contractApproved.message}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Sözleşme Versiyonu: {CONTRACT_VERSION} | 
+                        Onay Tarihi: {new Date().toLocaleDateString('tr-TR')}
+                      </p>
                     </div>
                   </div>
 

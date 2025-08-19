@@ -19,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserType } from "@/types/auth.types";
 import { toast } from "@/components/ui/use-toast";
+import { USER_SERVICE_CONTRACT, CONTRACT_APPROVAL_TEXT, CONTRACT_VERSION } from "@/utils/contractTexts";
 
 const Register = () => {
   const { language } = useLanguage();
@@ -79,6 +80,9 @@ const Register = () => {
       email: z.string().email({ message: t.validation.email }),
       password: z.string().min(6, { message: t.validation.password }),
       confirmPassword: z.string(),
+      contractApproved: z.boolean().refine((val) => val === true, {
+        message: language === "tr" ? "Hizmet sözleşmesini kabul etmelisiniz" : "You must accept the service contract"
+      }),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t.validation.passwordMatch,
@@ -94,6 +98,7 @@ const Register = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      contractApproved: false,
     },
   });
 
@@ -108,6 +113,8 @@ const Register = () => {
         username: values.username,
         userType: UserType.CUSTOMER,
         phoneNumber: "", // Will be collected in profile completion
+        contractApproved: values.contractApproved,
+        contractVersion: CONTRACT_VERSION,
       };
 
       const response = await registerUser(registerData);
@@ -327,6 +334,44 @@ const Register = () => {
                   </FormItem>
                 )}
               />
+
+              {/* Kullanıcı Hizmet Sözleşmesi */}
+              <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
+                <h3 className="text-lg font-semibold">
+                  {language === "tr" ? "Kullanıcı Hizmet Sözleşmesi" : "User Service Agreement"}
+                </h3>
+                
+                <div className="max-h-48 overflow-y-auto border rounded p-3 bg-white text-sm">
+                  <pre className="whitespace-pre-wrap font-sans">{USER_SERVICE_CONTRACT}</pre>
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="contractApproved"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start gap-3">
+                        <input
+                          id="contractApproved"
+                          type="checkbox"
+                          className="mt-1"
+                          disabled={isLoading}
+                          checked={field.value}
+                          onChange={field.onChange}
+                        />
+                        <FormLabel htmlFor="contractApproved" className="text-sm leading-relaxed cursor-pointer">
+                          {CONTRACT_APPROVAL_TEXT}
+                        </FormLabel>
+                      </div>
+                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">
+                        {language === "tr" ? "Sözleşme Versiyonu" : "Contract Version"}: {CONTRACT_VERSION} | 
+                        {language === "tr" ? "Onay Tarihi" : "Approval Date"}: {new Date().toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
+                      </p>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="flex flex-col space-y-4">
                 <Button type="submit" size="lg" disabled={isLoading}>

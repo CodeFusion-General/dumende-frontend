@@ -39,6 +39,10 @@ class CaptainApplicationService extends BaseService {
       formData.append("companyJson", companyJson);
     }
 
+    // Contract approval bilgileri
+    formData.append("contractApproved", String(data.contractApproved));
+    formData.append("contractVersion", data.contractVersion);
+
     return this.uploadMultipleFiles<CaptainApplication>("/multipart", formData);
   }
 
