@@ -48,7 +48,7 @@ class ProfileCompletionService extends BaseService {
   }
 
   /**
-   * Formats the form data for API submission
+   * Formats the form data for API submission (handles optional fields)
    * @param formData - The profile form data
    * @param accountId - The account ID
    * @returns FormData - Formatted multipart form data
@@ -59,19 +59,40 @@ class ProfileCompletionService extends BaseService {
   ): FormData {
     const apiFormData = new FormData();
 
-    // Combine firstName and lastName to create fullName
-    const fullName = `${formData.firstName} ${formData.lastName}`;
+    // Combine firstName and lastName to create fullName (handle empty values)
+    const firstName = formData.firstName?.trim() || "";
+    const lastName = formData.lastName?.trim() || "";
+    const fullName = `${firstName} ${lastName}`.trim();
 
-    // Add basic user information
-    apiFormData.append("fullName", fullName);
-    apiFormData.append("firstName", formData.firstName);
-    apiFormData.append("lastName", formData.lastName);
-    apiFormData.append("phoneNumber", formData.phoneNumber);
-    apiFormData.append("dateOfBirth", formData.dateOfBirth);
+    // Add basic user information (only if provided)
+    if (fullName) {
+      apiFormData.append("fullName", fullName);
+    }
+    if (firstName) {
+      apiFormData.append("firstName", firstName);
+    }
+    if (lastName) {
+      apiFormData.append("lastName", lastName);
+    }
+    if (formData.phoneNumber?.trim()) {
+      apiFormData.append("phoneNumber", formData.phoneNumber.trim());
+    }
+    if (formData.dateOfBirth?.trim()) {
+      apiFormData.append("dateOfBirth", formData.dateOfBirth.trim());
+    }
+    
     apiFormData.append("accountId", accountId.toString());
 
-    // Serialize address as JSON string
-    const addressJson = JSON.stringify(formData.address);
+    // Serialize address as JSON string (only include non-empty fields)
+    const address = {
+      street: formData.address.street?.trim() || "",
+      city: formData.address.city?.trim() || "",
+      district: formData.address.district?.trim() || "",
+      postalCode: formData.address.postalCode?.trim() || "",
+      country: formData.address.country?.trim() || "Türkiye",
+    };
+    
+    const addressJson = JSON.stringify(address);
     apiFormData.append("addressJson", addressJson);
 
     // Add profile image if provided
@@ -131,76 +152,48 @@ class ProfileCompletionService extends BaseService {
   }
 
   /**
-   * Validates profile data before submission
+   * Validates profile data before submission (all fields are optional)
    * @param data - The profile form data to validate
    * @throws Error if validation fails
    */
   private validateProfileData(data: ProfileFormData): void {
-    // Validate required fields
-    if (!data.firstName?.trim()) {
-      throw new Error("Ad alanı zorunludur.");
+    // Optional format validations only
+
+    // Validate date of birth format if provided
+    if (data.dateOfBirth) {
+      const birthDate = new Date(data.dateOfBirth);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ) {
+        // Adjust age if birthday hasn't occurred this year
+      }
+
+      // Only validate if age is unreasonable (but allow under 18)
+      if (age > 150) {
+        throw new Error("Lütfen geçerli bir doğum tarihi girin.");
+      }
     }
 
-    if (!data.lastName?.trim()) {
-      throw new Error("Soyad alanı zorunludur.");
+    // Validate phone number format if provided (very flexible)
+    if (data.phoneNumber?.trim()) {
+      const phoneRegex = /^(0?5\d{9})$/;
+      const cleanPhone = data.phoneNumber.replace(/\s/g, "");
+      if (!phoneRegex.test(cleanPhone)) {
+        throw new Error("Telefon numarası formatı: 5378700077 veya 05378700077");
+      }
     }
 
-    if (!data.phoneNumber?.trim()) {
-      throw new Error("Telefon numarası zorunludur.");
-    }
-
-    if (!data.dateOfBirth) {
-      throw new Error("Doğum tarihi zorunludur.");
-    }
-
-    // Validate address
-    if (!data.address.street?.trim()) {
-      throw new Error("Sokak adresi zorunludur.");
-    }
-
-    if (!data.address.city?.trim()) {
-      throw new Error("Şehir zorunludur.");
-    }
-
-    if (!data.address.district?.trim()) {
-      throw new Error("İlçe zorunludur.");
-    }
-
-    if (!data.address.postalCode?.trim()) {
-      throw new Error("Posta kodu zorunludur.");
-    }
-
-    // Validate date of birth (age check)
-    const birthDate = new Date(data.dateOfBirth);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-      // Adjust age if birthday hasn't occurred this year
-    }
-
-    if (age < 18) {
-      throw new Error("18 yaşından küçük kullanıcılar kayıt olamaz.");
-    }
-
-    if (age > 100) {
-      throw new Error("Lütfen geçerli bir doğum tarihi girin.");
-    }
-
-    // Validate phone number format
-    const phoneRegex = /^(\+90|0)?[0-9]{10}$/;
-    if (!phoneRegex.test(data.phoneNumber.replace(/\s/g, ""))) {
-      throw new Error("Geçerli bir telefon numarası girin.");
-    }
-
-    // Validate postal code
-    const postalCodeRegex = /^[0-9]{5}$/;
-    if (!postalCodeRegex.test(data.address.postalCode)) {
-      throw new Error("Posta kodu 5 haneli olmalıdır.");
+    // Validate postal code format if provided
+    if (data.address.postalCode?.trim()) {
+      const postalCodeRegex = /^[0-9]{5}$/;
+      if (!postalCodeRegex.test(data.address.postalCode)) {
+        throw new Error("Posta kodu 5 haneli olmalıdır.");
+      }
     }
 
     // Validate profile image if provided
