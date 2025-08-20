@@ -1,5 +1,11 @@
 // Tour ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+import {
+  TourDocumentDTO,
+  CreateTourDocumentDTO,
+  UpdateTourDocumentDTO,
+} from "./document.types";
+
 // Guide data interface for tour guides
 export interface GuideData {
   id: number;
@@ -100,6 +106,7 @@ export interface TourDTO {
   tourType?: TourType;
   tourDates: TourDateDTO[];
   tourImages: TourImageDTO[];
+  tourDocuments: TourDocumentDTO[];
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;
@@ -132,6 +139,7 @@ export interface CreateTourDTO {
   tourType?: TourType;
   tourDates: CreateTourDateDTO[];
   tourImages: CreateTourImageDTO[];
+  tourDocuments?: CreateTourDocumentDTO[];
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;
@@ -167,6 +175,9 @@ export interface UpdateTourDTO {
   tourImagesToUpdate?: UpdateTourImageDTO[];
   tourImagesToAdd?: CreateTourImageDTO[];
   tourImageIdsToRemove?: number[]; // List<Long> -> number[]
+  tourDocumentsToAdd?: CreateTourDocumentDTO[];
+  tourDocumentsToUpdate?: UpdateTourDocumentDTO[];
+  tourDocumentIdsToRemove?: number[]; // List<Long> -> number[]
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;

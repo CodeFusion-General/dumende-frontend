@@ -44,25 +44,21 @@ const BoatOwnerApplication = () => {
   const t = translations[language];
 
   const applicationSchema = z.object({
-    licenseNumber: z
-      .string()
-      .min(3, "Lisans numarası en az 3 karakter olmalıdır"),
-    licenseExpiry: z.string().min(10, "Lisans bitiş tarihi zorunludur"),
-    yearsOfExperience: z.coerce
+    licenseNumber: z.string().min(1, "Lisans numarası zorunludur"),
+    licenseExpiry: z.string().min(1, "Lisans bitiş tarihi zorunludur"),
+    yearsOfExperience: z
+      .coerce
       .number()
       .min(0, "Deneyim yılı 0 veya daha büyük olmalıdır"),
-    specializationsInput: z.string().optional(), // virgülle ayrılmış
-    bio: z.string().min(30, "Biyografi en az 30 karakter olmalıdır"),
-    // Şirket alanları opsiyonel; toggle açık ise kontrol edilecek
+    specializationsInput: z.string().optional(),
+    bio: z.string().optional(),
+    // Şirket alanları opsiyonel
     includeCompany: z.boolean().optional(),
     company_legalName: z.string().optional(),
     company_taxNumber: z.string().optional(),
     company_taxOffice: z.string().optional(),
     company_authorizedPerson: z.string().optional(),
-    company_companyEmail: z
-      .string()
-      .email("Geçerli bir e-posta giriniz")
-      .optional(),
+    company_companyEmail: z.string().optional(),
     company_nationalIdNumber: z.string().optional(),
     company_mobilePhone: z.string().optional(),
     company_landlinePhone: z.string().optional(),
@@ -231,8 +227,6 @@ const BoatOwnerApplication = () => {
     }
   };
 
-  // Sadece CUSTOMER olmayan authenticated kullanıcıları engelle
-  // (BOAT_OWNER veya ADMIN zaten boat owner oldukları için başvuru yapamaz)
   if (isAuthenticated && user?.role !== UserType.CUSTOMER) {
     return null;
   }
@@ -241,7 +235,6 @@ const BoatOwnerApplication = () => {
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-8">
             <Ship className="w-16 h-16 mx-auto text-primary mb-4" />
             <h1 className="text-3xl font-bold mb-2">

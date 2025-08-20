@@ -13,6 +13,12 @@ import {
   UpdateTourImageDTO,
   TourAvailabilityStatus,
 } from "@/types/tour.types";
+import {
+  TourDocumentDTO,
+  CreateTourDocumentDTO,
+  UpdateTourDocumentDTO,
+} from "@/types/document.types";
+import { documentService } from "./documentService";
 
 class TourService extends BaseService {
   constructor() {
@@ -25,14 +31,46 @@ class TourService extends BaseService {
   }
 
   public async getTourById(id: number): Promise<TourDTO> {
-    return this.get<TourDTO>(`/${id}`);
+    const tour = await this.get<TourDTO>(`/${id}`);
+
+    // Fetch tour documents during tour loading
+    try {
+      tour.tourDocuments = await documentService.getTourDocuments(id);
+    } catch (error) {
+      console.warn(`Failed to load documents for tour ${id}:`, error);
+      tour.tourDocuments = [];
+    }
+
+    return tour;
+  }
+
+  public async getTourWithDocuments(id: number): Promise<TourDTO> {
+    return this.getTourById(id);
   }
 
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
-   
-
     try {
+      // Create the tour first
       const result = await this.post<TourDTO>("/tours", data);
+
+      // If tour documents are provided, create them
+      if (data.tourDocuments && data.tourDocuments.length > 0) {
+        try {
+          const createdDocuments =
+            await documentService.createTourDocumentsBatch(
+              result.id,
+              data.tourDocuments
+            );
+          result.tourDocuments = createdDocuments;
+        } catch (documentError) {
+          console.warn(
+            `Failed to create documents for tour ${result.id}:`,
+            documentError
+          );
+          result.tourDocuments = [];
+        }
+      }
+
       return result;
     } catch (error) {
       console.error("TourService.createTour hatası:", error);
@@ -41,7 +79,70 @@ class TourService extends BaseService {
   }
 
   public async updateTour(data: UpdateTourDTO): Promise<TourDTO> {
-    return this.put<TourDTO>("/tours", data);
+    try {
+      // Update the tour first
+      const result = await this.put<TourDTO>("/tours", data);
+
+      // Handle document operations if provided
+      if (data.tourDocumentsToAdd && data.tourDocumentsToAdd.length > 0) {
+        try {
+          const createdDocuments =
+            await documentService.createTourDocumentsBatch(
+              result.id,
+              data.tourDocumentsToAdd
+            );
+          result.tourDocuments = [
+            ...(result.tourDocuments || []),
+            ...createdDocuments,
+          ];
+        } catch (documentError) {
+          console.warn(
+            `Failed to create new documents for tour ${result.id}:`,
+            documentError
+          );
+        }
+      }
+
+      if (data.tourDocumentsToUpdate && data.tourDocumentsToUpdate.length > 0) {
+        try {
+          for (const docUpdate of data.tourDocumentsToUpdate) {
+            await documentService.updateTourDocument(docUpdate);
+          }
+        } catch (documentError) {
+          console.warn(
+            `Failed to update documents for tour ${result.id}:`,
+            documentError
+          );
+        }
+      }
+
+      if (
+        data.tourDocumentIdsToRemove &&
+        data.tourDocumentIdsToRemove.length > 0
+      ) {
+        try {
+          for (const docId of data.tourDocumentIdsToRemove) {
+            await documentService.deleteTourDocument(docId);
+          }
+          // Filter out removed documents from result
+          if (result.tourDocuments) {
+            result.tourDocuments = result.tourDocuments.filter(
+              (doc) => !data.tourDocumentIdsToRemove!.includes(doc.id)
+            );
+          }
+        } catch (documentError) {
+          console.warn(
+            `Failed to delete documents for tour ${result.id}:`,
+            documentError
+          );
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("TourService.updateTour hatası:", error);
+      throw error;
+    }
   }
 
   public async deleteTour(id: number): Promise<void> {
@@ -62,9 +163,7 @@ class TourService extends BaseService {
   }
 
   public async searchToursByName(name: string): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(
-      `/search/name?name=${encodeURIComponent(name)}`
-    );
+    return this.get<TourDTO[]>(`/search/name?name=${encodeURIComponent(name)}`);
   }
 
   public async searchToursByType(type: string): Promise<TourDTO[]> {
@@ -91,9 +190,7 @@ class TourService extends BaseService {
   }
 
   public async searchToursByCapacity(minCapacity: number): Promise<TourDTO[]> {
-    return this.get<TourDTO[]>(
-      `/search/capacity?minCapacity=${minCapacity}`
-    );
+    return this.get<TourDTO[]>(`/search/capacity?minCapacity=${minCapacity}`);
   }
 
   public async existsTourById(id: number): Promise<boolean> {
@@ -161,7 +258,9 @@ class TourService extends BaseService {
   ): Promise<TourDateDTO[]> {
     const params = new URLSearchParams({ start, end });
     return this.api
-      .get<TourDateDTO[]>(`/tour-dates/tour/${tourId}/overlapping?${params.toString()}`)
+      .get<TourDateDTO[]>(
+        `/tour-dates/tour/${tourId}/overlapping?${params.toString()}`
+      )
       .then((res) => res.data);
   }
 
@@ -293,6 +392,104 @@ class TourService extends BaseService {
         `/tour-images/${id}/display-order?displayOrder=${displayOrder}`
       )
       .then((res) => res.data);
+  }
+
+  // ======= Tour Document Operations =======
+  public async getTourDocuments(tourId: number): Promise<TourDocumentDTO[]> {
+    try {
+      return await documentService.getTourDocuments(tourId);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async getTourDocument(documentId: number): Promise<TourDocumentDTO> {
+    try {
+      return await documentService.getTourDocument(documentId);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async createTourDocument(
+    tourId: number,
+    data: CreateTourDocumentDTO
+  ): Promise<TourDocumentDTO> {
+    try {
+      return await documentService.createTourDocument(tourId, data);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async createTourDocumentsBatch(
+    tourId: number,
+    documents: CreateTourDocumentDTO[]
+  ): Promise<TourDocumentDTO[]> {
+    try {
+      return await documentService.createTourDocumentsBatch(tourId, documents);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async updateTourDocument(
+    data: UpdateTourDocumentDTO
+  ): Promise<TourDocumentDTO> {
+    try {
+      return await documentService.updateTourDocument(data);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async deleteTourDocument(documentId: number): Promise<void> {
+    try {
+      return await documentService.deleteTourDocument(documentId);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async updateTourDocumentDisplayOrder(
+    documentId: number,
+    displayOrder: number
+  ): Promise<void> {
+    try {
+      return await documentService.updateTourDocumentDisplayOrder(
+        documentId,
+        displayOrder
+      );
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async updateTourDocumentsDisplayOrder(
+    updates: Array<{ id: number; displayOrder: number }>
+  ): Promise<void> {
+    try {
+      return await documentService.updateTourDocumentsDisplayOrder(updates);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  public async checkTourDocumentExists(documentId: number): Promise<boolean> {
+    try {
+      return await documentService.checkTourDocumentExists(documentId);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 
   // ======= Helper Methods =======

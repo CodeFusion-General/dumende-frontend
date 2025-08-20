@@ -14,8 +14,14 @@ import {
   UpdateBoatServiceDTO,
   ServiceType,
 } from "@/types/boat.types";
+import {
+  BoatDocumentDTO,
+  CreateBoatDocumentDTO,
+  UpdateBoatDocumentDTO,
+} from "@/types/document.types";
 import { compressImage, validateImageFile } from "@/lib/imageUtils";
 import { availabilityService } from "./availabilityService";
+import { documentService } from "./documentService";
 
 // Yeni tip tanımları
 export interface LocationStatistic {
@@ -90,7 +96,11 @@ class BoatService extends BaseService {
     startDate: string,
     endDate: string
   ): Promise<boolean> {
-    return availabilityService.isBoatAvailableBetweenDates(id, startDate, endDate);
+    return availabilityService.isBoatAvailableBetweenDates(
+      id,
+      startDate,
+      endDate
+    );
   }
 
   public async getBoatAvailabilities(
@@ -239,14 +249,17 @@ class BoatService extends BaseService {
         // No auth headers for public endpoint
         headers: {
           "Content-Type": "application/json",
-        }
+        },
       }
     );
     return response.data;
   }
 
   // Arama önerileri (Ana sayfa için public)
-  public async getSuggestions(query: string, limit: number = 6): Promise<SearchSuggestion[]> {
+  public async getSuggestions(
+    query: string,
+    limit: number = 6
+  ): Promise<SearchSuggestion[]> {
     return this.getPublic<SearchSuggestion[]>(`/suggestions`, { query, limit });
   }
 
@@ -392,14 +405,12 @@ class BoatService extends BaseService {
   public async createVesselWithOptimizedImages(
     vesselData: CreateVesselDTO
   ): Promise<BoatDTO> {
-
     // Önce resimler olmadan tekneyi oluştur
     const vesselDataWithoutImages = { ...vesselData, images: [] };
     const createdVessel = await this.post<BoatDTO>("", vesselDataWithoutImages);
 
     // Eğer resim varsa, compress edip ayrı ayrı yükle
     if (vesselData.images && vesselData.images.length > 0) {
-
       const optimizedImages = await Promise.all(
         vesselData.images.map(async (imageDto, index) => ({
           imageData: imageDto.imageData, // Zaten base64 format
@@ -469,7 +480,6 @@ class BoatService extends BaseService {
           isPrimary: i === 0,
           displayOrder: i + 1,
         });
-
       } catch (error) {
         console.error(`${file.name} compress edilemedi:`, error);
         throw new Error(`Resim işlenemedi: ${file.name}`);
@@ -498,7 +508,9 @@ class BoatService extends BaseService {
     }
   }
 
-  public async getBoatServicesByBoatId(boatId: number): Promise<BoatServiceDTO[]> {
+  public async getBoatServicesByBoatId(
+    boatId: number
+  ): Promise<BoatServiceDTO[]> {
     try {
       const response = await this.api.get(`/boat-services/boat/${boatId}`, {
         headers: this.getAuthHeaders(),
@@ -510,11 +522,16 @@ class BoatService extends BaseService {
     }
   }
 
-  public async getBoatServicesByType(serviceType: ServiceType): Promise<BoatServiceDTO[]> {
+  public async getBoatServicesByType(
+    serviceType: ServiceType
+  ): Promise<BoatServiceDTO[]> {
     try {
-      const response = await this.api.get(`/boat-services/type/${serviceType}`, {
-        headers: this.getAuthHeaders(),
-      });
+      const response = await this.api.get(
+        `/boat-services/type/${serviceType}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -522,11 +539,17 @@ class BoatService extends BaseService {
     }
   }
 
-  public async getBoatServicesByBoatIdAndType(boatId: number, serviceType: ServiceType): Promise<BoatServiceDTO[]> {
+  public async getBoatServicesByBoatIdAndType(
+    boatId: number,
+    serviceType: ServiceType
+  ): Promise<BoatServiceDTO[]> {
     try {
-      const response = await this.api.get(`/boat-services/boat/${boatId}/type/${serviceType}`, {
-        headers: this.getAuthHeaders(),
-      });
+      const response = await this.api.get(
+        `/boat-services/boat/${boatId}/type/${serviceType}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -534,12 +557,18 @@ class BoatService extends BaseService {
     }
   }
 
-  public async searchBoatServicesByName(boatId: number, name: string): Promise<BoatServiceDTO[]> {
+  public async searchBoatServicesByName(
+    boatId: number,
+    name: string
+  ): Promise<BoatServiceDTO[]> {
     try {
-      const response = await this.api.get(`/boat-services/boat/${boatId}/search`, {
-        params: { name },
-        headers: this.getAuthHeaders(),
-      });
+      const response = await this.api.get(
+        `/boat-services/boat/${boatId}/search`,
+        {
+          params: { name },
+          headers: this.getAuthHeaders(),
+        }
+      );
       return response.data;
     } catch (error) {
       this.handleError(error);
@@ -548,7 +577,9 @@ class BoatService extends BaseService {
   }
 
   // Boat Services - Command Methods
-  public async createBoatService(data: CreateBoatServiceDTO): Promise<BoatServiceDTO> {
+  public async createBoatService(
+    data: CreateBoatServiceDTO
+  ): Promise<BoatServiceDTO> {
     try {
       const response = await this.api.post("/boat-services", data, {
         headers: this.getAuthHeaders(),
@@ -560,7 +591,9 @@ class BoatService extends BaseService {
     }
   }
 
-  public async createBoatServices(data: CreateBoatServiceDTO[]): Promise<BoatServiceDTO[]> {
+  public async createBoatServices(
+    data: CreateBoatServiceDTO[]
+  ): Promise<BoatServiceDTO[]> {
     try {
       const response = await this.api.post("/boat-services/batch", data, {
         headers: this.getAuthHeaders(),
@@ -572,7 +605,9 @@ class BoatService extends BaseService {
     }
   }
 
-  public async updateBoatService(data: UpdateBoatServiceDTO): Promise<BoatServiceDTO> {
+  public async updateBoatService(
+    data: UpdateBoatServiceDTO
+  ): Promise<BoatServiceDTO> {
     try {
       const response = await this.api.put("/boat-services", data, {
         headers: this.getAuthHeaders(),
@@ -609,16 +644,391 @@ class BoatService extends BaseService {
   }
 
   // Helper method for getting services with price calculation
-  public async getBoatServicesWithPricing(boatId: number): Promise<BoatServiceDTO[]> {
+  public async getBoatServicesWithPricing(
+    boatId: number
+  ): Promise<BoatServiceDTO[]> {
     const services = await this.getBoatServicesByBoatId(boatId);
-    
+
     // Add calculated total prices for each service
-    return services.map(service => ({
+    return services.map((service) => ({
       ...service,
-      totalPrice: service.serviceType === ServiceType.FOOD 
-        ? service.price * service.quantity
-        : service.price
+      totalPrice:
+        service.serviceType === ServiceType.FOOD
+          ? service.price * service.quantity
+          : service.price,
     }));
+  }
+
+  // ==================== BOAT DOCUMENT INTEGRATION ====================
+
+  /**
+   * Fetches boat documents during boat loading
+   * @param boatId - The boat ID
+   * @returns Promise with boat documents
+   */
+  public async getBoatDocuments(boatId: number): Promise<BoatDocumentDTO[]> {
+    try {
+      return await documentService.getBoatDocuments(boatId);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets boat with documents included
+   * @param boatId - The boat ID
+   * @returns Promise with boat data including documents
+   */
+  public async getBoatWithDocuments(boatId: number): Promise<BoatDTO> {
+    try {
+      const [boat, documents] = await Promise.all([
+        this.getBoatById(boatId),
+        this.getBoatDocuments(boatId),
+      ]);
+
+      return {
+        ...boat,
+        documents,
+      };
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a boat with documents in a single transaction-like operation
+   * @param boatData - Boat creation data including documents
+   * @returns Promise with created boat
+   */
+  public async createBoatWithDocuments(
+    boatData: CreateBoatDTO
+  ): Promise<BoatDTO> {
+    try {
+      // Extract documents from boat data
+      const { documents, ...boatDataWithoutDocuments } = boatData;
+
+      // Create boat first
+      const createdBoat = await this.createBoat(boatDataWithoutDocuments);
+
+      // If documents are provided, create them
+      if (documents && documents.length > 0) {
+        const createdDocuments = await Promise.all(
+          documents.map((doc) =>
+            documentService.createBoatDocument(createdBoat.id!, doc)
+          )
+        );
+
+        // Return boat with documents
+        return {
+          ...createdBoat,
+          documents: createdDocuments,
+        };
+      }
+
+      return createdBoat;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates a boat with document operations
+   * @param boatData - Boat update data including document operations
+   * @returns Promise with updated boat
+   */
+  public async updateBoatWithDocuments(
+    boatData: UpdateBoatDTO
+  ): Promise<BoatDTO> {
+    try {
+      const {
+        documentsToAdd,
+        documentsToUpdate,
+        documentIdsToRemove,
+        ...boatDataWithoutDocuments
+      } = boatData;
+
+      // Update boat first
+      const updatedBoat = await this.updateBoat(boatDataWithoutDocuments);
+
+      // Handle document operations in parallel
+      const documentOperations: Promise<any>[] = [];
+
+      // Add new documents
+      if (documentsToAdd && documentsToAdd.length > 0) {
+        documentOperations.push(
+          ...documentsToAdd.map((doc) =>
+            documentService.createBoatDocument(updatedBoat.id!, doc)
+          )
+        );
+      }
+
+      // Update existing documents
+      if (documentsToUpdate && documentsToUpdate.length > 0) {
+        documentOperations.push(
+          ...documentsToUpdate.map((doc) =>
+            documentService.updateBoatDocument(doc)
+          )
+        );
+      }
+
+      // Remove documents
+      if (documentIdsToRemove && documentIdsToRemove.length > 0) {
+        documentOperations.push(
+          ...documentIdsToRemove.map((id) =>
+            documentService.deleteBoatDocument(id)
+          )
+        );
+      }
+
+      // Wait for all document operations to complete
+      if (documentOperations.length > 0) {
+        await Promise.all(documentOperations);
+      }
+
+      // Fetch updated boat with documents
+      return await this.getBoatWithDocuments(updatedBoat.id!);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a vessel with optimized images and documents
+   * @param vesselData - Vessel creation data
+   * @returns Promise with created vessel
+   */
+  public async createVesselWithDocumentsAndImages(
+    vesselData: CreateVesselDTO
+  ): Promise<BoatDTO> {
+    try {
+      // Extract documents and images
+      const { documents, images, ...vesselDataWithoutDocuments } = vesselData;
+
+      // Create vessel first without images and documents
+      const createdVessel = await this.post<BoatDTO>(
+        "",
+        vesselDataWithoutDocuments
+      );
+
+      // Handle images and documents in parallel
+      const operations: Promise<any>[] = [];
+
+      // Upload optimized images if provided
+      if (images && images.length > 0) {
+        const optimizedImages = images.map((imageDto, index) => ({
+          imageData: imageDto.imageData,
+          isPrimary: index === 0,
+          displayOrder: index + 1,
+        }));
+
+        operations.push(
+          this.uploadOptimizedImages(createdVessel.id!, optimizedImages)
+        );
+      }
+
+      // Create documents if provided
+      if (documents && documents.length > 0) {
+        operations.push(
+          ...documents.map((doc) =>
+            documentService.createBoatDocument(createdVessel.id!, doc)
+          )
+        );
+      }
+
+      // Wait for all operations to complete
+      if (operations.length > 0) {
+        await Promise.all(operations);
+      }
+
+      // Return vessel with all data
+      return await this.getBoatWithDocuments(createdVessel.id!);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Validates boat data including documents before creation/update
+   * @param boatData - Boat data to validate
+   * @returns Promise with validation result
+   */
+  public async validateBoatWithDocuments(
+    boatData: Partial<CreateBoatDTO | UpdateBoatDTO>
+  ): Promise<{
+    isValid: boolean;
+    errors: string[];
+    documentErrors?: Array<{ document: any; errors: string[] }>;
+  }> {
+    try {
+      // Validate basic boat data
+      const boatValidation = await this.validateVesselData(boatData);
+      const errors = [...boatValidation.errors];
+      const documentErrors: Array<{ document: any; errors: string[] }> = [];
+
+      // Validate documents if present
+      if ("documents" in boatData && boatData.documents) {
+        for (const doc of boatData.documents) {
+          const docValidation = documentService.validateDocumentCreationData(
+            doc as CreateBoatDocumentDTO,
+            "boat"
+          );
+          if (!docValidation.isValid) {
+            documentErrors.push({
+              document: doc,
+              errors: docValidation.errors.map((err) => err.message),
+            });
+          }
+        }
+      }
+
+      // Validate documents to add if present (for updates)
+      if ("documentsToAdd" in boatData && boatData.documentsToAdd) {
+        for (const doc of boatData.documentsToAdd) {
+          const docValidation = documentService.validateDocumentCreationData(
+            doc as CreateBoatDocumentDTO,
+            "boat"
+          );
+          if (!docValidation.isValid) {
+            documentErrors.push({
+              document: doc,
+              errors: docValidation.errors.map((err) => err.message),
+            });
+          }
+        }
+      }
+
+      const hasDocumentErrors = documentErrors.length > 0;
+      const allErrors = hasDocumentErrors
+        ? [...errors, "Some documents have validation errors"]
+        : errors;
+
+      return {
+        isValid: boatValidation.isValid && !hasDocumentErrors,
+        errors: allErrors,
+        documentErrors: hasDocumentErrors ? documentErrors : undefined,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        errors: ["Validation service unavailable"],
+      };
+    }
+  }
+
+  /**
+   * Gets boats by owner with documents included
+   * @param ownerId - The owner ID
+   * @returns Promise with boats including documents
+   */
+  public async getBoatsByOwnerWithDocuments(
+    ownerId: number
+  ): Promise<BoatDTO[]> {
+    try {
+      const boats = await this.getBoatsByOwner(ownerId);
+
+      // Fetch documents for all boats in parallel
+      const boatsWithDocuments = await Promise.all(
+        boats.map(async (boat) => {
+          try {
+            const documents = await this.getBoatDocuments(boat.id!);
+            return { ...boat, documents };
+          } catch (error) {
+            // If document fetching fails, return boat without documents
+            console.warn(
+              `Failed to fetch documents for boat ${boat.id}:`,
+              error
+            );
+            return { ...boat, documents: [] };
+          }
+        })
+      );
+
+      return boatsWithDocuments;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets vessels by owner with documents (alias for compatibility)
+   * @param ownerId - The owner ID
+   * @returns Promise with vessels including documents
+   */
+  public async getVesselsByOwnerWithDocuments(
+    ownerId: number
+  ): Promise<BoatDTO[]> {
+    return this.getBoatsByOwnerWithDocuments(ownerId);
+  }
+
+  /**
+   * Batch creates boat services with proper ServiceType handling
+   * @param boatId - The boat ID
+   * @param services - Array of service creation data
+   * @returns Promise with created services
+   */
+  public async createBoatServicesWithPricing(
+    boatId: number,
+    services: Omit<CreateBoatServiceDTO, "boatId">[]
+  ): Promise<BoatServiceDTO[]> {
+    try {
+      // Add boatId to each service and calculate pricing
+      const servicesWithBoatId = services.map((service) => ({
+        ...service,
+        boatId,
+        // Ensure quantity is set for food services
+        quantity:
+          service.serviceType === ServiceType.FOOD
+            ? service.quantity || 1
+            : service.quantity || 1,
+      }));
+
+      const createdServices = await this.createBoatServices(servicesWithBoatId);
+
+      // Return services with calculated total prices
+      return createdServices.map((service) => ({
+        ...service,
+        totalPrice:
+          service.serviceType === ServiceType.FOOD
+            ? service.price * service.quantity
+            : service.price,
+      }));
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates boat services with proper pricing calculation
+   * @param services - Array of service update data
+   * @returns Promise with updated services
+   */
+  public async updateBoatServicesWithPricing(
+    services: UpdateBoatServiceDTO[]
+  ): Promise<BoatServiceDTO[]> {
+    try {
+      const updatedServices = await Promise.all(
+        services.map((service) => this.updateBoatService(service))
+      );
+
+      // Return services with calculated total prices
+      return updatedServices.map((service) => ({
+        ...service,
+        totalPrice:
+          service.serviceType === ServiceType.FOOD
+            ? service.price * service.quantity
+            : service.price,
+      }));
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
   }
 }
 

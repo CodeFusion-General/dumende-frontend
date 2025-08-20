@@ -1,33 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Utensils, 
-  Package, 
-  Star,
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Utensils,
+  Music,
+  Waves,
+  Car,
+  Package,
   Save,
-  X
+  X,
+  Calculator,
 } from "lucide-react";
-import { ServiceType } from "@/types/boat.types";
+import { ServiceType, SERVICE_TYPE_LABELS } from "@/types/boat.types";
 
 interface BoatService {
   name: string;
   description: string;
   price: number;
-  serviceType: string;
+  serviceType: ServiceType;
   quantity: number;
 }
 
@@ -36,40 +40,33 @@ interface BoatServicesManagerProps {
   onServicesChange: (services: BoatService[]) => void;
 }
 
-const getServiceIcon = (serviceType: string) => {
+const getServiceIcon = (serviceType: ServiceType) => {
   switch (serviceType) {
-    case "FOOD":
+    case ServiceType.FOOD:
       return <Utensils className="h-4 w-4" />;
-    case "PACKAGE":
-      return <Package className="h-4 w-4" />;
-    case "EXTRA":
-      return <Star className="h-4 w-4" />;
+    case ServiceType.ENTERTAINMENT:
+      return <Music className="h-4 w-4" />;
+    case ServiceType.WATER_SPORTS:
+      return <Waves className="h-4 w-4" />;
+    case ServiceType.TRANSPORTATION:
+      return <Car className="h-4 w-4" />;
+    case ServiceType.OTHER:
     default:
       return <Package className="h-4 w-4" />;
   }
 };
 
-const getServiceTypeLabel = (serviceType: string) => {
+const getServiceTypeColor = (serviceType: ServiceType) => {
   switch (serviceType) {
-    case "FOOD":
-      return "Yemek";
-    case "PACKAGE":
-      return "Paket";
-    case "EXTRA":
-      return "Ekstra";
-    default:
-      return "Hizmet";
-  }
-};
-
-const getServiceTypeColor = (serviceType: string) => {
-  switch (serviceType) {
-    case "FOOD":
+    case ServiceType.FOOD:
       return "bg-orange-100 text-orange-800 border-orange-200";
-    case "PACKAGE":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "EXTRA":
+    case ServiceType.ENTERTAINMENT:
       return "bg-purple-100 text-purple-800 border-purple-200";
+    case ServiceType.WATER_SPORTS:
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case ServiceType.TRANSPORTATION:
+      return "bg-green-100 text-green-800 border-green-200";
+    case ServiceType.OTHER:
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -79,22 +76,70 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
   services,
   onServicesChange,
 }) => {
+  const { t, i18n } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<BoatService>({
     name: "",
     description: "",
     price: 0,
-    serviceType: "FOOD",
+    serviceType: ServiceType.FOOD,
     quantity: 1,
   });
+
+  // Get service type labels based on current language
+  const getServiceTypeLabels = useCallback(() => {
+    const currentLang = i18n.language === "tr" ? "tr" : "en";
+    return Object.entries(SERVICE_TYPE_LABELS).reduce((acc, [key, value]) => {
+      acc[key as ServiceType] = value[currentLang];
+      return acc;
+    }, {} as Record<ServiceType, string>);
+  }, [i18n.language]);
+
+  const serviceTypeLabels = getServiceTypeLabels();
+
+  // Group services by service type
+  const groupedServices = useMemo(() => {
+    const groups: Record<ServiceType, BoatService[]> = {
+      [ServiceType.FOOD]: [],
+      [ServiceType.ENTERTAINMENT]: [],
+      [ServiceType.WATER_SPORTS]: [],
+      [ServiceType.TRANSPORTATION]: [],
+      [ServiceType.OTHER]: [],
+    };
+
+    services.forEach((service) => {
+      if (groups[service.serviceType]) {
+        groups[service.serviceType].push(service);
+      } else {
+        groups[ServiceType.OTHER].push(service);
+      }
+    });
+
+    return groups;
+  }, [services]);
+
+  // Calculate total pricing for food services (price × quantity)
+  const calculateServiceTotal = useCallback((service: BoatService) => {
+    if (service.serviceType === ServiceType.FOOD) {
+      return service.price * service.quantity;
+    }
+    return service.price;
+  }, []);
+
+  // Calculate total price for all services
+  const totalPrice = useMemo(() => {
+    return services.reduce((total, service) => {
+      return total + calculateServiceTotal(service);
+    }, 0);
+  }, [services, calculateServiceTotal]);
 
   const resetForm = () => {
     setFormData({
       name: "",
       description: "",
       price: 0,
-      serviceType: "FOOD",
+      serviceType: ServiceType.FOOD,
       quantity: 1,
     });
   };
@@ -178,7 +223,7 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                   placeholder="Örn: Balık Menüsü, DJ Hizmeti"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Hizmet Tipi *
@@ -193,9 +238,14 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FOOD">Yemek</SelectItem>
-                    <SelectItem value="PACKAGE">Paket</SelectItem>
-                    <SelectItem value="EXTRA">Ekstra</SelectItem>
+                    {Object.entries(serviceTypeLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          {getServiceIcon(key as ServiceType)}
+                          {label}
+                        </div>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -220,10 +270,15 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                   placeholder="0.00"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Varsayılan Miktar
+                  {t("services.quantity", "Quantity")}
+                  {formData.serviceType === ServiceType.FOOD && (
+                    <span className="text-xs text-gray-500 ml-1">
+                      ({t("services.foodQuantityNote", "affects total price")})
+                    </span>
+                  )}
                 </label>
                 <Input
                   type="number"
@@ -236,13 +291,20 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                     }))
                   }
                 />
+                {formData.serviceType === ServiceType.FOOD &&
+                  formData.price > 0 &&
+                  formData.quantity > 1 && (
+                    <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                      <Calculator className="h-3 w-3" />
+                      {t("services.totalPrice", "Total")}: ₺
+                      {(formData.price * formData.quantity).toLocaleString()}
+                    </p>
+                  )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Açıklama
-              </label>
+              <label className="block text-sm font-medium mb-2">Açıklama</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
@@ -270,67 +332,135 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
         </Card>
       )}
 
-      {/* Services List */}
+      {/* Services List - Grouped by Service Type */}
       {services.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Eklenen Hizmetler</h3>
-          <div className="grid grid-cols-1 gap-4">
-            {services.map((service, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {getServiceIcon(service.serviceType)}
-                        <h4 className="font-semibold text-gray-900">
-                          {service.name}
-                        </h4>
-                        <Badge
-                          variant="outline"
-                          className={getServiceTypeColor(service.serviceType)}
-                        >
-                          {getServiceTypeLabel(service.serviceType)}
-                        </Badge>
-                      </div>
-                      
-                      {service.description && (
-                        <p className="text-sm text-gray-600 mb-2">
-                          {service.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="font-medium text-primary">
-                          ₺{service.price.toLocaleString()}
-                        </span>
-                        <span className="text-gray-500">
-                          Miktar: {service.quantity}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(index)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">
+              {t("services.addedServices", "Added Services")} ({services.length}
+              )
+            </h3>
+            {totalPrice > 0 && (
+              <div className="text-right">
+                <p className="text-sm text-gray-600">
+                  {t("services.totalValue", "Total Value")}
+                </p>
+                <p className="text-xl font-bold text-primary">
+                  ₺{totalPrice.toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
+
+          {Object.entries(groupedServices).map(([serviceType, serviceList]) => {
+            if (serviceList.length === 0) return null;
+
+            const typeKey = serviceType as ServiceType;
+            const typeLabel = serviceTypeLabels[typeKey];
+            const typeTotal = serviceList.reduce(
+              (sum, service) => sum + calculateServiceTotal(service),
+              0
+            );
+
+            return (
+              <div key={serviceType} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getServiceIcon(typeKey)}
+                    <h4 className="font-medium text-gray-900">{typeLabel}</h4>
+                    <Badge
+                      variant="outline"
+                      className={getServiceTypeColor(typeKey)}
+                    >
+                      {serviceList.length}
+                    </Badge>
+                  </div>
+                  {typeTotal > 0 && (
+                    <span className="text-sm font-medium text-gray-700">
+                      ₺{typeTotal.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 ml-6">
+                  {serviceList.map((service, serviceIndex) => {
+                    const originalIndex = services.findIndex(
+                      (s) => s === service
+                    );
+                    const serviceTotal = calculateServiceTotal(service);
+
+                    return (
+                      <Card
+                        key={originalIndex}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h5 className="font-semibold text-gray-900">
+                                  {service.name}
+                                </h5>
+                              </div>
+
+                              {service.description && (
+                                <p className="text-sm text-gray-600 mb-2">
+                                  {service.description}
+                                </p>
+                              )}
+
+                              <div className="flex items-center gap-4 text-sm">
+                                <span className="font-medium text-primary">
+                                  ₺{service.price.toLocaleString()}
+                                  {service.serviceType === ServiceType.FOOD &&
+                                    service.quantity > 1 && (
+                                      <span className="text-gray-500 ml-1">
+                                        × {service.quantity}
+                                      </span>
+                                    )}
+                                </span>
+                                {service.serviceType === ServiceType.FOOD &&
+                                  service.quantity > 1 && (
+                                    <span className="font-medium text-green-600">
+                                      = ₺{serviceTotal.toLocaleString()}
+                                    </span>
+                                  )}
+                                {service.serviceType !== ServiceType.FOOD &&
+                                  service.quantity > 1 && (
+                                    <span className="text-gray-500">
+                                      {t("services.quantity", "Quantity")}:{" "}
+                                      {service.quantity}
+                                    </span>
+                                  )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(originalIndex)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(originalIndex)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -345,7 +475,8 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
               Henüz hizmet eklenmemiş
             </h3>
             <p className="text-gray-500 mb-4">
-              Tekneniz için ek hizmetler ekleyerek müşterilerinize daha fazla seçenek sunabilirsiniz.
+              Tekneniz için ek hizmetler ekleyerek müşterilerinize daha fazla
+              seçenek sunabilirsiniz.
             </p>
             <Button onClick={handleAdd} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

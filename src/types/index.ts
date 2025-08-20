@@ -16,3 +16,4 @@ export * from "./notification.types";
 export * from "./ratings.types";
 export * from "./review.types";
 export * from "./tour.types";
+export * from "./document.types";

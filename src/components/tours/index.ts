@@ -48,3 +48,4 @@ export { TourBookingForm } from "./TourBookingForm";
 export { TourFeatures } from "./TourFeatures";
 export { TourGuideInfo } from "./TourGuideInfo";
 export { SimilarTours } from "./SimilarTours";
+export { default as TourDocumentsTab } from "./TourDocumentsTab";

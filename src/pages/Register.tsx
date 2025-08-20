@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { authService } from "@/services/authService";
 import {
   Form,
   FormControl,
@@ -24,11 +23,7 @@ import { USER_SERVICE_CONTRACT, CONTRACT_APPROVAL_TEXT, CONTRACT_VERSION } from 
 const Register = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
-  const {
-    register: registerUser,
-    getProfileCompletionRedirectPath,
-    updateUserData,
-  } = useAuth();
+  const { register: registerUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -112,7 +107,7 @@ const Register = () => {
         fullName: `${values.firstName} ${values.lastName}`,
         username: values.username,
         userType: UserType.CUSTOMER,
-        phoneNumber: "", // Will be collected in profile completion
+        phoneNumber: "",
         contractApproved: values.contractApproved,
         contractVersion: CONTRACT_VERSION,
       };
@@ -128,28 +123,7 @@ const Register = () => {
             : "Your account has been created. Please complete your profile.",
       });
 
-      // Account oluşturulduktan sonra profile completion'a yönlendir
-      const targetId = response?.accountId ?? response?.userId;
-      if (targetId) {
-        // Auth state'e hesapId bilgisini işle (fallback olarak userId de olabilir)
-        updateUserData({ accountId: targetId });
-        navigate(`/profile-completion/${targetId}`);
-      } else {
-        // Yedek: Auth state üzerinden yönlendirme yolu hesapla
-        const redirectPath = getProfileCompletionRedirectPath();
-        if (redirectPath) {
-          navigate(redirectPath);
-        } else {
-          toast({
-            title: language === "tr" ? "Yönlendirme Hatası" : "Redirect Error",
-            description:
-              language === "tr"
-                ? "Hesap bilgileri alınamadı. Lütfen tekrar giriş yapın."
-                : "Account info not available. Please log in again.",
-            variant: "destructive",
-          });
-        }
-      }
+      navigate("/");
     } catch (error: any) {
       console.error("Registration failed:", error);
 

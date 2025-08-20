@@ -1,10 +1,18 @@
 // Boat ile ilgili tüm type'lar - Backend DTO'larıyla uyumlu
 
+import {
+  BoatDocumentDTO,
+  CreateBoatDocumentDTO,
+  UpdateBoatDocumentDTO,
+} from "./document.types";
+
 // BoatService Types (Yeni eklenen)
 export enum ServiceType {
   FOOD = "FOOD",
-  PACKAGE = "PACKAGE", 
-  EXTRA = "EXTRA"
+  ENTERTAINMENT = "ENTERTAINMENT",
+  WATER_SPORTS = "WATER_SPORTS",
+  TRANSPORTATION = "TRANSPORTATION",
+  OTHER = "OTHER",
 }
 
 export interface BoatServiceDTO {
@@ -28,6 +36,37 @@ export interface CreateBoatServiceDTO {
   price: number;
   quantity?: number;
 }
+
+// Service Type Labels (for internationalization)
+export interface ServiceTypeLabels {
+  [key: string]: {
+    tr: string;
+    en: string;
+  };
+}
+
+export const SERVICE_TYPE_LABELS: ServiceTypeLabels = {
+  [ServiceType.FOOD]: {
+    tr: "Yiyecek & İçecek",
+    en: "Food & Beverage",
+  },
+  [ServiceType.ENTERTAINMENT]: {
+    tr: "Eğlence",
+    en: "Entertainment",
+  },
+  [ServiceType.WATER_SPORTS]: {
+    tr: "Su Sporları",
+    en: "Water Sports",
+  },
+  [ServiceType.TRANSPORTATION]: {
+    tr: "Ulaşım",
+    en: "Transportation",
+  },
+  [ServiceType.OTHER]: {
+    tr: "Diğer",
+    en: "Other",
+  },
+};
 
 export interface UpdateBoatServiceDTO {
   id: number;
@@ -142,6 +181,7 @@ export interface BoatDTO {
   features: BoatFeatureDTO[];
   availabilities: AvailabilityDTO[];
   services: BoatServiceDTO[]; // Gemi hizmetleri
+  documents: BoatDocumentDTO[]; // Gemi belgeleri
   createdAt: string;
   updatedAt: string;
 }
@@ -166,6 +206,7 @@ export interface CreateBoatDTO {
   images?: CreateBoatImageDTO[];
   features?: CreateBoatFeatureDTO[];
   services?: CreateBoatServiceDTO[]; // YENİ: Boat services
+  documents?: CreateBoatDocumentDTO[]; // YENİ: Boat documents
 }
 
 export interface UpdateBoatDTO {
@@ -190,6 +231,9 @@ export interface UpdateBoatDTO {
   imageIdsToRemove?: number[]; // List<Long> -> number[]
   featuresToAdd?: UpdateBoatFeatureDTO[];
   featureIdsToRemove?: number[]; // List<Long> -> number[]
+  documentsToAdd?: CreateBoatDocumentDTO[];
+  documentsToUpdate?: UpdateBoatDocumentDTO[];
+  documentIdsToRemove?: number[]; // List<Long> -> number[]
 }
 
 // Frontend filtreleme için kullanılan interface
