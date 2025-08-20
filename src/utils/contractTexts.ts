@@ -158,94 +158,100 @@ Taraflar, işbu ek protokol hükümlerini okuyup anladıklarını ve kabul ettik
 `;
 
 export const USER_SERVICE_CONTRACT = `
-KULLANICI HİZMET SÖZLEŞMESİ
+# KULLANICI HİZMET SÖZLEŞMESİ
 
-İşbu Kullanıcı Hizmet Sözleşmesi, Dümende ("Platform") ile Platform üzerinden kaptanlı tekne kiralama ve ilgili hizmetleri satın alan bireysel kullanıcı ("Kullanıcı") arasında, 6502 Sayılı Tüketicinin Korunması Hakkında Kanun, Türk Borçlar Kanunu ve ilgili diğer mevzuatlara uygun olarak akdedilmiştir.
+İşbu Kullanıcı Hizmet Sözleşmesi, **Dümende** ("Platform") ile Platform üzerinden kaptanlı tekne kiralama ve ilgili hizmetleri satın alan bireysel kullanıcı ("Kullanıcı") arasında, 6502 Sayılı Tüketicinin Korunması Hakkında Kanun, Türk Borçlar Kanunu ve ilgili diğer mevzuatlara uygun olarak akdedilmiştir.
 
-## 1. Tanımlar ve Taraflar
+## 1. Taraflar ve Platform Bilgileri
 
 **Platform / Aracı Bilgileri:**
-- Adı Soyadı / Ünvan: Ahmet Turkaç / Şahıs Şirketi
-- Adres: İnönü Mahallesi, 364. Sokak No: 26/1 Esenyurt/İstanbul
-- Vergi Dairesi: Avcılar
-- Vergi Numarası: 8710690872
+- **Ünvan:** Ahmet Turkaç / Şahıs Şirketi
+- **Adres:** İnönü Mahallesi, 364. Sokak No: 26/1 Esenyurt/İstanbul
+- **Vergi Dairesi:** Avcılar
+- **Vergi Numarası:** 8710690872
 
-**Sağlayıcı / İlan Sahibi Bilgileri:**
-- Platform üzerinde hizmet sunan tekne sahipleri
+**Hizmet Sağlayıcılar:** Platform üzerinde hizmet sunan tekne sahipleri
 
-## 2. Sözleşmenin Konusu
+## 2. Sözleşmenin Kapsamı
 
-Bu sözleşme, Kullanıcı'nın Platform üzerinden gerçekleştirdiği rezervasyonlar doğrultusunda alacağı hizmetlerin şartlarını, tarafların yükümlülüklerini ve haklarını düzenler. Platform yalnızca aracılık hizmeti sağlar. Hizmetin sunumu, İlan Sahibi'nin sorumluluğundadır.
+Bu sözleşme, Kullanıcı'nın Platform üzerinden gerçekleştirdiği rezervasyonlar doğrultusunda alacağı hizmetlerin şartlarını düzenler. 
 
-## 3. Rezervasyon ve Ödeme Koşulları
+**Önemli:** Platform yalnızca **aracılık hizmeti** sağlar. Tekne kiralama hizmetinin sunumu, İlan Sahibi'nin sorumluluğundadır.
+
+## 3. Rezervasyon ve Ödeme
 
 3.1 Kullanıcı, seçilen hizmetin tüm koşullarını inceleyerek rezervasyonunu gerçekleştirir.
 
-3.2 Ödeme, platform üzerinde kredi kartı veya diğer ödeme altyapısı aracılığıyla yapılır.
+3.2 Ödeme, platform üzerinde güvenli ödeme altyapısı aracılığıyla yapılır.
 
 3.3 Platform, yapılan ödemenin içinden komisyonunu tahsil eder; kalan tutar İlan Sahibi'ne aktarılır.
 
-## 4. Rezervasyon Para Birimi ve Kur Farkı
+## 4. Para Birimi ve Kur
 
-4.1 Kullanıcının yaptığı rezervasyonun para birimi, Platform tarafından belirtilen "Rezervasyon Para Birimi"dir. Platform'un resmi para birimi Türk Lirası (TRY)'dır.
+4.1 Platform'un resmi para birimi **Türk Lirası (TRY)**'dır.
 
-4.2 Kullanıcının ödeme yaptığı para birimi ile rezervasyon para birimi farklı ise, ödeme anındaki Türkiye Cumhuriyet Merkez Bankası efektif satış kuru esas alınır.
+4.2 Farklı para birimi ile ödeme yapılması durumunda, ödeme anındaki TCMB efektif satış kuru esas alınır.
 
-4.3 Kur farklarından doğabilecek küçük yuvarlama farkları için kullanıcı herhangi bir hak veya talepte bulunamaz.
+4.3 Kur farklarından doğabilecek küçük yuvarlama farkları için kullanıcı herhangi bir hak iddia edemez.
 
-## 5. Cayma Hakkı ve İptal Koşulları
+## 5. İptal ve İade Koşulları
 
-5.1 Kullanıcı, belirli bir tarih ve zaman dilimi için yapılan rezervasyonlarda, Mesafeli Sözleşmeler Yönetmeliği gereği cayma hakkına sahip değildir.
+**⏰ İptal Süreleri:**
+- **72 saat öncesi:** %100 iade
+- **72 saatten az:** İade yapılmaz
 
-5.2 Kullanıcı, etkinlik tarihinden en az 72 saat öncesine kadar yaptığı iptal taleplerinde tam ücret iadesi alabilir.
+**📋 Özel Durumlar:**
+- Mesafeli Sözleşmeler Yönetmeliği gereği, belirli tarih ve saatli rezervasyonlarda cayma hakkı bulunmaz
+- Mücbir sebep durumlarında (fırtına, deprem vb.) özel değerlendirme yapılır
 
-5.3 72 saatten az sürede yapılan iptallerde herhangi bir iade yapılmaz.
+## 6. Kullanıcı Sorumlulukları
 
-## 6. Değişiklik Talepleri
+6.1 Hizmet sırasında genel ahlak kurallarına uygun davranmak
 
-6.1 Kullanıcı, rezervasyon sonrası tarih, kişi sayısı vb. konularda değişiklik talep edebilir.
+6.2 Rezervasyon bilgilerinin doğruluğunu sağlamak
 
-6.2 Bu değişiklikler İlan Sahibi'nin onayına bağlıdır. İlan Sahibi, talebi kabul veya reddetme hakkına sahiptir.
+6.3 Tekne ve çevreye zarar vermemek
 
-## 7. Mücbir Sebepler
+6.4 Yasa dışı madde bulundurmamak veya tüketmemek
 
-7.1 Tarafların kontrolü dışında gerçekleşen olaylar (deprem, fırtına, salgın, savaş vb.) mücbir sebep olarak değerlendirilir.
+## 7. Platform Sorumlulukları
 
-7.2 Bu gibi durumlarda taraflar birbirine herhangi bir tazminat yükümlülüğü olmaksızın sözleşmeyi feshedebilir.
+7.1 **Aracılık Hizmeti:** Platform yalnızca aracı sıfatıyla hareket eder
 
-## 8. Kullanıcı Yükümlülükleri
+7.2 **Sorumluluk Sınırı:** Tekne kiralama hizmetinden doğan sorumluluk İlan Sahibi'ne aittir
 
-8.1 Kullanıcı, hizmet sırasında genel ahlak kurallarına uygun davranmalı, tekneye veya üçüncü kişilere zarar vermemelidir.
+7.3 **Güvenlik:** Ödeme ve kişisel veri güvenliğini sağlamak
 
-8.2 Kullanıcı, rezervasyon sırasında beyan ettiği bilgilerin doğru olduğunu kabul eder.
+## 8. Kişisel Veriler ve Gizlilik
 
-8.3 Kullanıcı, tekne içerisinde herhangi bir yasa dışı madde bulunduramaz veya tüketemez.
+8.1 **KVKK Uyumu:** 6698 Sayılı Kişisel Verilerin Korunması Kanunu'na uygun hareket edilir
 
-## 9. Sorumluluk Reddi
+8.2 **Veri Paylaşımı:** Kullanıcı bilgileri, hizmet sunumu dışında üçüncü kişilerle paylaşılmaz
 
-9.1 Platform, yalnızca aracı sıfatıyla hareket eder. Hizmetin sunumundan doğan her türlü sorumluluk İlan Sahibi'ne aittir.
+8.3 **Güvenlik:** Kişisel veriler güvenli şekilde saklanır ve işlenir
 
-9.2 Platform, hizmet sırasında doğabilecek kazalar, iptaller veya memnuniyetsizliklerden sorumlu tutulamaz.
+## 9. İletişim ve Bildirimler
 
-## 10. Gizlilik ve Kişisel Veriler
+Tüm bildirimler e-posta veya Platform mesajlaşma sistemi üzerinden yapılır. Bildirimler aynı gün tebliğ edilmiş sayılır.
 
-10.1 Taraflar, yürürlükteki 6698 Sayılı Kişisel Verilerin Korunması Kanunu çerçevesinde kişisel verileri korumayı taahhüt eder.
+## 10. Uyuşmazlık Çözümü
 
-10.2 Kullanıcı bilgileri, hizmet sunumu dışında üçüncü kişilerle paylaşılmaz.
+İşbu sözleşmeden doğabilecek uyuşmazlıklarda:
+- **Tüketici Hakem Heyetleri**
+- **Tüketici Mahkemeleri** 
+yetkilidir.
 
-## 11. Bildirimler
+## 11. Sözleşmenin Geçerliliği
 
-Tüm bildirimler e-posta veya Platform mesajlaşma sistemi üzerinden yapılır. Yapılan bildirimler aynı gün tebliğ edilmiş sayılır.
+Bu sözleşme, Kullanıcı tarafından Platform üzerinden **elektronik ortamda onaylandığı** andan itibaren yürürlüğe girer.
 
-## 12. Uyuşmazlıkların Çözümü
+**Kullanıcı Beyanı:** Bu sözleşmenin tüm hükümlerini okuduğumu, anladığımı ve kabul ettiğimi beyan ederim.
 
-İşbu sözleşmeden doğabilecek uyuşmazlıklarda, Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.
+---
 
-## 13. Sözleşmenin Yürürlüğü
-
-Bu sözleşme, Kullanıcı tarafından Platform üzerinden onaylandığı andan itibaren yürürlüğe girer. Kullanıcı, bu sözleşmenin tüm hükümlerini okuduğunu, anladığını ve kabul ettiğini beyan eder.
+**📞 İletişim:** Sorularınız için destek ekibimizle iletişime geçebilirsiniz.
+**🔒 Güvenlik:** Bu sözleşme elektronik imza ile geçerlidir.
+**📅 Güncelleme:** Sözleşme değişiklikleri kullanıcılara bildirilir.
 `;
 
-export const CONTRACT_APPROVAL_TEXT = `
-Bu sözleşmeyi okudum, anladım ve tüm hükümlerini kabul ediyorum. Onay butonuna basarak sözleşmeyi elektronik ortamda imzalamış olacağımı kabul ederim.
-`;
+export const CONTRACT_APPROVAL_TEXT = `Kullanıcı Hizmet Sözleşmesi'ni okudum, anladım ve kabul ediyorum. Elektronik imza ile onayladığımı beyan ederim.`;

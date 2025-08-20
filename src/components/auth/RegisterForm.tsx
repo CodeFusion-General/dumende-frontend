@@ -10,6 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { RegisterRequest, UserType } from "@/types/auth.types";
+import {
+  CONTRACT_VERSION,
+  CONTRACT_APPROVAL_TEXT,
+} from "@/utils/contractTexts";
+import { ContractModal } from "@/components/ui/contract-modal";
 
 const registerSchema = z
   .object({
@@ -27,8 +32,8 @@ const registerSchema = z
       .min(3, "Ad soyad en az 3 karakter olmalıdır")
       .max(100, "Ad soyad en fazla 100 karakter olabilir"),
     phoneNumber: z.string().min(10, "Geçerli bir telefon numarası giriniz"),
-    agreeToTerms: z.boolean().refine((value) => value === true, {
-      message: "Kullanım koşullarını kabul etmelisiniz",
+    contractApproved: z.boolean().refine((value) => value === true, {
+      message: "Hizmet sözleşmesini kabul etmelisiniz",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -68,7 +73,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       confirmPassword: "",
       fullName: "",
       phoneNumber: "",
-      agreeToTerms: false,
+      contractApproved: false,
     },
   });
 
@@ -84,6 +89,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         userType: UserType.CUSTOMER, // Otomatik olarak CUSTOMER
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
+        contractApproved: data.contractApproved,
+        contractVersion: CONTRACT_VERSION,
       };
 
       const response = await registerUser(registerData);
@@ -298,25 +305,42 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           )}
         </div>
 
-        {/* Kullanım Koşulları */}
-        <div className="flex items-center space-x-2">
-          <input
-            id="agreeToTerms"
-            type="checkbox"
-            className="h-4 w-4 rounded border-gray-300"
-            {...register("agreeToTerms")}
-          />
-          <Label htmlFor="agreeToTerms" className="text-sm">
-            <span className="text-muted-foreground">
-              Kullanım koşullarını kabul ediyorum
-            </span>
-          </Label>
+        {/* Hizmet Sözleşmesi */}
+        <div className="space-y-3">
+          <div className="flex items-start space-x-3">
+            <input
+              id="contractApproved"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 mt-1 accent-blue-600"
+              {...register("contractApproved")}
+            />
+            <div className="flex-1">
+              <Label
+                htmlFor="contractApproved"
+                className="text-sm leading-relaxed cursor-pointer"
+              >
+                {CONTRACT_APPROVAL_TEXT}
+              </Label>
+              <div className="mt-2">
+                <ContractModal>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8"
+                  >
+                    📄 Sözleşmeyi Görüntüle
+                  </Button>
+                </ContractModal>
+              </div>
+            </div>
+          </div>
+          {errors.contractApproved && (
+            <p className="text-sm text-destructive">
+              {errors.contractApproved.message}
+            </p>
+          )}
         </div>
-        {errors.agreeToTerms && (
-          <p className="text-sm text-destructive">
-            {errors.agreeToTerms.message}
-          </p>
-        )}
 
         {/* Bilgilendirme */}
         <div className="bg-blue-50 p-3 rounded-lg">
