@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber,
         accountId: response.accountId ?? response.userId,
-        isProfileComplete: false, // New users need to complete profile
+        isProfileComplete: true, // Skip profile completion step
       });
 
       // Çifte kayıt problemini önlemek için tokenUtils'i tekrar çağırmıyoruz

@@ -95,18 +95,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
       const response = await registerUser(registerData);
 
-      // Check if accountId is available for profile completion redirect
-      if (response.accountId) {
-        if (onProfileCompletionRedirect) {
-          onProfileCompletionRedirect(response.accountId);
-        } else {
-          // Fallback to direct navigation if no callback provided
-          navigate(`/profile-completion/${response.accountId}`);
-        }
-      } else {
-        // Fallback to original success handler if no accountId
-        onSuccess?.();
-      }
+      // Direct redirect to main website
+      window.location.href = "https://www.dumende.com/";
     } catch (err: any) {
       console.error("Registration error:", err);
 
