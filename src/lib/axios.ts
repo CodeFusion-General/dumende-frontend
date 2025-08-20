@@ -11,11 +11,11 @@ class HttpClient {
 
   private constructor() {
     // Use environment variable for API base URL
-    // In production, should be set to https://dumenden-backend-pliz2d45kq-ew.a.run.app/api
+    // In production, should be set to https://dumenden-backend-289960158905.europe-west1.run.app/api
     // In development, fallback to /api for development proxy
     let baseURL = import.meta.env.VITE_API_BASE_URL || 
       (import.meta.env.MODE === 'production' 
-        ? "https://dumenden-backend-pliz2d45kq-ew.a.run.app"
+        ? "https://dumenden-backend-289960158905.europe-west1.run.app"
         : "");
     
     // Ensure /api suffix is always present

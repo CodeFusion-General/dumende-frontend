@@ -79,12 +79,12 @@ build_and_push() {
     # Build args based on environment
     local build_args=""
     if [ "$ENVIRONMENT" = "production" ]; then
-        build_args="--build-arg VITE_API_BASE_URL=https://dumenden-backend-pliz2d45kq-ew.a.run.app/api"
+        build_args="--build-arg VITE_API_BASE_URL=https://dumenden-backend-289960158905.europe-west1.run.app/api"
         build_args="$build_args --build-arg VITE_APP_ENVIRONMENT=production"
         build_args="$build_args --build-arg VITE_ENABLE_ANALYTICS=true"
         build_args="$build_args --build-arg VITE_ENABLE_DEBUG_MODE=false"
     else
-        build_args="--build-arg VITE_API_BASE_URL=https://dumenden-backend-pliz2d45kq-ew.a.run.app/api"
+        build_args="--build-arg VITE_API_BASE_URL=https://dumenden-backend-289960158905.europe-west1.run.app/api"
         build_args="$build_args --build-arg VITE_APP_ENVIRONMENT=staging"
         build_args="$build_args --build-arg VITE_ENABLE_ANALYTICS=false"
         build_args="$build_args --build-arg VITE_ENABLE_DEBUG_MODE=true"
