@@ -50,7 +50,11 @@ import {
   BoatServiceDTO,
   ServiceType,
 } from "@/types/boat.types";
-import { BoatDocumentDTO, CreateBoatDocumentDTO, BoatDocumentType } from "@/types/document.types";
+import {
+  BoatDocumentDTO,
+  CreateBoatDocumentDTO,
+  BoatDocumentType,
+} from "@/types/document.types";
 import { documentService } from "@/services/documentService";
 import {
   compressImage,
@@ -491,7 +495,10 @@ const VesselsPage = () => {
     }
 
     // Check for required document types (basic validation)
-    const requiredDocTypes = [BoatDocumentType.LICENSE, BoatDocumentType.INSURANCE];
+    const requiredDocTypes = [
+      BoatDocumentType.LICENSE,
+      BoatDocumentType.INSURANCE,
+    ];
     const existingDocTypes = documents.map((doc) => doc.documentType);
     const missingRequiredDocs = requiredDocTypes.filter(
       (type) => !existingDocTypes.includes(type)
@@ -576,7 +583,7 @@ const VesselsPage = () => {
       captainIncluded: false,
       images: imagesDTOs,
       features: data.features.map((name) => ({ featureName: name })),
-            services: data.boatServices.map((service) => ({
+      services: data.boatServices.map((service) => ({
         boatId: 0, // Will be set by backend
         name: service.name,
         description: service.description,
@@ -783,10 +790,33 @@ const VesselsPage = () => {
     // If so, don't process the main form submission
     const target = e.target as HTMLFormElement;
     const submitter = (e.nativeEvent as any)?.submitter;
-    
-    // Skip submission if it's coming from document upload area
-    if (submitter && submitter.closest('[data-document-area]')) {
-      console.log('Document area submission prevented');
+
+    // Skip submission if it's coming from document upload area or file input
+    if (submitter) {
+      const isDocumentArea = submitter.closest("[data-document-area]");
+      const isFileInput =
+        submitter.type === "file" || submitter.closest('input[type="file"]');
+      const isDocumentUploader = submitter.closest("[data-document-uploader]");
+      const isDocumentTab = submitter.closest("[data-document-tab-container]");
+      const isDocumentFileInput = submitter.hasAttribute(
+        "data-document-file-input"
+      );
+
+      if (
+        isDocumentArea ||
+        isFileInput ||
+        isDocumentUploader ||
+        isDocumentTab ||
+        isDocumentFileInput
+      ) {
+        console.log("Document-related submission prevented");
+        return;
+      }
+    }
+
+    // Additional check for current tab - don't submit if we're on documents tab
+    if (formTab === "documents") {
+      console.log("Form submission prevented while on documents tab");
       return;
     }
 
@@ -1073,7 +1103,36 @@ const VesselsPage = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit}>
+              <form
+                onSubmit={handleSubmit}
+                onClick={(e) => {
+                  // Prevent clicks on document-related elements from triggering form submission
+                  const target = e.target as HTMLElement;
+                  if (
+                    target.closest("[data-document-area]") ||
+                    target.closest("[data-document-uploader]") ||
+                    target.closest("[data-document-tab-container]") ||
+                    target.closest('input[type="file"]') ||
+                    target.hasAttribute("data-document-file-input")
+                  ) {
+                    e.stopPropagation();
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Prevent Enter key from submitting form when in document areas
+                  if (e.key === "Enter") {
+                    const target = e.target as HTMLElement;
+                    if (
+                      target.closest("[data-document-area]") ||
+                      target.closest("[data-document-uploader]") ||
+                      target.closest("[data-document-tab-container]")
+                    ) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }
+                }}
+              >
                 <Tabs
                   defaultValue={formTab}
                   className="w-full"
@@ -2018,7 +2077,11 @@ const VesselsPage = () => {
                     </TabsContent>
 
                     <TabsContent value="documents" className="p-8">
-                      <div className="space-y-8" data-document-area>
+                      <div
+                        className="space-y-8"
+                        data-document-area
+                        data-no-submit
+                      >
                         {/* Section Header */}
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>

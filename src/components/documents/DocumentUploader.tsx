@@ -191,6 +191,9 @@ const DocumentUploader = <T extends BoatDocumentType | TourDocumentType>({
   // Handle file input change
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
       const files = e.target.files;
       if (files && files.length > 0) {
         handleFileSelect(files[0]);
@@ -408,14 +411,14 @@ const DocumentUploader = <T extends BoatDocumentType | TourDocumentType>({
     uploadState.status !== "optimizing";
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn("w-full", className)} data-document-uploader>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="h-5 w-5" />
           {t("documents.upload.title", "Upload Document")}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6" data-document-uploader>
         {/* File Drop Zone */}
         <div
           className={cn(
@@ -553,8 +556,13 @@ const DocumentUploader = <T extends BoatDocumentType | TourDocumentType>({
                 </p>
               </div>
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
                 disabled={loading}
               >
                 {t("documents.upload.selectFile", "Select File")}
@@ -577,7 +585,11 @@ const DocumentUploader = <T extends BoatDocumentType | TourDocumentType>({
           type="file"
           accept={acceptedTypes.join(",")}
           onChange={handleFileInputChange}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
           className="hidden"
+          data-document-file-input
         />
 
         {/* Optimization Suggestions */}
@@ -798,7 +810,12 @@ const DocumentUploader = <T extends BoatDocumentType | TourDocumentType>({
         {/* Upload Button */}
         {uploadState.file && uploadState.status !== "success" && (
           <Button
-            onClick={() => handleUpload(false)}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleUpload(false);
+            }}
             disabled={
               !isFormValid ||
               loading ||

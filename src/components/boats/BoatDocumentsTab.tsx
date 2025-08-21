@@ -163,10 +163,11 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
       metadata: DocumentMetadata,
       event?: Event
     ) => {
-      // Prevent form submission
+      // Prevent form submission and event bubbling
       if (event) {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
       }
       if (!boatId) {
         // For new boats, we'll store the document data temporarily
@@ -414,7 +415,15 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
   const stats = getDocumentStats();
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div
+      className={cn("space-y-6", className)}
+      onClick={(e) => e.stopPropagation()}
+      onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      data-document-tab-container
+    >
       {/* Header Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -542,14 +551,15 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
             onSubmit={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
+            data-document-uploader-container
           >
             <DocumentUploader
               documentTypes={documentTypeLabels}
@@ -565,7 +575,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
                 "image/webp",
               ]}
             />
-          </form>
+          </div>
         </CardContent>
       </Card>
 
