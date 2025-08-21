@@ -96,12 +96,6 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
       );
     }
 
-    // Check for unverified documents
-    const unverifiedDocuments = documents.filter((doc) => !doc.isVerified);
-    if (unverifiedDocuments.length > 0) {
-      warnings.push(`${unverifiedDocuments.length} belge henüz doğrulanmamış`);
-    }
-
     // Check for required document types
     const requiredDocTypes = [
       BoatDocumentType.LICENSE,
