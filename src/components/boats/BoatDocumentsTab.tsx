@@ -60,6 +60,17 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    // Only validate if there are documents
+    if (documents.length === 0) {
+      setValidationSummary({
+        hasErrors: false,
+        hasWarnings: false,
+        errors: [],
+        warnings: [],
+      });
+      return;
+    }
+
     // Check for expired documents
     const expiredDocuments = documents.filter((doc) => {
       if (!doc.expiryDate) return false;
@@ -170,7 +181,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
             filePath: "", // Will be set by backend
             documentUrl: "", // Will be set by backend
             expiryDate: metadata.expiryDate,
-            isVerified: false,
+            isVerified: true, // Otomatik olarak onaylanmış duruma ayarla
             verificationNotes: metadata.verificationNotes,
             displayOrder: documents.length + 1,
             createdAt: new Date().toISOString(),
@@ -218,7 +229,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
             documentName: metadata.documentName || file.name,
             documentData: base64,
             expiryDate: metadata.expiryDate,
-            isVerified: false,
+            isVerified: true,
             verificationNotes: metadata.verificationNotes,
             displayOrder: documents.length + 1,
           };

@@ -118,6 +118,8 @@ class DocumentService extends BaseService {
       const payload = {
         ...data,
         boatId,
+        // Otomatik olarak onaylanmış duruma ayarla
+        isVerified: true,
       };
       const result = await this.post<BoatDocumentDTO>(
         "/boat-documents",
@@ -227,6 +229,8 @@ class DocumentService extends BaseService {
       const payload = {
         ...data,
         tourId,
+        // Otomatik olarak onaylanmış duruma ayarla
+        isVerified: true,
       };
       const result = await this.post<TourDocumentDTO>(
         "/tour-documents",

@@ -60,6 +60,17 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    // Only validate if there are documents
+    if (documents.length === 0) {
+      setValidationSummary({
+        hasErrors: false,
+        hasWarnings: false,
+        errors: [],
+        warnings: [],
+      });
+      return;
+    }
+
     // Check for expired documents
     const expiredDocuments = documents.filter((doc) => {
       if (!doc.expiryDate) return false;
@@ -116,7 +127,7 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
     }, {} as Record<string, number>);
 
     const duplicateTypes = Object.entries(docTypeCounts)
-      .filter(([_, count]) => count > 1)
+      .filter(([_, count]) => Number(count) > 1)
       .map(([type, _]) => type);
 
     if (duplicateTypes.length > 0) {
@@ -159,7 +170,7 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
           setUploadError(null);
 
           // Convert file to base64
-          const base64Data = await documentService.convertFileToBase64(file);
+          const { base64 } = await documentService.convertFileToBase64(file);
 
           // Create a temporary document object
           const tempDocument: TourDocumentDTO = {
@@ -170,7 +181,7 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
             filePath: "", // Will be set by backend
             documentUrl: "", // Will be set by backend
             expiryDate: metadata.expiryDate,
-            isVerified: false,
+            isVerified: true, // Otomatik olarak onaylanmış duruma ayarla
             verificationNotes: metadata.verificationNotes,
             displayOrder: documents.length + 1,
             createdAt: new Date().toISOString(),
@@ -211,14 +222,14 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
           setIsUploading(true);
           setUploadError(null);
 
-          const base64Data = await documentService.convertFileToBase64(file);
+          const { base64 } = await documentService.convertFileToBase64(file);
 
           const createDTO: CreateTourDocumentDTO = {
             documentType,
             documentName: metadata.documentName || file.name,
-            documentData: base64Data,
+            documentData: base64,
             expiryDate: metadata.expiryDate,
-            isVerified: false,
+            isVerified: true, // Otomatik olarak onaylanmış duruma ayarla
             verificationNotes: metadata.verificationNotes,
             displayOrder: documents.length + 1,
           };
