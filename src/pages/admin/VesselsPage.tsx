@@ -47,8 +47,10 @@ import {
   CreateVesselDTO,
   UpdateVesselDTO,
   BoatImageDTO,
+  BoatServiceDTO,
+  ServiceType,
 } from "@/types/boat.types";
-import { BoatDocumentDTO, CreateBoatDocumentDTO } from "@/types/document.types";
+import { BoatDocumentDTO, CreateBoatDocumentDTO, BoatDocumentType } from "@/types/document.types";
 import { documentService } from "@/services/documentService";
 import {
   compressImage,
@@ -125,7 +127,7 @@ interface VesselFormData {
     name: string;
     description: string;
     price: number;
-    serviceType: string;
+    serviceType: ServiceType;
     quantity: number;
   }>;
 
@@ -369,7 +371,7 @@ const VesselsPage = () => {
       boatServices:
         vessel.services?.map((s) => ({
           name: s.name,
-          description: s.description,
+          description: s.description || "",
           price: s.price,
           serviceType: s.serviceType,
           quantity: s.quantity,
@@ -489,7 +491,7 @@ const VesselsPage = () => {
     }
 
     // Check for required document types (basic validation)
-    const requiredDocTypes = ["LICENSE", "INSURANCE"];
+    const requiredDocTypes = [BoatDocumentType.LICENSE, BoatDocumentType.INSURANCE];
     const existingDocTypes = documents.map((doc) => doc.documentType);
     const missingRequiredDocs = requiredDocTypes.filter(
       (type) => !existingDocTypes.includes(type)
@@ -498,9 +500,9 @@ const VesselsPage = () => {
     if (missingRequiredDocs.length > 0) {
       const missingDocNames = missingRequiredDocs.map((type) => {
         switch (type) {
-          case "LICENSE":
+          case BoatDocumentType.LICENSE:
             return "Gemi Ruhsatı";
-          case "INSURANCE":
+          case BoatDocumentType.INSURANCE:
             return "Sigorta Belgesi";
           default:
             return type;
@@ -574,11 +576,11 @@ const VesselsPage = () => {
       captainIncluded: false,
       images: imagesDTOs,
       features: data.features.map((name) => ({ featureName: name })),
-      services: data.boatServices.map((service) => ({
-        boatId: 0,
+            services: data.boatServices.map((service) => ({
+        boatId: 0, // Will be set by backend
         name: service.name,
         description: service.description,
-        serviceType: service.serviceType as any,
+        serviceType: service.serviceType,
         price: service.price,
         quantity: service.quantity,
       })),
@@ -775,6 +777,18 @@ const VesselsPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    // Check if the submit was triggered by a document-related action
+    // If so, don't process the main form submission
+    const target = e.target as HTMLFormElement;
+    const submitter = (e.nativeEvent as any)?.submitter;
+    
+    // Skip submission if it's coming from document upload area
+    if (submitter && submitter.closest('[data-document-area]')) {
+      console.log('Document area submission prevented');
+      return;
+    }
 
     const validation = validateForm();
     if (!validation.isValid) {
@@ -2004,7 +2018,7 @@ const VesselsPage = () => {
                     </TabsContent>
 
                     <TabsContent value="documents" className="p-8">
-                      <div className="space-y-8">
+                      <div className="space-y-8" data-document-area>
                         {/* Section Header */}
                         <div className="relative">
                           <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 rounded-2xl opacity-10"></div>

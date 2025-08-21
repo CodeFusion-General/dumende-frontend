@@ -160,8 +160,14 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
     async (
       file: File,
       documentType: TourDocumentType,
-      metadata: DocumentMetadata
+      metadata: DocumentMetadata,
+      event?: Event
     ) => {
+      // Prevent form submission
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
       if (!tourId) {
         // For new tours, we'll store the document data temporarily
         // and upload it when the tour is created
@@ -536,20 +542,30 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DocumentUploader
-            documentTypes={documentTypeLabels}
-            onUpload={handleDocumentUpload}
-            loading={isUploading || loading}
-            entityType="tour"
-            maxFileSize={10 * 1024 * 1024} // 10MB
-            acceptedTypes={[
-              "application/pdf",
-              "image/jpeg",
-              "image/jpg",
-              "image/png",
-              "image/webp",
-            ]}
-          />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
+            <DocumentUploader
+              documentTypes={documentTypeLabels}
+              onUpload={handleDocumentUpload}
+              loading={isUploading || loading}
+              entityType="tour"
+              maxFileSize={10 * 1024 * 1024} // 10MB
+              acceptedTypes={[
+                "application/pdf",
+                "image/jpeg",
+                "image/jpg",
+                "image/png",
+                "image/webp",
+              ]}
+            />
+          </form>
         </CardContent>
       </Card>
 
