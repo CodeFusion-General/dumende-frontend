@@ -163,7 +163,7 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-6 w-32" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <BoatCardSkeleton key={index} />
           ))}
@@ -217,7 +217,7 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
       {/* Boats Grid */}
       <div
         ref={similarBoatsRef as React.RefObject<HTMLDivElement>}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
       >
         {filteredBoats.map((boat, index) => (
           <VisualFeedback

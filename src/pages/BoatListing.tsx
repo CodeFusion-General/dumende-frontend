@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useRef, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -11,7 +11,6 @@ import Reviews from "@/components/boats/Reviews";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  AlertCircle,
   MapPin,
   Users,
   Anchor,
@@ -30,11 +29,8 @@ import { bookingService } from "@/services/bookingService";
 import { captainService } from "@/services/captainService";
 import { useQuery } from "@tanstack/react-query";
 import { useMicroInteractions } from "@/hooks/useMicroInteractions";
-import { VisualFeedback, AnimatedButton } from "@/components/ui/VisualFeedback";
-
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { isValidImageUrl, getFullImageUrl } from "@/lib/imageUtils";
+import { VisualFeedback } from "@/components/ui/VisualFeedback";
+import { isValidImageUrl } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import { CustomerCaptainChat } from "@/components/boats/messaging/CustomerCaptainChat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,13 +52,17 @@ import {
   ErrorState,
   NetworkError,
   BoatNotFoundError,
-  ErrorBoundaryFallback,
 } from "@/components/ui/ErrorStates";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { notificationService } from "@/services/notificationService";
 import { BoatDTO } from "@/types/boat.types";
 import MapPicker from "@/components/common/MapPicker";
+import {
+  preloadImages,
+  getResponsiveImageSizes,
+  getContainmentStyle,
+} from "@/utils/performanceOptimizations";
 
 // Default image kaldırıldı: geçerli görsel yoksa boş durum gösterilecek
 
@@ -78,30 +78,14 @@ const BoatListing = () => {
   const [checkingBooking, setCheckingBooking] = React.useState(false);
 
   // Micro-interactions
-  const { fadeIn, slideIn, staggerAnimation, prefersReducedMotion } =
-    useMicroInteractions();
-  const heroRef = useRef<HTMLDivElement>(null);
-  const mainContentRef = useRef<HTMLDivElement>(null);
+  const { prefersReducedMotion } = useMicroInteractions();
   const quickInfoRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Progressive loading for different sections
-  const { shouldLoad: shouldLoadFeatures } = useProgressiveLoading({
-    delay: 300,
-    priority: "medium",
-  });
-
-  const { shouldLoad: shouldLoadReviews } = useProgressiveLoading({
-    delay: 600,
-    priority: "low",
-  });
-
   const { shouldLoad: shouldLoadSimilarBoats } = useProgressiveLoading({
     delay: 900,
     priority: "low",
   });
-
-  // State for retry mechanism
-  const [isRetrying, setIsRetrying] = React.useState(false);
 
   // Optimize React Query with stricter caching and prevent refetching
   const {
@@ -135,8 +119,9 @@ const BoatListing = () => {
       boatService.searchBoats({
         type: boatData?.type,
       }),
-    select: useCallback((data: BoatDTO[]) =>
-      data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
+    select: useCallback(
+      (data: BoatDTO[]) =>
+        data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
       [boatData?.id]
     ),
     enabled: !!boatData?.type && shouldLoadSimilarBoats,
@@ -170,7 +155,7 @@ const BoatListing = () => {
           const captainId = await extractCaptainIdFromBooking(booking);
           const captainData = await captainService.getCaptainById(captainId);
           setCaptain(captainData);
-        // console.debug("Captain data loaded:", captainData);
+          // console.debug("Captain data loaded:", captainData);
         } catch (error) {
           console.error("❌ Failed to load captain info:", error);
         } finally {
@@ -209,30 +194,33 @@ const BoatListing = () => {
   const stableBoatData = useStableBoatData(boatData);
 
   // Memoize messaging callbacks to prevent re-renders
-  const messagingCallbacks = useMemo(() => ({
-    handleOpenMessaging: () => {
-      if (userBooking && captain) {
-        setShowMessaging(true);
-      } else {
-        toast({
-          title: "Mesajlaşma mevcut değil",
-          description: "Bu tekne ile aktif bir rezervasyonunuz bulunmuyor.",
-          variant: "destructive",
-        });
-      }
-    },
-    handleCloseMessaging: () => {
-      setShowMessaging(false);
-    },
-    isMessagingAvailable: () => {
-      if (!isAuthenticated || !isCustomer() || !userBooking) {
-        return false;
-      }
+  const messagingCallbacks = useMemo(
+    () => ({
+      handleOpenMessaging: () => {
+        if (userBooking && captain) {
+          setShowMessaging(true);
+        } else {
+          toast({
+            title: "Mesajlaşma mevcut değil",
+            description: "Bu tekne ile aktif bir rezervasyonunuz bulunmuyor.",
+            variant: "destructive",
+          });
+        }
+      },
+      handleCloseMessaging: () => {
+        setShowMessaging(false);
+      },
+      isMessagingAvailable: () => {
+        if (!isAuthenticated || !isCustomer() || !userBooking) {
+          return false;
+        }
 
-      const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED"];
-      return allowedStatuses.includes(userBooking.status);
-    }
-  }), [userBooking, captain, isAuthenticated, isCustomer]);
+        const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED"];
+        return allowedStatuses.includes(userBooking.status);
+      },
+    }),
+    [userBooking, captain, isAuthenticated, isCustomer]
+  );
 
   // Messaging functions
   const handleOpenMessaging = messagingCallbacks.handleOpenMessaging;
@@ -242,8 +230,7 @@ const BoatListing = () => {
   // Check if messaging should be available
   const messagingAvailable = isMessagingAvailable();
 
-  // Geçerli fotoğrafları filtrele ve default image sistemi ekle
-  const [signedUrlCache, setSignedUrlCache] = React.useState<Record<string, string>>({});
+  // Image processing state
   const [isProcessingImages, setIsProcessingImages] = React.useState(false);
 
   // Cache for signed URLs to prevent repeated requests
@@ -269,14 +256,17 @@ const BoatListing = () => {
       if (!processedImageUrls.length || isProcessingImages) return;
 
       // Skip if images haven't changed and we already have valid images
-      if (validImages.length > 0 && validImages.length === processedImageUrls.length) {
+      if (
+        validImages.length > 0 &&
+        validImages.length === processedImageUrls.length
+      ) {
         return;
       }
 
       setIsProcessingImages(true);
       try {
         const newValidImages: string[] = [];
-        
+
         for (const imageUrl of processedImageUrls) {
           // Skip if already cached
           if (signedUrlCacheRef.current[imageUrl]) {
@@ -290,16 +280,18 @@ const BoatListing = () => {
           }
 
           // For Firebase Storage URLs, we need to check if they need signing
-          if (imageUrl.includes('firebasestorage.googleapis.com') && !imageUrl.includes('&signature=')) {
+          if (
+            imageUrl.includes("firebasestorage.googleapis.com") &&
+            !imageUrl.includes("&signature=")
+          ) {
             pendingUrlRequests.current.add(imageUrl);
-            
+
             try {
               // Use the existing URL as-is for now (assuming backend provides signed URLs)
               // In a real implementation, you would call a service to get signed URLs
               signedUrlCacheRef.current[imageUrl] = imageUrl;
               newValidImages.push(imageUrl);
             } catch (error) {
-
               signedUrlCacheRef.current[imageUrl] = imageUrl; // Fallback to original
               newValidImages.push(imageUrl);
             } finally {
@@ -313,7 +305,11 @@ const BoatListing = () => {
         }
 
         setValidImages(newValidImages);
-        setSignedUrlCache(signedUrlCacheRef.current);
+
+        // Preload first few images to prevent layout shifts
+        if (newValidImages.length > 0) {
+          preloadImages(newValidImages.slice(0, 3)).catch(console.warn);
+        }
       } finally {
         setIsProcessingImages(false);
       }
@@ -350,12 +346,15 @@ const BoatListing = () => {
   }, []);
 
   // Memoize the CustomerCaptainChat props to prevent re-renders
-  const chatProps = useMemo(() => ({
-    isOpen: showMessaging,
-    onClose: handleCloseMessaging,
-    booking: userBooking,
-    captain: captain
-  }), [showMessaging, handleCloseMessaging, userBooking, captain]);
+  const chatProps = useMemo(
+    () => ({
+      isOpen: showMessaging,
+      onClose: handleCloseMessaging,
+      booking: userBooking,
+      captain: captain,
+    }),
+    [showMessaging, handleCloseMessaging, userBooking, captain]
+  );
 
   // Stable boat data for the entire component lifecycle
   const finalBoatData = stableBoatData || boatData;
@@ -365,7 +364,7 @@ const BoatListing = () => {
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-16 py-8">
             {/* Hero Image Skeleton */}
             <div className="relative pt-16 sm:pt-20 pb-8 sm:pb-12">
               <ImageGallerySkeleton className="mb-8" />
@@ -373,7 +372,7 @@ const BoatListing = () => {
 
             {/* Main Content Skeleton */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12">
-              <div className="lg:col-span-8 space-y-6 sm:space-y-8 lg:space-y-12">
+              <div className="lg:col-span-8 space-y-6 sm:space-y-8">
                 <BoatInfoSkeleton />
                 <BoatFeaturesSkeleton />
                 <HostInfoSkeleton />
@@ -400,7 +399,7 @@ const BoatListing = () => {
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-16 py-8">
             {isNetworkError ? (
               <NetworkError onRetry={() => refetchBoat()} />
             ) : (
@@ -423,7 +422,7 @@ const BoatListing = () => {
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
         <main className="flex-grow">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-16 py-8">
             <BoatNotFoundError onGoBack={() => window.history.back()} />
           </div>
         </main>
@@ -443,18 +442,21 @@ const BoatListing = () => {
         {/* Add bottom padding for mobile booking footer */}
         {/* Enhanced Hero Section with Corporate Design */}
         <section
-          className="relative pt-16 sm:pt-20 pb-8 sm:pb-12 overflow-hidden"
+          className="relative pt-16 sm:pt-20 pb-6 sm:pb-8 lg:pb-6 overflow-hidden"
           aria-label="Boat image gallery"
         >
           {/* Background Pattern */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(26,95,122,0.1),transparent_50%)]" />
 
-          <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-12">
             {/* Hero Image Gallery with Professional Presentation */}
             <div className="relative animate-fade-in">
               {validImages.length > 0 ? (
-                <div className="relative bg-white rounded-3xl p-6 shadow-2xl border border-gray-100/50 backdrop-blur-sm transition-all duration-700 hover:shadow-3xl group">
+                <div
+                  className="relative bg-white rounded-3xl p-4 sm:p-6 shadow-2xl border border-gray-100/50 backdrop-blur-sm transition-all duration-700 hover:shadow-3xl group"
+                  style={getContainmentStyle("layout")}
+                >
                   {/* Action Buttons */}
                   <div className="absolute top-8 right-8 z-20 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <Button
@@ -476,14 +478,17 @@ const BoatListing = () => {
                   </div>
 
                   <div className="relative overflow-hidden rounded-2xl">
-                    <div className="aspect-[16/10] relative overflow-hidden">
+                    <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[5/3] xl:aspect-[16/9] relative overflow-hidden">
                       <img
                         src={validImages[currentImageIndex]}
                         alt={`${finalBoatData.name} - Görsel ${
                           currentImageIndex + 1
                         }`}
                         className="w-full h-full object-cover transition-all duration-700 ease-out hover:scale-105 cursor-pointer"
+                        style={{ willChange: "transform" }}
                         loading="eager"
+                        sizes={getResponsiveImageSizes("hero")}
+                        decoding="async"
                       />
                       {/* Enhanced Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
@@ -495,7 +500,7 @@ const BoatListing = () => {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-[44px] min-w-[44px] touch-manipulation"
+                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-11 min-w-11 touch-manipulation focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             onClick={previousImage}
                             aria-label="Previous image"
                           >
@@ -504,7 +509,7 @@ const BoatListing = () => {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-[44px] min-w-[44px] touch-manipulation"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-11 min-w-11 touch-manipulation focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             onClick={nextImage}
                             aria-label="Next image"
                           >
@@ -525,26 +530,29 @@ const BoatListing = () => {
 
                   {/* Enhanced Thumbnail Strip */}
                   {validImages.length > 1 && (
-                    <div className="mt-6 flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    <div className="mt-4 sm:mt-6 flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
                       {validImages.slice(0, 8).map((image, index) => (
                         <button
                           key={index}
                           onClick={() => goToImage(index)}
-                          className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-3 transition-all duration-300 hover:scale-105 ${
+                          className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-3 transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                             currentImageIndex === index
                               ? "border-primary ring-4 ring-primary/20 shadow-lg"
                               : "border-transparent hover:border-primary/50 shadow-md"
                           }`}
+                          aria-label={`View image ${index + 1}`}
                         >
                           <img
                             src={image}
                             alt={`Thumbnail ${index + 1}`}
                             className="w-full h-full object-cover transition-all duration-300"
+                            loading="lazy"
+                            decoding="async"
                           />
                         </button>
                       ))}
                       {validImages.length > 8 && (
-                        <div className="flex-shrink-0 w-20 h-20 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium border-2 border-gray-200 shadow-md">
+                        <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 xl:w-20 xl:h-20 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 text-xs sm:text-sm font-medium border-2 border-gray-200 shadow-md">
                           +{validImages.length - 8}
                         </div>
                       )}
@@ -552,8 +560,11 @@ const BoatListing = () => {
                   )}
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl p-12 shadow-2xl border border-gray-100/50 backdrop-blur-sm">
-                  <div className="aspect-[16/10] bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 rounded-2xl flex items-center justify-center">
+                <div
+                  className="bg-white rounded-3xl p-8 sm:p-12 lg:p-8 shadow-2xl border border-gray-100/50 backdrop-blur-sm"
+                  style={getContainmentStyle("layout")}
+                >
+                  <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[5/3] xl:aspect-[16/9] bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 rounded-2xl flex items-center justify-center">
                     <div className="text-center animate-pulse">
                       <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Anchor className="h-12 w-12 text-primary/60" />
@@ -577,13 +588,16 @@ const BoatListing = () => {
           {/* Background Elements */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/2 to-transparent" />
 
-          <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8 sm:py-12">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-16 py-8 sm:py-12">
             {/* Three-Column Grid Layout with Proper Responsive Breakpoints */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-8 xl:gap-12">
               {/* Main Content Area - Spans 8 columns on lg+ screens */}
-              <div className="lg:col-span-8 space-y-6 sm:space-y-8 lg:space-y-12">
+              <div className="lg:col-span-8 space-y-6 sm:space-y-8">
                 {/* Enhanced Boat Header with Corporate Design */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl animate-fade-in">
+                <div
+                  className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-6 sm:p-8 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl animate-fade-in"
+                  style={getContainmentStyle("layout")}
+                >
                   <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 sm:gap-8 mb-6 sm:mb-8">
                     <div className="flex-1 space-y-4 sm:space-y-6">
                       {/* Badges and Rating */}
@@ -618,7 +632,7 @@ const BoatListing = () => {
 
                       {/* Title and Location */}
                       <div className="space-y-3 sm:space-y-4">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+                        <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-3xl xl:text-4xl font-bold text-gray-900 leading-tight">
                           {finalBoatData.name}
                         </h1>
                         <div className="flex items-center gap-3 text-gray-600">
@@ -636,7 +650,7 @@ const BoatListing = () => {
                     <div className="flex flex-col items-start lg:items-end gap-3 bg-gradient-to-br from-primary/5 to-secondary/5 p-4 sm:p-6 rounded-2xl border border-primary/10">
                       <div className="text-left lg:text-right">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">
+                          <span className="text-2xl sm:text-3xl lg:text-3xl xl:text-4xl font-bold text-primary">
                             ₺{Number(finalBoatData.dailyPrice).toLocaleString()}
                           </span>
                           <span className="text-gray-500 text-base sm:text-lg font-medium">
@@ -646,7 +660,8 @@ const BoatListing = () => {
                         {finalBoatData.hourlyPrice && (
                           <div className="text-xs text-gray-600 mt-1">
                             veya ₺
-                            {Number(finalBoatData.hourlyPrice).toLocaleString()}/saat
+                            {Number(finalBoatData.hourlyPrice).toLocaleString()}
+                            /saat
                           </div>
                         )}
                       </div>
@@ -659,7 +674,7 @@ const BoatListing = () => {
                   <Separator className="my-8 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
                   {/* Enhanced Quick Info Cards */}
-                  <div className="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                     <VisualFeedback
                       variant="lift"
                       intensity="sm"
@@ -668,7 +683,7 @@ const BoatListing = () => {
                     >
                       <div
                         ref={(el) => (quickInfoRefs.current[0] = el)}
-                        className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 text-center border border-blue-200/50"
+                        className="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 sm:p-6 text-center border border-blue-200/50"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                           <Users className="h-6 w-6 text-white" />
@@ -676,7 +691,7 @@ const BoatListing = () => {
                         <div className="text-sm text-blue-700 font-medium mb-1">
                           Kapasite
                         </div>
-                        <div className="text-xl font-bold text-blue-900">
+                        <div className="text-lg sm:text-xl font-bold text-blue-900">
                           {finalBoatData.capacity} kişi
                         </div>
                       </div>
@@ -690,7 +705,7 @@ const BoatListing = () => {
                     >
                       <div
                         ref={(el) => (quickInfoRefs.current[1] = el)}
-                        className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 text-center border border-primary/20"
+                        className="group bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-4 sm:p-6 text-center border border-primary/20"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                           <Anchor className="h-6 w-6 text-white" />
@@ -698,7 +713,7 @@ const BoatListing = () => {
                         <div className="text-sm text-primary font-medium mb-1">
                           Uzunluk
                         </div>
-                        <div className="text-xl font-bold text-primary-dark">
+                        <div className="text-lg sm:text-xl font-bold text-primary-dark">
                           {finalBoatData.length}m
                         </div>
                       </div>
@@ -712,7 +727,7 @@ const BoatListing = () => {
                     >
                       <div
                         ref={(el) => (quickInfoRefs.current[2] = el)}
-                        className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-6 text-center border border-green-200/50"
+                        className="group bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-4 sm:p-6 text-center border border-green-200/50"
                       >
                         <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                           <Shield className="h-6 w-6 text-white" />
@@ -720,8 +735,10 @@ const BoatListing = () => {
                         <div className="text-sm text-green-700 font-medium mb-1">
                           Kaptan
                         </div>
-                        <div className="text-xl font-bold text-green-900">
-                          {finalBoatData.captainIncluded ? "Dahil" : "Opsiyonel"}
+                        <div className="text-lg sm:text-xl font-bold text-green-900">
+                          {finalBoatData.captainIncluded
+                            ? "Dahil"
+                            : "Opsiyonel"}
                         </div>
                       </div>
                     </VisualFeedback>
@@ -729,7 +746,7 @@ const BoatListing = () => {
 
                   {/* Enhanced Description */}
                   <div className="space-y-4">
-                    <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
                       <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
                       Açıklama
                     </h3>
@@ -743,29 +760,34 @@ const BoatListing = () => {
 
                 {/* Enhanced Features Section with Corporate Design */}
                 {/* Location Map Section */}
-                {finalBoatData.latitude != null && finalBoatData.longitude != null && (
-                  <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
-                    <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                      <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
-                      Konum
-                    </h2>
-                    <p className="text-gray-600 mb-4 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" /> {finalBoatData.location}
-                    </p>
-                    <div className="rounded-2xl overflow-hidden border border-gray-200">
-                      <MapPicker
-                        value={{ lat: finalBoatData.latitude, lng: finalBoatData.longitude }}
-                        height={360}
-                        zoom={13}
-                        readOnly
-                      />
+                {finalBoatData.latitude != null &&
+                  finalBoatData.longitude != null && (
+                    <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-6 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                      <h2 className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                        <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
+                        Konum
+                      </h2>
+                      <p className="text-gray-600 mb-4 flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary" />{" "}
+                        {finalBoatData.location}
+                      </p>
+                      <div className="rounded-2xl overflow-hidden border border-gray-200">
+                        <MapPicker
+                          value={{
+                            lat: finalBoatData.latitude,
+                            lng: finalBoatData.longitude,
+                          }}
+                          height={360}
+                          zoom={13}
+                          readOnly
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Enhanced Features Section with Corporate Design */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
-                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-6 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                  <h2 className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                     <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
                     Özellikler
                   </h2>
@@ -773,13 +795,13 @@ const BoatListing = () => {
                 </div>
 
                 {/* Enhanced Services Section */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-6 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
                   <BoatServices services={finalBoatData.services || []} />
                 </div>
 
                 {/* Enhanced Host Section with Professional Design */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-10 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
-                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl p-8 lg:p-6 border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
+                  <h2 className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                     <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
                     Tekne Sahibi
                   </h2>
@@ -811,8 +833,8 @@ const BoatListing = () => {
 
                 {/* Enhanced Reviews Section */}
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100/50 transition-all duration-500 hover:shadow-2xl overflow-hidden">
-                  <div className="p-8 lg:p-10">
-                    <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                  <div className="p-8 lg:p-6">
+                    <h2 className="text-xl sm:text-2xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
                       <div className="w-1 h-8 bg-gradient-to-b from-primary to-secondary rounded-full"></div>
                       Değerlendirmeler
                     </h2>
@@ -824,7 +846,7 @@ const BoatListing = () => {
                 <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100/50 transition-all duration-500 hover:shadow-2xl overflow-hidden">
                   <ProgressiveLoader
                     isLoading={isSimilarBoatsLoading}
-                    skeleton={<SimilarBoatsSkeleton className="p-8 lg:p-10" />}
+                    skeleton={<SimilarBoatsSkeleton className="p-8 lg:p-6" />}
                   >
                     <SimilarBoats
                       boats={similarBoatsData || []}
@@ -843,7 +865,7 @@ const BoatListing = () => {
 
               {/* Enhanced Booking Sidebar - Spans 4 columns on lg+ screens */}
               <div className="lg:col-span-4">
-                <div className="sticky top-8 space-y-6">
+                <div className="sticky top-6 sm:top-8 space-y-4 sm:space-y-6">
                   <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100/50 transition-all duration-500 hover:shadow-2xl">
                     <BookingForm
                       dailyPrice={Number(finalBoatData.dailyPrice) || 0}
@@ -855,8 +877,8 @@ const BoatListing = () => {
                   </div>
 
                   {/* Additional Trust Indicators */}
-                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-100/50">
-                    <div className="space-y-4">
+                  <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-100/50">
+                    <div className="space-y-3 sm:space-y-4">
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <Shield className="h-4 w-4 text-green-600" />
                         <span>Güvenli ödeme sistemi</span>
@@ -880,9 +902,7 @@ const BoatListing = () => {
       <Footer />
 
       {/* Customer Captain Chat Modal */}
-      {userBooking && captain && (
-        <CustomerCaptainChat {...chatProps} />
-      )}
+      {userBooking && captain && <CustomerCaptainChat {...chatProps} />}
     </div>
   );
 };

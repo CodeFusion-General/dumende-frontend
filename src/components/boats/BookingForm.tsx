@@ -50,7 +50,12 @@ import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomerCaptainChat } from "./messaging/CustomerCaptainChat";
-import { BookingDTO, BookingStatus, SelectedServiceDTO, CreateBookingDTO } from "@/types/booking.types";
+import {
+  BookingDTO,
+  BookingStatus,
+  SelectedServiceDTO,
+  CreateBookingDTO,
+} from "@/types/booking.types";
 import { BoatServiceDTO } from "@/types/boat.types";
 import { Captain } from "@/types/captain.types";
 import { PaymentStatusResponseDto } from "@/types/payment.types";
@@ -102,13 +107,18 @@ export function BookingForm({
   const [isTimeSlotLoading, setIsTimeSlotLoading] = useState<boolean>(false);
 
   // Services state
-  const [selectedServices, setSelectedServices] = useState<SelectedServiceDTO[]>([]);
+  const [selectedServices, setSelectedServices] = useState<
+    SelectedServiceDTO[]
+  >([]);
   const [servicesPrice, setServicesPrice] = useState<number>(0);
   const [showServiceModal, setShowServiceModal] = useState(false);
-  const [availableServices, setAvailableServices] = useState<BoatServiceDTO[]>([]);
+  const [availableServices, setAvailableServices] = useState<BoatServiceDTO[]>(
+    []
+  );
 
   // Payment state
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusResponseDto | null>(null);
+  const [paymentStatus, setPaymentStatus] =
+    useState<PaymentStatusResponseDto | null>(null);
   const [showPaymentInfo, setShowPaymentInfo] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
@@ -211,16 +221,19 @@ export function BookingForm({
   useEffect(() => {
     const loadServices = async () => {
       if (!boatIdNumber) return;
-      
+
       try {
-        const services = await boatService.getBoatServicesWithPricing(boatIdNumber);
+        const services = await boatService.getBoatServicesWithPricing(
+          boatIdNumber
+        );
         // Remove duplicates based on service ID
-        const uniqueServices = services.filter((service, index, self) => 
-          index === self.findIndex(s => s.id === service.id)
+        const uniqueServices = services.filter(
+          (service, index, self) =>
+            index === self.findIndex((s) => s.id === service.id)
         );
         setAvailableServices(uniqueServices);
       } catch (error) {
-        console.error('Failed to load boat services:', error);
+        console.error("Failed to load boat services:", error);
       }
     };
 
@@ -390,66 +403,69 @@ export function BookingForm({
   }, [lastBooking, isAuthenticated, isCustomer, captain, captainLoading]);
 
   // Payment redirect function
-const handlePaymentRedirect = useCallback(async (bookingId: number) => {
-  try {
-    setPaymentLoading(true);
-    
-    // Get payment status from backend
-    const paymentInfo = await paymentService.getPaymentStatus(bookingId);
-    setPaymentStatus(paymentInfo);
-    
-    // If payment is required and we have a payment URL, redirect
-    if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
-      // Show payment info briefly before redirect
-      setShowPaymentInfo(true);
-      
-      // ✅ Simplified: Let PaymentService handle returnUrl - Don't add it here
-      setTimeout(() => {
-        // Just use the original payment URL, PaymentService will handle returnUrl
-        paymentService.redirectToPayment(paymentInfo.paymentUrl!);
-      }, 2000);
-      
-    } else if (paymentInfo.paymentRequired && !paymentInfo.paymentUrl) {
-      // 3DS akışı: ödeme linki yoksa kart bilgisi akışına yönlendir
-      navigate(`/payment/return?bookingId=${bookingId}&start=3ds`);
-      return;
-    } else if (paymentInfo.paymentCompleted) {
-      // Payment already completed
-      toast({
-        title: "Ödeme zaten tamamlanmış",
-        description: "Bu rezervasyon için ödeme zaten tamamlanmış durumda.",
-      });
-      
-      // Redirect to bookings page
-      navigate("/my-bookings");
-      
-    } else {
-      // No payment required
-      toast({
-        title: "Rezervasyon tamamlandı",
-        description: "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
-      });
-      
-      // Redirect to bookings page
-      navigate("/my-bookings");
-    }
-  } catch (error) {
-    console.error("Payment redirect failed:", error);
-    toast({
-      title: "Ödeme sayfası yüklenemedi",
-      description: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
-      variant: "destructive",
-    });
-    
-    // Still redirect to bookings page so user can see their reservation
-    setTimeout(() => {
-      navigate("/my-bookings");
-    }, 3000);
-  } finally {
-    setPaymentLoading(false);
-    setShowPaymentInfo(false);
-  }
-}, [navigate]);
+  const handlePaymentRedirect = useCallback(
+    async (bookingId: number) => {
+      try {
+        setPaymentLoading(true);
+
+        // Get payment status from backend
+        const paymentInfo = await paymentService.getPaymentStatus(bookingId);
+        setPaymentStatus(paymentInfo);
+
+        // If payment is required and we have a payment URL, redirect
+        if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
+          // Show payment info briefly before redirect
+          setShowPaymentInfo(true);
+
+          // ✅ Simplified: Let PaymentService handle returnUrl - Don't add it here
+          setTimeout(() => {
+            // Just use the original payment URL, PaymentService will handle returnUrl
+            paymentService.redirectToPayment(paymentInfo.paymentUrl!);
+          }, 2000);
+        } else if (paymentInfo.paymentRequired && !paymentInfo.paymentUrl) {
+          // 3DS akışı: ödeme linki yoksa kart bilgisi akışına yönlendir
+          navigate(`/payment/return?bookingId=${bookingId}&start=3ds`);
+          return;
+        } else if (paymentInfo.paymentCompleted) {
+          // Payment already completed
+          toast({
+            title: "Ödeme zaten tamamlanmış",
+            description: "Bu rezervasyon için ödeme zaten tamamlanmış durumda.",
+          });
+
+          // Redirect to bookings page
+          navigate("/my-bookings");
+        } else {
+          // No payment required
+          toast({
+            title: "Rezervasyon tamamlandı",
+            description:
+              "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
+          });
+
+          // Redirect to bookings page
+          navigate("/my-bookings");
+        }
+      } catch (error) {
+        console.error("Payment redirect failed:", error);
+        toast({
+          title: "Ödeme sayfası yüklenemedi",
+          description:
+            "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+          variant: "destructive",
+        });
+
+        // Still redirect to bookings page so user can see their reservation
+        setTimeout(() => {
+          navigate("/my-bookings");
+        }, 3000);
+      } finally {
+        setPaymentLoading(false);
+        setShowPaymentInfo(false);
+      }
+    },
+    [navigate]
+  );
 
   // Cleanup messaging state when component unmounts
   useEffect(() => {
@@ -502,9 +518,12 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
     ? hourlyPrice * totalUnits
     : dailyPrice * totalUnits;
   const estimatedTotal = rentalPrice + servicesPrice; // Tahminî toplam (service fee backend'de)
-  
+
   // Payment calculations
-  const depositAmount = paymentService.calculateDepositAmount(estimatedTotal, 20);
+  const depositAmount = paymentService.calculateDepositAmount(
+    estimatedTotal,
+    20
+  );
   const remainingAmount = estimatedTotal - depositAmount;
 
   // Booking function
@@ -588,7 +607,8 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         passengerCount: guests,
-        selectedServices: selectedServices.length > 0 ? selectedServices : undefined,
+        selectedServices:
+          selectedServices.length > 0 ? selectedServices : undefined,
         notes: `Booking created on ${new Date().toISOString()}`,
       };
 
@@ -614,13 +634,13 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
         if (!hasLink) {
           // PaymentReturn sayfasında start=3ds parametresi ile kart formu gösterilecek
           const amount = status.depositAmount ?? status.totalAmount ?? 0;
-          navigate(`/payment/return?bookingId=${response.id}&start=3ds&amount=${amount}`);
+          navigate(
+            `/payment/return?bookingId=${response.id}&start=3ds&amount=${amount}`
+          );
         }
       } catch (e) {
         // Sessiz geç, kullanıcı zaten ödeme modali/redirect deneyimini gördü
       }
-
-
     } catch (error) {
       console.error("Booking failed:", error);
       toast({
@@ -800,7 +820,9 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
           <div className="border-t pt-4 mt-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium">Ek Hizmetler</label>
+                <label className="block text-sm font-medium">
+                  Ek Hizmetler
+                </label>
                 <Button
                   type="button"
                   variant="outline"
@@ -812,7 +834,7 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                   Hizmet Seç ({selectedServices.length})
                 </Button>
               </div>
-              
+
               {selectedServices.length > 0 && (
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
                   <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
@@ -821,12 +843,24 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto">
                     {selectedServices.map((selected) => {
-                      const service = availableServices.find(s => s.id === selected.boatServiceId);
+                      const service = availableServices.find(
+                        (s) => s.id === selected.boatServiceId
+                      );
                       if (!service) return null;
                       return (
-                        <div key={selected.boatServiceId} className="flex justify-between items-center text-xs text-gray-700">
-                          <span className="truncate mr-2">{service.name} x{selected.quantity}</span>
-                          <span className="font-medium text-primary">₺{(service.price * selected.quantity).toLocaleString()}</span>
+                        <div
+                          key={selected.boatServiceId}
+                          className="flex justify-between items-center text-xs text-gray-700"
+                        >
+                          <span className="truncate mr-2">
+                            {service.name} x{selected.quantity}
+                          </span>
+                          <span className="font-medium text-primary">
+                            ₺
+                            {(
+                              service.price * selected.quantity
+                            ).toLocaleString()}
+                          </span>
                         </div>
                       );
                     })}
@@ -860,22 +894,28 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
             <span>Toplam tutar</span>
             <span>₺{estimatedTotal.toLocaleString()}</span>
           </div>
-          
+
           {/* Payment breakdown */}
           <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
             <div className="flex justify-between text-sm">
               <span className="text-blue-700 font-medium flex items-center">
                 💳 Online ön ödeme tutarı
-                <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">%20</span>
+                <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">
+                  %20
+                </span>
               </span>
-              <span className="font-semibold text-blue-800">₺{depositAmount.toLocaleString()}</span>
+              <span className="font-semibold text-blue-800">
+                ₺{depositAmount.toLocaleString()}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Teknede ödenecek tutar</span>
-              <span className="text-gray-700">₺{remainingAmount.toLocaleString()}</span>
+              <span className="text-gray-700">
+                ₺{remainingAmount.toLocaleString()}
+              </span>
             </div>
           </div>
-          
+
           <p className="text-xs text-gray-500 text-center">
             *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
           </p>
@@ -911,8 +951,8 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
 
   return (
     <>
-      <Card className="sticky top-24 hidden md:block max-h-[calc(100vh-120px)] overflow-y-auto">
-        <CardHeader className="pb-3">
+      <Card className="sticky top-20 sm:top-24 lg:top-20 xl:top-24 hidden md:block max-h-[calc(100vh-100px)] sm:max-h-[calc(100vh-120px)] lg:max-h-[calc(100vh-100px)] xl:max-h-[calc(100vh-120px)] overflow-y-auto">
+        <CardHeader className="pb-3 px-4 sm:px-6 lg:px-4 xl:px-6 pt-4 sm:pt-6 lg:pt-4 xl:pt-6">
           <div className="flex mb-3">
             <Button
               variant="outline"
@@ -952,7 +992,7 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 py-4 sm:py-6">
           <div>
             <label className="block text-sm font-medium mb-1">Date</label>
             <Popover>
@@ -1045,10 +1085,12 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
           </div>
 
           {/* Service Selection - Compact Button */}
-          <div className="border-t pt-4">
-            <div className="space-y-3">
+          <div className="border-t pt-3 sm:pt-4 lg:pt-3 xl:pt-4">
+            <div className="space-y-2 sm:space-y-3 lg:space-y-2 xl:space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium">Ek Hizmetler</label>
+                <label className="block text-sm font-medium">
+                  Ek Hizmetler
+                </label>
                 <Button
                   type="button"
                   variant="outline"
@@ -1060,7 +1102,7 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                   Hizmet Seç ({selectedServices.length})
                 </Button>
               </div>
-              
+
               {selectedServices.length > 0 && (
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
                   <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
@@ -1069,12 +1111,24 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto">
                     {selectedServices.map((selected) => {
-                      const service = availableServices.find(s => s.id === selected.boatServiceId);
+                      const service = availableServices.find(
+                        (s) => s.id === selected.boatServiceId
+                      );
                       if (!service) return null;
                       return (
-                        <div key={selected.boatServiceId} className="flex justify-between items-center text-xs text-gray-700">
-                          <span className="truncate mr-2">{service.name} x{selected.quantity}</span>
-                          <span className="font-medium text-primary">₺{(service.price * selected.quantity).toLocaleString()}</span>
+                        <div
+                          key={selected.boatServiceId}
+                          className="flex justify-between items-center text-xs text-gray-700"
+                        >
+                          <span className="truncate mr-2">
+                            {service.name} x{selected.quantity}
+                          </span>
+                          <span className="font-medium text-primary">
+                            ₺
+                            {(
+                              service.price * selected.quantity
+                            ).toLocaleString()}
+                          </span>
                         </div>
                       );
                     })}
@@ -1114,7 +1168,7 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
           </p>
         </CardContent>
 
-        <CardFooter className="border-t pt-4">
+        <CardFooter className="border-t pt-4 px-4 sm:px-6 lg:px-4 xl:px-6 pb-4 sm:pb-6 lg:pb-4 xl:pb-6">
           <div className="space-y-3 w-full">
             <div className="flex justify-between">
               <span className="text-gray-600">
@@ -1133,22 +1187,28 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
               <span>Toplam tutar</span>
               <span>₺{estimatedTotal.toLocaleString()}</span>
             </div>
-            
+
             {/* Payment breakdown */}
             <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
               <div className="flex justify-between text-sm">
                 <span className="text-blue-700 font-medium flex items-center">
                   💳 Online ön ödeme tutarı
-                  <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">%20</span>
+                  <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">
+                    %20
+                  </span>
                 </span>
-                <span className="font-semibold text-blue-800">₺{depositAmount.toLocaleString()}</span>
+                <span className="font-semibold text-blue-800">
+                  ₺{depositAmount.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Teknede ödenecek tutar</span>
-                <span className="text-gray-700">₺{remainingAmount.toLocaleString()}</span>
+                <span className="text-gray-700">
+                  ₺{remainingAmount.toLocaleString()}
+                </span>
               </div>
             </div>
-            
+
             <p className="text-xs text-gray-500 text-center">
               *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
             </p>
@@ -1189,22 +1249,28 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                     Rezervasyon ID: #{paymentStatus.bookingId}
                   </p>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Toplam Tutar:</span>
-                    <span className="font-semibold">₺{paymentStatus.totalAmount.toLocaleString()}</span>
+                    <span className="font-semibold">
+                      ₺{paymentStatus.totalAmount.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between text-blue-700">
                     <span>Şimdi Ödenecek (Depozito):</span>
-                    <span className="font-bold">₺{paymentStatus.depositAmount.toLocaleString()}</span>
+                    <span className="font-bold">
+                      ₺{paymentStatus.depositAmount.toLocaleString()}
+                    </span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Teknede Ödenecek:</span>
-                    <span>₺{paymentStatus.remainingAmount.toLocaleString()}</span>
+                    <span>
+                      ₺{paymentStatus.remainingAmount.toLocaleString()}
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                   <p className="text-sm text-blue-800 text-center">
                     ⏰ Güvenli ödeme sayfasına yönlendiriliyorsunuz...
@@ -1212,11 +1278,13 @@ const handlePaymentRedirect = useCallback(async (bookingId: number) => {
                 </div>
               </>
             )}
-            
+
             {paymentLoading && (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Ödeme sayfası hazırlanıyor...</span>
+                <span className="ml-3 text-gray-600">
+                  Ödeme sayfası hazırlanıyor...
+                </span>
               </div>
             )}
           </div>
