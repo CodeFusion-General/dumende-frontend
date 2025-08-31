@@ -63,6 +63,8 @@ import {
   getResponsiveImageSizes,
   getContainmentStyle,
 } from "@/utils/performanceOptimizations";
+import BoatImageCarousel, { BoatImage } from "@/components/boats/BoatImageCarousel";
+import "@/styles/boat-image-carousel.css";
 
 // Default image kaldırıldı: geçerli görsel yoksa boş durum gösterilecek
 
@@ -230,13 +232,6 @@ const BoatListing = () => {
   // Check if messaging should be available
   const messagingAvailable = isMessagingAvailable();
 
-  // Image processing state
-  const [isProcessingImages, setIsProcessingImages] = React.useState(false);
-
-  // Cache for signed URLs to prevent repeated requests
-  const signedUrlCacheRef = React.useRef<Record<string, string>>({});
-  const pendingUrlRequests = React.useRef<Set<string>>(new Set());
-
   // Memoize image URLs to prevent re-processing
   const processedImageUrls = useMemo(() => {
     if (!boatData?.images || boatData.images.length === 0) {
@@ -250,98 +245,33 @@ const BoatListing = () => {
     return validImageUrls.length > 0 ? validImageUrls : [];
   }, [boatData?.images]);
 
-  // Process images with caching - optimized to prevent unnecessary processing
-  React.useEffect(() => {
-    const processImages = async () => {
-      if (!processedImageUrls.length || isProcessingImages) return;
+  // Stable boat data for the entire component lifecycle
+  const finalBoatData = stableBoatData || boatData;
 
-      // Skip if images haven't changed and we already have valid images
-      if (
-        validImages.length > 0 &&
-        validImages.length === processedImageUrls.length
-      ) {
-        return;
-      }
+  // Transform boat images to carousel format
+  const carouselImages: BoatImage[] = useMemo(() => {
+    if (!finalBoatData?.images || finalBoatData.images.length === 0) {
+      return [];
+    }
 
-      setIsProcessingImages(true);
-      try {
-        const newValidImages: string[] = [];
-
-        for (const imageUrl of processedImageUrls) {
-          // Skip if already cached
-          if (signedUrlCacheRef.current[imageUrl]) {
-            newValidImages.push(signedUrlCacheRef.current[imageUrl]);
-            continue;
-          }
-
-          // Skip if request is already pending
-          if (pendingUrlRequests.current.has(imageUrl)) {
-            continue;
-          }
-
-          // For Firebase Storage URLs, we need to check if they need signing
-          if (
-            imageUrl.includes("firebasestorage.googleapis.com") &&
-            !imageUrl.includes("&signature=")
-          ) {
-            pendingUrlRequests.current.add(imageUrl);
-
-            try {
-              // Use the existing URL as-is for now (assuming backend provides signed URLs)
-              // In a real implementation, you would call a service to get signed URLs
-              signedUrlCacheRef.current[imageUrl] = imageUrl;
-              newValidImages.push(imageUrl);
-            } catch (error) {
-              signedUrlCacheRef.current[imageUrl] = imageUrl; // Fallback to original
-              newValidImages.push(imageUrl);
-            } finally {
-              pendingUrlRequests.current.delete(imageUrl);
-            }
-          } else {
-            // Already signed or not Firebase URL
-            signedUrlCacheRef.current[imageUrl] = imageUrl;
-            newValidImages.push(imageUrl);
-          }
-        }
-
-        setValidImages(newValidImages);
-
-        // Preload first few images to prevent layout shifts
-        if (newValidImages.length > 0) {
-          preloadImages(newValidImages.slice(0, 3)).catch(console.warn);
-        }
-      } finally {
-        setIsProcessingImages(false);
-      }
-    };
-
-    processImages();
-  }, [processedImageUrls]);
-
-  const [validImages, setValidImages] = React.useState<string[]>([]);
-  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-
-  // Navigation functions for image gallery
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % validImages.length);
-  };
-
-  const previousImage = () => {
-    setCurrentImageIndex(
-      (prev) => (prev - 1 + validImages.length) % validImages.length
-    );
-  };
-
-  const goToImage = (index: number) => {
-    setCurrentImageIndex(index);
-  };
+    return finalBoatData.images
+      .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
+      .sort((a, b) => ((a as any).order || 0) - ((b as any).order || 0))
+      .map((img, index) => ({
+        id: img.id?.toString() || index.toString(),
+        imageUrl: img.imageUrl,
+        altText: `${finalBoatData.name} - Image ${index + 1}`,
+        caption: (img as any).caption || undefined,
+        order: (img as any).order || index + 1,
+        thumbnailUrl: img.imageUrl, // Could be optimized thumbnail URL
+        isHeroImage: img.isPrimary || index === 0,
+      }));
+  }, [finalBoatData?.images, finalBoatData?.name]);
 
   // Add cleanup on unmount to prevent memory leaks
   React.useEffect(() => {
     return () => {
-      // Clear cache references on unmount
-      signedUrlCacheRef.current = {};
-      pendingUrlRequests.current.clear();
+      // Component cleanup
     };
   }, []);
 
@@ -356,10 +286,7 @@ const BoatListing = () => {
     [showMessaging, handleCloseMessaging, userBooking, captain]
   );
 
-  // Stable boat data for the entire component lifecycle
-  const finalBoatData = stableBoatData || boatData;
-
-  if (isLoading || isRetrying) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-primary/5">
         <Navbar />
@@ -450,135 +377,45 @@ const BoatListing = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(26,95,122,0.1),transparent_50%)]" />
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-12">
-            {/* Hero Image Gallery with Professional Presentation */}
+            {/* New Responsive Image Carousel */}
             <div className="relative animate-fade-in">
-              {validImages.length > 0 ? (
-                <div
-                  className="relative bg-white rounded-3xl p-4 sm:p-6 shadow-2xl border border-gray-100/50 backdrop-blur-sm transition-all duration-700 hover:shadow-3xl group"
-                  style={getContainmentStyle("layout")}
-                >
-                  {/* Action Buttons */}
-                  <div className="absolute top-8 right-8 z-20 flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm border-white/50"
-                    >
-                      <Heart className="h-4 w-4 mr-2" />
-                      Kaydet
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm border-white/50"
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Paylaş
-                    </Button>
-                  </div>
-
-                  <div className="relative overflow-hidden rounded-2xl">
-                    <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[5/3] xl:aspect-[16/9] relative overflow-hidden">
-                      <img
-                        src={validImages[currentImageIndex]}
-                        alt={`${finalBoatData.name} - Görsel ${
-                          currentImageIndex + 1
-                        }`}
-                        className="w-full h-full object-cover transition-all duration-700 ease-out hover:scale-105 cursor-pointer"
-                        style={{ willChange: "transform" }}
-                        loading="eager"
-                        sizes={getResponsiveImageSizes("hero")}
-                        decoding="async"
-                      />
-                      {/* Enhanced Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-secondary/20 opacity-30" />
-
-                      {/* Floating Navigation with Glass-morphism */}
-                      {validImages.length > 1 && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-11 min-w-11 touch-manipulation focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                            onClick={previousImage}
-                            aria-label="Previous image"
-                          >
-                            <ArrowLeft className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-xl backdrop-blur-md border-white/50 transition-all duration-300 hover:scale-110 min-h-11 min-w-11 touch-manipulation focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                            onClick={nextImage}
-                            aria-label="Next image"
-                          >
-                            <ArrowRight className="h-5 w-5" />
-                          </Button>
-                        </>
-                      )}
-
-                      {/* Professional Image Counter */}
-                      {validImages.length > 1 && (
-                        <div className="absolute bottom-6 right-6 bg-black/80 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm flex items-center gap-2">
-                          <Camera className="h-4 w-4" />
-                          {currentImageIndex + 1} / {validImages.length}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Enhanced Thumbnail Strip */}
-                  {validImages.length > 1 && (
-                    <div className="mt-4 sm:mt-6 flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                      {validImages.slice(0, 8).map((image, index) => (
-                        <button
-                          key={index}
-                          onClick={() => goToImage(index)}
-                          className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-3 transition-all duration-300 hover:scale-105 focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                            currentImageIndex === index
-                              ? "border-primary ring-4 ring-primary/20 shadow-lg"
-                              : "border-transparent hover:border-primary/50 shadow-md"
-                          }`}
-                          aria-label={`View image ${index + 1}`}
-                        >
-                          <img
-                            src={image}
-                            alt={`Thumbnail ${index + 1}`}
-                            className="w-full h-full object-cover transition-all duration-300"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </button>
-                      ))}
-                      {validImages.length > 8 && (
-                        <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 xl:w-20 xl:h-20 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 text-xs sm:text-sm font-medium border-2 border-gray-200 shadow-md">
-                          +{validImages.length - 8}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="bg-white rounded-3xl p-8 sm:p-12 lg:p-8 shadow-2xl border border-gray-100/50 backdrop-blur-sm"
-                  style={getContainmentStyle("layout")}
-                >
-                  <div className="aspect-[4/3] sm:aspect-[3/2] lg:aspect-[5/3] xl:aspect-[16/9] bg-gradient-to-br from-gray-100 via-gray-50 to-gray-200 rounded-2xl flex items-center justify-center">
-                    <div className="text-center animate-pulse">
-                      <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Anchor className="h-12 w-12 text-primary/60" />
-                      </div>
-                      <p className="text-gray-500 text-xl font-medium">
-                        Bu tekne için fotoğraf bulunmuyor
-                      </p>
-                      <p className="text-gray-400 text-sm mt-2">
-                        Yakında fotoğraflar eklenecek
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <BoatImageCarousel
+                images={carouselImages}
+                autoplay={false}
+                maxHeight={520}
+                showActionButtons={true}
+                onSave={() => {
+                  // Handle save to favorites
+                  toast({
+                    title: "Saved",
+                    description: "Boat saved to your favorites",
+                  });
+                }}
+                onShare={() => {
+                  // Handle share functionality
+                  if (navigator.share) {
+                    navigator.share({
+                      title: finalBoatData.name,
+                      text: `Check out this amazing boat: ${finalBoatData.name}`,
+                      url: window.location.href,
+                    }).catch(() => {
+                      // Fallback: copy to clipboard
+                      navigator.clipboard.writeText(window.location.href);
+                      toast({
+                        title: "Link copied",
+                        description: "Boat link copied to clipboard",
+                      });
+                    });
+                  } else {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast({
+                      title: "Link copied",
+                      description: "Boat link copied to clipboard",
+                    });
+                  }
+                }}
+                className="mb-8"
+              />
             </div>
           </div>
         </section>
