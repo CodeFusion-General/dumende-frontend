@@ -6,13 +6,11 @@ import {
   UpdateBoatDocumentDTO,
 } from "./document.types";
 
-// BoatService Types (Yeni eklenen)
+// BoatService Types (Backend ile uyumlu)
 export enum ServiceType {
   FOOD = "FOOD",
-  ENTERTAINMENT = "ENTERTAINMENT",
-  WATER_SPORTS = "WATER_SPORTS",
-  TRANSPORTATION = "TRANSPORTATION",
-  OTHER = "OTHER",
+  PACKAGE = "PACKAGE",
+  EXTRA = "EXTRA",
 }
 
 export interface BoatServiceDTO {
@@ -47,24 +45,16 @@ export interface ServiceTypeLabels {
 
 export const SERVICE_TYPE_LABELS: ServiceTypeLabels = {
   [ServiceType.FOOD]: {
-    tr: "Yiyecek & İçecek",
-    en: "Food & Beverage",
+    tr: "Yemek",
+    en: "Food",
   },
-  [ServiceType.ENTERTAINMENT]: {
-    tr: "Eğlence",
-    en: "Entertainment",
+  [ServiceType.PACKAGE]: {
+    tr: "Paket",
+    en: "Package",
   },
-  [ServiceType.WATER_SPORTS]: {
-    tr: "Su Sporları",
-    en: "Water Sports",
-  },
-  [ServiceType.TRANSPORTATION]: {
-    tr: "Ulaşım",
-    en: "Transportation",
-  },
-  [ServiceType.OTHER]: {
-    tr: "Diğer",
-    en: "Other",
+  [ServiceType.EXTRA]: {
+    tr: "Ekstra",
+    en: "Extra",
   },
 };
 
