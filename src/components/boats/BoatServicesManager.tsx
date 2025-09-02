@@ -221,7 +221,7 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                 <Select
                   value={formData.serviceType}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, serviceType: value }))
+                    setFormData((prev) => ({ ...prev, serviceType: value as ServiceType }))
                   }
                 >
                   <SelectTrigger>

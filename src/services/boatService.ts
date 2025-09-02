@@ -1030,6 +1030,209 @@ class BoatService extends BaseService {
       throw error;
     }
   }
+
+  // ==================== ADMIN-SPECIFIC METHODS ====================
+
+  /**
+   * Admin method to get all boats with additional metadata
+   * @returns Promise with all boats including admin-specific data
+   */
+  public async getAllBoatsForAdmin(): Promise<BoatDTO[]> {
+    try {
+      return this.get<BoatDTO[]>("/admin/all");
+    } catch (error) {
+      // Fallback to regular getBoats if admin endpoint is not available
+      return this.getBoats();
+    }
+  }
+
+  /**
+   * Admin method to approve a boat
+   * @param boatId - The boat ID to approve
+   * @param adminNote - Optional admin note
+   * @returns Promise with updated boat
+   */
+  public async approveBoat(
+    boatId: number,
+    adminNote?: string
+  ): Promise<BoatDTO> {
+    try {
+      return this.post<BoatDTO>(`/admin/${boatId}/approve`, { adminNote });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to reject a boat
+   * @param boatId - The boat ID to reject
+   * @param reason - Rejection reason
+   * @param adminNote - Optional admin note
+   * @returns Promise with updated boat
+   */
+  public async rejectBoat(
+    boatId: number,
+    reason: string,
+    adminNote?: string
+  ): Promise<BoatDTO> {
+    try {
+      return this.post<BoatDTO>(`/admin/${boatId}/reject`, {
+        reason,
+        adminNote,
+      });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to suspend a boat
+   * @param boatId - The boat ID to suspend
+   * @param reason - Suspension reason
+   * @returns Promise with updated boat
+   */
+  public async suspendBoat(boatId: number, reason: string): Promise<BoatDTO> {
+    try {
+      return this.post<BoatDTO>(`/admin/${boatId}/suspend`, { reason });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to activate a suspended boat
+   * @param boatId - The boat ID to activate
+   * @returns Promise with updated boat
+   */
+  public async activateBoat(boatId: number): Promise<BoatDTO> {
+    try {
+      return this.post<BoatDTO>(`/admin/${boatId}/activate`, {});
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to get boat approval history
+   * @param boatId - The boat ID
+   * @returns Promise with approval history
+   */
+  public async getBoatApprovalHistory(boatId: number): Promise<any[]> {
+    try {
+      return this.get<any[]>(`/admin/${boatId}/approval-history`);
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  /**
+   * Admin method to add a note to a boat
+   * @param boatId - The boat ID
+   * @param note - The note content
+   * @param type - The note type
+   * @returns Promise with success status
+   */
+  public async addBoatNote(
+    boatId: number,
+    note: string,
+    type: string = "info"
+  ): Promise<void> {
+    try {
+      await this.post(`/admin/${boatId}/notes`, { note, type });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to get boat notes
+   * @param boatId - The boat ID
+   * @returns Promise with boat notes
+   */
+  public async getBoatNotes(boatId: number): Promise<any[]> {
+    try {
+      return this.get<any[]>(`/admin/${boatId}/notes`);
+    } catch (error) {
+      this.handleError(error);
+      return [];
+    }
+  }
+
+  /**
+   * Admin method to bulk approve boats
+   * @param boatIds - Array of boat IDs to approve
+   * @param adminNote - Optional admin note
+   * @returns Promise with operation result
+   */
+  public async bulkApproveBoats(
+    boatIds: number[],
+    adminNote?: string
+  ): Promise<void> {
+    try {
+      await this.post("/admin/bulk-approve", { boatIds, adminNote });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to bulk reject boats
+   * @param boatIds - Array of boat IDs to reject
+   * @param reason - Rejection reason
+   * @param adminNote - Optional admin note
+   * @returns Promise with operation result
+   */
+  public async bulkRejectBoats(
+    boatIds: number[],
+    reason: string,
+    adminNote?: string
+  ): Promise<void> {
+    try {
+      await this.post("/admin/bulk-reject", { boatIds, reason, adminNote });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Admin method to get boat statistics for dashboard
+   * @returns Promise with boat statistics
+   */
+  public async getAdminBoatStatistics(): Promise<{
+    totalBoats: number;
+    activeBoats: number;
+    pendingBoats: number;
+    rejectedBoats: number;
+    suspendedBoats: number;
+    newBoatsThisMonth: number;
+    boatsByType: { [type: string]: number };
+    boatsByLocation: { [location: string]: number };
+  }> {
+    try {
+      return this.get("/admin/statistics");
+    } catch (error) {
+      this.handleError(error);
+      // Return default statistics if endpoint is not available
+      return {
+        totalBoats: 0,
+        activeBoats: 0,
+        pendingBoats: 0,
+        rejectedBoats: 0,
+        suspendedBoats: 0,
+        newBoatsThisMonth: 0,
+        boatsByType: {},
+        boatsByLocation: {},
+      };
+    }
+  }
 }
 
 export const boatService = new BoatService();
