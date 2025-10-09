@@ -39,20 +39,27 @@ export interface LoginResponse {
   accountId?: number; // Account ID for profile completion
 }
 
-// AuthContext için user state
+// ✅ BACKEND UYUMLU: AuthContext için user state
 export interface AuthUser {
   id: number;
   email: string;
   username: string;
   role: UserType;
-  fullName?: string;
-  phoneNumber?: string;
-  profileImage?: string;
-  accountId?: number;
-  isProfileComplete?: boolean;
+
+  // Name fields
   firstName?: string;
   lastName?: string;
+  fullName?: string;
+
+  phoneNumber?: string;
   dateOfBirth?: string;
+
+  // ✅ GÜNCELLE: Backend field ismi ile uyumlu
+  profileImageUrl?: string; // Backend'deki field ismi
+  profileImage?: string; // Geriye uyumluluk için (deprecated, profileImageUrl kullan)
+
+  accountId?: number;
+  isProfileComplete?: boolean;
 }
 
 // AuthContext state type

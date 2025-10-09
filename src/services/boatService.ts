@@ -364,14 +364,15 @@ class BoatService extends BaseService {
     }
   }
 
-  // Tekne özelliklerini toplu güncelleme
+  // ✅ DÜZELT: Tekne özelliklerini toplu güncelleme
+  // Backend endpoint: /batch (bulk değil)
   public async updateVesselFeatures(
     boatId: number,
     features: string[]
   ): Promise<BoatDTO> {
     try {
       const response = await this.api.post(
-        `/boat-features/boat/${boatId}/bulk`,
+        `/boat-features/boat/${boatId}/batch`, // ✅ DÜZELT: bulk → batch
         { features }
       );
       return response.data;
@@ -1057,7 +1058,10 @@ class BoatService extends BaseService {
     adminNote?: string
   ): Promise<BoatDTO> {
     try {
-      return this.post<BoatDTO>(`/admin/${boatId}/approve`, { adminNote });
+      return this.post<BoatDTO>(`/api/admin/boats/${boatId}/approve`, { 
+        approved: true,
+        adminNotes: adminNote || "Approved by admin"
+      });
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -1077,9 +1081,9 @@ class BoatService extends BaseService {
     adminNote?: string
   ): Promise<BoatDTO> {
     try {
-      return this.post<BoatDTO>(`/admin/${boatId}/reject`, {
-        reason,
-        adminNote,
+      return this.post<BoatDTO>(`/api/admin/boats/${boatId}/reject`, {
+        approved: false,
+        adminNotes: adminNote || reason
       });
     } catch (error) {
       this.handleError(error);
@@ -1231,6 +1235,42 @@ class BoatService extends BaseService {
         boatsByType: {},
         boatsByLocation: {},
       };
+    }
+  }
+
+  /**
+   * Get a random default boat image from the backend
+   * @returns Promise with image blob
+   */
+  public async getDefaultImage(): Promise<Blob> {
+    try {
+      // Backend endpoint returns a random default boat image as byte array
+      const response = await this.getPublic<ArrayBuffer>("/default-image", {
+        responseType: "arraybuffer" as any
+      });
+      return new Blob([response], { type: "image/jpeg" });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a default boat image URL (data URL format)
+   * @returns Promise with data URL string
+   */
+  public async getDefaultImageUrl(): Promise<string> {
+    try {
+      const blob = await this.getDefaultImage();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
     }
   }
 }

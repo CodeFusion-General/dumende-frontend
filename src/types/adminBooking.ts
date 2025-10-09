@@ -163,19 +163,6 @@ export interface AdminBulkBookingOperation {
   note?: string;
 }
 
-// Export configuration for booking reports
-export interface BookingExportConfig {
-  format: "excel" | "csv" | "pdf";
-  filters?: AdminBookingFilters;
-  columns: string[];
-  includePaymentDetails: boolean;
-  includeCustomerDetails: boolean;
-  includeNotes: boolean;
-  dateRange?: {
-    startDate: string;
-    endDate: string;
-  };
-}
 
 // Booking report types
 export interface BookingReportData {

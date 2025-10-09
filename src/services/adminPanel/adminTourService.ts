@@ -15,7 +15,7 @@ import { documentService } from "../documentService";
 
 class AdminTourService extends BaseService {
   constructor() {
-    super("/admin/tours");
+    super("/api/admin/tours");
   }
 
   // ======= Tour Management Operations =======
@@ -1389,74 +1389,6 @@ class AdminTourService extends BaseService {
     }
   }
 
-  /**
-   * Export tour data for reporting
-   */
-  public async exportTourData(
-    format: "csv" | "excel" | "json",
-    filters?: AdminTourFilters
-  ): Promise<string> {
-    try {
-      const searchOptions: AdminTourSearchOptions = {
-        filters,
-        limit: 10000, // Get all tours for export
-      };
-
-      const result = await this.getAdminTours(searchOptions);
-
-      switch (format) {
-        case "json":
-          return JSON.stringify(result.tours, null, 2);
-        case "csv":
-          return this.convertToCSV(result.tours);
-        case "excel":
-          // This would require a library like xlsx
-          return this.convertToCSV(result.tours); // Fallback to CSV
-        default:
-          throw new Error(`Unsupported export format: ${format}`);
-      }
-    } catch (error) {
-      console.error("AdminTourService.exportTourData error:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Convert tour data to CSV format
-   */
-  private convertToCSV(tours: AdminTourView[]): string {
-    const headers = [
-      "ID",
-      "Name",
-      "Status",
-      "Guide Name",
-      "Location",
-      "Price",
-      "Max Guests",
-      "Rating",
-      "Total Bookings",
-      "Revenue",
-      "Created At",
-      "Last Activity",
-    ];
-
-    const rows = tours.map((tour) => [
-      tour.id,
-      `"${tour.name}"`,
-      tour.status,
-      `"${tour.guideInfo.name}"`,
-      `"${tour.location}"`,
-      tour.price,
-      tour.maxGuests,
-      tour.rating || 0,
-      tour.bookingStats.totalBookings,
-      tour.bookingStats.revenue,
-      tour.createdAt,
-      tour.lastActivity,
-    ]);
-
-    return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-  }
 
   /**
    * Get current admin information (placeholder implementation)

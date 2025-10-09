@@ -17,7 +17,7 @@ import { UserType } from "@/types/auth.types";
 
 class AdminUserService extends BaseService {
   constructor() {
-    super("/admin/users");
+    super("/api/admin/users");
   }
 
   // Get all users with admin-specific information
@@ -37,17 +37,30 @@ class AdminUserService extends BaseService {
     return this.get<AdminUserView>(`/${id}`);
   }
 
-  // Search users with advanced filters
+  // Search users with advanced filters (Backend: POST /api/admin/users/search)
   public async searchUsers(
-    query: string,
-    filters?: AdminUserFilters
+    searchCriteria: AdminUserFilters & { query?: string }
   ): Promise<AdminUserView[]> {
-    const params = {
-      q: query,
-      ...filters,
+    const searchDto = {
+      name: searchCriteria.query,
+      email: searchCriteria.email,
+      phone: searchCriteria.phoneNumber,
+      username: searchCriteria.username,
+      userType: searchCriteria.role,
+      isEnabled: searchCriteria.status === "active",
+      registeredAfter: searchCriteria.registrationDateFrom,
+      registeredBefore: searchCriteria.registrationDateTo,
+      lastLoginAfter: searchCriteria.lastLoginAfter,
+      lastLoginBefore: searchCriteria.lastLoginBefore,
+      hasBoats: searchCriteria.hasBoats,
+      hasBookings: searchCriteria.hasBookings,
+      minBookingCount: searchCriteria.totalBookingsMin,
+      maxBookingCount: searchCriteria.totalBookingsMax,
+      city: searchCriteria.city,
+      country: searchCriteria.country,
+      hasRecentActivity: searchCriteria.hasRecentActivity
     };
-    const queryString = this.buildQueryString(params);
-    return this.get<AdminUserView[]>(`/search?${queryString}`);
+    return this.post<AdminUserView[]>("/search", searchDto);
   }
 
   // Update user information (admin only)
@@ -117,15 +130,25 @@ class AdminUserService extends BaseService {
     return this.post(`/${request.userId}/reset-password`, request);
   }
 
-  // Get users by role
+  // Get users by role (Backend: GET /api/admin/users/type/{userType})
   public async getUsersByRole(
     role: UserType,
     page?: number,
     size?: number
   ): Promise<AdminUserSearchResult> {
-    const params = { role, page, size };
+    const params = { page, size };
     const queryString = this.buildQueryString(params);
-    return this.get<AdminUserSearchResult>(`/by-role?${queryString}`);
+    return this.get<AdminUserSearchResult>(`/type/${role}?${queryString}`);
+  }
+
+  // Get recent users (Backend: GET /api/admin/users/recent)
+  public async getRecentUsers(): Promise<AdminUserView[]> {
+    return this.get<AdminUserView[]>("/recent");
+  }
+
+  // Get active users (Backend: GET /api/admin/users/active)
+  public async getActiveUsers(): Promise<AdminUserView[]> {
+    return this.get<AdminUserView[]>("/active");
   }
 
   // Get users with pending verification
@@ -145,15 +168,6 @@ class AdminUserService extends BaseService {
     return this.get<AdminUserView[]>(`/high-risk?threshold=${threshold}`);
   }
 
-  // Export users data
-  public async exportUsers(
-    filters?: AdminUserFilters,
-    format: "csv" | "excel" = "csv"
-  ): Promise<Blob> {
-    const params = { ...filters, format };
-    const queryString = this.buildQueryString(params);
-    return this.getBlob(`/export?${queryString}`);
-  }
 
   // Get user booking history for admin view
   public async getUserBookingHistory(userId: number): Promise<any[]> {

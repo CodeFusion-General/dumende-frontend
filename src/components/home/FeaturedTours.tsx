@@ -1,46 +1,41 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BoatCard } from "../boats/BoatCard";
+import { TourCard } from "../tours/TourCard";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { boatService } from "@/services/boatService";
+import { tourService } from "@/services/tourService";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
-// import { useStaggeredClasses } from "@/hooks/useStaggeredAnimation";
 
-const FeaturedBoats = () => {
+const FeaturedTours = () => {
   const { language } = useLanguage();
   const t = translations[language];
-  // const { getStaggeredStyle } = useStaggeredClasses(6, 150);
 
-  // ✅ OPTIMIZED: React Query with aggressive caching for homepage
-  const {
-    data: boats = [],
-    isLoading: loading,
+  // ✅ PERFORMANCE: React Query for caching and automatic state management
+  const { 
+    data: tours = [], 
+    isLoading: loading, 
     isError,
-    error
+    error 
   } = useQuery({
-    queryKey: ['featured-boats'],
+    queryKey: ['featured-tours'],
     queryFn: async () => {
-      const response = await boatService.advancedSearchPaginated(
-        {}, // No filters, get all boats
-        {
-          page: 0,
-          size: 6,
-          sort: "popularity,desc"
+      const response = await tourService.advancedSearchPaginated(
+        {}, // No filters, get all tours
+        { 
+          page: 0, 
+          size: 6, 
+          sort: "rating,desc" 
         }
       );
       return response.content || [];
     },
-    staleTime: 15 * 60 * 1000, // Increased to 15 minutes (homepage data rarely changes)
-    gcTime: 45 * 60 * 1000, // Increased to 45 minutes
-    retry: 1, // Reduced retry for faster failure
-    refetchOnWindowFocus: false, // Disable refetch on window focus
-    refetchOnReconnect: false, // Disable refetch on reconnect
+    staleTime: 10 * 60 * 1000, // 10 minutes for homepage
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   const errorMessage = isError 
-    ? (error?.message || "Popüler tekneler yüklenirken bir sorun oluştu")
+    ? (error?.message || "Popüler turlar yüklenirken bir sorun oluştu")
     : null;
 
   // Loading state
@@ -60,14 +55,14 @@ const FeaturedBoats = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-[#2c3e50] mb-2 font-montserrat">
-                {t.home.featuredBoats.title}
+                Popüler Turlarımız
               </h2>
               <p className="text-gray-600 font-roboto">
-                {t.home.featuredBoats.subtitle}
+                En çok tercih edilen rehberli turlarımızı keşfedin
               </p>
             </div>
             <div className="glass-button flex items-center space-x-2 text-[#2c3e50] font-medium mt-4 md:mt-0 px-6 py-3 bg-white/30 backdrop-blur-sm border border-white/20 rounded-xl">
-              <span>{t.home.featuredBoats.viewAll}</span>
+              <span>Tüm Turları Görüntüle</span>
               <ArrowRight className="w-4 h-4" />
             </div>
           </div>
@@ -110,10 +105,10 @@ const FeaturedBoats = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-[#2c3e50] mb-2 font-montserrat">
-                Popüler Teknelerimiz
+                Popüler Turlarımız
               </h2>
               <p className="text-gray-600 font-roboto">
-                En çok tercih edilen lüks ve konforlu teknelerimizi keşfedin
+                En çok tercih edilen rehberli turlarımızı keşfedin
               </p>
             </div>
           </div>
@@ -183,38 +178,37 @@ const FeaturedBoats = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
           <div className="animate-fade-in-up">
             <h2 className="text-3xl md:text-4xl font-bold text-[#2c3e50] mb-2 font-montserrat">
-              Popüler Teknelerimiz
+              Popüler Turlarımız
             </h2>
             <p className="text-gray-600 font-roboto">
-              En çok tercih edilen lüks ve konforlu teknelerimizi keşfedin
+              En çok tercih edilen rehberli turlarımızı keşfedin
             </p>
           </div>
           <Link
-            to="/boats"
+            to="/tours"
             className="glass-button flex items-center space-x-2 text-[#2c3e50] hover:text-[#3498db] font-medium mt-4 md:mt-0 group px-6 py-3 animate-fade-in-up animate-delay-200 bg-white/30 backdrop-blur-sm border border-white/20 rounded-xl hover:bg-white/40 transition-all duration-300 hover:scale-105 shadow-lg"
           >
-            <span>Tüm Tekneleri Görüntüle</span>
+            <span>Tüm Turları Görüntüle</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-          {boats.length > 0 ? (
-            boats.map((boat, index) => (
-              <div key={boat.id} className="opacity-100 visible h-full">
-                <BoatCard
-                  boat={boat}
+          {tours.length > 0 ? (
+            tours.map((tour, index) => (
+              <div key={tour.id} className="opacity-100 visible h-full">
+                <TourCard
+                  tour={tour}
                   viewMode="grid"
-                  isHourlyMode={false}
+                  variant="homepage"
                   isCompared={false}
                   onCompareToggle={() => {}}
-                  variant="homepage"
                 />
               </div>
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-500">Henüz tekne bulunamadı.</p>
+              <p className="text-gray-500">Henüz tur bulunamadı.</p>
             </div>
           )}
         </div>
@@ -223,4 +217,4 @@ const FeaturedBoats = () => {
   );
 };
 
-export default FeaturedBoats;
+export default FeaturedTours;

@@ -1,3 +1,4 @@
+import { BaseService } from "../base/BaseService";
 import {
   AdminDashboardStats,
   DashboardActivity,
@@ -14,9 +15,12 @@ import { messageService } from "@/services/messageService";
  * AdminDashboardService - Admin dashboard veri yönetimi servisi
  *
  * Dashboard istatistikleri, aktiviteler ve grafik verilerini yönetir.
- * Mevcut servisleri kullanarak veri toplar ve cache stratejisi uygular.
+ * Backend API /api/admin/statistics endpoint'lerini kullanır.
  */
-class AdminDashboardService {
+class AdminDashboardService extends BaseService {
+  constructor() {
+    super("/api/admin/statistics");
+  }
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 dakika
 
@@ -323,7 +327,40 @@ class AdminDashboardService {
   }
 
   /**
-   * Tüm dashboard verilerini getir
+   * Backend'den dashboard verilerini getir
+   */
+  public async getDashboardDataFromBackend(): Promise<DashboardMetrics> {
+    try {
+      // Backend API çağrıları
+      const [dashboardStats, userStats, boatStats, tourStats, bookingStats, paymentStats] = 
+        await Promise.all([
+          this.get<AdminDashboardStats>("/dashboard"),
+          this.get<any>("/users"), 
+          this.get<any>("/boats"),
+          this.get<any>("/tours"),
+          this.get<any>("/bookings"),
+          this.get<any>("/payments")
+        ]);
+
+      return {
+        stats: dashboardStats,
+        activities: [], // Backend'de activity endpoint'i varsa eklenecek
+        charts: {
+          userGrowth: { title: "User Growth", description: "", data: [] },
+          revenueGrowth: { title: "Revenue Growth", description: "", data: [] },
+          bookingTrends: { title: "Booking Trends", description: "", data: [] },
+          boatApprovals: { title: "Boat Approvals", description: "", data: [] }
+        },
+        lastUpdated: new Date()
+      };
+    } catch (error) {
+      console.error("Backend dashboard API hatası, fallback'e geçiliyor:", error);
+      return this.getDashboardData(); // Fallback to mock data
+    }
+  }
+
+  /**
+   * Mock dashboard verilerini getir (fallback)
    */
   public async getDashboardData(): Promise<DashboardMetrics> {
     try {

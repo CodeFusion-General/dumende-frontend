@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
 import TourListingHeader from "@/components/tours/TourListingHeader";
 import TourFilterSidebar from "@/components/tours/TourFilterSidebar";
@@ -11,16 +12,16 @@ import { TourDTO } from "@/types/tour.types";
 import { toast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
-import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { usePullToRefresh } from "@/hooks/useMobileGestures";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Debounce hook
 const useDebounce = (value: any, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
@@ -45,15 +46,13 @@ const ToursPage: React.FC = () => {
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Data state
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [allTours, setAllTours] = useState<TourDTO[]>([]);
-  const [filteredTours, setFilteredTours] = useState<TourDTO[]>([]);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const [itemsPerPage] = useState(12);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Filter state
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -83,14 +82,13 @@ const ToursPage: React.FC = () => {
     dateAvailability: true,
   });
 
-  // Debounced filter values for performance
-  const debouncedSelectedTypes = useDebounce(selectedTypes, 300);
-  const debouncedSelectedDurations = useDebounce(selectedDurations, 300);
-  const debouncedCapacity = useDebounce(capacity, 300);
-  const debouncedPriceRange = useDebounce(priceRange, 500);
-  const debouncedSelectedLocations = useDebounce(selectedLocations, 300);
-  const debouncedSelectedDifficulties = useDebounce(selectedDifficulties, 300);
-  const debouncedSelectedDateRange = useDebounce(selectedDateRange, 500);
+  // Debounced filter values for performance  
+  const debouncedSelectedTypes = useDebounce(selectedTypes, 500);
+  const debouncedSelectedDurations = useDebounce(selectedDurations, 500);
+  const debouncedCapacity = useDebounce(capacity, 800);
+  const debouncedPriceRange = useDebounce(priceRange, 800);
+  const debouncedSelectedLocations = useDebounce(selectedLocations, 500);
+  const debouncedSelectedDifficulties = useDebounce(selectedDifficulties, 500);
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections({
@@ -99,17 +97,90 @@ const ToursPage: React.FC = () => {
     });
   };
 
-  // Fetch tours from API
+  // ✅ PERFORMANCE: React Query for server state management with pagination
+  const {
+    data: tourData,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      "tours-paginated",
+      currentPage,
+      debouncedSearchQuery,
+      debouncedSelectedTypes,
+      debouncedCapacity,
+      debouncedPriceRange,
+      debouncedSelectedLocations,
+      sortBy,
+    ],
+    queryFn: async () => {
+      const filters: any = {};
+      
+      // Apply search query
+      if (debouncedSearchQuery.trim()) {
+        filters.name = debouncedSearchQuery.trim();
+      }
+
+      // Apply type filters
+      if (debouncedSelectedTypes.length > 0) {
+        filters.type = debouncedSelectedTypes[0]; // Backend expects single type
+      }
+
+      // Apply location filters
+      if (debouncedSelectedLocations.length > 0) {
+        filters.location = debouncedSelectedLocations[0]; // Backend expects single location
+      }
+
+      // Apply capacity filter
+      if (debouncedCapacity) {
+        const capacityMap: Record<string, number> = {
+          "1-2": 1,
+          "3-6": 3,
+          "7-15": 7,
+          "16-30": 16,
+          "30+": 30,
+          "1-4": 1, // Legacy
+          "5-10": 5, // Legacy
+          "11-20": 11, // Legacy
+          "20+": 20, // Legacy
+        };
+        filters.minCapacity = capacityMap[debouncedCapacity] || 1;
+      }
+
+      // Apply price range filter
+      if (debouncedPriceRange[0] !== 100 || debouncedPriceRange[1] !== 5000) {
+        filters.minPrice = debouncedPriceRange[0];
+        filters.maxPrice = debouncedPriceRange[1];
+      }
+
+      const sortMapping: Record<string, string> = {
+        popular: "rating,desc",
+        "price-low": "price,asc",
+        "price-high": "price,desc",
+        rating: "rating,desc",
+        capacity: "capacity,desc",
+      };
+
+      return tourService.advancedSearchPaginated(filters, {
+        page: currentPage,
+        size: itemsPerPage,
+        sort: sortMapping[sortBy] || "rating,desc",
+      });
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const tours = tourData?.content || [];
+  const totalElements = tourData?.totalElements || 0;
+  const totalPages = tourData?.totalPages || 0;
+
+  // Fetch tours manually for pull-to-refresh
   const fetchTours = async (showToast: boolean = false) => {
     try {
-      setLoading(true);
-      setError(null);
-
-      // Try to get all tours using capacity search as fallback
-      const tours = await tourService.searchToursByCapacity(1);
-      setAllTours(tours);
-      setFilteredTours(tours);
-
+      await refetch();
       if (showToast) {
         toast({
           title: "Başarılı",
@@ -118,343 +189,55 @@ const ToursPage: React.FC = () => {
       }
     } catch (err) {
       console.error("Error fetching tours:", err);
-      setError(
-        "Turlar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-      );
-      setAllTours([]);
-      setFilteredTours([]);
-
       if (showToast) {
         toast({
-          title: "Hata",
+          title: "Hata", 
           description: "Turlar yenilenirken bir hata oluştu",
           variant: "destructive",
         });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Helper: Prefer backend tourType; fallback to text inference for backward compatibility
-  const getTourType = (tour: TourDTO): string[] => {
-    if (tour.tourType) {
-      switch (tour.tourType) {
-        case "HIKING":
-          return ["walking", "adventure"];
-        case "CULTURAL":
-          return ["cultural"];
-        case "FOOD":
-          return ["food"];
-        case "CITY":
-          return ["city"];
-        case "NATURE":
-          return ["nature"];
-        case "BOAT":
-          return ["boat"];
-        case "PHOTOGRAPHY":
-          return ["adventure"];
-        case "DIVING":
-          return ["adventure", "nature"];
-        default:
-          break;
-      }
+  // Pagination controls
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const getPageNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (
+      let i = Math.max(2, currentPage + 1 - delta);
+      i <= Math.min(totalPages - 1, currentPage + 1 + delta);
+      i++
+    ) {
+      range.push(i);
     }
 
-    const text = `${tour.name} ${tour.description}`.toLowerCase();
-    const types: string[] = [];
-
-    if (
-      text.includes("macera") ||
-      text.includes("adventure") ||
-      text.includes("tırmanış") ||
-      text.includes("dağ")
-    )
-      types.push("adventure");
-    if (
-      text.includes("kültür") ||
-      text.includes("cultural") ||
-      text.includes("müze") ||
-      text.includes("tarihi")
-    )
-      types.push("cultural");
-    if (
-      text.includes("yemek") ||
-      text.includes("food") ||
-      text.includes("gastronomi") ||
-      text.includes("lezz")
-    )
-      types.push("food");
-    if (
-      text.includes("tarih") ||
-      text.includes("historical") ||
-      text.includes("antik") ||
-      text.includes("eski")
-    )
-      types.push("historical");
-    if (
-      text.includes("doğa") ||
-      text.includes("nature") ||
-      text.includes("orman") ||
-      text.includes("park")
-    )
-      types.push("nature");
-    if (
-      text.includes("şehir") ||
-      text.includes("city") ||
-      text.includes("kent") ||
-      text.includes("merkez")
-    )
-      types.push("city");
-    if (
-      text.includes("tekne") ||
-      text.includes("boat") ||
-      text.includes("gemi") ||
-      text.includes("deniz")
-    )
-      types.push("boat");
-    if (
-      text.includes("yürüyüş") ||
-      text.includes("walking") ||
-      text.includes("hiking") ||
-      text.includes("trek")
-    )
-      types.push("walking");
-
-    return types.length > 0 ? types : ["city"]; // Default to city if no type detected
-  };
-
-  // Helper function to extract duration from tour dates
-  const getTourDuration = (tour: TourDTO): string[] => {
-    const durations: string[] = [];
-
-    tour.tourDates.forEach((date) => {
-      const durationText = date.durationText.toLowerCase();
-      if (
-        durationText.includes("2") ||
-        durationText.includes("3") ||
-        durationText.includes("4")
-      ) {
-        if (durationText.includes("saat") || durationText.includes("hour")) {
-          durations.push("half-day");
-        }
-      }
-      if (
-        durationText.includes("6") ||
-        durationText.includes("7") ||
-        durationText.includes("8")
-      ) {
-        if (durationText.includes("saat") || durationText.includes("hour")) {
-          durations.push("full-day");
-        }
-      }
-      if (durationText.includes("gün") || durationText.includes("day")) {
-        const dayMatch = durationText.match(/(\d+)\s*(gün|day)/);
-        if (dayMatch && parseInt(dayMatch[1]) > 1) {
-          durations.push("multi-day");
-        }
-      }
-      if (durationText.includes("akşam") || durationText.includes("evening")) {
-        durations.push("evening");
-      }
-    });
-
-    return durations.length > 0 ? durations : ["half-day"]; // Default to half-day
-  };
-
-  // Helper function to extract difficulty from description
-  const getTourDifficulty = (tour: TourDTO): string[] => {
-    const text = `${tour.name} ${tour.description}`.toLowerCase();
-    const difficulties: string[] = [];
-
-    if (
-      text.includes("kolay") ||
-      text.includes("easy") ||
-      text.includes("rahat") ||
-      text.includes("başlangıç")
-    )
-      difficulties.push("easy");
-    if (
-      text.includes("orta") ||
-      text.includes("moderate") ||
-      text.includes("normal") ||
-      text.includes("standart")
-    )
-      difficulties.push("moderate");
-    if (
-      text.includes("zor") ||
-      text.includes("challenging") ||
-      text.includes("ileri") ||
-      text.includes("deneyimli")
-    )
-      difficulties.push("challenging");
-
-    return difficulties.length > 0 ? difficulties : ["easy"]; // Default to easy
-  };
-
-  // Apply filters and search
-  const applyFilters = useCallback(async () => {
-    try {
-      setLoading(true);
-      let filtered = [...allTours];
-
-      // Apply search query
-      if (debouncedSearchQuery.trim()) {
-        filtered = filtered.filter(
-          (tour) =>
-            tour.name
-              .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase()) ||
-            tour.location
-              .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase()) ||
-            tour.description
-              .toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase())
-        );
-      }
-
-      // Apply tour type filter
-      if (debouncedSelectedTypes.length > 0) {
-        filtered = filtered.filter((tour) => {
-          const tourTypes = getTourType(tour);
-          return debouncedSelectedTypes.some((type) =>
-            tourTypes.includes(type)
-          );
-        });
-      }
-
-      // Apply duration filter
-      if (debouncedSelectedDurations.length > 0) {
-        filtered = filtered.filter((tour) => {
-          const tourDurations = getTourDuration(tour);
-          return debouncedSelectedDurations.some((duration) =>
-            tourDurations.includes(duration)
-          );
-        });
-      }
-
-      // Apply difficulty filter
-      if (debouncedSelectedDifficulties.length > 0) {
-        filtered = filtered.filter((tour) => {
-          const tourDifficulties = getTourDifficulty(tour);
-          return debouncedSelectedDifficulties.some((difficulty) =>
-            tourDifficulties.includes(difficulty)
-          );
-        });
-      }
-
-      // Apply location filter
-      if (debouncedSelectedLocations.length > 0) {
-        filtered = filtered.filter((tour) =>
-          debouncedSelectedLocations.includes(tour.location)
-        );
-      }
-
-      // Apply price range filter
-      filtered = filtered.filter(
-        (tour) =>
-          tour.price >= debouncedPriceRange[0] &&
-          tour.price <= debouncedPriceRange[1]
-      );
-
-      // Apply group size filter
-      if (debouncedCapacity) {
-        filtered = filtered.filter((tour) => {
-          const cap = tour.capacity;
-          if (!cap) return false;
-          // New group size ranges
-          if (debouncedCapacity === "1-2") return cap >= 1 && cap <= 2;
-          if (debouncedCapacity === "3-6") return cap >= 3 && cap <= 6;
-          if (debouncedCapacity === "7-15") return cap >= 7 && cap <= 15;
-          if (debouncedCapacity === "16-30") return cap >= 16 && cap <= 30;
-          if (debouncedCapacity === "30+") return cap > 30;
-          // Legacy capacity ranges for backward compatibility
-          if (debouncedCapacity === "1-4") return cap >= 1 && cap <= 4;
-          if (debouncedCapacity === "5-10") return cap >= 5 && cap <= 10;
-          if (debouncedCapacity === "11-20") return cap >= 11 && cap <= 20;
-          if (debouncedCapacity === "20+") return cap > 20;
-          return false;
-        });
-      }
-
-      // Apply date availability filter
-      if (debouncedSelectedDateRange.from || debouncedSelectedDateRange.to) {
-        filtered = filtered.filter((tour) => {
-          if (!tour.tourDates || tour.tourDates.length === 0) return false;
-
-          return tour.tourDates.some((date) => {
-            try {
-              const tourDate = parseISO(date.startDate);
-              const isAvailable = date.availabilityStatus === "AVAILABLE";
-
-              if (!isAvailable) return false;
-
-              if (
-                debouncedSelectedDateRange.from &&
-                debouncedSelectedDateRange.to
-              ) {
-                return (
-                  !isBefore(tourDate, debouncedSelectedDateRange.from) &&
-                  !isAfter(tourDate, debouncedSelectedDateRange.to)
-                );
-              } else if (debouncedSelectedDateRange.from) {
-                return !isBefore(tourDate, debouncedSelectedDateRange.from);
-              } else if (debouncedSelectedDateRange.to) {
-                return !isAfter(tourDate, debouncedSelectedDateRange.to);
-              }
-
-              return true;
-            } catch (error) {
-              console.error("Error parsing tour date:", error);
-              return false;
-            }
-          });
-        });
-      }
-
-      // Apply sorting
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case "price-low":
-            return a.price - b.price;
-          case "price-high":
-            return b.price - a.price;
-          case "rating":
-            return (b.rating || 0) - (a.rating || 0);
-          case "capacity":
-            return b.capacity - a.capacity;
-          case "popular":
-          default:
-            return (b.rating || 0) - (a.rating || 0); // Use rating as popularity proxy
-        }
-      });
-
-      setFilteredTours(filtered);
-    } catch (err) {
-      console.error("Filter application error:", err);
-      toast({
-        title: "Hata",
-        description: "Filtreleri uygularken bir hata oluştu.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (currentPage + 1 - delta > 2) {
+      rangeWithDots.push(1, "...");
+    } else {
+      rangeWithDots.push(1);
     }
-  }, [
-    allTours,
-    debouncedSearchQuery,
-    debouncedSelectedTypes,
-    debouncedSelectedDurations,
-    debouncedCapacity,
-    debouncedPriceRange,
-    debouncedSelectedLocations,
-    debouncedSelectedDifficulties,
-    debouncedSelectedDateRange,
-    sortBy,
-  ]);
 
-  // Reset filters with animated transitions
+    rangeWithDots.push(...range);
+
+    if (currentPage + 1 + delta < totalPages - 1) {
+      rangeWithDots.push("...", totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
+  };
+
+  // Reset filters with animated transitions  
   const handleFilterReset = useCallback(() => {
     // Add smooth transition classes
     const filterSidebar = document.querySelector(".tour-filter-sidebar");
@@ -473,6 +256,7 @@ const ToursPage: React.FC = () => {
     setCapacity("");
     setSearchQuery("");
     setSelectedDateRange({});
+    setCurrentPage(0); // Reset to first page
   }, []);
 
   // Pull to refresh functionality
@@ -490,27 +274,17 @@ const ToursPage: React.FC = () => {
     },
   });
 
-  // Initialize data
-  useEffect(() => {
-    fetchTours();
-  }, []);
-
-  // Apply filters when dependencies change
-  useEffect(() => {
-    if (allTours.length > 0) {
-      applyFilters();
-    }
+  // ✅ PERFORMANCE: No manual effects needed - React Query handles data fetching automatically
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(0);
   }, [
     debouncedSearchQuery,
     debouncedSelectedTypes,
-    debouncedSelectedDurations,
     debouncedCapacity,
     debouncedPriceRange,
     debouncedSelectedLocations,
-    debouncedSelectedDifficulties,
-    debouncedSelectedDateRange,
     sortBy,
-    applyFilters,
   ]);
 
   // Handle compare toggle
@@ -528,13 +302,21 @@ const ToursPage: React.FC = () => {
     }
   };
 
-  if (error) {
+  if (isError) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-red-600 mb-4">Hata</h2>
-            <p className="text-gray-600">{error}</p>
+            <p className="text-gray-600">
+              {error?.message || "Turlar yüklenirken bir hata oluştu"}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            >
+              🔄 Tekrar Dene
+            </button>
           </div>
         </div>
       </Layout>
@@ -580,7 +362,7 @@ const ToursPage: React.FC = () => {
             setSortBy={setSortBy}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
-            totalTours={filteredTours.length}
+            totalTours={totalElements}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
@@ -606,20 +388,80 @@ const ToursPage: React.FC = () => {
               openSections={openSections}
               toggleSection={toggleSection}
               resetFilters={handleFilterReset}
-              applyFilters={applyFilters}
-              allTours={allTours}
-              filteredCount={filteredTours.length}
+              applyFilters={() => {}} // No longer needed with React Query
+              allTours={tours} // Current page tours
+              filteredCount={totalElements}
             />
 
             <div className="flex-1">
-              {filteredTours.length > 0 ? (
-                <AnimatedTourGrid
-                  tours={filteredTours}
-                  viewMode={viewMode}
-                  comparedTours={comparedTours}
-                  onCompareToggle={handleCompareToggle}
-                  loading={loading}
-                />
+              {tours.length > 0 ? (
+                <>
+                  <AnimatedTourGrid
+                    tours={tours}
+                    viewMode={viewMode}
+                    comparedTours={comparedTours}
+                    onCompareToggle={handleCompareToggle}
+                    loading={loading}
+                  />
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-sm text-gray-600 font-roboto">
+                        {totalElements > 0 ? (
+                          <>
+                            {currentPage * itemsPerPage + 1}-
+                            {Math.min((currentPage + 1) * itemsPerPage, totalElements)} / {totalElements} tur
+                          </>
+                        ) : (
+                          "Tur bulunamadı"
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 0 || loading}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+
+                        <div className="flex gap-1">
+                          {getPageNumbers().map((page, index) => (
+                            <React.Fragment key={index}>
+                              {page === "..." ? (
+                                <span className="px-2 py-1 text-sm text-gray-400">...</span>
+                              ) : (
+                                <Button
+                                  variant={currentPage === (page as number) - 1 ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => handlePageChange((page as number) - 1)}
+                                  disabled={loading}
+                                  className="h-8 w-8 p-0 text-sm"
+                                >
+                                  {page}
+                                </Button>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage >= totalPages - 1 || loading}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <NoTourResults
                   onReset={handleFilterReset}
@@ -644,7 +486,7 @@ const ToursPage: React.FC = () => {
           {comparedTours.length > 0 && (
             <TourCompareBar
               comparedTours={comparedTours}
-              tours={allTours}
+              tours={tours}
               onRemove={(id) =>
                 setComparedTours(
                   comparedTours.filter((tourId) => tourId !== id)

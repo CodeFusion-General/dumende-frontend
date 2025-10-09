@@ -2,6 +2,7 @@ import React from "react";
 import Layout from "../components/layout/Layout";
 import Hero from "../components/home/Hero";
 import FeaturedBoats from "../components/home/FeaturedBoats";
+import FeaturedTours from "../components/home/FeaturedTours";
 import FeatureBox from "../components/home/FeatureBox";
 import ServiceSection from "../components/home/ServiceSection";
 import Destinations from "../components/home/Destinations";
@@ -15,6 +16,7 @@ const Index = () => {
     <Layout isHomePage={true}>
       <Hero />
       <FeaturedBoats />
+      <FeaturedTours />
       <FeatureBox />
       <ServiceSection />
       <Destinations />

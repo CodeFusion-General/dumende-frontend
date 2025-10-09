@@ -9,7 +9,6 @@ import {
   AdminBookingStatistics,
   AdminBookingAction,
   AdminBulkBookingOperation,
-  BookingExportConfig,
   BookingReportData,
   AdminBookingNote,
 } from "@/types/adminBooking";
@@ -18,33 +17,38 @@ import {
   BookingStatus,
   PaymentStatus,
 } from "@/types/booking.types";
-import { string } from "zod";
-import { string } from "zod";
-import { string } from "zod";
-import { number } from "zod";
-import { number } from "zod";
-import { type } from "os";
-import { type } from "os";
-import { string } from "zod";
-import { string } from "zod";
-import { type } from "os";
-import { number } from "zod";
-import { type } from "os";
-import { type } from "os";
-import { string } from "zod";
-import { string } from "zod";
-import { type } from "os";
-import { number } from "zod";
-import { string } from "zod";
-import { type } from "os";
-import { type } from "os";
-
 class AdminBookingService extends BaseService {
   constructor() {
-    super("/admin/bookings");
+    super("/api/admin/bookings");
   }
 
-  // Get all bookings with admin view (enriched data)
+  // Get all bookings from backend API (Backend: GET /api/admin/bookings)
+  public async getAllBookingsFromBackend(
+    filters?: AdminBookingFilters,
+    page?: number,
+    size?: number
+  ): Promise<{
+    bookings: AdminBookingView[];
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+  }> {
+    try {
+      const params = { page, size, ...filters };
+      const queryString = this.buildQueryString(params);
+      return this.get<{
+        bookings: AdminBookingView[];
+        totalElements: number;
+        totalPages: number;
+        currentPage: number;
+      }>(`/?${queryString}`);
+    } catch (error) {
+      console.error("Backend admin bookings API hatası, fallback'e geçiliyor:", error);
+      return this.getAllBookings(filters, page, size); // Fallback to mock
+    }
+  }
+
+  // Get all bookings with admin view (fallback mock implementation)
   public async getAllBookings(
     filters?: AdminBookingFilters,
     page?: number,
@@ -56,7 +60,7 @@ class AdminBookingService extends BaseService {
     currentPage: number;
   }> {
     try {
-      // Get basic bookings first
+      // Get basic bookings first  
       const bookings = await bookingService.getBookings();
 
       // Enrich with additional data
@@ -290,23 +294,6 @@ class AdminBookingService extends BaseService {
     }
   }
 
-  // Export bookings data
-  public async exportBookings(config: BookingExportConfig): Promise<Blob> {
-    try {
-      const { bookings } = await this.getAllBookings(config.filters);
-
-      // This would typically call a backend endpoint for export
-      // For now, we'll create a simple CSV
-      if (config.format === "csv") {
-        return this.createCSVExport(bookings, config);
-      }
-
-      throw new Error(`Export format ${config.format} not implemented yet`);
-    } catch (error) {
-      console.error("Error exporting bookings:", error);
-      throw error;
-    }
-  }
 
   // Generate booking report
   public async generateBookingReport(
@@ -638,44 +625,6 @@ class AdminBookingService extends BaseService {
     };
   }
 
-  private createCSVExport(
-    bookings: AdminBookingView[],
-    config: BookingExportConfig
-  ): Blob {
-    const headers = [
-      "ID",
-      "Customer Name",
-      "Customer Email",
-      "Boat/Tour",
-      "Start Date",
-      "End Date",
-      "Status",
-      "Total Price",
-      "Passenger Count",
-      "Payment Status",
-      "Created At",
-    ];
-
-    const rows = bookings.map((booking) => [
-      booking.id.toString(),
-      booking.customerInfo.name,
-      booking.customerInfo.email,
-      booking.boatInfo?.name || booking.tourInfo?.name || "N/A",
-      booking.startDate,
-      booking.endDate,
-      booking.status,
-      booking.totalPrice.toString(),
-      booking.passengerCount.toString(),
-      booking.paymentInfo.paymentStatus,
-      booking.createdAt,
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
-      .join("\n");
-
-    return new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  }
 
   // Send notification to customer
   private async sendNotificationToCustomer(
@@ -753,6 +702,137 @@ class AdminBookingService extends BaseService {
       console.error("Error rescheduling booking:", error);
       throw error;
     }
+  }
+
+  // **BACKEND API ENDPOINTS**
+
+  // Advanced booking search (Backend: POST /api/admin/bookings/search)
+  public async searchBookings(searchCriteria: {
+    bookingNumber?: string;
+    status?: string;
+    bookingDateFrom?: string;
+    bookingDateTo?: string;
+    startDateFrom?: string;
+    startDateTo?: string;
+    customerName?: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    boatId?: number;
+    boatName?: string;
+    tourId?: number;
+    tourName?: string;
+    ownerId?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    paymentStatus?: string;
+    minPassengers?: number;
+    maxPassengers?: number;
+    hasConflicts?: boolean;
+    hasRefunds?: boolean;
+    notes?: string;
+  }): Promise<{
+    content: AdminBookingView[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
+  }> {
+    return this.post("/search", searchCriteria);
+  }
+
+  // Reschedule booking (Backend: POST /api/admin/bookings/{id}/reschedule)
+  public async rescheduleBookingAPI(
+    bookingId: number,
+    rescheduleData: {
+      newStartDate: string;
+      newEndDate: string;
+      reason?: string;
+      notifyCustomer?: boolean;
+      checkAvailability?: boolean;
+      priceAdjustment?: number;
+      priceAdjustmentReason?: string;
+    },
+    adminId: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    conflictingBookings?: any[];
+    priceChanges?: {
+      oldPrice: number;
+      newPrice: number;
+      adjustment: number;
+    };
+  }> {
+    return this.post(`/${bookingId}/reschedule?adminId=${adminId}`, rescheduleData);
+  }
+
+  // Process refund (Backend: POST /api/admin/bookings/{id}/refund)
+  public async processRefund(
+    bookingId: number,
+    refundData: {
+      refundAmount: number;
+      reason: string;
+      isFullRefund?: boolean;
+      notifyCustomer?: boolean;
+      adminNotes?: string;
+    },
+    adminId: number
+  ): Promise<{
+    success: boolean;
+    message: string;
+    refundId?: string;
+    processedAmount: number;
+    remainingAmount: number;
+  }> {
+    return this.post(`/${bookingId}/refund?adminId=${adminId}`, refundData);
+  }
+
+  // Get booking conflicts (Backend: GET /api/admin/bookings/conflicts)
+  public async getBookingConflicts(
+    startDate?: string,
+    endDate?: string,
+    resourceType?: 'BOAT' | 'TOUR'
+  ): Promise<{
+    conflicts: {
+      id: number;
+      bookingIds: number[];
+      resourceType: string;
+      resourceId: number;
+      resourceName: string;
+      conflictType: 'DOUBLE_BOOKING' | 'OVERLAPPING_TIMES' | 'CAPACITY_EXCEEDED';
+      description: string;
+      severity: 'HIGH' | 'MEDIUM' | 'LOW';
+      createdAt: string;
+    }[];
+    totalCount: number;
+  }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (resourceType) params.append('resourceType', resourceType);
+    
+    return this.get(`/conflicts?${params.toString()}`);
+  }
+
+  // Bulk booking operations (Backend: POST /api/admin/bookings/bulk-actions)
+  public async bulkBookingActions(bulkAction: {
+    bookingIds: number[];
+    action: 'APPROVE' | 'CANCEL' | 'CONFIRM' | 'RESCHEDULE';
+    reason?: string;
+    newStartDate?: string;
+    newEndDate?: string;
+    notifyCustomers?: boolean;
+    adminId: number;
+  }): Promise<{
+    successCount: number;
+    failureCount: number;
+    results: {
+      bookingId: number;
+      success: boolean;
+      message: string;
+    }[];
+  }> {
+    return this.post('/bulk-actions', bulkAction);
   }
 }
 

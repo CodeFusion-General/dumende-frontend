@@ -29,7 +29,7 @@ export interface GuideData {
   location?: string;
 }
 
-// Tour Date (Tur Tarihleri) Types
+// ✅ BACKEND UYUMLU: Tour Date (Tur Tarihleri) Types
 export interface TourDateDTO {
   id: number;
   tourId: number;
@@ -39,6 +39,7 @@ export interface TourDateDTO {
   durationMinutes?: number;
   availabilityStatus: string;
   maxGuests: number;
+  price?: number; // ✅ EKLE: Backend'de BigDecimal -> number
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +52,7 @@ export interface CreateTourDateDTO {
   durationMinutes?: number;
   availabilityStatus: string;
   maxGuests: number;
+  price?: number; // ✅ EKLE: Backend'de BigDecimal -> number
 }
 
 export interface UpdateTourDateDTO {
@@ -62,6 +64,7 @@ export interface UpdateTourDateDTO {
   durationMinutes?: number;
   availabilityStatus?: string;
   maxGuests?: number;
+  price?: number; // ✅ EKLE: Backend'de BigDecimal -> number (opsiyonel)
 }
 
 // Tour Image (Tur Resimleri) Types

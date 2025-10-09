@@ -15,11 +15,8 @@ import { tokenUtils } from "@/lib/utils";
 
 class AuthService extends BaseService {
   constructor() {
-    super("/auth");
-    // Now uses BaseService methods which already use the correct API URL from HttpClient
+    super("/api/auth");
   }
-
-  // Auth service now uses BaseService methods which use correct API URL
 
 
   // Yeni backend API'sine uygun register
@@ -109,32 +106,49 @@ class AuthService extends BaseService {
     return this.hasRole(UserType.CUSTOMER);
   }
 
-  // Account yönetimi (backend'deki diğer endpoints için)
+  // ✅ DÜZELT: Account yönetimi (Backend: /api/v1/accounts)
+  // NOT: Account endpoint'leri /api/v1/accounts altında, /api/auth altında DEĞİL
+
+  public async getAccountById(accountId: number): Promise<AccountDTO> {
+    // Backend: GET /api/v1/accounts/{id}
+    return this.get<AccountDTO>(`/v1/accounts/${accountId}`);
+  }
+
   public async getCurrentAccount(): Promise<AccountDTO> {
-    return this.get<AccountDTO>("/account");
+    const user = this.getCurrentUser();
+    if (!user?.accountId) {
+      throw new Error("Account ID bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+    return this.getAccountById(user.accountId);
   }
 
   public async createAccount(data: CreateAccountRequest): Promise<AccountDTO> {
-    return this.post<AccountDTO>("/account", data);
+    // Backend: POST /api/v1/accounts/
+    return this.post<AccountDTO>("/v1/accounts", data);
   }
 
-  public async updateAccount(data: UpdateAccountRequest): Promise<AccountDTO> {
-    return this.put<AccountDTO>("/account", data);
+  public async updateAccount(accountId: number, data: UpdateAccountRequest): Promise<AccountDTO> {
+    // Backend: PUT /api/v1/accounts/{id}
+    return this.put<AccountDTO>(`/v1/accounts/${accountId}`, data);
   }
 
-  public async updatePassword(data: UpdatePasswordRequest): Promise<void> {
-    return this.put<void>("/account/password", data);
+  public async updatePassword(accountId: number, data: UpdatePasswordRequest): Promise<void> {
+    // Backend: PUT /api/v1/accounts/{id}/password
+    return this.put<void>(`/v1/accounts/${accountId}/password`, data);
   }
 
-  public async deleteAccount(): Promise<void> {
-    await this.delete<void>("/account");
+  public async deleteAccount(accountId: number): Promise<void> {
+    // Backend: DELETE /api/v1/accounts/{id}
+    await this.delete<void>(`/v1/accounts/${accountId}`);
     this.logout();
   }
 
-  // Token refresh (eğer backend'de varsa)
+  // ❌ KALDIR: refreshToken() - Backend'de bu endpoint yok
+  // Token refresh için yeniden login yapılmalı veya backend'de endpoint eklenmeli
+  /*
   public async refreshToken(): Promise<LoginResponse> {
     const response = await this.post<LoginResponse>("/refresh");
-    
+
     if (response.token) {
       tokenUtils.setAuthToken(response.token, response.expiresIn);
       tokenUtils.setUserData({
@@ -144,26 +158,32 @@ class AuthService extends BaseService {
         role: response.role,
       });
     }
-    
+
     return response;
   }
+  */
 
-  // **ADMİN PANELİ FONKSİYONLARI**
-  
-  // Tüm kullanıcıları getir (Admin only)
+  // ❌ DEPRECATED: ADMİN PANELİ FONKSİYONLARI
+  // NOT: Bu metodlar adminUserService.ts'ye taşınmalı
+  // Backend endpoint'leri /api/users altında, /api/auth/admin/users DEĞİL
+
+  // ⚠️ DEPRECATED: adminUserService.getAllUsers() kullan
+  // Backend: GET /api/users/ (@PreAuthorize('ADMIN'))
   public async getAllUsers(): Promise<AuthUser[]> {
-    return this.get<AuthUser[]>("/admin/users");
+    // Doğru endpoint: /api/users/ (BaseService zaten /api/auth kullanıyor, o yüzden relative path)
+    // UYARI: Bu method adminUserService'e taşınmalı
+    return this.get<AuthUser[]>("/../users/");
   }
 
-  // Kullanıcı rolünü güncelle (Admin only)
-  public async updateUserRole(userId: number, newRole: UserType): Promise<void> {
-    return this.put<void>(`/admin/users/${userId}/role`, { role: newRole });
-  }
+  // ⚠️ DEPRECATED: Backend'de bu endpoint YOK - adminUserService'de implement edilmeli
+  // public async updateUserRole(userId: number, newRole: UserType): Promise<void> {
+  //   return this.put<void>(`/admin/users/${userId}/role`, { role: newRole });
+  // }
 
-  // Kullanıcıyı aktif/pasif et (Admin only)
-  public async toggleUserStatus(userId: number, isActive: boolean): Promise<void> {
-    return this.put<void>(`/admin/users/${userId}/status`, { isActive });
-  }
+  // ⚠️ DEPRECATED: Backend'de bu endpoint YOK - adminUserService'de implement edilmeli
+  // public async toggleUserStatus(userId: number, isActive: boolean): Promise<void> {
+  //   return this.put<void>(`/admin/users/${userId}/status`, { isActive });
+  // }
 
   // Boat owner başvurularını getir (Admin only)
   public async getBoatOwnerApplications(): Promise<{
@@ -223,19 +243,59 @@ class AuthService extends BaseService {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  // Kullanıcıyı ID ile getir (Admin only)
+  // ⚠️ DEPRECATED: userService.getUserById() veya adminUserService kullan
+  // Backend: GET /api/users/{id} (@PreAuthorize)
   public async getUserById(userId: number): Promise<AuthUser> {
-    return this.get<AuthUser>(`/admin/users/${userId}`);
+    // Doğru endpoint için relative path kullan
+    return this.get<AuthUser>(`/../users/${userId}`);
   }
 
-  // Kullanıcı arama (Admin only)
+  // ⚠️ DEPRECATED: adminUserService.searchUsers() kullan
+  // Backend'de search endpoint'i farklı formatta olabilir
   public async searchUsers(query: string): Promise<AuthUser[]> {
-    return this.get<AuthUser[]>(`/admin/users/search?q=${encodeURIComponent(query)}`);
+    // Bu method adminUserService'e taşınmalı
+    return this.get<AuthUser[]>(`/../admin/users/search?q=${encodeURIComponent(query)}`);
   }
 
-  // Role göre kullanıcıları filtrele (Admin only)
+  // ⚠️ DEPRECATED: Backend'de bu exact endpoint YOK
+  // Backend: GET /api/admin/users/type/{userType} kullanılmalı
   public async getUsersByRole(role: UserType): Promise<AuthUser[]> {
-    return this.get<AuthUser[]>(`/admin/users?role=${role}`);
+    // Bu method adminUserService'e taşınmalı ve backend endpoint'i ile senkronize edilmeli
+    return this.get<AuthUser[]>(`/../admin/users/type/${role}`);
+  }
+
+  // **EMAIL VERİFİCATİON API'LERİ**
+  
+  // Email doğrulama kodu gönder
+  public async sendEmailVerificationCode(email: string): Promise<void> {
+    return this.postPublic<void>("/email-verification/send-code", { email });
+  }
+
+  // Email doğrula
+  public async verifyEmail(email: string, code: string): Promise<void> {
+    return this.postPublic<void>("/email-verification/verify", { email, code });
+  }
+
+  // **PASSWORD RESET API'LERİ**
+  
+  // Şifre sıfırlama isteği
+  public async forgotPassword(email: string): Promise<{ message: string }> {
+    return this.postPublic<{ message: string }>("/password-reset/forgot-password", { email });
+  }
+
+  // Şifre sıfırla
+  public async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    return this.postPublic<{ message: string }>("/password-reset/reset-password", { 
+      token, 
+      newPassword 
+    });
+  }
+
+  // **TEST API'LERİ** (Sadece development)
+  
+  // Test endpoint'i
+  public async testAuth(): Promise<string> {
+    return this.get<string>("/test");
   }
 
   // **BOAT OWNER BAŞVURU FONKSİYONLARI**

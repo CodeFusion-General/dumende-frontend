@@ -89,7 +89,7 @@ const BoatListing = () => {
     priority: "low",
   });
 
-  // Optimize React Query with stricter caching and prevent refetching
+  // ✅ OPTIMIZED: React Query with better caching and smart refetching
   const {
     data: boatData,
     isLoading,
@@ -99,17 +99,24 @@ const BoatListing = () => {
     queryKey: ["boat", id],
     queryFn: () => boatService.getBoatById(Number(id)),
     enabled: !!id,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2, // Reduced from 3 to 2 for faster failure
+    retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 10000), // Faster retry
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: true, // Re-enable for better UX after connection loss
     refetchOnMount: false,
-    staleTime: 30 * 60 * 1000, // 30 dakika cache
-    gcTime: 60 * 60 * 1000, // For React Query v5 compatibility
-    refetchInterval: false, // Otomatik refetch'i kapatın
+    staleTime: 30 * 60 * 1000, // 30 minutes cache
+    gcTime: 60 * 60 * 1000, // 1 hour garbage collection
+    // Smart refetching: only refetch if data is stale and user is active
+    refetchInterval: false,
   });
 
-  // Memoize similar boats query to prevent re-computation
+  // ✅ OPTIMIZED: Similar boats query with better caching
+  const selectSimilarBoats = useCallback(
+    (data: BoatDTO[]) =>
+      data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
+    [boatData?.id]
+  );
+
   const {
     data: similarBoatsData,
     isLoading: isSimilarBoatsLoading,
@@ -121,19 +128,15 @@ const BoatListing = () => {
       boatService.searchBoats({
         type: boatData?.type,
       }),
-    select: useCallback(
-      (data: BoatDTO[]) =>
-        data.filter((boat) => boat.id !== boatData?.id).slice(0, 4),
-      [boatData?.id]
-    ),
+    select: selectSimilarBoats,
     enabled: !!boatData?.type && shouldLoadSimilarBoats,
-    retry: 2,
+    retry: 1, // Reduced retry for non-critical data
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
     placeholderData: (previousData) => previousData,
-    staleTime: 15 * 60 * 1000, // 15 minutes cache
-    gcTime: 30 * 60 * 1000, // For React Query v5 compatibility
+    staleTime: 20 * 60 * 1000, // Increased to 20 minutes (less critical data)
+    gcTime: 40 * 60 * 1000, // 40 minutes garbage collection
   });
 
   // Check if user has booking with this boat
@@ -171,12 +174,12 @@ const BoatListing = () => {
     }
   }, [isAuthenticated, isCustomer, boatData?.id]);
 
-  // Check user booking when boat data is loaded - memoized to prevent excessive calls
+  // ✅ OPTIMIZED: Check user booking when boat data is loaded with proper dependencies
   React.useEffect(() => {
     if (boatData?.id && isAuthenticated && isCustomer()) {
       checkUserBooking();
     }
-  }, [boatData?.id, isAuthenticated, isCustomer]);
+  }, [boatData?.id, isAuthenticated, checkUserBooking]); // Fixed: added checkUserBooking to dependencies
 
   // Custom hook to prevent messaging from triggering refetches
   const useStableBoatData = (boatData: BoatDTO | undefined) => {
@@ -268,10 +271,13 @@ const BoatListing = () => {
       }));
   }, [finalBoatData?.images, finalBoatData?.name]);
 
-  // Add cleanup on unmount to prevent memory leaks
+  // ✅ OPTIMIZED: Add proper cleanup on unmount to prevent memory leaks
   React.useEffect(() => {
     return () => {
-      // Component cleanup
+      // Cleanup messaging state
+      setShowMessaging(false);
+      setUserBooking(null);
+      setCaptain(null);
     };
   }, []);
 

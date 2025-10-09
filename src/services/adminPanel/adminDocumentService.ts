@@ -19,7 +19,7 @@ import {
 
 class AdminDocumentService extends BaseService {
   constructor() {
-    super("/admin/documents");
+    super("/api/admin"); // Base path for both boat-documents and tour-documents
   }
 
   /**
@@ -260,51 +260,6 @@ class AdminDocumentService extends BaseService {
     }
   }
 
-  /**
-   * Export documents to CSV/Excel
-   */
-  async exportDocuments(
-    filter?: AdminDocumentFilter,
-    format: "csv" | "excel" = "csv"
-  ): Promise<Blob> {
-    try {
-      const params = new URLSearchParams();
-      params.append("format", format);
-
-      if (filter) {
-        if (filter.entityType) params.append("entityType", filter.entityType);
-        if (filter.documentType)
-          params.append("documentType", filter.documentType);
-        if (filter.verificationStatus)
-          params.append("verificationStatus", filter.verificationStatus);
-        if (filter.expiryStatus)
-          params.append("expiryStatus", filter.expiryStatus);
-        if (filter.ownerId) params.append("ownerId", filter.ownerId.toString());
-        if (filter.search) params.append("search", filter.search);
-        if (filter.dateRange) {
-          params.append("startDate", filter.dateRange.start);
-          params.append("endDate", filter.dateRange.end);
-        }
-      }
-
-      const response = await fetch(
-        `${this.baseURL}/export?${params.toString()}`,
-        {
-          method: "GET",
-          headers: this.getHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.statusText}`);
-      }
-
-      return await response.blob();
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
 
   /**
    * Send expiry notifications

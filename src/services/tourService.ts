@@ -520,6 +520,46 @@ class TourService extends BaseService {
     return results;
   }
 
+  // ======= Paginated Search Method =======
+  public async advancedSearchPaginated(
+    filters: {
+      name?: string;
+      location?: string;
+      type?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      minCapacity?: number;
+    },
+    pagination: {
+      page: number;
+      size: number;
+      sort?: string;
+    }
+  ): Promise<{
+    content: TourDTO[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  }> {
+    const params = new URLSearchParams();
+    
+    // Add filter parameters
+    if (filters.name) params.append('name', filters.name);
+    if (filters.location) params.append('location', filters.location);
+    if (filters.type) params.append('type', filters.type);
+    if (filters.minPrice !== undefined) params.append('minPrice', filters.minPrice.toString());
+    if (filters.maxPrice !== undefined) params.append('maxPrice', filters.maxPrice.toString());
+    if (filters.minCapacity !== undefined) params.append('minCapacity', filters.minCapacity.toString());
+    
+    // Add pagination parameters
+    params.append('page', pagination.page.toString());
+    params.append('size', pagination.size.toString());
+    if (pagination.sort) params.append('sort', pagination.sort);
+
+    return this.get(`/search/advanced?${params.toString()}`);
+  }
+
   // Backward compatibility methods
   public async getToursByLocation(location: string): Promise<TourDTO[]> {
     return this.searchToursByLocation(location);

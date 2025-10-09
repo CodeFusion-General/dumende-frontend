@@ -61,7 +61,9 @@ interface ApplicationFilters {
 
 class AdminCaptainApplicationService extends BaseService {
   constructor() {
-    super("/admin/captain-applications");
+    // ✅ DÜZELT: Backend base path - /api prefix eksikti
+    // Backend: POST /api/admin/captain-applications/bulk
+    super("/api/admin/captain-applications");
   }
 
   // Get comprehensive statistics

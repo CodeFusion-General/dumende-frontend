@@ -303,57 +303,6 @@ describe("AdminTourService", () => {
     });
   });
 
-  describe("exportTourData", () => {
-    it("should export tour data in CSV format", async () => {
-      const mockTours = [
-        {
-          id: 1,
-          name: "Test Tour",
-          status: "ACTIVE",
-          rating: 4.5,
-          guideId: 1,
-          location: "Istanbul",
-          price: 100,
-          maxGuests: 10,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      vi.mocked(tourService.getTours).mockResolvedValue(mockTours as any);
-      vi.mocked(tourService.getTourDocuments).mockResolvedValue([]);
-
-      const csvData = await adminTourService.exportTourData("csv");
-
-      expect(csvData).toContain("ID,Name,Status");
-      expect(csvData).toContain("Test Tour");
-      expect(csvData).toContain("ACTIVE");
-    });
-
-    it("should export tour data in JSON format", async () => {
-      const mockTours = [
-        {
-          id: 1,
-          name: "Test Tour",
-          status: "ACTIVE",
-          rating: 4.5,
-          guideId: 1,
-          location: "Istanbul",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      vi.mocked(tourService.getTours).mockResolvedValue(mockTours as any);
-      vi.mocked(tourService.getTourDocuments).mockResolvedValue([]);
-
-      const jsonData = await adminTourService.exportTourData("json");
-      const parsedData = JSON.parse(jsonData);
-
-      expect(Array.isArray(parsedData)).toBe(true);
-      expect(parsedData[0].name).toBe("Test Tour");
-    });
-  });
 
   describe("updateTourContent", () => {
     it("should update tour content and add note", async () => {

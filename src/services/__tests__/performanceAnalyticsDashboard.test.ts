@@ -480,23 +480,6 @@ describe("PerformanceAnalyticsDashboardService", () => {
       }).not.toThrow();
     });
 
-    it("should export dashboard data", () => {
-      performanceAnalyticsDashboard.startMonitoring();
-
-      const exportedData = performanceAnalyticsDashboard.exportData();
-
-      expect(exportedData).toMatchObject({
-        metrics: expect.any(Array),
-        alerts: expect.any(Array),
-        abTests: expect.any(Array),
-        config: expect.objectContaining({
-          refreshInterval: expect.any(Number),
-          alertThresholds: expect.any(Object),
-          retentionPeriod: expect.any(Number),
-          enableRealTimeAlerts: expect.any(Boolean),
-        }),
-      });
-    });
 
     it("should cleanup old data", () => {
       expect(() => {

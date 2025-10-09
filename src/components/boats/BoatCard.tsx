@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ interface BoatCardProps {
   detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
-// Default image helper function
+// ✅ OPTIMIZED: Memoized image URL getter to prevent recalculation
 const getBoatImageUrl = (boat: BoatDTO): string => {
   // Backend'den gelen URL'i tam URL'e çevir
   if (boat.images && boat.images.length > 0) {
@@ -74,7 +74,7 @@ const BoatCardGrid: React.FC<{
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
   detailLinkBuilder?: (boat: BoatDTO) => string;
-}> = ({
+}> = React.memo(({
   boat,
   isHourlyMode,
   isCompared,
@@ -84,18 +84,17 @@ const BoatCardGrid: React.FC<{
 }) => {
   const { language } = useLanguage();
   const t = translations[language];
-  const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
 
-  useEffect(() => {
-    const url = getBoatImageUrl(boat);
-    setImageUrl(url);
-  }, [boat]);
+  // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
+  const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
+  const [imageError, setImageError] = useState(false);
 
-  const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
-  const priceUnit = isHourlyMode ? "saat" : "gün";
+  // ✅ OPTIMIZED: Memoize computed values
+  const price = useMemo(() => isHourlyMode ? boat.hourlyPrice : boat.dailyPrice, [isHourlyMode, boat.hourlyPrice, boat.dailyPrice]);
+  const priceUnit = useMemo(() => isHourlyMode ? "saat" : "gün", [isHourlyMode]);
 
-  // Helper functions for modern glass styling
-  const getTextColor = (opacity?: string) => {
+  // Memoized helper functions for modern glass styling
+  const getTextColor = useMemo(() => (opacity?: string) => {
     return opacity
       ? `text-gray-${
           opacity === "70"
@@ -107,27 +106,28 @@ const BoatCardGrid: React.FC<{
             : "500"
         }`
       : "text-[#2c3e50]";
-  };
+  }, []);
 
-  const getBadgeStyles = () => {
-    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
-  };
+  const badgeStyles = "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
 
-  const getCompareButtonStyles = () => {
-    return isCompared
+  const compareButtonStyles = useMemo(() =>
+    isCompared
       ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
-      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
-  };
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm"
+  , [isCompared]);
+
+  const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
 
   return (
     <GlassCard className="overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
       {/* Image Section with Glass Overlay */}
       <div className="relative overflow-hidden h-60 flex-shrink-0">
         <img
-          src={imageUrl}
+          src={displayImageUrl}
           alt={boat.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImageUrl("/placeholder-boat.jpg")}
+          onError={() => setImageError(true)}
         />
 
         {/* Enhanced gradient overlay for better contrast */}
@@ -135,7 +135,7 @@ const BoatCardGrid: React.FC<{
 
         {/* Boat type badge with enhanced glass effect */}
         <div
-          className={`absolute top-4 left-4 px-3 py-1.5 rounded-full ${getBadgeStyles()} font-medium`}
+          className={`absolute top-4 left-4 px-3 py-1.5 rounded-full ${badgeStyles} font-medium`}
         >
           <span className="text-sm">{boat.type}</span>
         </div>
@@ -151,7 +151,7 @@ const BoatCardGrid: React.FC<{
         {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${getCompareButtonStyles()}`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${compareButtonStyles}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -243,7 +243,7 @@ const BoatCardGrid: React.FC<{
       </div>
     </GlassCard>
   );
-};
+}); // ✅ OPTIMIZED: Added React.memo closing bracket
 
 const BoatCardList: React.FC<{
   boat: BoatDTO;
@@ -252,7 +252,7 @@ const BoatCardList: React.FC<{
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
   detailLinkBuilder?: (boat: BoatDTO) => string;
-}> = ({
+}> = React.memo(({
   boat,
   isHourlyMode,
   isCompared,
@@ -260,18 +260,16 @@ const BoatCardList: React.FC<{
   variant = "listing",
   detailLinkBuilder,
 }) => {
-  const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
+  // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
+  const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
+  const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
-    const url = getBoatImageUrl(boat);
-    setImageUrl(url);
-  }, [boat]);
+  // ✅ OPTIMIZED: Memoize computed values
+  const price = useMemo(() => isHourlyMode ? boat.hourlyPrice : boat.dailyPrice, [isHourlyMode, boat.hourlyPrice, boat.dailyPrice]);
+  const priceUnit = useMemo(() => isHourlyMode ? "saat" : "gün", [isHourlyMode]);
 
-  const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
-  const priceUnit = isHourlyMode ? "saat" : "gün";
-
-  // Helper functions for modern glass styling
-  const getTextColor = (opacity?: string) => {
+  // Memoized helper functions for modern glass styling
+  const getTextColor = useMemo(() => (opacity?: string) => {
     return opacity
       ? `text-gray-${
           opacity === "70"
@@ -283,27 +281,28 @@ const BoatCardList: React.FC<{
             : "500"
         }`
       : "text-[#2c3e50]";
-  };
+  }, []);
 
-  const getBadgeStyles = () => {
-    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
-  };
+  const badgeStyles = "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
 
-  const getCompareButtonStyles = () => {
-    return isCompared
+  const compareButtonStyles = useMemo(() =>
+    isCompared
       ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
-      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
-  };
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm"
+  , [isCompared]);
+
+  const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
 
   return (
     <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
       {/* Image Section */}
       <div className="relative overflow-hidden md:w-1/3 h-48 md:h-auto">
         <img
-          src={imageUrl}
+          src={displayImageUrl}
           alt={boat.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImageUrl("/placeholder-boat.jpg")}
+          onError={() => setImageError(true)}
         />
 
         {/* Gradient overlay */}
@@ -311,7 +310,7 @@ const BoatCardList: React.FC<{
 
         {/* Boat type badge */}
         <div
-          className={`absolute top-4 left-4 px-3 py-1 rounded-full ${getBadgeStyles()}`}
+          className={`absolute top-4 left-4 px-3 py-1 rounded-full ${badgeStyles}`}
         >
           <span className="text-sm font-medium">{boat.type}</span>
         </div>
@@ -327,7 +326,7 @@ const BoatCardList: React.FC<{
         {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${compareButtonStyles}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -410,4 +409,4 @@ const BoatCardList: React.FC<{
       </div>
     </GlassCard>
   );
-};
+}); // ✅ OPTIMIZED: Added React.memo closing bracket

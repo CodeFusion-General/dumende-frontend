@@ -22,7 +22,7 @@ import { BoatDocumentDTO } from "@/types/document.types";
 
 class AdminBoatService extends BaseService {
   constructor() {
-    super("/admin/boats");
+    super("/api/admin/boats");
   }
 
   // Get boats with admin-specific information

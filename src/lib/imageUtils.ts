@@ -176,3 +176,66 @@ export const getFullImageUrl = (imageUrl: string): string => {
   // Diğer durumlarda /api/uploads/ prefix'i ekle
   return `${baseUrl}/api/uploads/${imageUrl}`;
 };
+
+// ✅ OPTIMIZATION: Image preloading utility
+export const preloadImage = (url: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
+// ✅ OPTIMIZATION: Preload multiple images
+export const preloadImages = (urls: string[]): Promise<void[]> => {
+  return Promise.all(urls.map(url => preloadImage(url).catch(() => {})));
+};
+
+// ✅ OPTIMIZATION: Get responsive image srcset
+export const getResponsiveImageSrcSet = (baseUrl: string): string => {
+  // Generate responsive image sizes (if backend supports it)
+  // For now, we'll return the base URL with different quality parameters
+  return `${baseUrl}?w=400 400w, ${baseUrl}?w=800 800w, ${baseUrl}?w=1200 1200w`;
+};
+
+// ✅ OPTIMIZATION: Image lazy loading with Intersection Observer
+export const createImageObserver = (
+  callback: (entry: IntersectionObserverEntry) => void,
+  options?: IntersectionObserverInit
+): IntersectionObserver | null => {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+    return null;
+  }
+
+  return new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        callback(entry);
+      }
+    });
+  }, {
+    rootMargin: '50px', // Start loading 50px before the image enters viewport
+    threshold: 0.01,
+    ...options,
+  });
+};
+
+// ✅ OPTIMIZATION: Image dimension calculator for responsive layouts
+export const calculateImageDimensions = (
+  originalWidth: number,
+  originalHeight: number,
+  maxWidth: number,
+  maxHeight: number
+): { width: number; height: number } => {
+  const ratio = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
+
+  if (ratio >= 1) {
+    return { width: originalWidth, height: originalHeight };
+  }
+
+  return {
+    width: Math.round(originalWidth * ratio),
+    height: Math.round(originalHeight * ratio),
+  };
+};

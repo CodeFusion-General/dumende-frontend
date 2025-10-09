@@ -3,18 +3,92 @@ import { BookingDTO } from "./booking.types";
 import { ReviewDTO } from "./review.types";
 import { BoatDTO } from "./boat.types";
 
-// User Types
+// ✅ BACKEND UYUMLU: UserDTO - Backend UserDTO.java ile tam uyumlu
 export interface UserDTO {
   id: number;
+
+  // ✅ EKLE: Name fields (Backend'den gelen field'lar)
+  firstName?: string;
+  lastName?: string;
   fullName: string;
+
   phoneNumber: string;
-  profileImage?: string; // URL olarak tutuluyor
+
+  // ✅ EKLE: Additional profile fields
+  dateOfBirth?: string; // LocalDate -> ISO 8601 format (YYYY-MM-DD)
+  address?: AddressDto;
+
+  // ✅ DEĞİŞTİR: profileImage → profileImageUrl (Backend field ismi)
+  profileImageUrl?: string; // URL olarak tutuluyor
+  profileImageFilePath?: string; // Backend'deki internal file path
+
+  // ✅ EKLE: Company info (for boat owners)
+  company?: CompanyDTO;
+
   account: AccountDTO;
+
+  // ✅ EKLE: Captain-specific fields (backend'den gelen field'lar)
+  professionalInfo?: ProfessionalInfoDto;
+  statistics?: CaptainStatisticsDto;
+  certifications?: CertificationDto[];
+
+  // Existing relational fields
   bookings: BookingDTO[];
   reviews: ReviewDTO[];
   boats: BoatDTO[]; // Kullanıcının sahip olduğu tekneler
+
   createdAt: string; // LocalDateTime -> string
   updatedAt: string; // LocalDateTime -> string
+}
+
+// ✅ EKLE: Supporting DTOs (Backend'den gelen nested types)
+
+export interface AddressDto {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
+
+export interface CompanyDTO {
+  legalName?: string;
+  displayName?: string;
+  taxNumber?: string;
+  taxOffice?: string;
+  authorizedPerson?: string;
+  companyEmail?: string;
+  nationalIdNumber?: string;
+  mobilePhone?: string;
+  landlinePhone?: string;
+  billingAddress?: string;
+  iban?: string;
+}
+
+export interface ProfessionalInfoDto {
+  licenseNumber?: string;
+  licenseExpiry?: string; // LocalDate -> ISO 8601
+  yearsOfExperience?: number;
+  certifications?: CertificationDto[];
+  specializations?: string[];
+  bio?: string;
+}
+
+export interface CaptainStatisticsDto {
+  totalTrips?: number;
+  totalHours?: number;
+  averageRating?: number;
+  totalEarnings?: number;
+  completionRate?: number;
+}
+
+export interface CertificationDto {
+  id: number;
+  name: string;
+  issuer?: string;
+  issueDate?: string; // LocalDate -> ISO 8601
+  expiryDate?: string; // LocalDate -> ISO 8601
+  certificateNumber?: string;
 }
 
 export interface CreateUserCommand {
