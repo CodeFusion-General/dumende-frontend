@@ -417,11 +417,10 @@ export function BookingForm({
           // Show payment info briefly before redirect
           setShowPaymentInfo(true);
 
-          // ✅ Simplified: Let PaymentService handle returnUrl - Don't add it here
+          // ✅ iFrame akışına yönlendir
           setTimeout(() => {
-            // Just use the original payment URL, PaymentService will handle returnUrl
-            paymentService.redirectToPayment(paymentInfo.paymentUrl!);
-          }, 2000);
+            navigate(`/payment/return?bookingId=${bookingId}&start=iframe`);
+          }, 1500);
         } else if (paymentInfo.paymentRequired && !paymentInfo.paymentUrl) {
           // 3DS akışı: ödeme linki yoksa kart bilgisi akışına yönlendir
           navigate(`/payment/return?bookingId=${bookingId}&start=3ds`);

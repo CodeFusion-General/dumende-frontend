@@ -34,6 +34,8 @@ import MyBookings from "./pages/MyBookings";
 import BoatOwnerApplication from "./pages/BoatOwnerApplication";
 import NotificationsPage from "./pages/NotificationsPage";
 import PaymentReturn from "./pages/PaymentReturn";
+import PaymentSuccess from "./pages/payment/Success";
+import PaymentFailure from "./pages/payment/Failure";
 import ProfileCompletionPage from "./pages/ProfileCompletionPage";
 import MyProfile from "./pages/MyProfile";
 
@@ -173,6 +175,8 @@ const App = () => {
                         path="/payment/return"
                         element={<PaymentReturn />}
                       />
+                      <Route path="/payment/success" element={<PaymentSuccess />} />
+                      <Route path="/payment/failure" element={<PaymentFailure />} />
                       <Route
                         path="/boat-owner-application"
                         element={<BoatOwnerApplication />}
