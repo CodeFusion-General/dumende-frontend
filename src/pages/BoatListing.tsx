@@ -90,15 +90,19 @@ const BoatListing = () => {
   });
 
   // ✅ OPTIMIZED: React Query with better caching and smart refetching
+  // NOTE: queryKey second param olarak her zaman sayısal boatId kullanıyoruz.
+  // Böylece listelerdeki `BoatCard` içindeki prefetch ile aynı cache entry'yi paylaşır
+  // ve detay sayfasına geçişte ikinci bir istek atılmasını önleriz.
+  const numericBoatId = id ? Number(id) : undefined;
   const {
     data: boatData,
     isLoading,
     error,
     refetch: refetchBoat,
   } = useQuery({
-    queryKey: ["boat", id],
-    queryFn: () => boatService.getBoatById(Number(id)),
-    enabled: !!id,
+    queryKey: ["boat", numericBoatId],
+    queryFn: () => boatService.getBoatById(numericBoatId as number),
+    enabled: !!numericBoatId,
     retry: 2, // Reduced from 3 to 2 for faster failure
     retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 10000), // Faster retry
     refetchOnWindowFocus: false,

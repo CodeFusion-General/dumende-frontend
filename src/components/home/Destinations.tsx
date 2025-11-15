@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, TrendingUp, DollarSign, Anchor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, LocationStatistic } from "@/services/boatService";
@@ -6,84 +7,76 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 
 const Destinations = () => {
-  const [destinations, setDestinations] = useState<LocationStatistic[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const navigate = useNavigate();
   const { language } = useLanguage();
   const t = translations[language];
 
-  useEffect(() => {
-    fetchDestinations();
-  }, []);
+  const {
+    data: locationStats,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["location-statistics"],
+    queryFn: () => boatService.getLocationStatistics(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+  });
 
-  const fetchDestinations = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const destinations: LocationStatistic[] = useMemo(() => {
+    const fallback: LocationStatistic[] = [
+      {
+        location: "İstanbul",
+        boatCount: 25,
+        averagePrice: 2500,
+        minPrice: 800,
+        maxPrice: 8000,
+      },
+      {
+        location: "Bodrum",
+        boatCount: 18,
+        averagePrice: 3200,
+        minPrice: 1200,
+        maxPrice: 12000,
+      },
+      {
+        location: "Fethiye",
+        boatCount: 15,
+        averagePrice: 2800,
+        minPrice: 1000,
+        maxPrice: 9000,
+      },
+      {
+        location: "Marmaris",
+        boatCount: 12,
+        averagePrice: 2600,
+        minPrice: 900,
+        maxPrice: 7500,
+      },
+      {
+        location: "Çeşme",
+        boatCount: 10,
+        averagePrice: 2200,
+        minPrice: 700,
+        maxPrice: 6000,
+      },
+      {
+        location: "Antalya",
+        boatCount: 8,
+        averagePrice: 2900,
+        minPrice: 1100,
+        maxPrice: 8500,
+      },
+    ];
 
-      const locationStats = await boatService.getLocationStatistics();
+    const base =
+      locationStats && locationStats.length > 0 ? locationStats : fallback;
 
-      // En popüler 6 lokasyonu al (tekne sayısına göre sıralı)
-      const topDestinations = locationStats
-        .sort((a, b) => b.boatCount - a.boatCount)
-        .slice(0, 6);
-
-      setDestinations(topDestinations);
-    } catch (error) {
-      console.error("Destinations istatistik hatası:", error);
-      setError(t.errors.somethingWentWrong);
-
-      // Hata durumunda fallback data
-      setDestinations([
-        {
-          location: "İstanbul",
-          boatCount: 25,
-          averagePrice: 2500,
-          minPrice: 800,
-          maxPrice: 8000,
-        },
-        {
-          location: "Bodrum",
-          boatCount: 18,
-          averagePrice: 3200,
-          minPrice: 1200,
-          maxPrice: 12000,
-        },
-        {
-          location: "Fethiye",
-          boatCount: 15,
-          averagePrice: 2800,
-          minPrice: 1000,
-          maxPrice: 9000,
-        },
-        {
-          location: "Marmaris",
-          boatCount: 12,
-          averagePrice: 2600,
-          minPrice: 900,
-          maxPrice: 7500,
-        },
-        {
-          location: "Çeşme",
-          boatCount: 10,
-          averagePrice: 2200,
-          minPrice: 700,
-          maxPrice: 6000,
-        },
-        {
-          location: "Antalya",
-          boatCount: 8,
-          averagePrice: 2900,
-          minPrice: 1100,
-          maxPrice: 8500,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // En popüler 6 lokasyonu al (tekne sayısına göre sıralı)
+    return [...base].sort((a, b) => b.boatCount - a.boatCount).slice(0, 6);
+  }, [locationStats]);
 
   const formatPrice = (price: number) => {
     return `₺${price.toLocaleString("tr-TR")}`;
@@ -119,7 +112,6 @@ const Destinations = () => {
 
   // Lokasyon filtreli tekne listesine yönlendirme
   const handleViewBoats = (location: string) => {
-
     // URL parametreleri ile lokasyon filtrelemesi
     const params = new URLSearchParams({
       location: location,
@@ -177,11 +169,13 @@ const Destinations = () => {
           </p>
         </div>
 
-        {error && (
+        {isError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8 text-center">
-            <p className="text-red-600">⚠️ {error}</p>
+            <p className="text-red-600">
+              ⚠️ {error?.message || t.errors.somethingWentWrong}
+            </p>
             <button
-              onClick={fetchDestinations}
+              onClick={() => refetch()}
               className="mt-2 text-sm text-red-800 underline hover:no-underline"
             >
               {t.common.tryAgain}
@@ -278,4 +272,3 @@ const Destinations = () => {
 };
 
 export default Destinations;
-

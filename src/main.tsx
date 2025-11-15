@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.tsx";
 import "./index.css";
 import { swUtils } from "./services/serviceWorkerManager";
+import "./services/performanceAnalyticsDashboard";
 
 // ✅ PERFORMANCE: Create QueryClient for caching
 const queryClient = new QueryClient({

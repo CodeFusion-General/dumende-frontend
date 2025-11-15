@@ -68,9 +68,10 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
           alt={images[currentIndex]?.altText || `Image ${currentIndex + 1}`}
           className="w-full h-full object-cover transition-all duration-300"
           onClick={onImageClick}
-          loading={currentIndex < 2 ? "eager" : "lazy"}
+          loading={currentIndex === 0 ? "eager" : "lazy"}
           decoding="async"
           sizes="100vw"
+          fetchpriority={currentIndex === 0 || images[currentIndex]?.isHeroImage ? "high" : "auto"}
         />
         
         {/* Mobile navigation arrows */}

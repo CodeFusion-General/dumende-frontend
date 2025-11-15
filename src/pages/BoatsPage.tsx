@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import BoatListingHeader from "@/components/boats/BoatListingHeader";
@@ -104,61 +105,95 @@ const BoatsPage = () => {
     });
   };
 
-  // ✅ PERFORMANCE: Memoized and paginated applyFilters
-  const applyFilters = useCallback(async (page = 0) => {
-    try {
-      setLoading(true);
-      
-      const advancedReq: any = {
-        types: debouncedSelectedTypes.length > 0 ? debouncedSelectedTypes : undefined,
-        locations: debouncedSelectedLocations.length > 0 ? debouncedSelectedLocations : undefined,
-        minCapacity: debouncedCapacity ? parseInt(debouncedCapacity.split("-")[0]) : undefined,
-        minPrice: debouncedPriceRange[0],
-        maxPrice: debouncedPriceRange[1],
-        startDate,
-        endDate,
-      };
+  // ✅ PERFORMANCE: Filtre modelini ve sıralamayı memoize et
+  const advancedReq = useMemo(() => {
+    return {
+      types:
+        debouncedSelectedTypes.length > 0 ? debouncedSelectedTypes : undefined,
+      locations:
+        debouncedSelectedLocations.length > 0
+          ? debouncedSelectedLocations
+          : undefined,
+      minCapacity: debouncedCapacity
+        ? parseInt(debouncedCapacity.split("-")[0])
+        : undefined,
+      minPrice: debouncedPriceRange[0],
+      maxPrice: debouncedPriceRange[1],
+      startDate,
+      endDate,
+    } as any;
+  }, [
+    debouncedSelectedTypes,
+    debouncedSelectedLocations,
+    debouncedCapacity,
+    debouncedPriceRange,
+    startDate,
+    endDate,
+  ]);
 
-      const sortParam =
-        sortBy === "priceHigh" ? "dailyPrice,desc" :
-        sortBy === "priceLow" ? "dailyPrice,asc" :
-        "popularity,desc";
+  const sortParam = useMemo(() => {
+    return sortBy === "priceHigh"
+      ? "dailyPrice,desc"
+      : sortBy === "priceLow"
+      ? "dailyPrice,asc"
+      : "popularity,desc";
+  }, [sortBy]);
 
-      // ✅ OPTIMIZED: Increased page size from 12 to 24 for better UX and fewer API calls
-      const pageResp = await boatService.advancedSearchPaginated(advancedReq, {
-        page,
-        size: 24, // Optimal balance between performance and UX
+  // ✅ React Query ile sayfalı arama (keepPreviousData)
+  const {
+    data: pageResp,
+    isFetching,
+    isError: isQueryError,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["boats-advanced", advancedReq, sortParam, currentPage],
+    queryFn: async () =>
+      boatService.advancedSearchPaginated(advancedReq, {
+        page: currentPage,
+        size: 24,
         sort: sortParam,
-      });
+      }),
+    keepPreviousData: true,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
-      setFilteredBoats(pageResp.content || []);
-      setCurrentPage(pageResp.number || 0);
-      setTotalPages(pageResp.totalPages || 0);
-      setTotalBoats(pageResp.totalElements || 0);
-      setHasNextPage(!pageResp.last);
+  // ✅ Sunucu yanıtını yerel state'e yansıt
+  useEffect(() => {
+    if (!pageResp) return;
+    setFilteredBoats(pageResp.content || []);
+    setCurrentPage(pageResp.number ?? 0);
+    setTotalPages(pageResp.totalPages ?? 0);
+    setTotalBoats(pageResp.totalElements ?? 0);
+    setHasNextPage(!pageResp.last);
+    setError(null);
+  }, [pageResp]);
 
-    } catch (err) {
-      console.error("Filter uygulama hatası:", err);
+  // ✅ Yükleme durumunu React Query'den al
+  useEffect(() => {
+    setLoading(isFetching);
+  }, [isFetching]);
+
+  // ✅ Hata yönetimi
+  useEffect(() => {
+    if (isQueryError) {
+      console.error("Filter uygulama hatası:", queryError);
       toast({
         title: "Hata",
-        description: "Filtreleri uygularken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        description:
+          "Filtreleri uygularken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
         variant: "destructive",
       });
       setFilteredBoats([]);
       setTotalBoats(0);
-    } finally {
-      setLoading(false);
     }
-  }, [
-    debouncedSelectedTypes,
-    debouncedCapacity,
-    debouncedPriceRange,
-    debouncedSelectedLocations,
-    debouncedSelectedFeatures,
-    startDate,
-    endDate,
-    sortBy,
-  ]);
+  }, [isQueryError, queryError]);
+
+  // ✅ Sadece sayfayı değiştiren hafif fonksiyon
+  const applyFilters = useCallback((page = 0) => {
+    setCurrentPage(page);
+  }, []);
 
   // Optimized reset function
   const handleFilterReset = useCallback(() => {
@@ -173,9 +208,8 @@ const BoatsPage = () => {
   }, [serviceParam, navigate]);
 
   useEffect(() => {
-    fetchInitialBoats();
     parseUrlFilters();
-  }, [fetchInitialBoats, location.search]);
+  }, [location.search]);
 
   // URL parametrelerini parsing eden fonksiyon
   const parseUrlFilters = () => {
@@ -203,37 +237,7 @@ const BoatsPage = () => {
     if (guests) setCapacity(guests);
   };
 
-  // ✅ PERFORMANCE: Removed separate fetchBoats, using applyFilters directly
-  const fetchInitialBoats = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // ✅ OPTIMIZED: Use paginated API with increased page size
-      const response = await boatService.advancedSearchPaginated(
-        {}, // No initial filters
-        {
-          page: 0,
-          size: 24, // Increased from 12 to 24
-          sort: "popularity,desc"
-        }
-      );
-      
-      setFilteredBoats(response.content || []);
-      setCurrentPage(response.number || 0);
-      setTotalPages(response.totalPages || 0);
-      setTotalBoats(response.totalElements || 0);
-      setHasNextPage(!response.last);
-      setError(null);
-      
-    } catch (err) {
-      console.error("Error fetching initial boats:", err);
-      setError("Tekneleri yüklerken bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
-      setFilteredBoats([]);
-      setTotalBoats(0);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // fetchInitialBoats kaldırıldı; React Query ilk veriyi yükleyecek
 
   useEffect(() => {
     if (serviceParam && serviceBoatMap[serviceParam]) {
@@ -327,7 +331,14 @@ const BoatsPage = () => {
                   detailLinkBuilder={(boat) => {
                     const params = new URLSearchParams(location.search);
                     // Arama sonuçlarından gelen temel parametreleri taşıyalım
-                    const allowed = ["location", "start", "end", "guests", "filter", "type"]; 
+                    const allowed = [
+                      "location",
+                      "start",
+                      "end",
+                      "guests",
+                      "filter",
+                      "type",
+                    ];
                     const forwardParams = new URLSearchParams();
                     allowed.forEach((key) => {
                       const value = params.get(key);
@@ -371,26 +382,26 @@ const BoatsPage = () => {
               {/* ✅ PERFORMANCE: Pagination Controls */}
               {totalPages > 1 && (
                 <div className="mt-8 flex justify-center items-center space-x-2">
-                  <button 
+                  <button
                     onClick={() => applyFilters(currentPage - 1)}
                     disabled={currentPage === 0 || loading}
                     className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     ← Önceki
                   </button>
-                  
+
                   <span className="px-4 py-2 bg-gray-100 rounded">
                     Sayfa {currentPage + 1} / {totalPages}
                   </span>
-                  
-                  <button 
+
+                  <button
                     onClick={() => applyFilters(currentPage + 1)}
                     disabled={!hasNextPage || loading}
                     className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     Sonraki →
                   </button>
-                  
+
                   <span className="text-sm text-gray-600 ml-4">
                     Toplam {totalBoats} tekne
                   </span>

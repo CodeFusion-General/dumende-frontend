@@ -25,6 +25,12 @@ export abstract class BaseService {
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second base delay
 
+  // In-flight request deduplication and lightweight public GET cache
+  private inFlightRequests: Map<string, Promise<any>> = new Map();
+  private responseCache: Map<string, { expiry: number; value: any }> =
+    new Map();
+  private readonly defaultPublicGetTtlMs = 60 * 1000;
+
   constructor(baseUrl: string) {
     this.api = httpClient;
     this.baseUrl = baseUrl;
@@ -35,87 +41,184 @@ export abstract class BaseService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  protected async get<T>(url: string, params?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const fullUrl = `${this.baseUrl}${url}`;
-      const response: AxiosResponse<T> = await this.api.get(fullUrl, {
-        params,
-        headers: this.getAuthHeaders(),
-      });
-      return response.data;
-    }, `GET ${this.baseUrl}${url}`);
+  protected async get<T>(
+    url: string,
+    params?: any,
+    options?: { retries?: number }
+  ): Promise<T> {
+    const fullUrl = `${this.baseUrl}${url}`;
+    const key = this.buildRequestKey("GET", fullUrl, params);
+
+    // In-flight deduplication
+    const existing = this.inFlightRequests.get(key);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+
+    const requestPromise = this.executeWithRetry<T>(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.get(fullUrl, {
+          params,
+          headers: this.getAuthHeaders(),
+        });
+        return response.data;
+      },
+      `GET ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    ).finally(() => {
+      this.inFlightRequests.delete(key);
+    });
+
+    this.inFlightRequests.set(key, requestPromise);
+    return requestPromise;
   }
 
   // Public GET method without auth headers (for homepage/public APIs)
-  protected async getPublic<T>(url: string, params?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const fullUrl = `${this.baseUrl}${url}`;
-      const response: AxiosResponse<T> = await this.api.get(fullUrl, {
-        params,
-        // No auth headers for public endpoints
-      });
-      return response.data;
-    }, `GET_PUBLIC ${this.baseUrl}${url}`);
+  protected async getPublic<T>(
+    url: string,
+    params?: any,
+    options?: { ttlMs?: number; retries?: number }
+  ): Promise<T> {
+    const fullUrl = `${this.baseUrl}${url}`;
+    const key = this.buildRequestKey("GET_PUBLIC", fullUrl, params);
+
+    // Return cached if fresh
+    const cached = this.responseCache.get(key);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.value as T;
+    }
+
+    // In-flight deduplication
+    const inflight = this.inFlightRequests.get(key);
+    if (inflight) {
+      return inflight as Promise<T>;
+    }
+
+    const requestPromise = this.executeWithRetry<T>(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.get(fullUrl, {
+          params,
+          // No auth headers for public endpoints
+        });
+        const value = response.data;
+        const ttl = options?.ttlMs ?? this.defaultPublicGetTtlMs;
+        this.responseCache.set(key, { expiry: Date.now() + ttl, value });
+        return value;
+      },
+      `GET_PUBLIC ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    ).finally(() => {
+      this.inFlightRequests.delete(key);
+    });
+
+    this.inFlightRequests.set(key, requestPromise);
+    return requestPromise;
   }
 
-  protected async post<T>(url: string, data?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const response: AxiosResponse<T> = await this.api.post(
-        `${this.baseUrl}${url}`,
-        data,
-        { headers: this.getAuthHeaders() }
-      );
-      return response.data;
-    }, `POST ${this.baseUrl}${url}`);
+  protected async post<T>(
+    url: string,
+    data?: any,
+    options?: { retries?: number }
+  ): Promise<T> {
+    return this.executeWithRetry(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.post(
+          `${this.baseUrl}${url}`,
+          data,
+          { headers: this.getAuthHeaders() }
+        );
+        return response.data;
+      },
+      `POST ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    );
   }
 
   // Public POST method without auth headers (for homepage/public APIs)
-  protected async postPublic<T>(url: string, data?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const response: AxiosResponse<T> = await this.api.post(
-        `${this.baseUrl}${url}`,
-        data,
-        {
-          // No auth headers for public endpoints
-          headers: {
-            "Content-Type": "application/json",
+  protected async postPublic<T>(
+    url: string,
+    data?: any,
+    options?: { retries?: number }
+  ): Promise<T> {
+    return this.executeWithRetry(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.post(
+          `${this.baseUrl}${url}`,
+          data,
+          {
+            // No auth headers for public endpoints
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
-        }
-      );
-      return response.data;
-    }, `POST_PUBLIC ${this.baseUrl}${url}`);
+        );
+        return response.data;
+      },
+      `POST_PUBLIC ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    );
   }
 
-  protected async put<T>(url: string, data?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const response: AxiosResponse<T> = await this.api.put(
-        `${this.baseUrl}${url}`,
-        data,
-        { headers: this.getAuthHeaders() }
-      );
-      return response.data;
-    }, `PUT ${this.baseUrl}${url}`);
+  protected async put<T>(
+    url: string,
+    data?: any,
+    options?: { retries?: number }
+  ): Promise<T> {
+    return this.executeWithRetry(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.put(
+          `${this.baseUrl}${url}`,
+          data,
+          { headers: this.getAuthHeaders() }
+        );
+        return response.data;
+      },
+      `PUT ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    );
   }
 
-  protected async patch<T>(url: string, data?: any): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const response: AxiosResponse<T> = await this.api.patch(
-        `${this.baseUrl}${url}`,
-        data,
-        { headers: this.getAuthHeaders() }
-      );
-      return response.data;
-    }, `PATCH ${this.baseUrl}${url}`);
+  protected async patch<T>(
+    url: string,
+    data?: any,
+    options?: { retries?: number }
+  ): Promise<T> {
+    return this.executeWithRetry(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.patch(
+          `${this.baseUrl}${url}`,
+          data,
+          { headers: this.getAuthHeaders() }
+        );
+        return response.data;
+      },
+      `PATCH ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    );
   }
 
-  protected async delete<T>(url: string): Promise<T> {
-    return this.executeWithRetry(async () => {
-      const response: AxiosResponse<T> = await this.api.delete(
-        `${this.baseUrl}${url}`,
-        { headers: this.getAuthHeaders() }
-      );
-      return response.data;
-    }, `DELETE ${this.baseUrl}${url}`);
+  protected async delete<T>(
+    url: string,
+    options?: { retries?: number }
+  ): Promise<T> {
+    return this.executeWithRetry(
+      async () => {
+        const response: AxiosResponse<T> = await this.api.delete(
+          `${this.baseUrl}${url}`,
+          { headers: this.getAuthHeaders() }
+        );
+        return response.data;
+      },
+      `DELETE ${this.baseUrl}${url}`,
+      1,
+      options?.retries
+    );
   }
 
   // File upload support
@@ -226,7 +329,8 @@ export abstract class BaseService {
   private async executeWithRetry<T>(
     operation: () => Promise<T>,
     operationName: string,
-    attempt: number = 1
+    attempt: number = 1,
+    maxRetriesOverride?: number
   ): Promise<T> {
     try {
       return await operation();
@@ -234,12 +338,18 @@ export abstract class BaseService {
       console.error(`${operationName} - Attempt ${attempt} failed:`, error);
 
       // Check if error is retryable
-      if (this.isRetryableError(error) && attempt < this.maxRetries) {
+      const maxRetries = maxRetriesOverride ?? this.maxRetries;
+      if (this.isRetryableError(error) && attempt < maxRetries) {
         const delay = this.calculateRetryDelay(attempt);
         // Retrying operation (could add proper logging here if needed)
 
         await this.sleep(delay);
-        return this.executeWithRetry(operation, operationName, attempt + 1);
+        return this.executeWithRetry(
+          operation,
+          operationName,
+          attempt + 1,
+          maxRetries
+        );
       }
 
       // Handle error and throw
@@ -501,5 +611,11 @@ export abstract class BaseService {
     });
 
     return queryParams.toString();
+  }
+
+  // Build a unique request key for dedup/cache
+  private buildRequestKey(method: string, url: string, params?: any): string {
+    const p = params ? JSON.stringify(params) : "";
+    return `${method}:${url}?${p}`;
   }
 }

@@ -14,7 +14,7 @@ interface AnimatedBoatGridProps {
   detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
-const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
+const AnimatedBoatGridComponent: React.FC<AnimatedBoatGridProps> = ({
   boats,
   viewMode,
   isHourlyMode,
@@ -102,5 +102,7 @@ const AnimatedBoatGrid: React.FC<AnimatedBoatGridProps> = ({
     </div>
   );
 };
+
+const AnimatedBoatGrid = React.memo(AnimatedBoatGridComponent);
 
 export default AnimatedBoatGrid;

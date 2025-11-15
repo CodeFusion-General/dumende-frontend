@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { format, addHours, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import {
@@ -112,9 +113,6 @@ export function BookingForm({
   >([]);
   const [servicesPrice, setServicesPrice] = useState<number>(0);
   const [showServiceModal, setShowServiceModal] = useState(false);
-  const [availableServices, setAvailableServices] = useState<BoatServiceDTO[]>(
-    []
-  );
 
   // Payment state
   const [paymentStatus, setPaymentStatus] =
@@ -124,6 +122,39 @@ export function BookingForm({
 
   // Memoize the boatId number to prevent unnecessary re-renders
   const boatIdNumber = useMemo(() => Number(boatId), [boatId]);
+
+  // ✅ OPTIMIZED: Ek hizmetleri React Query ile tek noktadan ve cache'li yönet
+  // Bu sayede BookingForm ve ServiceSelector aynı data setini paylaşır, aynı tekne
+  // için birden fazla istek atılmaz ve in-flight dedup + client cache birlikte çalışır.
+  const {
+    data: boatServices,
+    isLoading: isBoatServicesLoading,
+    isError: isBoatServicesError,
+    error: boatServicesError,
+  } = useQuery({
+    queryKey: ["boat-services-with-pricing", boatIdNumber],
+    queryFn: () =>
+      boatService.getBoatServicesWithPricing(boatIdNumber as number),
+    enabled: !!boatIdNumber,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+
+  const availableServices: BoatServiceDTO[] = useMemo(() => {
+    if (!boatServices) return [];
+
+    // Aynı servis birden fazla kez dönse bile tekilleştir
+    return boatServices.filter(
+      (service, index, self) =>
+        index === self.findIndex((s) => s.id === service.id)
+    );
+  }, [boatServices]);
+
+  const boatServicesErrorMessage: string | null = isBoatServicesError
+    ? ((boatServicesError as any)?.message as string) ||
+      "Hizmetler yüklenirken bir hata oluştu."
+    : null;
 
   // Memoize date formatting to prevent unnecessary calculations
   const formattedDateForSlots = useMemo(() => {
@@ -217,33 +248,10 @@ export function BookingForm({
     };
   }, [boatIdNumber]); // Only depend on boatIdNumber, not all the state setters
 
-  // Load available services
-  useEffect(() => {
-    const loadServices = async () => {
-      if (!boatIdNumber) return;
-
-      try {
-        const services = await boatService.getBoatServicesWithPricing(
-          boatIdNumber
-        );
-        // Remove duplicates based on service ID
-        const uniqueServices = services.filter(
-          (service, index, self) =>
-            index === self.findIndex((s) => s.id === service.id)
-        );
-        setAvailableServices(uniqueServices);
-      } catch (error) {
-        console.error("Failed to load boat services:", error);
-      }
-    };
-
-    loadServices();
-  }, [boatIdNumber]);
-
   // Fetch available time slots when date changes - Add debouncing
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const fetchAvailableTimeSlots = async () => {
       if (!formattedDateForSlots || !boatIdNumber) {
@@ -1310,6 +1318,9 @@ export function BookingForm({
           <div className="mt-4">
             <ServiceSelector
               boatId={boatIdNumber}
+              availableServices={availableServices}
+              loading={isBoatServicesLoading}
+              error={boatServicesErrorMessage}
               selectedServices={selectedServices}
               onServicesChange={setSelectedServices}
               onPriceChange={setServicesPrice}

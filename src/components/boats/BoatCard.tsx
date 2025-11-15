@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
 import { getFullImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
+import { useQueryClient } from "@tanstack/react-query";
+import { boatService } from "@/services/boatService";
 
 interface BoatCardProps {
   boat: BoatDTO;
@@ -84,6 +86,7 @@ const BoatCardGrid: React.FC<{
 }) => {
   const { language } = useLanguage();
   const t = translations[language];
+  const queryClient = useQueryClient();
 
   // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
   const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
@@ -117,6 +120,20 @@ const BoatCardGrid: React.FC<{
   , [isCompared]);
 
   const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
+
+  // Prefetch boat detail on hover/focus
+  // NOTE: queryKey ikinci parametre olarak her zaman sayısal boatId kullanıyoruz.
+  // Böylece `BoatListing` içindeki detay sorgusu ile aynı cache key'i paylaşır.
+  const prefetchBoat = useCallback(() => {
+    const numericBoatId = Number(boat.id);
+    if (!numericBoatId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["boat", numericBoatId],
+      queryFn: () => boatService.getBoatById(numericBoatId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, boat.id]);
 
   return (
     <GlassCard className="overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
@@ -234,7 +251,11 @@ const BoatCardGrid: React.FC<{
               /{priceUnit}
             </span>
           </div>
-          <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
+          <Link
+            to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}
+            onMouseEnter={prefetchBoat}
+            onFocus={prefetchBoat}
+          >
             <Button className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
               İncele
             </Button>
@@ -263,6 +284,7 @@ const BoatCardList: React.FC<{
   // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
   const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
   const [imageError, setImageError] = useState(false);
+  const queryClient = useQueryClient();
 
   // ✅ OPTIMIZED: Memoize computed values
   const price = useMemo(() => isHourlyMode ? boat.hourlyPrice : boat.dailyPrice, [isHourlyMode, boat.hourlyPrice, boat.dailyPrice]);
@@ -292,6 +314,18 @@ const BoatCardList: React.FC<{
   , [isCompared]);
 
   const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
+
+  // Prefetch boat detail on hover/focus
+  const prefetchBoat = useCallback(() => {
+    const numericBoatId = Number(boat.id);
+    if (!numericBoatId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["boat", numericBoatId],
+      queryFn: () => boatService.getBoatById(numericBoatId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, boat.id]);
 
   return (
     <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -394,7 +428,11 @@ const BoatCardList: React.FC<{
             </span>
           </div>
           <div className="flex space-x-2">
-            <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
+            <Link
+              to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}
+              onMouseEnter={prefetchBoat}
+              onFocus={prefetchBoat}
+            >
               <Button className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-4 py-2 rounded-xl transition-all duration-300 font-montserrat">
                 Detaylar
               </Button>

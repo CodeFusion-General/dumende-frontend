@@ -56,9 +56,10 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({
           alt={mainImage.altText || `Image ${currentIndex + 1}`}
           className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
           onClick={onMainImageClick}
-          loading={currentIndex < 3 ? "eager" : "lazy"}
+          loading={currentIndex === 0 ? "eager" : "lazy"}
           decoding="async"
           sizes="(min-width: 1024px) 70vw, 100vw"
+          fetchpriority={currentIndex === 0 || mainImage.isHeroImage ? "high" : "auto"}
         />
         
         {/* Overlay gradient on hover */}
