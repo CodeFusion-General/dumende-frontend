@@ -130,11 +130,17 @@ class BookingService extends BaseService {
 
       const bookings = await this.get<BookingDTO[]>(`/customer/${userId}`);
 
-      // Find active booking with this boat
+      // Find active/processing booking with this boat
+      const activeStatuses = [
+        "PENDING",
+        "PROCESSING",
+        "CONFIRMED",
+        "COMPLETED",
+      ];
+
       const activeBooking = bookings.find(
         (booking) =>
-          booking.boatId === boatId &&
-          ["PENDING", "CONFIRMED", "COMPLETED"].includes(booking.status)
+          booking.boatId === boatId && activeStatuses.includes(booking.status)
       );
 
       return activeBooking || null;

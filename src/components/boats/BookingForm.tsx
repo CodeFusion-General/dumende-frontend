@@ -361,7 +361,9 @@ export function BookingForm({
     if (!isBookingValid()) {
       return "No Availability";
     }
-    return "Request to Book";
+    // E2E testleri ve kurumsal UX için masaüstü/mobil akışta tek bir ana CTA kullanıyoruz
+    // Testler `Book Now` metnini beklediği için burada bunu döndürüyoruz.
+    return "Book Now";
   };
 
   // Messaging functions
@@ -611,8 +613,10 @@ export function BookingForm({
 
       const bookingData: CreateBookingDTO = {
         boatId: Number(boatId),
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        // Backend CreateBookingDTO LocalDateTime alanları için timezone'suz ISO format bekliyor
+        // örn: 2025-11-28T10:00:00
+        startDate: format(startDate, "yyyy-MM-dd'T'HH:mm:ss"),
+        endDate: format(endDate, "yyyy-MM-dd'T'HH:mm:ss"),
         passengerCount: guests,
         selectedServices:
           selectedServices.length > 0 ? selectedServices : undefined,
@@ -1018,7 +1022,19 @@ export function BookingForm({
               <PopoverContent className="w-auto p-0" align="start">
                 <AvailabilityCalendar
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={(next) => {
+                    // Tarih seçildiğinde popover'ı kapatmak için butona programatik tıklama
+                    setDate(next);
+                    if (next) {
+                      // Kullanıcı akışını bozmadan popover'ı kapat
+                      requestAnimationFrame(() => {
+                        const trigger = document.querySelector(
+                          'button:has(svg[class*="CalendarIcon"]), button:has(svg[class*="calendar"])'
+                        ) as HTMLButtonElement | null;
+                        trigger?.click();
+                      });
+                    }
+                  }}
                   availabilityData={calendarAvailability}
                   isLoading={isDateLoading}
                   language={language}

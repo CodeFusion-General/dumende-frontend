@@ -224,7 +224,12 @@ const BoatListing = () => {
           return false;
         }
 
-        const allowedStatuses = ["PENDING", "CONFIRMED", "COMPLETED"];
+        const allowedStatuses = [
+          "PENDING",
+          "PROCESSING",
+          "CONFIRMED",
+          "COMPLETED",
+        ];
         return allowedStatuses.includes(userBooking.status);
       },
     }),

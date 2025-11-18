@@ -102,6 +102,7 @@ export interface UpdatePaymentDTO {
 // Enum Types
 export enum BookingStatus {
   PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
   CONFIRMED = "CONFIRMED",
   CANCELLED = "CANCELLED",
   COMPLETED = "COMPLETED",
