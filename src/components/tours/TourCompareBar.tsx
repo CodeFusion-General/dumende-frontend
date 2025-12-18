@@ -12,7 +12,7 @@ interface TourCompareBarProps {
   onClearAll: () => void;
 }
 
-const TourCompareBar: React.FC<TourCompareBarProps> = ({
+const TourCompareBarComponent: React.FC<TourCompareBarProps> = ({
   comparedTours,
   tours,
   onRemove,
@@ -86,5 +86,7 @@ const TourCompareBar: React.FC<TourCompareBarProps> = ({
     </div>
   );
 };
+
+const TourCompareBar = React.memo(TourCompareBarComponent);
 
 export default TourCompareBar;

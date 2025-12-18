@@ -9,21 +9,25 @@ import {
 
 class UserService extends BaseService {
   constructor() {
-    super("/users");
+    // ✅ DÜZELT: Backend base path - /api/users
+    super("/api/users");
   }
 
   public async getUsers(filters?: UserFilters): Promise<UserDTO[]> {
     const queryString = filters ? this.buildQueryString(filters) : "";
-    return this.get<UserDTO[]>(`?${queryString}`);
+    // Backend: GET /api/users/
+    return this.get<UserDTO[]>(`${queryString ? '?' + queryString : ''}`);
   }
 
   public async getUserById(id: number): Promise<UserDTO> {
+    // Backend: GET /api/users/{id}
     return this.get<UserDTO>(`/${id}`);
   }
 
+  // ✅ DÜZELT: Backend POST endpoint kullanıyor, GET değil
   public async getUsersByQuery(query: UserQuery): Promise<UserDTO[]> {
-    const queryString = this.buildQueryString(query);
-    return this.get<UserDTO[]>(`/search?${queryString}`);
+    // Backend: POST /api/users/query (UserQuery request body)
+    return this.post<UserDTO[]>("/query", query);
   }
 
   public async createUser(data: CreateUserCommand): Promise<UserDTO> {
@@ -38,6 +42,11 @@ class UserService extends BaseService {
     return this.delete<void>(`/${id}`);
   }
 
+  // ❌ DEPRECATED: Backend'de bu endpoint'ler YOK
+  // UserDTO zaten nested olarak bookings, reviews, boats içeriyor
+  // Kullanım: const user = await userService.getUserById(userId); user.bookings
+
+  /*
   public async getUserBookings(userId: number): Promise<UserDTO> {
     return this.get<UserDTO>(`/${userId}/bookings`);
   }
@@ -48,6 +57,13 @@ class UserService extends BaseService {
 
   public async getUserBoats(userId: number): Promise<UserDTO> {
     return this.get<UserDTO>(`/${userId}/boats`);
+  }
+  */
+
+  // ✅ ALTERNATİF: UserDTO'dan nested data kullan
+  public async getUserWithDetails(userId: number): Promise<UserDTO> {
+    // UserDTO zaten bookings, reviews, boats içeriyor
+    return this.getUserById(userId);
   }
 
   public async uploadProfileImage(

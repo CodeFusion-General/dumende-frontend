@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Utensils, Package, Star, ChefHat } from "lucide-react";
-import { BoatServiceDTO, ServiceType } from "@/types/boat.types";
+import { BoatServiceDTO, ServiceType, SERVICE_TYPE_LABELS } from "@/types/boat.types";
 
 interface BoatServicesProps {
   services: BoatServiceDTO[];
@@ -22,16 +22,8 @@ const getServiceIcon = (serviceType: ServiceType) => {
 };
 
 const getServiceTypeLabel = (serviceType: ServiceType) => {
-  switch (serviceType) {
-    case ServiceType.FOOD:
-      return "Yemek";
-    case ServiceType.PACKAGE:
-      return "Paket";
-    case ServiceType.EXTRA:
-      return "Ekstra";
-    default:
-      return "Hizmet";
-  }
+  // Use the standardized labels from SERVICE_TYPE_LABELS
+  return SERVICE_TYPE_LABELS[serviceType]?.tr || "Hizmet";
 };
 
 const getServiceTypeColor = (serviceType: ServiceType) => {
@@ -104,9 +96,9 @@ export default function BoatServices({ services }: BoatServicesProps) {
             
             {/* Services Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {serviceList.map((service) => (
+              {serviceList.map((service, index) => (
                 <div 
-                  key={service.id} 
+                  key={`${serviceType}-${service.id}-${index}`} 
                   className="p-4 border border-gray-200 rounded-lg hover:border-primary/30 hover:shadow-md transition-all duration-200 bg-gradient-to-br from-gray-50/50 to-white"
                 >
                   <div className="flex items-start justify-between mb-2">

@@ -17,10 +17,8 @@ import {
   Edit,
   Trash2,
   Utensils,
-  Music,
-  Waves,
-  Car,
   Package,
+  Star,
   Save,
   X,
   Calculator,
@@ -44,13 +42,10 @@ const getServiceIcon = (serviceType: ServiceType) => {
   switch (serviceType) {
     case ServiceType.FOOD:
       return <Utensils className="h-4 w-4" />;
-    case ServiceType.ENTERTAINMENT:
-      return <Music className="h-4 w-4" />;
-    case ServiceType.WATER_SPORTS:
-      return <Waves className="h-4 w-4" />;
-    case ServiceType.TRANSPORTATION:
-      return <Car className="h-4 w-4" />;
-    case ServiceType.OTHER:
+    case ServiceType.PACKAGE:
+      return <Package className="h-4 w-4" />;
+    case ServiceType.EXTRA:
+      return <Star className="h-4 w-4" />;
     default:
       return <Package className="h-4 w-4" />;
   }
@@ -60,13 +55,10 @@ const getServiceTypeColor = (serviceType: ServiceType) => {
   switch (serviceType) {
     case ServiceType.FOOD:
       return "bg-orange-100 text-orange-800 border-orange-200";
-    case ServiceType.ENTERTAINMENT:
-      return "bg-purple-100 text-purple-800 border-purple-200";
-    case ServiceType.WATER_SPORTS:
+    case ServiceType.PACKAGE:
       return "bg-blue-100 text-blue-800 border-blue-200";
-    case ServiceType.TRANSPORTATION:
-      return "bg-green-100 text-green-800 border-green-200";
-    case ServiceType.OTHER:
+    case ServiceType.EXTRA:
+      return "bg-purple-100 text-purple-800 border-purple-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -102,17 +94,15 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
   const groupedServices = useMemo(() => {
     const groups: Record<ServiceType, BoatService[]> = {
       [ServiceType.FOOD]: [],
-      [ServiceType.ENTERTAINMENT]: [],
-      [ServiceType.WATER_SPORTS]: [],
-      [ServiceType.TRANSPORTATION]: [],
-      [ServiceType.OTHER]: [],
+      [ServiceType.PACKAGE]: [],
+      [ServiceType.EXTRA]: [],
     };
 
     services.forEach((service) => {
       if (groups[service.serviceType]) {
         groups[service.serviceType].push(service);
       } else {
-        groups[ServiceType.OTHER].push(service);
+        groups[ServiceType.EXTRA].push(service);
       }
     });
 
@@ -231,7 +221,7 @@ const BoatServicesManager: React.FC<BoatServicesManagerProps> = ({
                 <Select
                   value={formData.serviceType}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, serviceType: value }))
+                    setFormData((prev) => ({ ...prev, serviceType: value as ServiceType }))
                   }
                 >
                   <SelectTrigger>

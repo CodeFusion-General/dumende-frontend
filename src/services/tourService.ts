@@ -51,7 +51,7 @@ class TourService extends BaseService {
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
     try {
       // Create the tour first
-      const result = await this.post<TourDTO>("/tours", data);
+      const result = await this.post<TourDTO>("", data);
 
       // If tour documents are provided, create them
       if (data.tourDocuments && data.tourDocuments.length > 0) {
@@ -81,7 +81,7 @@ class TourService extends BaseService {
   public async updateTour(data: UpdateTourDTO): Promise<TourDTO> {
     try {
       // Update the tour first
-      const result = await this.put<TourDTO>("/tours", data);
+      const result = await this.put<TourDTO>("", data);
 
       // Handle document operations if provided
       if (data.tourDocumentsToAdd && data.tourDocumentsToAdd.length > 0) {
@@ -518,6 +518,68 @@ class TourService extends BaseService {
     }
 
     return results;
+  }
+
+  // ======= Paginated Search Method =======
+  // TODO: Backend'de /api/tours/search/advanced endpoint'i mevcut değil.
+  // Bu method şimdilik client-side pagination ile çalışacak şekilde düzenlendi.
+  // Backend'e bu endpoint eklendiğinde gerçek API çağrısına dönülmeli.
+  public async advancedSearchPaginated(
+    filters: {
+      name?: string;
+      location?: string;
+      type?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      minCapacity?: number;
+    },
+    pagination: {
+      page: number;
+      size: number;
+      sort?: string;
+    }
+  ): Promise<{
+    content: TourDTO[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  }> {
+    // Backend'de advanced search endpoint'i olmadığı için
+    // mevcut endpoint'leri kullanarak client-side filtreleme yapıyoruz
+    let allTours: TourDTO[] = [];
+
+    try {
+      if (filters.name) {
+        allTours = await this.searchToursByName(filters.name);
+      } else if (filters.location) {
+        allTours = await this.searchToursByLocation(filters.location);
+      } else if (filters.type) {
+        allTours = await this.searchToursByType(filters.type);
+      } else if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+        allTours = await this.searchToursByPriceRange(filters.minPrice, filters.maxPrice);
+      } else if (filters.minCapacity !== undefined) {
+        allTours = await this.searchToursByCapacity(filters.minCapacity);
+      } else {
+        allTours = await this.getAllTours();
+      }
+    } catch {
+      console.warn('[TourService] Advanced search fallback: fetching all tours');
+      allTours = await this.getAllTours();
+    }
+
+    // Client-side pagination
+    const startIndex = pagination.page * pagination.size;
+    const endIndex = startIndex + pagination.size;
+    const paginatedContent = allTours.slice(startIndex, endIndex);
+
+    return {
+      content: paginatedContent,
+      totalElements: allTours.length,
+      totalPages: Math.ceil(allTours.length / pagination.size),
+      size: pagination.size,
+      number: pagination.page,
+    };
   }
 
   // Backward compatibility methods

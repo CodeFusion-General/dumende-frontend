@@ -6,13 +6,11 @@ import {
   UpdateBoatDocumentDTO,
 } from "./document.types";
 
-// BoatService Types (Yeni eklenen)
+// BoatService Types (Backend ile uyumlu)
 export enum ServiceType {
   FOOD = "FOOD",
-  ENTERTAINMENT = "ENTERTAINMENT",
-  WATER_SPORTS = "WATER_SPORTS",
-  TRANSPORTATION = "TRANSPORTATION",
-  OTHER = "OTHER",
+  PACKAGE = "PACKAGE",
+  EXTRA = "EXTRA",
 }
 
 export interface BoatServiceDTO {
@@ -47,24 +45,16 @@ export interface ServiceTypeLabels {
 
 export const SERVICE_TYPE_LABELS: ServiceTypeLabels = {
   [ServiceType.FOOD]: {
-    tr: "Yiyecek & İçecek",
-    en: "Food & Beverage",
+    tr: "Yemek",
+    en: "Food",
   },
-  [ServiceType.ENTERTAINMENT]: {
-    tr: "Eğlence",
-    en: "Entertainment",
+  [ServiceType.PACKAGE]: {
+    tr: "Paket",
+    en: "Package",
   },
-  [ServiceType.WATER_SPORTS]: {
-    tr: "Su Sporları",
-    en: "Water Sports",
-  },
-  [ServiceType.TRANSPORTATION]: {
-    tr: "Ulaşım",
-    en: "Transportation",
-  },
-  [ServiceType.OTHER]: {
-    tr: "Diğer",
-    en: "Other",
+  [ServiceType.EXTRA]: {
+    tr: "Ekstra",
+    en: "Extra",
   },
 };
 
@@ -136,11 +126,21 @@ export interface UpdateBoatFeatureDTO {
 export interface BoatImageDTO {
   id: number;
   boatId: number;
-  imageUrl: string; // URL olarak tutuluyor artık
+  imageUrl: string; // ⚠️ DEPRECATED - Use variant URLs instead (kept for backward compatibility)
   isPrimary: boolean;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+
+  // CloudFlare Images Integration (Backend commit 7eb759e)
+  imageId?: string; // CloudFlare image ID
+  storageType?: string; // CLOUDFLARE_IMAGES, CLOUDFLARE_R2, FIREBASE, LOCAL
+  publicUrl?: string; // Default variant (original size)
+  thumbnailUrl?: string; // 200x200 - List views
+  smallUrl?: string; // 400x300 - Mobile detail pages
+  mediumUrl?: string; // 800x600 - Tablet/desktop detail pages
+  largeUrl?: string; // 1600x1200 - Full-screen views
+  fullUrl?: string; // Original quality (same as publicUrl)
 }
 
 export interface CreateBoatImageDTO {

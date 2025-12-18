@@ -1,243 +1,111 @@
-import { BaseService } from './base/BaseService';
-import { PaymentStatusResponseDto, ThreeDSInitializeRequestDto, ThreeDSInitializeResponseDto, ThreeDSCompleteRequestDto, BinCheckResponseDto } from '@/types/payment.types';
+import { BaseService } from "./base/BaseService";
+import { bookingService } from "./bookingService";
+import type { PaymentStatusResponseDto } from "@/types/payment.types";
 
 class PaymentService extends BaseService {
   constructor() {
-    super('/bookings');
+    // NOT: httpClient zaten /api baseURL kullanıyor, bu yüzden /api prefix'i eklememeliyiz
+    super("/iyzico");
   }
 
   /**
-   * Get payment status for a booking
+   * Get current payment status and enrich with booking paymentUrl if present.
    */
   public async getPaymentStatus(bookingId: number): Promise<PaymentStatusResponseDto> {
-    return this.get<PaymentStatusResponseDto>(`/${bookingId}/payment/status`);
-  }
-
-  /**
-   * Initialize deposit payment for a booking
-   */
-  public async initializeDepositPayment(bookingId: number): Promise<PaymentStatusResponseDto> {
-    return this.post<PaymentStatusResponseDto>(`/${bookingId}/payment/initialize-deposit`, {});
-  }
-
-  /**
-   * ✅ Manual check and update payment status - Backend'den gerçek durumu çeker
-   */
-  public async checkAndUpdatePaymentStatus(bookingId: number): Promise<PaymentStatusResponseDto> {
-    return this.post<PaymentStatusResponseDto>(`/${bookingId}/payment/check-status`, {});
-  }
-
-  /** 3DS: Initialize */
-  public async initialize3DS(data: ThreeDSInitializeRequestDto): Promise<ThreeDSInitializeResponseDto> {
-    // Backend base URL uses /api/payments root, not /bookings
-    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
-    const resp = await fetch(`/api/payments/3ds/initialize`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data)
+    // Call status endpoint (wrapped by ApiResponse)
+    const statusResp = await this.api.get(`${this.baseUrl}/booking/${bookingId}/status`, {
+      headers: this.getAuthHeaders(),
     });
-    if (!resp.ok) throw new Error('3DS initialize failed');
-    return resp.json();
-  }
 
-  /** 3DS: Complete (manual test) */
-  public async complete3DS(data: ThreeDSCompleteRequestDto): Promise<PaymentStatusResponseDto> {
-    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
-    const resp = await fetch(`/api/payments/3ds/complete`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data)
-    });
-    if (!resp.ok) throw new Error('3DS complete failed');
-    return resp.json();
-  }
+    const apiResponse = statusResp.data as { success: boolean; data?: any };
+    const statusData = (apiResponse?.data ?? {}) as PaymentStatusResponseDto;
 
-  /** 3DS: BIN Check (optional) */
-  public async binCheck(binNumber: string, amount: number): Promise<BinCheckResponseDto> {
-    const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() } as Record<string, string>;
-    const resp = await fetch(`/api/payments/3ds/bin-check`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ binNumber, amount })
-    });
-    if (!resp.ok) throw new Error('BIN check failed');
-    return resp.json();
-  }
-
-  /**
-   * Redirect user to payment URL
-   */
-    public redirectToPayment(paymentUrl: string): void {
-    if (!paymentUrl) {
-        throw new Error('Payment URL is required');
-    }
-    
-    // ✅ BASIT: Backend'den gelen URL'i olduğu gibi kullan
-    console.log('🔄 Redirecting to payment URL (as-is):', paymentUrl);
-    
-    // External redirect to Iyzico payment page
-    window.location.href = paymentUrl;
+    // Try to fetch booking for paymentUrl and totals
+    let booking: any = null;
+    try {
+      booking = await bookingService.getBookingById(bookingId);
+    } catch {
+      // ignore; we'll rely on status only
     }
 
-  /**
-   * Poll payment status until completion or timeout
-   */
-  public async pollPaymentStatus(bookingId: number, maxRetries: number = 3, intervalMs: number = 6000): Promise<PaymentStatusResponseDto> {
-    let lastStatus: PaymentStatusResponseDto | null = null;
-    
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        console.log(`Polling payment status - attempt ${i + 1}/${maxRetries}`);
-        
-        // Use the manual check method for more accurate status
-        const status = i === 0 
-          ? await this.getPaymentStatus(bookingId) 
-          : await this.checkAndUpdatePaymentStatus(bookingId);
-        
-        lastStatus = status;
-        
-        console.log(`Payment status: ${status.paymentStatus}, Completed: ${status.paymentCompleted}`);
-        
-        // If payment is completed or failed, return immediately
-        if (status.paymentCompleted || 
-            status.paymentStatus === 'COMPLETED' || 
-            status.paymentStatus === 'FAILED' ||
-            status.paymentStatus === 'CANCELLED') {
-          return status;
-        }
-        
-        // Wait before next check (except for last iteration)
-        if (i < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
-        }
-      } catch (error) {
-        console.error(`Error polling payment status (attempt ${i + 1}):`, error);
-        
-        // On last attempt, throw the error
-        if (i === maxRetries - 1) {
-          throw error;
-        }
-        
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-      }
-    }
-    
-    // Return last known status or throw timeout error
-    if (lastStatus) {
-      console.warn('Payment status polling timeout, returning last known status');
-      return lastStatus;
-    }
-    
-    throw new Error('Payment status polling timeout - no status received');
-  }
+    const paymentUrl: string | null =
+      (booking && typeof booking.paymentUrl === "string" && booking.paymentUrl) || null;
 
-  /**
-   * ✅ Enhanced polling with callback for status updates
-   */
-  public async pollPaymentStatusWithCallback(
-    bookingId: number, 
-    onStatusUpdate: (status: PaymentStatusResponseDto) => void,
-    maxRetries: number = 3, 
-    intervalMs: number = 4000
-  ): Promise<PaymentStatusResponseDto> {
-    let lastStatus: PaymentStatusResponseDto | null = null;
-    
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const status = i === 0 
-          ? await this.getPaymentStatus(bookingId) 
-          : await this.checkAndUpdatePaymentStatus(bookingId);
-        
-        lastStatus = status;
-        
-        // Call the callback with current status
-        onStatusUpdate(status);
-        
-        // If payment is completed or failed, return immediately
-        if (status.paymentCompleted || 
-            status.paymentStatus === 'COMPLETED' || 
-            status.paymentStatus === 'FAILED' ||
-            status.paymentStatus === 'CANCELLED') {
-          return status;
-        }
-        
-        // Wait before next check
-        if (i < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, intervalMs));
-        }
-      } catch (error) {
-        console.error(`Error polling payment status (attempt ${i + 1}):`, error);
-        
-        if (i === maxRetries - 1 && !lastStatus) {
-          throw error;
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-      }
-    }
-    
-    if (lastStatus) {
-      return lastStatus;
-    }
-    
-    throw new Error('Payment status polling timeout');
-  }
+    const totalAmount: number | undefined = (booking && booking.totalPrice) || undefined;
+    const isDepositPayment: boolean | undefined =
+      booking && typeof booking.isDepositPayment === "boolean" ? booking.isDepositPayment : undefined;
+    const depositPercentage: number | undefined =
+      booking && typeof booking.depositPercentage === "number" ? booking.depositPercentage : undefined;
 
-  /**
-   * Calculate deposit amount from total price
-   */
-  public calculateDepositAmount(totalPrice: number, depositPercentage: number = 20): number {
-    return Math.round((totalPrice * depositPercentage) / 100);
-  }
+    const computedDeposit =
+      isDepositPayment && totalAmount
+        ? this.calculateDepositAmount(totalAmount, depositPercentage ?? 20)
+        : undefined;
 
-  /**
-   * Format currency amount
-   */
-  public formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  }
+    const paymentCompleted =
+      statusData.status === "SUCCESS" || statusData.status === "COMPLETED";
 
-  /**
-   * ✅ Check if payment is in final state
-   */
-  public isPaymentFinal(status: string): boolean {
-    const finalStates = ['COMPLETED', 'FAILED', 'CANCELLED'];
-    return finalStates.includes(status.toUpperCase());
-  }
-
-  /**
-   * ✅ Get status display info
-   */
-  public getStatusDisplayInfo(status: PaymentStatusResponseDto) {
-    // PARTIAL (depozito ödendi) durumunu kullanıcı açısından başarı kabul ediyoruz
-    const isDepositPartial = status.paymentStatus === 'PARTIAL';
-    const isSuccess = status.paymentCompleted || status.paymentStatus === 'COMPLETED' || isDepositPartial;
-    const isFailed = status.paymentStatus === 'FAILED' || status.paymentStatus === 'CANCELLED';
-    const isPending = (!isSuccess && !isFailed) || status.paymentStatus === 'PENDING' || status.paymentPending;
-
-    const statusText = isFailed
-      ? 'Başarısız'
-      : isDepositPartial
-      ? 'Ön ödeme alındı'
-      : isSuccess
-      ? 'Başarılı'
-      : 'Bekliyor';
+    const paymentRequired = !paymentCompleted && (Boolean(paymentUrl) || statusData.status === "PENDING");
 
     return {
-      isSuccess,
-      isFailed,
-      isPending,
-      statusText,
-      statusColor: isFailed ? 'text-red-600' : isSuccess ? 'text-green-600' : 'text-yellow-600',
-      bgColor: isFailed ? 'bg-red-50' : isSuccess ? 'bg-green-50' : 'bg-yellow-50'
+      ...statusData,
+      bookingId,
+      paymentUrl,
+      paymentRequired,
+      paymentCompleted,
+      totalAmount,
+      depositAmount: computedDeposit,
+      remainingAmount:
+        totalAmount !== undefined && computedDeposit !== undefined
+          ? Math.max(totalAmount - computedDeposit, 0)
+          : undefined,
     };
+  }
+
+  /**
+   * Calculate deposit amount with given percentage
+   */
+  public calculateDepositAmount(totalAmount: number, percentage: number): number {
+    if (!totalAmount || totalAmount <= 0) return 0;
+    const pct = Math.max(0, Math.min(100, percentage || 0));
+    const value = (totalAmount * pct) / 100;
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+
+  /**
+   * Format currency for display
+   */
+  public formatCurrency(amount: number, currency: string = "TL"): string {
+    try {
+      return `${amount.toLocaleString("tr-TR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })} ${currency}`;
+    } catch {
+      return `${amount} ${currency}`;
+    }
+  }
+
+  /**
+   * Build iframe url by appending &iframe=true (or ?iframe=true)
+   */
+  public buildIframeUrl(url: string): string {
+    if (!url) return url;
+    const hasQuery = url.includes("?");
+    if (url.includes("iframe=true")) return url;
+    return `${url}${hasQuery ? "&" : "?"}iframe=true`;
+  }
+
+  /**
+   * Redirect to external payment page
+   */
+  public redirectToPayment(url: string): void {
+    if (typeof window !== "undefined" && url) {
+      window.location.href = url;
+    }
   }
 }
 
 export const paymentService = new PaymentService();
+
+

@@ -3,6 +3,8 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 import { authService } from "@/services/authService";
@@ -82,8 +84,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  // Login fonksiyonu
-  const login = async (credentials: LoginRequest): Promise<void> => {
+  // Login fonksiyonu - memoized to prevent unnecessary re-renders
+  const login = useCallback(async (credentials: LoginRequest): Promise<void> => {
     try {
       setIsLoading(true);
       const response = await authService.login(credentials);
@@ -111,10 +113,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Register fonksiyonu
-  const register = async (data: RegisterRequest): Promise<LoginResponse> => {
+  // Register fonksiyonu - memoized
+  const register = useCallback(async (data: RegisterRequest): Promise<LoginResponse> => {
     try {
       setIsLoading(true);
       const response = await authService.register(data);
@@ -143,61 +145,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Logout fonksiyonu
-  const logout = (): void => {
+  // Logout fonksiyonu - memoized
+  const logout = useCallback((): void => {
     authService.logout();
     setToken(null);
     setUser(null);
-  };
+  }, []);
 
-  // Token refresh fonksiyonu
-  const refreshToken = async (): Promise<void> => {
+  // Token refresh fonksiyonu - memoized
+  const refreshToken = useCallback(async (): Promise<void> => {
     try {
       const response = await authService.refreshToken();
 
       // AuthService zaten token'ı cookie'ye kaydediyor, burada state'i güncelle
       setToken(response.token);
-      setUser({
+      setUser((prevUser) => ({
         id: response.userId,
         email: response.email,
         username: response.username,
         role: response.role,
         accountId: response.accountId,
         // Preserve existing profile completion status during refresh
-        isProfileComplete: user?.isProfileComplete ?? true,
-        fullName: user?.fullName,
-        phoneNumber: user?.phoneNumber,
-        profileImage: user?.profileImage,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        dateOfBirth: user?.dateOfBirth,
-      });
+        isProfileComplete: prevUser?.isProfileComplete ?? true,
+        fullName: prevUser?.fullName,
+        phoneNumber: prevUser?.phoneNumber,
+        profileImage: prevUser?.profileImage,
+        firstName: prevUser?.firstName,
+        lastName: prevUser?.lastName,
+        dateOfBirth: prevUser?.dateOfBirth,
+      }));
     } catch (error) {
       // Refresh token başarısız olursa tüm auth verilerini temizle
       tokenUtils.clearAllAuthData();
       setToken(null);
       setUser(null);
-      logout();
+      authService.logout();
       throw error;
     }
-  };
+  }, []);
 
-  // Authentication durumu
-  const isAuthenticated = !!token && !!user;
+  // Authentication durumu - memoized
+  const isAuthenticated = useMemo(() => !!token && !!user, [token, user]);
 
-  // Role kontrolü helper fonksiyonları
-  const hasRole = (role: UserType): boolean => {
+  // Role kontrolü helper fonksiyonları - memoized
+  const hasRole = useCallback((role: UserType): boolean => {
     return user?.role === role;
-  };
+  }, [user?.role]);
 
-  const isAdmin = (): boolean => hasRole(UserType.ADMIN);
-  const isBoatOwner = (): boolean => hasRole(UserType.BOAT_OWNER);
-  const isCustomer = (): boolean => hasRole(UserType.CUSTOMER);
+  const isAdmin = useCallback((): boolean => user?.role === UserType.ADMIN, [user?.role]);
+  const isBoatOwner = useCallback((): boolean => user?.role === UserType.BOAT_OWNER, [user?.role]);
+  const isCustomer = useCallback((): boolean => user?.role === UserType.CUSTOMER, [user?.role]);
 
-  // Profile completion helper methods
-  const isProfileComplete = (): boolean => {
+  // Profile completion helper methods - memoized
+  const isProfileComplete = useCallback((): boolean => {
     if (!user) return false;
 
     // Check if user has explicitly marked profile as complete
@@ -212,49 +214,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       user.firstName &&
       user.lastName
     );
-  };
+  }, [user]);
 
-  const needsProfileCompletion = (): boolean => {
+  const needsProfileCompletion = useCallback((): boolean => {
     return isAuthenticated && !isProfileComplete();
-  };
+  }, [isAuthenticated, isProfileComplete]);
 
-  const getProfileCompletionRedirectPath = (): string | null => {
+  const getProfileCompletionRedirectPath = useCallback((): string | null => {
     if (!needsProfileCompletion()) {
       return null;
     }
     const targetId = user?.accountId ?? user?.id;
     return targetId ? `/profile-completion/${targetId}` : null;
-  };
+  }, [needsProfileCompletion, user?.accountId, user?.id]);
 
-  const updateUserData = (userData: Partial<AuthUser>): void => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
+  const updateUserData = useCallback((userData: Partial<AuthUser>): void => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      const updatedUser = { ...prevUser, ...userData };
       tokenUtils.setUserData(updatedUser);
-    }
-  };
+      return updatedUser;
+    });
+  }, []);
 
-  const updateUserFromProfile = (userDto: UserDTO): void => {
-    if (user) {
+  const updateUserFromProfile = useCallback((userDto: UserDTO): void => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
       const updatedUser: AuthUser = {
-        ...user,
+        ...prevUser,
         fullName: userDto.fullName,
         phoneNumber: userDto.phoneNumber,
         profileImage: userDto.profileImage,
         isProfileComplete: true,
         // Extract firstName and lastName from fullName if not already present
-        firstName: user.firstName || userDto.fullName.split(" ")[0],
+        firstName: prevUser.firstName || userDto.fullName.split(" ")[0],
         lastName:
-          user.lastName || userDto.fullName.split(" ").slice(1).join(" "),
+          prevUser.lastName || userDto.fullName.split(" ").slice(1).join(" "),
       };
-
-      setUser(updatedUser);
       tokenUtils.setUserData(updatedUser);
+      return updatedUser;
+    });
+  }, []);
 
-    }
-  };
-
-  const value: AuthContextType = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value: AuthContextType = useMemo(() => ({
     user,
     token,
     isAuthenticated,
@@ -274,7 +277,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateUserFromProfile,
     needsProfileCompletion,
     getProfileCompletionRedirectPath,
-  };
+  }), [
+    user,
+    token,
+    isAuthenticated,
+    isLoading,
+    login,
+    register,
+    logout,
+    refreshToken,
+    hasRole,
+    isAdmin,
+    isBoatOwner,
+    isCustomer,
+    isProfileComplete,
+    updateUserData,
+    updateUserFromProfile,
+    needsProfileCompletion,
+    getProfileCompletionRedirectPath,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

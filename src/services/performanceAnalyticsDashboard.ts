@@ -362,22 +362,6 @@ class PerformanceAnalyticsDashboardService {
     }
   }
 
-  /**
-   * Export dashboard data
-   */
-  public exportData(): {
-    metrics: PerformanceMetrics[];
-    alerts: PerformanceAlert[];
-    abTests: ABTest[];
-    config: DashboardConfig;
-  } {
-    return {
-      metrics: [...this.metrics],
-      alerts: [...this.alerts],
-      abTests: [...this.abTests],
-      config: { ...this.config },
-    };
-  }
 
   /**
    * Clear old data based on retention period

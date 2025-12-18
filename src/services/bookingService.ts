@@ -104,8 +104,13 @@ class BookingService extends BaseService {
     return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
-  public async cancelBooking(id: number, reason?: string): Promise<BookingDTO> {
-    return this.patch<BookingDTO>(`/${id}/cancel`, { reason });
+  public async cancelBooking(id: number, reason?: string): Promise<void> {
+    // Backend'de /cancel endpoint'i yok, status endpoint'i kullanılmalı
+    const params = new URLSearchParams({ status: "CANCELLED" });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async deleteBooking(id: number): Promise<void> {
@@ -130,11 +135,19 @@ class BookingService extends BaseService {
 
       const bookings = await this.get<BookingDTO[]>(`/customer/${userId}`);
 
-      // Find active booking with this boat
+      // Find active/processing booking with this boat
+      // ✅ UPDATED: Include RESERVED status (Backend commit 0499578)
+      const activeStatuses = [
+        "RESERVED",    // Added: 15min hold status
+        "PENDING",
+        "PROCESSING",
+        "CONFIRMED",
+        "COMPLETED",
+      ];
+
       const activeBooking = bookings.find(
         (booking) =>
-          booking.boatId === boatId &&
-          ["PENDING", "CONFIRMED", "COMPLETED"].includes(booking.status)
+          booking.boatId === boatId && activeStatuses.includes(booking.status)
       );
 
       return activeBooking || null;

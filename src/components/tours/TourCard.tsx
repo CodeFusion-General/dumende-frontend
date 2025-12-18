@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, MapPin, Calendar, Heart, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { VisualFeedback } from "@/components/ui/VisualFeedback";
 import { TourDTO } from "@/types/tour.types";
-import { getDefaultImageUrl, getFullImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
+import { useQueryClient } from "@tanstack/react-query";
+import { tourService } from "@/services/tourService";
 
 interface TourCardProps {
   tour: TourDTO;
@@ -17,13 +19,14 @@ interface TourCardProps {
   onCompareToggle?: (id: string) => void;
 }
 
-// Default image helper function
+// Default image helper function with CloudFlare variant support
 const getTourImageUrl = (tour: TourDTO): string => {
-  // Backend'den gelen URL'i tam URL'e çevir
+  // Use CloudFlare variant URLs for better performance
   if (tour.tourImages && tour.tourImages.length > 0) {
     const firstImage = tour.tourImages[0];
-    if (firstImage && firstImage.imageUrl) {
-      return getFullImageUrl(firstImage.imageUrl);
+    if (firstImage) {
+      // Use thumbnail variant for grid/list views (200x200 or 400x300)
+      return getResponsiveImageUrl(firstImage, 'thumbnail');
     }
   }
 
@@ -67,11 +70,26 @@ const TourCardGrid: React.FC<{
   const [imageUrl, setImageUrl] = useState<string>(getDefaultImageUrl());
   const { isMobile, isTouch } = useViewport();
   const { getTouchTargetProps } = useTouchTarget();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const url = getTourImageUrl(tour);
     setImageUrl(url);
   }, [tour]);
+
+  // Prefetch tour detail on hover/focus
+  // NOTE: queryKey ikinci parametre olarak sayısal tourId kullanıyoruz ki
+  // `TourDetailPage` içindeki detay sorgusu ile aynı cache entry kullanılsın.
+  const prefetchTour = useCallback(() => {
+    const numericTourId = Number(tour.id);
+    if (!numericTourId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["tour", numericTourId],
+      queryFn: () => tourService.getTourById(numericTourId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, tour.id]);
 
   const ratingDisplay =
     typeof tour.rating === "number" ? tour.rating.toFixed(1) : "0";
@@ -112,6 +130,7 @@ const TourCardGrid: React.FC<{
         <img
           src={imageUrl}
           alt={tour.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl(getDefaultImageUrl())}
         />
@@ -236,7 +255,7 @@ const TourCardGrid: React.FC<{
               /tur
             </span>
           </div>
-          <Link to={`/tours/${tour.id}`}>
+          <Link to={`/tours/${tour.id}`} onMouseEnter={prefetchTour} onFocus={prefetchTour}>
             <Button
               className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat"
               {...getTouchTargetProps(44)}
@@ -259,11 +278,24 @@ const TourCardList: React.FC<{
   const [imageUrl, setImageUrl] = useState<string>(getDefaultImageUrl());
   const { isMobile, isTouch } = useViewport();
   const { getTouchTargetProps } = useTouchTarget();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const url = getTourImageUrl(tour);
     setImageUrl(url);
   }, [tour]);
+
+  // Prefetch tour detail on hover/focus
+  const prefetchTour = useCallback(() => {
+    const numericTourId = Number(tour.id);
+    if (!numericTourId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["tour", numericTourId],
+      queryFn: () => tourService.getTourById(numericTourId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, tour.id]);
 
   const ratingDisplay =
     typeof tour.rating === "number" ? tour.rating.toFixed(1) : "0";
@@ -304,6 +336,7 @@ const TourCardList: React.FC<{
         <img
           src={imageUrl}
           alt={tour.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           onError={() => setImageUrl(getDefaultImageUrl())}
         />
@@ -426,7 +459,7 @@ const TourCardList: React.FC<{
             </span>
           </div>
           <div className="flex space-x-1 sm:space-x-2">
-            <Link to={`/tours/${tour.id}`}>
+            <Link to={`/tours/${tour.id}`} onMouseEnter={prefetchTour} onFocus={prefetchTour}>
               <Button
                 className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-3 sm:px-4 py-2 text-sm sm:text-base rounded-xl transition-all duration-300 font-montserrat"
                 {...getTouchTargetProps(44)}
@@ -434,7 +467,7 @@ const TourCardList: React.FC<{
                 Detaylar
               </Button>
             </Link>
-            <Link to={`/tours/${tour.id}`}>
+            <Link to={`/tours/${tour.id}`} onMouseEnter={prefetchTour} onFocus={prefetchTour}>
               <Button
                 className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-3 sm:px-4 py-2 text-sm sm:text-base rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat"
                 {...getTouchTargetProps(44)}

@@ -1,312 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BoatCard } from "../boats/BoatCard";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { boatService } from "@/services/boatService";
-import { BoatDTO } from "@/types/boat.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 // import { useStaggeredClasses } from "@/hooks/useStaggeredAnimation";
 
 const FeaturedBoats = () => {
-  const [boats, setBoats] = useState<BoatDTO[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
   const t = translations[language];
   // const { getStaggeredStyle } = useStaggeredClasses(6, 150);
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const loadBoats = async () => {
-      if (!isMounted) return;
-      await fetchFeaturedBoats();
-    };
-    
-    loadBoats();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const fetchFeaturedBoats = async () => {
-    try {
-      setLoading(true);
-
-      // Önce API'yi dene
-      try {
-        const response = await boatService.getBoats();
-        const allBoats = Array.isArray(response)
-          ? response
-          : (response as any)?.content || [];
-
-        if (allBoats.length > 0) {
-          const featuredBoats = allBoats.slice(0, 6);
-          setBoats(featuredBoats);
-          setError(null);
-          return;
+  // ✅ OPTIMIZED: React Query with aggressive caching for homepage
+  const {
+    data: boats = [],
+    isLoading: loading,
+    isError,
+    error
+  } = useQuery({
+    queryKey: ['featured-boats'],
+    queryFn: async () => {
+      const response = await boatService.advancedSearchPaginated(
+        {}, // No filters, get all boats
+        {
+          page: 0,
+          size: 6,
+          sort: "popularity,desc"
         }
-      } catch (apiError) {
-        console.warn(
-          "API'den veri alınamadı, mock data kullanılıyor:",
-          apiError
-        );
-      }
+      );
+      return response.content || [];
+    },
+    staleTime: 15 * 60 * 1000, // Increased to 15 minutes (homepage data rarely changes)
+    gcTime: 45 * 60 * 1000, // Increased to 45 minutes
+    retry: 1, // Reduced retry for faster failure
+    refetchOnWindowFocus: false, // Disable refetch on window focus
+    refetchOnReconnect: false, // Disable refetch on reconnect
+  });
 
-      // API'den veri gelmezse mock data kullan - BoatDTO ile uyumlu
-      const now = new Date().toISOString();
-      const mockBoats: BoatDTO[] = [
-        {
-          id: 1,
-          ownerId: 1,
-          name: "Luxury Yacht Princess",
-          description: "Lüks ve konforlu yacht deneyimi için mükemmel seçim",
-          model: "Princess 72",
-          year: 2020,
-          length: 25.5,
-          capacity: 12,
-          dailyPrice: 2500,
-          hourlyPrice: 350,
-          location: "Bodrum Marina",
-          rating: 4.8,
-          type: "YACHT",
-          status: "ACTIVE",
-          brandModel: "Princess",
-          buildYear: 2020,
-          captainIncluded: true,
-          latitude: 37.0344,
-          longitude: 27.4305,
-          images: [
-            {
-              id: 1,
-              boatId: 1,
-              imageUrl:
-                "https://images.unsplash.com/photo-1544551763-46a013bb70d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            {
-              id: 1,
-              boatId: 1,
-              featureName: "Klima",
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: 2,
-          ownerId: 1,
-          name: "Speedboat Thunder",
-          description: "Hızlı ve eğlenceli deniz macerası",
-          model: "Thunder 30",
-          year: 2019,
-          length: 18.0,
-          capacity: 8,
-          dailyPrice: 1800,
-          hourlyPrice: 250,
-          location: "Çeşme Marina",
-          rating: 4.6,
-          type: "SPEEDBOAT",
-          status: "ACTIVE",
-          brandModel: "Thunder",
-          buildYear: 2019,
-          captainIncluded: false,
-          latitude: 38.322,
-          longitude: 26.302,
-          images: [
-            {
-              id: 2,
-              boatId: 2,
-              imageUrl:
-                "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            { id: 5, boatId: 2, featureName: "GPS", createdAt: now, updatedAt: now },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: 3,
-          ownerId: 1,
-          name: "Sailing Boat Harmony",
-          description: "Rüzgarın gücüyle sakin bir yolculuk",
-          model: "Harmony 40",
-          year: 2021,
-          length: 22.0,
-          capacity: 10,
-          dailyPrice: 2000,
-          hourlyPrice: 280,
-          location: "Kaş Marina",
-          rating: 4.9,
-          type: "SAILBOAT",
-          status: "ACTIVE",
-          brandModel: "Harmony",
-          buildYear: 2021,
-          captainIncluded: true,
-          images: [
-            {
-              id: 3,
-              boatId: 3,
-              imageUrl:
-                "https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            { id: 8, boatId: 3, featureName: "Yelken Sistemi", createdAt: now, updatedAt: now },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: 4,
-          ownerId: 2,
-          name: "Catamaran Explorer",
-          description: "Geniş ve stabil catamaran deneyimi",
-          model: "Explorer 50",
-          year: 2022,
-          length: 28.0,
-          capacity: 16,
-          dailyPrice: 3200,
-          hourlyPrice: 450,
-          location: "Marmaris Marina",
-          rating: 4.7,
-          type: "CATAMARAN",
-          status: "ACTIVE",
-          brandModel: "Explorer",
-          buildYear: 2022,
-          captainIncluded: true,
-          images: [
-            {
-              id: 4,
-              boatId: 4,
-              imageUrl:
-                "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            { id: 11, boatId: 4, featureName: "Geniş Güverte", createdAt: now, updatedAt: now },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: 5,
-          ownerId: 2,
-          name: "Motor Yacht Elegance",
-          description: "Lüks motor yacht ile unutulmaz anlar",
-          model: "Elegance 70",
-          year: 2020,
-          length: 24.5,
-          capacity: 14,
-          dailyPrice: 2800,
-          hourlyPrice: 380,
-          location: "Antalya Marina",
-          rating: 4.8,
-          type: "MOTORBOAT",
-          status: "ACTIVE",
-          brandModel: "Elegance",
-          buildYear: 2020,
-          captainIncluded: true,
-          images: [
-            {
-              id: 5,
-              boatId: 5,
-              imageUrl:
-                "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            { id: 14, boatId: 5, featureName: "Jakuzi", createdAt: now, updatedAt: now },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: 6,
-          ownerId: 3,
-          name: "Fishing Boat Captain",
-          description: "Balık tutma macerası için ideal",
-          model: "Captain 20",
-          year: 2018,
-          length: 15.0,
-          capacity: 6,
-          dailyPrice: 1200,
-          hourlyPrice: 180,
-          location: "Sinop Marina",
-          rating: 4.5,
-          type: "MOTORBOAT",
-          status: "ACTIVE",
-          brandModel: "Captain",
-          buildYear: 2018,
-          captainIncluded: false,
-          images: [
-            {
-              id: 6,
-              boatId: 6,
-              imageUrl:
-                "https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-              isPrimary: true,
-              displayOrder: 1,
-              createdAt: now,
-              updatedAt: now,
-            },
-          ],
-          features: [
-            { id: 17, boatId: 6, featureName: "Balık Tutma Ekipmanları", createdAt: now, updatedAt: now },
-          ],
-          availabilities: [],
-          services: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-
-      setBoats(mockBoats);
-      setError(null);
-    } catch (err) {
-      setError("Tekneler yüklenirken bir hata oluştu");
-      setBoats([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const errorMessage = isError 
+    ? (error?.message || "Popüler tekneler yüklenirken bir sorun oluştu")
+    : null;
 
   // Loading state
   if (loading) {
@@ -359,7 +94,7 @@ const FeaturedBoats = () => {
   }
 
   // Error state
-  if (error) {
+  if (isError) {
     return (
       <div className="section-padding relative overflow-hidden">
         {/* Modern Multi-Layer Background */}
@@ -385,9 +120,9 @@ const FeaturedBoats = () => {
 
           <div className="text-center py-12">
             <div className="glass-card p-8 max-w-md mx-auto bg-white/40 backdrop-blur-sm border border-white/20 rounded-2xl">
-              <p className="text-red-600 mb-4 font-roboto">{error}</p>
+              <p className="text-red-600 mb-4 font-roboto">{errorMessage}</p>
               <button
-                onClick={fetchFeaturedBoats}
+                onClick={() => window.location.reload()}
                 className="glass-button bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 animate-ripple font-montserrat font-medium"
               >
                 🔄 Tekrar Dene

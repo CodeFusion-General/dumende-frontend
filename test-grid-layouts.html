@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grid Layout Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="p-8 bg-gray-100">
+    <h1 class="text-2xl font-bold mb-8">Grid Layout Optimizations Test</h1>
+
+    <!-- Quick Info Cards Test -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold mb-4">
+        Quick Info Cards (3-column with optimized spacing)
+      </h2>
+      <div
+        class="grid grid-cols-1 xs:grid-cols-3 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-4 mb-6 sm:mb-8"
+      >
+        <div
+          class="group bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 sm:p-6 lg:p-4 xl:p-6 text-center border border-blue-200/50"
+        >
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <span class="text-white">1</span>
+          </div>
+          <div class="text-sm text-blue-700 font-medium mb-1">Kapasite</div>
+          <div
+            class="text-lg sm:text-xl lg:text-lg xl:text-xl font-bold text-blue-900"
+          >
+            8 kişi
+          </div>
+        </div>
+        <div
+          class="group bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-4 sm:p-6 lg:p-4 xl:p-6 text-center border border-green-200/50"
+        >
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <span class="text-white">2</span>
+          </div>
+          <div class="text-sm text-green-700 font-medium mb-1">Uzunluk</div>
+          <div
+            class="text-lg sm:text-xl lg:text-lg xl:text-xl font-bold text-green-900"
+          >
+            12m
+          </div>
+        </div>
+        <div
+          class="group bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 sm:p-6 lg:p-4 xl:p-6 text-center border border-purple-200/50"
+        >
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <span class="text-white">3</span>
+          </div>
+          <div class="text-sm text-purple-700 font-medium mb-1">Kaptan</div>
+          <div
+            class="text-lg sm:text-xl lg:text-lg xl:text-xl font-bold text-purple-900"
+          >
+            Dahil
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Cards Test -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold mb-4">
+        Feature Cards (2 cols on md, 3 on lg, 4 on xl)
+      </h2>
+      <div
+        class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
+      >
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-blue-600 text-sm">W</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">WiFi</span>
+        </div>
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-green-600 text-sm">A</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">Anchor</span>
+        </div>
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-purple-600 text-sm">S</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">Sound System</span>
+        </div>
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-red-600 text-sm">L</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">Life Jackets</span>
+        </div>
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-yellow-600 text-sm">C</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">Cooler</span>
+        </div>
+        <div
+          class="bg-white p-4 rounded-lg border border-gray-200 flex items-center space-x-3"
+        >
+          <div
+            class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center"
+          >
+            <span class="text-indigo-600 text-sm">G</span>
+          </div>
+          <span class="font-medium text-gray-900 text-sm">GPS</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reviews Test -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold mb-4">
+        Reviews (2 columns on lg+ screens)
+      </h2>
+      <div
+        class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6"
+      >
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white font-semibold">JD</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900">John Doe</h4>
+              <div class="flex items-center gap-1 mt-1">
+                <span class="text-yellow-400">★★★★★</span>
+                <span class="text-sm text-gray-500 ml-2">2 days ago</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-gray-700">
+            Amazing boat trip! The captain was very professional and the boat
+            was in excellent condition.
+          </p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white font-semibold">MS</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-semibold text-gray-900">Maria Smith</h4>
+              <div class="flex items-center gap-1 mt-1">
+                <span class="text-yellow-400">★★★★☆</span>
+                <span class="text-sm text-gray-500 ml-2">1 week ago</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-gray-700">
+            Great experience overall. The boat was clean and well-maintained.
+            Would recommend!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Similar Boats Test -->
+    <section class="mb-12">
+      <h2 class="text-xl font-semibold mb-4">
+        Similar Boats (3 cols on lg, 4 on xl)
+      </h2>
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+      >
+        <div
+          class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+          >
+            <span class="text-white text-lg font-semibold">Boat 1</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">Luxury Yacht</h3>
+            <p class="text-sm text-gray-600 mb-2">Istanbul, Turkey</p>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600">8 people</span>
+              <span class="font-semibold text-primary">₺2,500/day</span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"
+          >
+            <span class="text-white text-lg font-semibold">Boat 2</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">Speed Boat</h3>
+            <p class="text-sm text-gray-600 mb-2">Antalya, Turkey</p>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600">6 people</span>
+              <span class="font-semibold text-primary">₺1,800/day</span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="h-48 bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center"
+          >
+            <span class="text-white text-lg font-semibold">Boat 3</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">Sailing Boat</h3>
+            <p class="text-sm text-gray-600 mb-2">Bodrum, Turkey</p>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600">10 people</span>
+              <span class="font-semibold text-primary">₺3,200/day</span>
+            </div>
+          </div>
+        </div>
+        <div
+          class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="h-48 bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"
+          >
+            <span class="text-white text-lg font-semibold">Boat 4</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">Catamaran</h3>
+            <p class="text-sm text-gray-600 mb-2">Marmaris, Turkey</p>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600">12 people</span>
+              <span class="font-semibold text-primary">₺4,000/day</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="mt-12 p-6 bg-blue-50 rounded-lg">
+      <h3 class="text-lg font-semibold mb-2">Test Instructions:</h3>
+      <ul class="text-sm text-gray-700 space-y-1">
+        <li>• Resize your browser window to test different breakpoints</li>
+        <li>• On mobile (< 640px): Most grids should be single column</li>
+        <li>• On tablet (640px - 1024px): 2-3 columns depending on content</li>
+        <li>• On laptop (1024px - 1280px): 3 columns for most grids</li>
+        <li>
+          • On desktop (1280px+): 4 columns for similar boats, 3 for others
+        </li>
+        <li>• Reviews should show 2 columns on lg+ screens</li>
+      </ul>
+    </div>
+  </body>
+</html>

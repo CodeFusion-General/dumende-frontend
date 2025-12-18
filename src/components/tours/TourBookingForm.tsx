@@ -84,26 +84,39 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
       let endISO: string;
 
       if (selectedTourDate) {
+        // Backend LocalDateTime (ISO, timezone'suz) format bekliyor.
+        // TourDateDTO zaten backend'den bu formatta geliyor, mümkünse direkt kullanıyoruz.
         const start = selectedTourDate.startDate;
-        // Duration text ör: "4 Saat" => 4 saat ekle
-        let computedEnd = start;
-        const match = selectedTourDate.durationText?.match(/(\d+)/);
-        if (match) {
-          const hours = parseInt(match[1], 10);
-          const startDateObj = new Date(start);
-          const end = new Date(startDateObj.getTime() + hours * 60 * 60 * 1000);
-          computedEnd = end.toISOString();
-        }
+        const end =
+          selectedTourDate.endDate ||
+          (() => {
+            const match = selectedTourDate.durationText?.match(/(\d+)/);
+            if (match) {
+              const hours = parseInt(match[1], 10);
+              const startDateObj = new Date(start);
+              const endObj = new Date(
+                startDateObj.getTime() + hours * 60 * 60 * 1000
+              );
+              // `toISOString()` yerine backend ile uyumlu olacak şekilde timezone'suz string üret
+              return format(endObj, "yyyy-MM-dd'T'HH:mm:ss");
+            }
+            return start;
+          })();
+
         startISO = start;
-        endISO = computedEnd;
+        endISO = end;
       } else {
         // TourDate yoksa: servis takvimi ile müsaitlik seçildi demektir.
         // Varsayılan 10:00 başlangıç ve turdan türetilen süre (yoksa 4 saat) kullanılır.
         const startObj = new Date(selectedDate);
         startObj.setHours(fallbackStartHour, 0, 0, 0);
-        const endObj = new Date(startObj.getTime() + fallbackDurationHours * 60 * 60 * 1000);
-        startISO = startObj.toISOString();
-        endISO = endObj.toISOString();
+        const endObj = new Date(
+          startObj.getTime() + fallbackDurationHours * 60 * 60 * 1000
+        );
+
+        // Backend CreateBookingDTO -> LocalDateTime ile birebir uyumlu format
+        startISO = format(startObj, "yyyy-MM-dd'T'HH:mm:ss");
+        endISO = format(endObj, "yyyy-MM-dd'T'HH:mm:ss");
       }
 
       const command: CreateBookingDTO = {
@@ -207,7 +220,9 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             <TourAvailabilityCalendar
               tourDates={tour.tourDates || []}
               selected={selectedDate}
-              onSelect={setSelectedDate}
+              onSelect={(next) => {
+                setSelectedDate(next);
+              }}
               tourId={tour.id}
             />
           </div>

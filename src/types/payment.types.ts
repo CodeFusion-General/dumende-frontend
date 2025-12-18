@@ -1,69 +1,52 @@
+export type PaymentStatus = "PENDING" | "SUCCESS" | "FAILED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "TIMEOUT";
+
 export interface PaymentStatusResponseDto {
+  paymentTransactionId: number;
+  merchantOid?: string | null;
   bookingId: number;
-  paymentRequired: boolean;
-  paymentStatus: string;
+  status: PaymentStatus;
+  statusDescription?: string;
+  amount?: number;
+  currency?: string;
+  transactionId?: string | null;
+  paytrSessionId?: string | null;
+  errorMessage?: string | null;
+  paymentDate?: string | null;
+  transactionDate?: string | null;
+  createdAt?: string | null;
+  isTestTransaction?: boolean;
+  conversationId?: string | null;
+  paymentId?: string | null;
+
+  // Frontend convenience fields (not from backend, computed client-side)
+  paymentRequired?: boolean;
+  paymentCompleted?: boolean;
+  paymentUrl?: string | null;
+  totalAmount?: number;
+  depositAmount?: number;
+  remainingAmount?: number;
+}
+
+export interface PaymentInitializationResponseDto {
+  success: boolean;
   paymentUrl?: string;
-  checkoutToken?: string;
-  totalAmount: number;
-  depositAmount: number;
-  paidAmount: number;
-  remainingAmount: number;
-  depositPercentage: number;
-  paymentDeadline: string;
-  message: string;
-  paymentType: PaymentType;
-  paymentCompleted: boolean;
-  paymentPending: boolean;
-}
-
-export enum PaymentType {
-  DEPOSIT = 'DEPOSIT',
-  REMAINING = 'REMAINING',
-  FULL = 'FULL'
-}
-
-export enum PaymentStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
-  PARTIAL = 'PARTIAL'
-}
-
-// 3DS DTOs
-export interface ThreeDSInitializeRequestDto {
-  bookingId: number;
-  cardHolderName: string;
-  cardNumber: string;
-  expireMonth: string;
-  expireYear: string;
-  cvc: string;
-  installment?: number;
-}
-
-export interface ThreeDSInitializeResponseDto {
-  status: string;
-  threeDSHtmlContent?: string;
-  paymentId?: string;
-  conversationId?: string;
+  transactionId?: string;
+  merchantOrderId?: string;
+  amount?: number;
+  currency?: string;
+  testMode?: boolean;
+  isDeposit?: boolean;
+  depositPercentage?: number | null;
   bookingId?: number;
-  errorCode?: string;
   errorMessage?: string;
-  errorGroup?: string;
-  systemTime?: number;
 }
 
-export interface ThreeDSCompleteRequestDto {
-  paymentId: string;
-  conversationData?: string | null;
-  bookingId: number;
+export interface PaymentConfigDto {
+  testMode?: boolean;
+  locale?: string;
+  currency?: string;
+  enabledInstallments?: number[];
+  testCardInfo?: string | null;
 }
 
-export interface BinCheckResponseDto {
-  binNumber?: string;
-  bankName?: string;
-  cardType?: string;
-  cardAssociation?: string;
-  force3ds?: number;
-  installmentPrices?: Array<{ installmentNumber: number; totalPrice: number }>;
-}
+

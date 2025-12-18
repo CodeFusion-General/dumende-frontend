@@ -1,0 +1,252 @@
+/* Boat Image Carousel Styles */
+
+/* Container styles */
+.carousel-container {
+  @apply relative w-full bg-white rounded-3xl overflow-hidden shadow-2xl;
+  @apply border border-gray-100/50 backdrop-blur-sm;
+}
+
+/* Desktop Layout (≥1024px) */
+.desktop-layout {
+  @apply lg:flex lg:gap-4 h-full;
+}
+
+.main-image-container {
+  @apply lg:flex-[0_0_70%] relative overflow-hidden rounded-2xl;
+}
+
+.thumbnail-grid {
+  @apply lg:flex-[0_0_30%] grid grid-cols-2 gap-2 h-full;
+}
+
+/* Mobile Layout (<1024px) */
+.mobile-swiper {
+  @apply lg:hidden w-full h-full;
+}
+
+/* Thumbnail styling */
+.thumbnail-item {
+  @apply relative overflow-hidden rounded-xl cursor-pointer;
+  @apply border-2 border-transparent transition-all duration-300;
+  @apply hover:border-primary/50 hover:shadow-lg;
+}
+
+.thumbnail-active {
+  @apply border-primary ring-2 ring-primary/20 shadow-lg;
+}
+
+/* Animation classes */
+.image-transition {
+  @apply transition-all duration-500 ease-out;
+}
+
+.slide-enter {
+  @apply transform translate-x-full opacity-0;
+}
+
+.slide-enter-active {
+  @apply transform translate-x-0 opacity-100;
+  transition: transform 500ms ease-out, opacity 500ms ease-out;
+}
+
+.slide-exit {
+  @apply transform translate-x-0 opacity-100;
+}
+
+.slide-exit-active {
+  @apply transform -translate-x-full opacity-0;
+  transition: transform 500ms ease-out, opacity 500ms ease-out;
+}
+
+/* Hover effects */
+.thumbnail-hover {
+  @apply hover:scale-105 hover:shadow-md;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.main-image-hover {
+  @apply hover:scale-105 cursor-pointer;
+  transition: transform 0.7s ease;
+}
+
+/* Fullscreen styles */
+.fullscreen-overlay {
+  @apply fixed inset-0 z-50 bg-black/95 flex items-center justify-center;
+  backdrop-filter: blur(4px);
+}
+
+.fullscreen-content {
+  @apply relative w-full h-full flex items-center justify-center p-4;
+}
+
+.fullscreen-image {
+  @apply max-w-full max-h-full object-contain;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Navigation button styles */
+.nav-button {
+  @apply bg-white/90 hover:bg-white shadow-lg backdrop-blur-sm border-white/50;
+  @apply transition-all duration-300 hover:scale-110;
+  @apply focus:ring-2 focus:ring-primary focus:ring-offset-2;
+}
+
+.nav-button-fullscreen {
+  @apply bg-white/10 hover:bg-white/20 border-white/20 text-white;
+  @apply transition-all duration-300;
+}
+
+/* Action buttons */
+.action-buttons {
+  @apply absolute top-4 right-4 z-20 flex gap-2;
+  @apply opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+}
+
+.action-button {
+  @apply bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm border-white/50;
+  @apply transition-all duration-300;
+}
+
+/* Pagination dots */
+.pagination-dots {
+  @apply absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2;
+}
+
+.pagination-dot {
+  @apply w-2 h-2 rounded-full transition-all duration-300;
+}
+
+.pagination-dot-active {
+  @apply bg-white shadow-lg w-6;
+}
+
+.pagination-dot-inactive {
+  @apply bg-white/60 hover:bg-white/80;
+}
+
+/* Image counter */
+.image-counter {
+  @apply absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1;
+  @apply rounded-full text-sm font-medium backdrop-blur-sm;
+}
+
+/* Loading states */
+.image-loading {
+  @apply absolute inset-0 bg-gray-100 flex items-center justify-center;
+}
+
+.loading-spinner {
+  @apply w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin;
+}
+
+/* Error states */
+.image-error {
+  @apply absolute inset-0 bg-gray-100 flex items-center justify-center;
+  @apply text-gray-500 text-center;
+}
+
+/* Accessibility */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden;
+  @apply whitespace-nowrap border-0;
+  clip: rect(0, 0, 0, 0);
+}
+
+/* Focus styles */
+.focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .image-transition,
+  .slide-enter-active,
+  .slide-exit-active,
+  .thumbnail-hover,
+  .main-image-hover {
+    transition: none;
+  }
+  
+  .fullscreen-image {
+    animation: none;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .carousel-container {
+    @apply border-2 border-gray-800;
+  }
+  
+  .thumbnail-item {
+    @apply border-2 border-gray-600;
+  }
+  
+  .thumbnail-active {
+    @apply border-2 border-primary;
+  }
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (min-width: 1024px) and (max-height: 800px) {
+  .carousel-container {
+    max-height: 450px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .action-buttons {
+    @apply opacity-100; /* Always show on mobile */
+  }
+  
+  .nav-button {
+    @apply h-10 w-10; /* Larger touch targets on mobile */
+  }
+}
+
+/* Print styles */
+@media print {
+  .carousel-container {
+    @apply shadow-none border border-gray-300;
+  }
+  
+  .action-buttons,
+  .nav-button,
+  .pagination-dots {
+    @apply hidden;
+  }
+}

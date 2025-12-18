@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Star, Users, Bed, Calendar, ArrowRight, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
-import { getFullImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
+import { getFullImageUrl, getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
+import { useQueryClient } from "@tanstack/react-query";
+import { boatService } from "@/services/boatService";
 
 interface BoatCardProps {
   boat: BoatDTO;
@@ -19,14 +21,15 @@ interface BoatCardProps {
   detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
-// Default image helper function
+// ✅ OPTIMIZED: Memoized image URL getter with CloudFlare variant support
 const getBoatImageUrl = (boat: BoatDTO): string => {
-  // Backend'den gelen URL'i tam URL'e çevir
+  // Use CloudFlare variant URLs for better performance
   if (boat.images && boat.images.length > 0) {
     const primaryImage =
       boat.images.find((img) => img.isPrimary) || boat.images[0];
-    if (primaryImage && primaryImage.imageUrl) {
-      return getFullImageUrl(primaryImage.imageUrl);
+    if (primaryImage) {
+      // Use thumbnail variant for grid/list views (200x200 or 400x300)
+      return getResponsiveImageUrl(primaryImage, 'thumbnail');
     }
   }
 
@@ -74,7 +77,7 @@ const BoatCardGrid: React.FC<{
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
   detailLinkBuilder?: (boat: BoatDTO) => string;
-}> = ({
+}> = React.memo(({
   boat,
   isHourlyMode,
   isCompared,
@@ -84,18 +87,18 @@ const BoatCardGrid: React.FC<{
 }) => {
   const { language } = useLanguage();
   const t = translations[language];
-  const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const url = getBoatImageUrl(boat);
-    setImageUrl(url);
-  }, [boat]);
+  // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
+  const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
+  const [imageError, setImageError] = useState(false);
 
-  const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
-  const priceUnit = isHourlyMode ? "saat" : "gün";
+  // ✅ OPTIMIZED: Memoize computed values
+  const price = useMemo(() => isHourlyMode ? boat.hourlyPrice : boat.dailyPrice, [isHourlyMode, boat.hourlyPrice, boat.dailyPrice]);
+  const priceUnit = useMemo(() => isHourlyMode ? "saat" : "gün", [isHourlyMode]);
 
-  // Helper functions for modern glass styling
-  const getTextColor = (opacity?: string) => {
+  // Memoized helper functions for modern glass styling
+  const getTextColor = useMemo(() => (opacity?: string) => {
     return opacity
       ? `text-gray-${
           opacity === "70"
@@ -107,27 +110,42 @@ const BoatCardGrid: React.FC<{
             : "500"
         }`
       : "text-[#2c3e50]";
-  };
+  }, []);
 
-  const getBadgeStyles = () => {
-    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
-  };
+  const badgeStyles = "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
 
-  const getCompareButtonStyles = () => {
-    return isCompared
+  const compareButtonStyles = useMemo(() =>
+    isCompared
       ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
-      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
-  };
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm"
+  , [isCompared]);
+
+  const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
+
+  // Prefetch boat detail on hover/focus
+  // NOTE: queryKey ikinci parametre olarak her zaman sayısal boatId kullanıyoruz.
+  // Böylece `BoatListing` içindeki detay sorgusu ile aynı cache key'i paylaşır.
+  const prefetchBoat = useCallback(() => {
+    const numericBoatId = Number(boat.id);
+    if (!numericBoatId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["boat", numericBoatId],
+      queryFn: () => boatService.getBoatById(numericBoatId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, boat.id]);
 
   return (
     <GlassCard className="overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
       {/* Image Section with Glass Overlay */}
       <div className="relative overflow-hidden h-60 flex-shrink-0">
         <img
-          src={imageUrl}
+          src={displayImageUrl}
           alt={boat.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImageUrl("/placeholder-boat.jpg")}
+          onError={() => setImageError(true)}
         />
 
         {/* Enhanced gradient overlay for better contrast */}
@@ -135,7 +153,7 @@ const BoatCardGrid: React.FC<{
 
         {/* Boat type badge with enhanced glass effect */}
         <div
-          className={`absolute top-4 left-4 px-3 py-1.5 rounded-full ${getBadgeStyles()} font-medium`}
+          className={`absolute top-4 left-4 px-3 py-1.5 rounded-full ${badgeStyles} font-medium`}
         >
           <span className="text-sm">{boat.type}</span>
         </div>
@@ -151,7 +169,7 @@ const BoatCardGrid: React.FC<{
         {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${getCompareButtonStyles()}`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${compareButtonStyles}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -167,7 +185,7 @@ const BoatCardGrid: React.FC<{
             {boat.name}
           </h3>
           <div
-            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()} flex-shrink-0`}
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${badgeStyles} flex-shrink-0`}
           >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
@@ -209,14 +227,14 @@ const BoatCardGrid: React.FC<{
             {boat.features?.slice(0, 3).map((feature, index) => (
               <span
                 key={index}
-                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} line-clamp-1 whitespace-nowrap`}
+                className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles} line-clamp-1 whitespace-nowrap`}
               >
                 {feature.featureName}
               </span>
             ))}
             {boat.features && boat.features.length > 3 && (
               <span
-                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} whitespace-nowrap`}
+                className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles} whitespace-nowrap`}
               >
                 +{boat.features.length - 3}
               </span>
@@ -234,7 +252,11 @@ const BoatCardGrid: React.FC<{
               /{priceUnit}
             </span>
           </div>
-          <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
+          <Link
+            to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}
+            onMouseEnter={prefetchBoat}
+            onFocus={prefetchBoat}
+          >
             <Button className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-6 py-2.5 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat">
               İncele
             </Button>
@@ -243,7 +265,7 @@ const BoatCardGrid: React.FC<{
       </div>
     </GlassCard>
   );
-};
+}); // ✅ OPTIMIZED: Added React.memo closing bracket
 
 const BoatCardList: React.FC<{
   boat: BoatDTO;
@@ -252,7 +274,7 @@ const BoatCardList: React.FC<{
   onCompareToggle?: (id: string) => void;
   variant?: "homepage" | "listing";
   detailLinkBuilder?: (boat: BoatDTO) => string;
-}> = ({
+}> = React.memo(({
   boat,
   isHourlyMode,
   isCompared,
@@ -260,18 +282,17 @@ const BoatCardList: React.FC<{
   variant = "listing",
   detailLinkBuilder,
 }) => {
-  const [imageUrl, setImageUrl] = useState<string>("/placeholder-boat.jpg");
+  // ✅ OPTIMIZED: Use useMemo instead of useEffect to prevent re-renders
+  const imageUrl = useMemo(() => getBoatImageUrl(boat), [boat.id, boat.images]);
+  const [imageError, setImageError] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const url = getBoatImageUrl(boat);
-    setImageUrl(url);
-  }, [boat]);
+  // ✅ OPTIMIZED: Memoize computed values
+  const price = useMemo(() => isHourlyMode ? boat.hourlyPrice : boat.dailyPrice, [isHourlyMode, boat.hourlyPrice, boat.dailyPrice]);
+  const priceUnit = useMemo(() => isHourlyMode ? "saat" : "gün", [isHourlyMode]);
 
-  const price = isHourlyMode ? boat.hourlyPrice : boat.dailyPrice;
-  const priceUnit = isHourlyMode ? "saat" : "gün";
-
-  // Helper functions for modern glass styling
-  const getTextColor = (opacity?: string) => {
+  // Memoized helper functions for modern glass styling
+  const getTextColor = useMemo(() => (opacity?: string) => {
     return opacity
       ? `text-gray-${
           opacity === "70"
@@ -283,27 +304,40 @@ const BoatCardList: React.FC<{
             : "500"
         }`
       : "text-[#2c3e50]";
-  };
+  }, []);
 
-  const getBadgeStyles = () => {
-    return "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
-  };
+  const badgeStyles = "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 shadow-sm font-roboto";
 
-  const getCompareButtonStyles = () => {
-    return isCompared
+  const compareButtonStyles = useMemo(() =>
+    isCompared
       ? "bg-[#3498db] text-white border border-[#3498db]/50 shadow-md"
-      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm";
-  };
+      : "bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-[#3498db] hover:text-white shadow-sm"
+  , [isCompared]);
+
+  const displayImageUrl = useMemo(() => imageError ? "/placeholder-boat.jpg" : imageUrl, [imageError, imageUrl]);
+
+  // Prefetch boat detail on hover/focus
+  const prefetchBoat = useCallback(() => {
+    const numericBoatId = Number(boat.id);
+    if (!numericBoatId) return;
+
+    queryClient.prefetchQuery({
+      queryKey: ["boat", numericBoatId],
+      queryFn: () => boatService.getBoatById(numericBoatId),
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [queryClient, boat.id]);
 
   return (
     <GlassCard className="flex flex-col md:flex-row h-full overflow-hidden animate-hover-lift group bg-white/40 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
       {/* Image Section */}
       <div className="relative overflow-hidden md:w-1/3 h-48 md:h-auto">
         <img
-          src={imageUrl}
+          src={displayImageUrl}
           alt={boat.name}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={() => setImageUrl("/placeholder-boat.jpg")}
+          onError={() => setImageError(true)}
         />
 
         {/* Gradient overlay */}
@@ -311,7 +345,7 @@ const BoatCardList: React.FC<{
 
         {/* Boat type badge */}
         <div
-          className={`absolute top-4 left-4 px-3 py-1 rounded-full ${getBadgeStyles()}`}
+          className={`absolute top-4 left-4 px-3 py-1 rounded-full ${badgeStyles}`}
         >
           <span className="text-sm font-medium">{boat.type}</span>
         </div>
@@ -327,7 +361,7 @@ const BoatCardList: React.FC<{
         {variant !== "homepage" && onCompareToggle && (
           <button
             onClick={() => onCompareToggle(boat.id.toString())}
-            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
+            className={`absolute bottom-4 right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${compareButtonStyles}`}
           >
             {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
           </button>
@@ -348,7 +382,7 @@ const BoatCardList: React.FC<{
             </div>
           </div>
           <div
-            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()}`}
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${badgeStyles}`}
           >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
@@ -378,7 +412,7 @@ const BoatCardList: React.FC<{
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()}`}
+              className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles}`}
             >
               {feature.featureName}
             </span>
@@ -395,7 +429,11 @@ const BoatCardList: React.FC<{
             </span>
           </div>
           <div className="flex space-x-2">
-            <Link to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}>
+            <Link
+              to={detailLinkBuilder ? detailLinkBuilder(boat) : `/boats/${boat.id}`}
+              onMouseEnter={prefetchBoat}
+              onFocus={prefetchBoat}
+            >
               <Button className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-4 py-2 rounded-xl transition-all duration-300 font-montserrat">
                 Detaylar
               </Button>
@@ -410,4 +448,4 @@ const BoatCardList: React.FC<{
       </div>
     </GlassCard>
   );
-};
+}); // ✅ OPTIMIZED: Added React.memo closing bracket

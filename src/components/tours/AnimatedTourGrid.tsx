@@ -11,7 +11,7 @@ interface AnimatedTourGridProps {
   loading?: boolean;
 }
 
-const AnimatedTourGrid: React.FC<AnimatedTourGridProps> = ({
+const AnimatedTourGridComponent: React.FC<AnimatedTourGridProps> = ({
   tours,
   viewMode,
   comparedTours,
@@ -102,5 +102,7 @@ const AnimatedTourGrid: React.FC<AnimatedTourGridProps> = ({
     </div>
   );
 };
+
+const AnimatedTourGrid = React.memo(AnimatedTourGridComponent);
 
 export default AnimatedTourGrid;

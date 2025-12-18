@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
   MapPin,
@@ -111,9 +112,36 @@ const SearchWidget = ({ onDatePickerToggle }: SearchWidgetProps) => {
   const { language } = useLanguage();
   const t = translations[language];
 
+  const {
+    data: remoteLocations,
+    isLoading: isLocationsQueryLoading,
+    isError: isLocationsError,
+  } = useQuery({
+    queryKey: ["boat-locations"],
+    queryFn: () => boatService.getAllLocations(),
+    staleTime: 60 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+    retry: 1,
+  });
+
   useEffect(() => {
-    fetchLocations();
-  }, []);
+    // React Query lokasyon verisini local state'e yansıtalım
+    if (remoteLocations && remoteLocations.length > 0) {
+      setLocations(remoteLocations);
+      setLocationsLoading(false);
+    } else if (!isLocationsQueryLoading && isLocationsError) {
+      // Hata durumunda fallback lokasyonlar
+      setLocations([
+        "İstanbul",
+        "Bodrum",
+        "Fethiye",
+        "Marmaris",
+        "Çeşme",
+        "Antalya",
+      ]);
+      setLocationsLoading(false);
+    }
+  }, [remoteLocations, isLocationsQueryLoading, isLocationsError]);
 
   // Debounced search suggestions
   const debouncedSearchSuggestions = useCallback(
@@ -188,27 +216,7 @@ const SearchWidget = ({ onDatePickerToggle }: SearchWidgetProps) => {
     return () => document.removeEventListener("keydown", handleEscapeKey);
   }, [showDatePicker]);
 
-  const fetchLocations = async () => {
-    try {
-      setLocationsLoading(true);
-      const locationList = await boatService.getAllLocations();
-
-      setLocations(locationList);
-    } catch (error) {
-      console.error("SearchWidget lokasyon hatası:", error);
-      // Hata durumunda fallback lokasyonlar
-      setLocations([
-        "İstanbul",
-        "Bodrum",
-        "Fethiye",
-        "Marmaris",
-        "Çeşme",
-        "Antalya",
-      ]);
-    } finally {
-      setLocationsLoading(false);
-    }
-  };
+  // Lokasyonlar React Query üzerinden yönetiliyor; eski fetchLocations kaldırıldı
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

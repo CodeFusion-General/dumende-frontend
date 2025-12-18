@@ -12,7 +12,7 @@ interface CompareBarProps {
   onClearAll: () => void;
 }
 
-const CompareBar: React.FC<CompareBarProps> = ({
+const CompareBarComponent: React.FC<CompareBarProps> = ({
   comparedBoats,
   boats,
   onRemove,
@@ -69,5 +69,7 @@ const CompareBar: React.FC<CompareBarProps> = ({
     </div>
   );
 };
+
+const CompareBar = React.memo(CompareBarComponent);
 
 export default CompareBar;

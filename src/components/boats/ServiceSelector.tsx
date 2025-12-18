@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Minus, Utensils, Package, Star } from "lucide-react";
 import { BoatServiceDTO, ServiceType } from "@/types/boat.types";
 import { SelectedServiceDTO } from "@/types/booking.types";
-import { boatService } from "@/services/boatService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 
 interface ServiceSelectorProps {
   boatId: number;
+  availableServices: BoatServiceDTO[];
+  loading: boolean;
+  error: string | null;
   selectedServices: SelectedServiceDTO[];
   onServicesChange: (services: SelectedServiceDTO[]) => void;
   onPriceChange: (totalServicesPrice: number) => void;
@@ -55,59 +57,28 @@ const getServiceTypeColor = (serviceType: ServiceType) => {
   }
 };
 
-export default function ServiceSelector({ 
-  boatId, 
-  selectedServices, 
-  onServicesChange, 
-  onPriceChange 
+export default function ServiceSelector({
+  boatId,
+  availableServices,
+  loading,
+  error,
+  selectedServices,
+  onServicesChange,
+  onPriceChange,
 }: ServiceSelectorProps) {
-  const [availableServices, setAvailableServices] = useState<BoatServiceDTO[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load available services
-  useEffect(() => {
-    const loadServices = async () => {
-      if (!boatId) return;
-
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const services = await boatService.getBoatServicesWithPricing(boatId);
-        
-        // Remove duplicates based on service ID
-        const uniqueServices = services.filter((service, index, self) => 
-          index === self.findIndex(s => s.id === service.id)
-        );
-        
-        setAvailableServices(uniqueServices);
-      } catch (err) {
-        console.error("Failed to load boat services:", err);
-        setError("Hizmetler yüklenirken hata oluştu");
-        toast({
-          title: "Hata",
-          description: "Hizmetler yüklenirken bir hata oluştu.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadServices();
-  }, [boatId]);
-
   // Calculate total services price whenever selected services change
   useEffect(() => {
     const totalPrice = selectedServices.reduce((total, selected) => {
-      const service = availableServices.find(s => s.id === selected.boatServiceId);
+      const service = availableServices.find(
+        (s) => s.id === selected.boatServiceId
+      );
       if (!service) return total;
-      
-      const serviceTotal = service.serviceType === ServiceType.FOOD 
-        ? service.price * selected.quantity
-        : service.price;
-      
+
+      const serviceTotal =
+        service.serviceType === ServiceType.FOOD
+          ? service.price * selected.quantity
+          : service.price;
+
       return total + serviceTotal;
     }, 0);
 
@@ -116,7 +87,9 @@ export default function ServiceSelector({
 
   // Get quantity for a specific service
   const getServiceQuantity = (serviceId: number): number => {
-    const selected = selectedServices.find(s => s.boatServiceId === serviceId);
+    const selected = selectedServices.find(
+      (s) => s.boatServiceId === serviceId
+    );
     return selected?.quantity || 0;
   };
 
@@ -124,20 +97,30 @@ export default function ServiceSelector({
   const updateServiceQuantity = (serviceId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       // Remove service if quantity is 0 or less
-      const updatedServices = selectedServices.filter(s => s.boatServiceId !== serviceId);
+      const updatedServices = selectedServices.filter(
+        (s) => s.boatServiceId !== serviceId
+      );
       onServicesChange(updatedServices);
     } else {
       // Update or add service
-      const existingIndex = selectedServices.findIndex(s => s.boatServiceId === serviceId);
-      
+      const existingIndex = selectedServices.findIndex(
+        (s) => s.boatServiceId === serviceId
+      );
+
       if (existingIndex >= 0) {
         // Update existing service
         const updatedServices = [...selectedServices];
-        updatedServices[existingIndex] = { boatServiceId: serviceId, quantity: newQuantity };
+        updatedServices[existingIndex] = {
+          boatServiceId: serviceId,
+          quantity: newQuantity,
+        };
         onServicesChange(updatedServices);
       } else {
         // Add new service
-        const updatedServices = [...selectedServices, { boatServiceId: serviceId, quantity: newQuantity }];
+        const updatedServices = [
+          ...selectedServices,
+          { boatServiceId: serviceId, quantity: newQuantity },
+        ];
         onServicesChange(updatedServices);
       }
     }
@@ -147,7 +130,7 @@ export default function ServiceSelector({
   const increaseQuantity = (service: BoatServiceDTO) => {
     const currentQuantity = getServiceQuantity(service.id);
     const maxQuantity = service.serviceType === ServiceType.FOOD ? 10 : 1;
-    
+
     if (currentQuantity < maxQuantity) {
       updateServiceQuantity(service.id, currentQuantity + 1);
     }
@@ -179,7 +162,10 @@ export default function ServiceSelector({
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+            <div
+              key={i}
+              className="flex items-center justify-between p-4 border rounded-lg"
+            >
               <div className="space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-48" />
@@ -230,56 +216,67 @@ export default function ServiceSelector({
           <Package className="h-5 w-5" />
           Ek Hizmetler
         </CardTitle>
-        <p className="text-sm text-gray-600">
-          İsteğe bağlı hizmetleri seçin
-        </p>
+        <p className="text-sm text-gray-600">İsteğe bağlı hizmetleri seçin</p>
       </CardHeader>
       <CardContent className="space-y-6">
         {Object.entries(groupedServices).map(([serviceType, services]) => (
           <div key={serviceType}>
             <div className="flex items-center gap-2 mb-3">
               {getServiceIcon(serviceType as ServiceType)}
-              <Badge variant="outline" className={getServiceTypeColor(serviceType as ServiceType)}>
+              <Badge
+                variant="outline"
+                className={getServiceTypeColor(serviceType as ServiceType)}
+              >
                 {getServiceTypeLabel(serviceType as ServiceType)}
               </Badge>
             </div>
-            
+
             <div className="space-y-3">
               {services.map((service) => {
                 const quantity = getServiceQuantity(service.id);
                 const isSelected = quantity > 0;
-                const canIncrease = service.serviceType === ServiceType.FOOD ? quantity < 10 : quantity < 1;
-                const serviceTotal = service.serviceType === ServiceType.FOOD 
-                  ? service.price * Math.max(1, quantity)
-                  : service.price;
+                const canIncrease =
+                  service.serviceType === ServiceType.FOOD
+                    ? quantity < 10
+                    : quantity < 1;
+                const serviceTotal =
+                  service.serviceType === ServiceType.FOOD
+                    ? service.price * Math.max(1, quantity)
+                    : service.price;
 
                 return (
-                  <div 
-                    key={service.id} 
+                  <div
+                    key={service.id}
                     className={`p-4 border rounded-lg transition-all duration-200 ${
-                      isSelected 
-                        ? 'border-primary bg-primary/5 shadow-sm' 
-                        : 'border-gray-200 hover:border-gray-300'
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{service.name}</h4>
+                          <h4 className="font-medium text-gray-900">
+                            {service.name}
+                          </h4>
                           <div className="text-right">
                             <span className="text-lg font-semibold text-primary">
                               ₺{service.price.toLocaleString()}
                             </span>
                             {service.serviceType === ServiceType.FOOD && (
-                              <span className="text-sm text-gray-500 ml-1">/adet</span>
+                              <span className="text-sm text-gray-500 ml-1">
+                                /adet
+                              </span>
                             )}
                           </div>
                         </div>
-                        
+
                         {service.description && (
-                          <p className="text-sm text-gray-600 mb-3">{service.description}</p>
+                          <p className="text-sm text-gray-600 mb-3">
+                            {service.description}
+                          </p>
                         )}
-                        
+
                         {isSelected && (
                           <div className="text-sm font-medium text-primary">
                             Toplam: ₺{serviceTotal.toLocaleString()}
@@ -287,14 +284,14 @@ export default function ServiceSelector({
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-3">
                       <div className="text-xs text-gray-500">
-                        {service.serviceType === ServiceType.FOOD 
-                          ? "Miktar seçebilirsiniz" 
+                        {service.serviceType === ServiceType.FOOD
+                          ? "Miktar seçebilirsiniz"
                           : "Tek seçim"}
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         {isSelected && (
                           <Button
@@ -306,13 +303,13 @@ export default function ServiceSelector({
                             <Minus className="h-4 w-4" />
                           </Button>
                         )}
-                        
+
                         {isSelected && (
                           <span className="mx-2 font-medium min-w-[20px] text-center">
                             {quantity}
                           </span>
                         )}
-                        
+
                         <Button
                           variant={isSelected ? "outline" : "default"}
                           size="sm"
@@ -320,11 +317,7 @@ export default function ServiceSelector({
                           disabled={!canIncrease}
                           className={isSelected ? "h-8 w-8 p-0" : ""}
                         >
-                          {isSelected ? (
-                            <Plus className="h-4 w-4" />
-                          ) : (
-                            "Seç"
-                          )}
+                          {isSelected ? <Plus className="h-4 w-4" /> : "Seç"}
                         </Button>
                       </div>
                     </div>
@@ -334,7 +327,7 @@ export default function ServiceSelector({
             </div>
           </div>
         ))}
-        
+
         {selectedServices.length === 0 && (
           <div className="text-center py-4 text-gray-500 text-sm">
             Yukarıdaki hizmetlerden istediğinizi seçebilirsiniz

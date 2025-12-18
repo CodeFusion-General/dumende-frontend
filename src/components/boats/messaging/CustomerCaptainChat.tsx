@@ -258,6 +258,17 @@ export const CustomerCaptainChat: React.FC<CustomerCaptainChatProps> = ({
     []
   );
 
+  // Helper: process promises in limited concurrent batches
+  const processInBatches = useCallback(
+    async <T,>(items: T[], batchSize: number, fn: (item: T) => Promise<any>) => {
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        await Promise.allSettled(batch.map((item) => fn(item)));
+      }
+    },
+    []
+  );
+
   // Auto-scroll when new messages arrive
   useEffect(() => {
     if (messages.length > previousMessageCountRef.current) {
@@ -275,11 +286,14 @@ export const CustomerCaptainChat: React.FC<CustomerCaptainChatProps> = ({
           msg.readStatus === "UNREAD" && msg.sender.id !== booking.customerId
       );
 
-      unreadMessages.forEach((msg) => {
-        markAsRead(msg.id)?.catch?.(console.warn);
-      });
+      if (unreadMessages.length > 0) {
+        // Batch mark-as-read with limited concurrency to reduce API pressure
+        processInBatches(unreadMessages, 3, (msg) =>
+          markAsRead(msg.id).catch(() => undefined)
+        );
+      }
     }
-  }, [isOpen, messages, booking.customerId, markAsRead]);
+  }, [isOpen, messages, booking.customerId, markAsRead, processInBatches]);
 
   // Cleanup on unmount or close
   useEffect(() => {

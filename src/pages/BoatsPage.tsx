@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import BoatListingHeader from "@/components/boats/BoatListingHeader";
 import FilterSidebar from "@/components/boats/FilterSidebar";
-import { boatListingData } from "@/data/boats";
+// import { boatListingData } from "@/data/boats"; // ✅ REMOVED: Mock data causing performance issues
 import NoResults from "@/components/boats/NoResults";
 import AnimatedBoatGrid from "@/components/boats/AnimatedBoatGrid";
 import CompareBar from "@/components/boats/CompareBar";
@@ -30,46 +31,7 @@ const serviceBoatMap: Record<string, string[]> = {
   "yuzme-dalis-turu": ["Katamaran", "Yelkenli"],
 };
 
-// Mock data adapter to convert listing data to BoatDTO format
-const convertToBoatDTO = (mockData: any): BoatDTO => ({
-  id: mockData.id,
-  ownerId: 1, // Mock owner ID
-  name: mockData.name,
-  description: mockData.description || "",
-  model: mockData.model || "",
-  year: mockData.year,
-  length: 0, // Mock value
-  capacity: mockData.capacity,
-  dailyPrice: mockData.price,
-  hourlyPrice: 0, // Mock value
-  location: mockData.location,
-  rating: mockData.rating,
-  type: mockData.type,
-  status: "ACTIVE",
-  brandModel: mockData.model || "",
-  buildYear: mockData.year,
-  captainIncluded: false,
-  images: mockData.images.map((url: string) => ({
-    id: 0,
-    boatId: mockData.id,
-    imageUrl: url,
-    isPrimary: false,
-    displayOrder: 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  })),
-  features: mockData.features.map((feature: string, index: number) => ({
-    id: index,
-    boatId: mockData.id,
-    featureName: feature,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  })),
-  availabilities: [],
-  services: [],
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-});
+// ✅ REMOVED: Mock data converter - now using real API data only
 
 // Debounce hook
 const useDebounce = (value: any, delay: number) => {
@@ -98,15 +60,14 @@ const BoatsPage = () => {
   // Hourly vs Daily price view
   const [isHourlyMode, setIsHourlyMode] = useState<boolean>(true);
 
-  // Mock data state (commented out but preserved)
-  /* const [allBoats] = useState(boatListingData);
-  const [filteredBoats, setFilteredBoats] = useState(boatListingData); */
-
-  // Real data state
+  // ✅ PERFORMANCE: State management optimized
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allBoats, setAllBoats] = useState<BoatDTO[]>([]);
   const [filteredBoats, setFilteredBoats] = useState<BoatDTO[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalBoats, setTotalBoats] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   const [comparedBoats, setComparedBoats] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -127,61 +88,97 @@ const BoatsPage = () => {
     date: true,
   });
 
-  // **PERFORMANCE OPTIMIZATION**
-  // Debounce filter değişikliklerini (500ms gecikme)
-  const debouncedSelectedTypes = useDebounce(selectedTypes, 300);
-  const debouncedCapacity = useDebounce(capacity, 300);
-  const debouncedPriceRange = useDebounce(priceRange, 500); // Fiyat için biraz daha uzun
-  const debouncedSelectedLocations = useDebounce(selectedLocations, 300);
-  const debouncedSelectedFeatures = useDebounce(selectedFeatures, 300);
+  // ✅ PERFORMANCE OPTIMIZATION: Increased debounce times
+  const debouncedSelectedTypes = useDebounce(selectedTypes, 500);
+  const debouncedCapacity = useDebounce(capacity, 500);
+  const debouncedPriceRange = useDebounce(priceRange, 800); // Longer for price range
+  const debouncedSelectedLocations = useDebounce(selectedLocations, 500);
+  const debouncedSelectedFeatures = useDebounce(selectedFeatures, 500);
 
   const searchParams = new URLSearchParams(location.search);
   const serviceParam = searchParams.get("service");
 
-  const toggleSection = (section: string) => {
-    setOpenSections({
-      ...openSections,
-      [section]: !openSections[section],
-    });
-  };
+  const toggleSection = useCallback((section: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  }, []);
 
-  // Performance için memoized applyFilters
-  const applyFilters = useCallback(async () => {
-    try {
-      setLoading(true);
-      // Advanced paginated search: çoklu tip/lokasyon ve sıralama desteği
-      const advancedReq: any = {
-        types:
-          debouncedSelectedTypes.length > 0 ? debouncedSelectedTypes : undefined,
-        locations:
-          debouncedSelectedLocations.length > 0
-            ? debouncedSelectedLocations
-            : undefined,
-        minCapacity: debouncedCapacity
-          ? parseInt(debouncedCapacity.split("-")[0])
+  // ✅ PERFORMANCE: Filtre modelini ve sıralamayı memoize et
+  const advancedReq = useMemo(() => {
+    return {
+      types:
+        debouncedSelectedTypes.length > 0 ? debouncedSelectedTypes : undefined,
+      locations:
+        debouncedSelectedLocations.length > 0
+          ? debouncedSelectedLocations
           : undefined,
-        minPrice: debouncedPriceRange[0],
-        maxPrice: debouncedPriceRange[1],
-        startDate,
-        endDate,
-      };
+      minCapacity: debouncedCapacity
+        ? parseInt(debouncedCapacity.split("-")[0])
+        : undefined,
+      minPrice: debouncedPriceRange[0],
+      maxPrice: debouncedPriceRange[1],
+      startDate,
+      endDate,
+    } as any;
+  }, [
+    debouncedSelectedTypes,
+    debouncedSelectedLocations,
+    debouncedCapacity,
+    debouncedPriceRange,
+    startDate,
+    endDate,
+  ]);
 
-      const sortParam =
-        sortBy === "priceHigh"
-          ? "dailyPrice,desc"
-          : sortBy === "priceLow"
-          ? "dailyPrice,asc"
-          : "popularity,desc";
+  const sortParam = useMemo(() => {
+    return sortBy === "priceHigh"
+      ? "dailyPrice,desc"
+      : sortBy === "priceLow"
+      ? "dailyPrice,asc"
+      : "popularity,desc";
+  }, [sortBy]);
 
-      const pageResp = await boatService.advancedSearchPaginated(advancedReq, {
-        page: 0,
+  // ✅ React Query ile sayfalı arama (keepPreviousData)
+  const {
+    data: pageResp,
+    isFetching,
+    isError: isQueryError,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["boats-advanced", advancedReq, sortParam, currentPage],
+    queryFn: async () =>
+      boatService.advancedSearchPaginated(advancedReq, {
+        page: currentPage,
         size: 24,
         sort: sortParam,
-      });
+      }),
+    keepPreviousData: true,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
-      setFilteredBoats(pageResp.content || []);
-    } catch (err) {
-      console.error("Filter uygulama hatası:", err);
+  // ✅ Sunucu yanıtını yerel state'e yansıt
+  useEffect(() => {
+    if (!pageResp) return;
+    setFilteredBoats(pageResp.content || []);
+    setCurrentPage(pageResp.number ?? 0);
+    setTotalPages(pageResp.totalPages ?? 0);
+    setTotalBoats(pageResp.totalElements ?? 0);
+    setHasNextPage(!pageResp.last);
+    setError(null);
+  }, [pageResp]);
+
+  // ✅ Yükleme durumunu React Query'den al
+  useEffect(() => {
+    setLoading(isFetching);
+  }, [isFetching]);
+
+  // ✅ Hata yönetimi
+  useEffect(() => {
+    if (isQueryError) {
+      console.error("Filter uygulama hatası:", queryError);
       toast({
         title: "Hata",
         description:
@@ -189,19 +186,14 @@ const BoatsPage = () => {
         variant: "destructive",
       });
       setFilteredBoats([]);
-    } finally {
-      setLoading(false);
+      setTotalBoats(0);
     }
-  }, [
-    debouncedSelectedTypes,
-    debouncedCapacity,
-    debouncedPriceRange,
-    debouncedSelectedLocations,
-    debouncedSelectedFeatures,
-    startDate,
-    endDate,
-    sortBy,
-  ]);
+  }, [isQueryError, queryError]);
+
+  // ✅ Sadece sayfayı değiştiren hafif fonksiyon
+  const applyFilters = useCallback((page = 0) => {
+    setCurrentPage(page);
+  }, []);
 
   // Optimized reset function
   const handleFilterReset = useCallback(() => {
@@ -215,14 +207,8 @@ const BoatsPage = () => {
     }
   }, [serviceParam, navigate]);
 
-  useEffect(() => {
-    fetchBoats();
-    // URL parametrelerini oku ve filtreleri uygula
-    parseUrlFilters();
-  }, [location.search]);
-
   // URL parametrelerini parsing eden fonksiyon
-  const parseUrlFilters = () => {
+  const parseUrlFilters = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const locationFilter = searchParams.get("location");
     const typeFilter = searchParams.get("type");
@@ -245,48 +231,13 @@ const BoatsPage = () => {
     if (start) setStartDate(start);
     if (end) setEndDate(end);
     if (guests) setCapacity(guests);
-  };
+  }, [location.search]);
 
-  const fetchBoats = async () => {
-    try {
-      setLoading(true);
+  useEffect(() => {
+    parseUrlFilters();
+  }, [parseUrlFilters]);
 
-      // Önce API'yi dene
-      try {
-        const response = await boatService.getBoats();
-        const boats = Array.isArray(response)
-          ? response
-          : (response as any)?.content || [];
-
-        if (boats.length > 0) {
-          setAllBoats(boats);
-          setFilteredBoats(boats);
-          setError(null);
-          return;
-        }
-      } catch (apiError) {
-        console.warn(
-          "API'den veri alınamadı, mock data kullanılıyor:",
-          apiError
-        );
-      }
-
-      // API'den veri gelmezse mock data kullan
-      const mockBoats = boatListingData.map(convertToBoatDTO);
-      setAllBoats(mockBoats);
-      setFilteredBoats(mockBoats);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching boats:", err);
-      setError(
-        "Tekneleri yüklerken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
-      );
-      setAllBoats([]);
-      setFilteredBoats([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // fetchInitialBoats kaldırıldı; React Query ilk veriyi yükleyecek
 
   useEffect(() => {
     if (serviceParam && serviceBoatMap[serviceParam]) {
@@ -294,20 +245,67 @@ const BoatsPage = () => {
     }
   }, [serviceParam]);
 
-  // Debounced değerler değiştiğinde filtreleri uygula
+  // ✅ PERFORMANCE: Apply filters when debounced values change (no dependency on boat data)
   useEffect(() => {
-    if (allBoats.length > 0) {
-      // Sadece tekneler yüklendikten sonra filtrele
-      applyFilters();
-    }
+    applyFilters(0); // Always start from page 0 when filters change
   }, [
     debouncedSelectedTypes,
     debouncedCapacity,
     debouncedPriceRange,
     debouncedSelectedLocations,
     debouncedSelectedFeatures,
-    applyFilters,
+    sortBy, // React to sorting changes
   ]);
+
+  // ✅ PERFORMANCE: Memoized compare toggle handler
+  const handleCompareToggle = useCallback((id: string) => {
+    setComparedBoats((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((boatId) => boatId !== id);
+      } else if (prev.length < 3) {
+        return [...prev, id];
+      } else {
+        toast({
+          title: t.pages.boats.compare.title,
+          description: "En fazla 3 tekneyi karşılaştırabilirsiniz.",
+          variant: "destructive",
+        });
+        return prev;
+      }
+    });
+  }, [t.pages.boats.compare.title]);
+
+  // ✅ PERFORMANCE: Memoized compare bar handlers
+  const handleRemoveFromCompare = useCallback((id: string) => {
+    setComparedBoats((prev) => prev.filter((boatId) => boatId !== id));
+  }, []);
+
+  const handleClearAllCompare = useCallback(() => {
+    setComparedBoats([]);
+  }, []);
+
+  // ✅ PERFORMANCE: Memoized detail link builder
+  const detailLinkBuilder = useCallback((boat: BoatDTO) => {
+    const params = new URLSearchParams(location.search);
+    const allowed = ["location", "start", "end", "guests", "filter", "type"];
+    const forwardParams = new URLSearchParams();
+    allowed.forEach((key) => {
+      const value = params.get(key);
+      if (value) forwardParams.set(key, value);
+    });
+    const qs = forwardParams.toString();
+    return qs ? `/boats/${boat.id}?${qs}` : `/boats/${boat.id}`;
+  }, [location.search]);
+
+  // ✅ PERFORMANCE: Memoized hasActiveFilters check
+  const hasActiveFilters = useMemo(() => (
+    selectedTypes.length > 0 ||
+    selectedLocations.length > 0 ||
+    selectedFeatures.length > 0 ||
+    capacity !== "" ||
+    priceRange[0] !== 500 ||
+    priceRange[1] !== 30000
+  ), [selectedTypes, selectedLocations, selectedFeatures, capacity, priceRange]);
 
   if (error) {
     return (
@@ -335,7 +333,7 @@ const BoatsPage = () => {
             setSortBy={setSortBy}
             showFilters={showFilters}
             setShowFilters={setShowFilters}
-            totalBoats={filteredBoats.length}
+            totalBoats={totalBoats}
             isHourlyMode={isHourlyMode}
             setIsHourlyMode={setIsHourlyMode}
           />
@@ -357,9 +355,9 @@ const BoatsPage = () => {
               openSections={openSections}
               toggleSection={toggleSection}
               resetFilters={handleFilterReset}
-              applyFilters={applyFilters}
-              allBoats={allBoats}
-              filteredCount={filteredBoats.length}
+              applyFilters={() => applyFilters(0)}
+              allBoats={[]} // Not needed anymore, using paginated data
+              filteredCount={totalBoats}
             />
 
             <div className="flex-1">
@@ -379,49 +377,44 @@ const BoatsPage = () => {
                   isHourlyMode={isHourlyMode}
                   comparedBoats={comparedBoats}
                   loading={loading}
-                  // Detay sayfasına geçerken mevcut arama parametrelerini koru
-                  detailLinkBuilder={(boat) => {
-                    const params = new URLSearchParams(location.search);
-                    // Arama sonuçlarından gelen temel parametreleri taşıyalım
-                    const allowed = ["location", "start", "end", "guests", "filter", "type"]; 
-                    const forwardParams = new URLSearchParams();
-                    allowed.forEach((key) => {
-                      const value = params.get(key);
-                      if (value) forwardParams.set(key, value);
-                    });
-                    const qs = forwardParams.toString();
-                    return qs ? `/boats/${boat.id}?${qs}` : `/boats/${boat.id}`;
-                  }}
-                  onCompareToggle={(id) => {
-                    if (comparedBoats.includes(id)) {
-                      setComparedBoats(
-                        comparedBoats.filter((boatId) => boatId !== id)
-                      );
-                    } else if (comparedBoats.length < 3) {
-                      setComparedBoats([...comparedBoats, id]);
-                    } else {
-                      toast({
-                        title: t.pages.boats.compare.title,
-                        description:
-                          "En fazla 3 tekneyi karşılaştırabilirsiniz.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
+                  detailLinkBuilder={detailLinkBuilder}
+                  onCompareToggle={handleCompareToggle}
                 />
               ) : (
                 <NoResults
                   onReset={handleFilterReset}
                   searchQuery={searchParams.get("search") || ""}
-                  hasActiveFilters={
-                    selectedTypes.length > 0 ||
-                    selectedLocations.length > 0 ||
-                    selectedFeatures.length > 0 ||
-                    capacity !== "" ||
-                    priceRange[0] !== 500 ||
-                    priceRange[1] !== 30000
-                  }
+                  hasActiveFilters={hasActiveFilters}
                 />
+              )}
+
+              {/* ✅ PERFORMANCE: Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center space-x-2">
+                  <button
+                    onClick={() => applyFilters(currentPage - 1)}
+                    disabled={currentPage === 0 || loading}
+                    className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    ← Önceki
+                  </button>
+
+                  <span className="px-4 py-2 bg-gray-100 rounded">
+                    Sayfa {currentPage + 1} / {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => applyFilters(currentPage + 1)}
+                    disabled={!hasNextPage || loading}
+                    className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    Sonraki →
+                  </button>
+
+                  <span className="text-sm text-gray-600 ml-4">
+                    Toplam {totalBoats} tekne
+                  </span>
+                </div>
               )}
             </div>
           </div>
@@ -429,13 +422,9 @@ const BoatsPage = () => {
           {comparedBoats.length > 0 && (
             <CompareBar
               comparedBoats={comparedBoats}
-              boats={allBoats}
-              onRemove={(id) =>
-                setComparedBoats(
-                  comparedBoats.filter((boatId) => boatId !== id)
-                )
-              }
-              onClearAll={() => setComparedBoats([])}
+              boats={filteredBoats}
+              onRemove={handleRemoveFromCompare}
+              onClearAll={handleClearAllCompare}
             />
           )}
         </div>

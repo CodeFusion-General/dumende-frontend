@@ -123,6 +123,35 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   onMonthChange,
   context = "boat",
 }) => {
+  // İç ay state'i: parent month prop vermiyorsa, availability'ye göre ilk uygun ayı seç
+  const [internalMonth, setInternalMonth] = React.useState<Date | undefined>(
+    month
+  );
+
+  React.useEffect(() => {
+    // Dışarıdan month kontrol ediliyorsa, iç state'i senkronize et
+    if (month) {
+      setInternalMonth(month);
+      return;
+    }
+
+    // İlk kez yüklenirken ve availabilityData geldiyse, en erken future availability ayına git
+    if (!internalMonth && availabilityData.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dates = availabilityData
+        .map((item) => new Date(item.date))
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      const future = dates.find((d) => d >= today) ?? dates[0];
+      if (future) {
+        const monthStart = new Date(future);
+        monthStart.setDate(1);
+        setInternalMonth(monthStart);
+      }
+    }
+  }, [month, availabilityData, internalMonth]);
   // Create a map for quick availability lookup
   const availabilityMap = React.useMemo(() => {
     const map = new Map<string, CalendarAvailability>();
@@ -280,8 +309,14 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           mode="single"
           selected={selected}
           onSelect={onSelect}
-          month={month}
-          onMonthChange={onMonthChange}
+          month={month ?? internalMonth}
+          showOutsideDays={false}
+          onMonthChange={(m) => {
+            if (!month) {
+              setInternalMonth(m);
+            }
+            onMonthChange?.(m);
+          }}
           disabled={disabledDates}
           locale={language === "tr" ? tr : undefined}
           className="w-full"

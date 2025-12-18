@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import CaptainLayout from "@/components/admin/layout/CaptainLayout";
 import VesselsList from "@/components/admin/vessels/VesselsList";
 import BoatServicesManager from "@/components/boats/BoatServicesManager";
@@ -55,6 +55,7 @@ import {
   CreateBoatDocumentDTO,
   BoatDocumentType,
 } from "@/types/document.types";
+import { VesselFormData } from "@/types/vessel.types";
 import { documentService } from "@/services/documentService";
 import {
   compressImage,
@@ -63,6 +64,8 @@ import {
   getDefaultImageUrl,
 } from "@/lib/imageUtils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVessels } from "@/hooks/useVessels";
+import { useVesselForm } from "@/hooks/useVesselForm";
 import MapPicker from "@/components/common/MapPicker";
 import {
   Dialog,
@@ -72,129 +75,49 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Form data interface
-interface VesselFormData {
-  // Temel bilgiler
-  type: string;
-  brandModel: string;
-  name: string;
-  buildYear: string;
-  lastMaintenanceYear: string;
-  toiletCount: string;
-  fullCapacity: string;
-  diningCapacity: string;
-  length: string;
-  flag: string;
-  material: string;
-  description: string;
-
-  // Fiyatlandırma
-  dailyPrice: string;
-  hourlyPrice: string;
-
-  // Lokasyon
-  location: string;
-  latitude?: number;
-  longitude?: number;
-  departurePoint: string;
-  returnPoint: string;
-
-  // Şartlar
-  smokingRule: string;
-  petPolicy: string;
-  alcoholPolicy: string;
-  musicPolicy: string;
-  additionalRules: string;
-
-  // Servisler
-  mealService: string;
-  djService: string;
-  waterSports: string;
-  otherServices: string;
-
-  // Açıklamalar
-  shortDescription: string;
-  detailedDescription: string;
-
-  // Organizasyonlar
-  organizationTypes: string[];
-  organizationDetails: string;
-
-  // Dosyalar
-  images: File[];
-  existingImages: BoatImageDTO[];
-  imageIdsToRemove: number[];
-  features: string[];
-
-  // Boat Services
-  boatServices: Array<{
-    name: string;
-    description: string;
-    price: number;
-    serviceType: ServiceType;
-    quantity: number;
-  }>;
-
-  // Documents
-  documents: BoatDocumentDTO[];
-}
-
 const VesselsPage = () => {
-  const { user, isAuthenticated, isBoatOwner, isAdmin } = useAuth();
+  const { user } = useAuth();
+
+  // Custom hooks for state management
+  const {
+    vessels,
+    currentVessel,
+    loading,
+    error,
+    fetchVessels,
+    fetchVesselById,
+    deleteVessel: deleteVesselFromHook,
+    setCurrentVessel,
+    setLoading,
+  } = useVessels();
+
+  const {
+    formData,
+    editingVesselId,
+    hasUnsavedDocumentChanges,
+    newFeature,
+    formTab,
+    setFormData,
+    setEditingVesselId,
+    setHasUnsavedDocumentChanges,
+    setNewFeature,
+    setFormTab,
+    validateForm,
+    validateDocuments,
+    resetForm,
+    populateFormWithVessel,
+    formDataToCreateDTO,
+    formDataToUpdateDTO,
+    handleInputChange,
+    handleSelectChange,
+    handleMultiSelectToggle,
+    handleImageUpload,
+    handleRemoveExistingImage,
+    handleRemoveNewImage,
+  } = useVesselForm();
+
+  // Local UI state
   const [activeTab, setActiveTab] = useState("list");
-  const [editingVesselId, setEditingVesselId] = useState<number | null>(null);
-  const [formTab, setFormTab] = useState("details");
-  const [newFeature, setNewFeature] = useState("");
-  const [hasUnsavedDocumentChanges, setHasUnsavedDocumentChanges] =
-    useState(false);
-
-  // Backend state
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [vessels, setVessels] = useState<BoatDTO[]>([]);
-  const [currentVessel, setCurrentVessel] = useState<BoatDTO | null>(null);
-
-  // Form state
-  const [formData, setFormData] = useState<VesselFormData>({
-    type: "",
-    brandModel: "",
-    name: "",
-    buildYear: "",
-    lastMaintenanceYear: "",
-    toiletCount: "",
-    fullCapacity: "",
-    diningCapacity: "",
-    length: "",
-    flag: "",
-    material: "",
-    description: "",
-    dailyPrice: "",
-    hourlyPrice: "",
-    location: "",
-    latitude: undefined,
-    longitude: undefined,
-    departurePoint: "",
-    returnPoint: "",
-    smokingRule: "",
-    petPolicy: "",
-    alcoholPolicy: "",
-    musicPolicy: "",
-    additionalRules: "",
-    mealService: "",
-    djService: "",
-    waterSports: "",
-    otherServices: "",
-    shortDescription: "",
-    detailedDescription: "",
-    organizationTypes: [],
-    organizationDetails: "",
-    images: [],
-    existingImages: [],
-    imageIdsToRemove: [],
-    features: [],
-    boatServices: [],
-    documents: [],
-  });
 
   // Harita modalı ve geolocation
   const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
@@ -237,400 +160,26 @@ const VesselsPage = () => {
     } else {
       resetForm();
     }
-  }, [editingVesselId, currentVessel]);
+  }, [editingVesselId, currentVessel, populateFormWithVessel, resetForm]);
 
-  // API Calls
-  const fetchVessels = async () => {
-    if (!user?.id) {
-      console.error("User ID bulunamadı:", { user, isAuthenticated });
-      setError("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.");
-      toast({
-        title: "Kimlik Doğrulama Hatası",
-        description:
-          "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isBoatOwner() && !isAdmin()) {
-      setError("Bu sayfaya erişim yetkiniz bulunmamaktadır.");
-      toast({
-        title: "Yetki Hatası",
-        description:
-          "Tekneler sayfasına erişim için kaptan yetkisi gereklidir.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      console.log("Fetching vessels for user ID:", user.id);
-      const ownerId = user.id;
-      const data = await boatService.getVesselsByOwner(ownerId);
-
-      console.log("Vessels fetched successfully:", data.length);
-      setVessels(data);
-    } catch (err) {
-      console.error("Vessels yükleme hatası:", err);
-
-      if (err instanceof Error) {
-        if (err.message.includes("401") || err.message.includes("token")) {
-          setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
-          toast({
-            title: "Oturum Süresi Doldu",
-            description:
-              "Güvenlik için oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.",
-            variant: "destructive",
-          });
-        } else if (err.message.includes("403")) {
-          setError("Bu işlem için yetkiniz bulunmamaktadır.");
-          toast({
-            title: "Yetki Hatası",
-            description:
-              "Bu işlemi gerçekleştirmek için gerekli izniniz bulunmamaktadır.",
-            variant: "destructive",
-          });
-        } else {
-          setError(`Tekneler yüklenirken hata: ${err.message}`);
-          toast({
-            title: "Yükleme Hatası",
-            description:
-              "Tekneler yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        setError("Tekneler yüklenirken bilinmeyen bir hata oluştu.");
-        toast({
-          title: "Hata",
-          description: "Beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyin.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchVesselById = async (id: number) => {
-    try {
-      setLoading(true);
-      const vessel = await boatService.getBoatById(id);
-      setCurrentVessel(vessel);
-    } catch (err) {
-      console.error("Vessel detay yükleme hatası:", err);
-      toast({
-        title: "Hata",
-        description: "Tekne bilgileri yüklenirken bir hata oluştu.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Form helpers
-  const populateFormWithVessel = (vessel: BoatDTO) => {
-    setFormData({
-      type: vessel.type || "",
-      brandModel: vessel.brandModel || "",
-      name: vessel.name || "",
-      buildYear: vessel.buildYear?.toString() || "",
-      lastMaintenanceYear: vessel.year?.toString() || "",
-      toiletCount: "",
-      fullCapacity: vessel.capacity?.toString() || "",
-      diningCapacity: "",
-      length: vessel.length?.toString() || "",
-      flag: "",
-      material: "",
-      description: vessel.description || "",
-      dailyPrice: vessel.dailyPrice?.toString() || "",
-      hourlyPrice: vessel.hourlyPrice?.toString() || "",
-      location: vessel.location || "",
-      latitude: vessel.latitude,
-      longitude: vessel.longitude,
-      departurePoint: "",
-      returnPoint: "",
-      smokingRule: "",
-      petPolicy: "",
-      alcoholPolicy: "",
-      musicPolicy: "",
-      additionalRules: "",
-      mealService: "",
-      djService: "",
-      waterSports: "",
-      otherServices: "",
-      shortDescription: "",
-      detailedDescription: "",
-      organizationTypes: [],
-      organizationDetails: "",
-      images: [],
-      existingImages: vessel.images || [],
-      imageIdsToRemove: [],
-      features: vessel.features?.map((f) => f.featureName) || [],
-      boatServices:
-        vessel.services?.map((s) => ({
-          name: s.name,
-          description: s.description || "",
-          price: s.price,
-          serviceType: s.serviceType,
-          quantity: s.quantity,
-        })) || [],
-      documents: vessel.documents || [],
-    });
-
-    // Reset unsaved changes flag when loading existing vessel
-    setHasUnsavedDocumentChanges(false);
-  };
-
-  const resetForm = () => {
-    setFormData({
-      type: "",
-      brandModel: "",
-      name: "",
-      buildYear: "",
-      lastMaintenanceYear: "",
-      toiletCount: "",
-      fullCapacity: "",
-      diningCapacity: "",
-      length: "",
-      flag: "",
-      material: "",
-      description: "",
-      dailyPrice: "",
-      hourlyPrice: "",
-      location: "",
-      departurePoint: "",
-      returnPoint: "",
-      smokingRule: "",
-      petPolicy: "",
-      alcoholPolicy: "",
-      musicPolicy: "",
-      additionalRules: "",
-      mealService: "",
-      djService: "",
-      waterSports: "",
-      otherServices: "",
-      shortDescription: "",
-      detailedDescription: "",
-      organizationTypes: [],
-      organizationDetails: "",
-      images: [],
-      existingImages: [],
-      imageIdsToRemove: [],
-      features: [],
-      boatServices: [],
-      documents: [],
-    });
-    setHasUnsavedDocumentChanges(false);
-  };
-
-  // Enhanced form validation with document validation
-  const validateForm = (): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-
-    // Basic form validation
-    if (!formData.name.trim()) errors.push("Tekne ismi zorunludur");
-    if (!formData.type) errors.push("Tekne tipi zorunludur");
-    if (!formData.fullCapacity || parseInt(formData.fullCapacity) <= 0)
-      errors.push("Geçerli bir kapasite giriniz");
-    if (!formData.location.trim()) errors.push("Lokasyon zorunludur");
-    if (!formData.dailyPrice || parseFloat(formData.dailyPrice) <= 0)
-      errors.push("Geçerli bir günlük fiyat giriniz");
-
-    // Enhanced document validation
-    const documentValidation = validateDocuments(formData.documents);
-    if (!documentValidation.isValid) {
-      errors.push(...documentValidation.errors);
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  };
-
-  // Document-specific validation function
-  const validateDocuments = (
-    documents: BoatDocumentDTO[]
-  ): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-
-    // Check for expired documents
-    const expiredDocuments = documents.filter((doc) => {
-      if (!doc.expiryDate) return false;
-      return documentService.isDocumentExpired(doc.expiryDate);
-    });
-
-    if (expiredDocuments.length > 0) {
-      errors.push(
-        `${expiredDocuments.length} belgenin süresi dolmuş. Lütfen güncel belgeler yükleyin.`
-      );
-    }
-
-    // Check for documents expiring soon
-    const expiringSoonDocuments = documents.filter((doc) => {
-      if (!doc.expiryDate) return false;
-      return (
-        documentService.isDocumentExpiringSoon(doc.expiryDate) &&
-        !documentService.isDocumentExpired(doc.expiryDate)
-      );
-    });
-
-    if (expiringSoonDocuments.length > 0) {
-      errors.push(
-        `${expiringSoonDocuments.length} belgenin süresi 30 gün içinde dolacak. Yenilemeyi düşünün.`
-      );
-    }
-
-    // Check for unverified documents (warning, not error)
-    const unverifiedDocuments = documents.filter((doc) => !doc.isVerified);
-    if (unverifiedDocuments.length > 0) {
-      // This is a warning, not an error - don't block form submission
-      console.warn(`${unverifiedDocuments.length} belge henüz doğrulanmamış.`);
-    }
-
-    // Check for required document types (basic validation)
-    const requiredDocTypes = [
-      BoatDocumentType.LICENSE,
-      BoatDocumentType.INSURANCE,
-    ];
-    const existingDocTypes = documents.map((doc) => doc.documentType);
-    const missingRequiredDocs = requiredDocTypes.filter(
-      (type) => !existingDocTypes.includes(type)
-    );
-
-    if (missingRequiredDocs.length > 0) {
-      const missingDocNames = missingRequiredDocs.map((type) => {
-        switch (type) {
-          case BoatDocumentType.LICENSE:
-            return "Gemi Ruhsatı";
-          case BoatDocumentType.INSURANCE:
-            return "Sigorta Belgesi";
-          default:
-            return type;
-        }
-      });
-      errors.push(`Zorunlu belgeler eksik: ${missingDocNames.join(", ")}`);
-    }
-
-    // Check for duplicate document types
-    const docTypeCounts = existingDocTypes.reduce((acc, type) => {
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const duplicateTypes = Object.entries(docTypeCounts)
-      .filter(([_, count]) => count > 1)
-      .map(([type, _]) => type);
-
-    if (duplicateTypes.length > 0) {
-      errors.push(
-        `Aynı tipte birden fazla belge yüklenmiş: ${duplicateTypes.join(", ")}`
-      );
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  };
-
-  // Form to DTO conversion
-  const formDataToCreateDTO = async (
-    data: VesselFormData
-  ): Promise<CreateVesselDTO> => {
-    const imagePromises = data.images.map(async (file, index) => {
-      return new Promise<any>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const base64String = reader.result as string;
-          const base64Data = base64String.split(",")[1];
-
-          resolve({
-            imageData: base64Data,
-            isPrimary: index === 0,
-            displayOrder: index + 1,
-          });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    });
-
-    const imagesDTOs = await Promise.all(imagePromises);
-
-    return {
-      name: data.name.trim(),
-      description: data.detailedDescription || data.shortDescription || "",
-      model: data.brandModel,
-      year: parseInt(data.buildYear) || new Date().getFullYear(),
-      length: parseFloat(data.length) || 0,
-      capacity: parseInt(data.fullCapacity) || 0,
-      dailyPrice: parseFloat(data.dailyPrice) || 0,
-      hourlyPrice: parseFloat(data.hourlyPrice) || 0,
-      location: data.location.trim(),
-      latitude: data.latitude,
-      longitude: data.longitude,
-      type: data.type,
-      status: "INACTIVE",
-      brandModel: data.brandModel,
-      buildYear: parseInt(data.buildYear) || new Date().getFullYear(),
-      captainIncluded: false,
-      images: imagesDTOs,
-      features: data.features.map((name) => ({ featureName: name })),
-      services: data.boatServices.map((service) => ({
-        boatId: 0, // Will be set by backend
-        name: service.name,
-        description: service.description,
-        serviceType: service.serviceType,
-        price: service.price,
-        quantity: service.quantity,
-      })),
-    };
-  };
-
-  const formDataToUpdateDTO = (data: VesselFormData): UpdateVesselDTO => {
-    return {
-      id: editingVesselId!,
-      name: data.name,
-      description: data.description,
-      model: data.brandModel,
-      buildYear: parseInt(data.buildYear) || undefined,
-      length: parseFloat(data.length) || undefined,
-      capacity: parseInt(data.fullCapacity) || undefined,
-      dailyPrice: parseFloat(data.dailyPrice) || undefined,
-      hourlyPrice: parseFloat(data.hourlyPrice) || undefined,
-      location: data.location,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      type: data.type,
-      brandModel: data.brandModel,
-      imageIdsToRemove: data.imageIdsToRemove,
-    };
-  };
-
-  const handleAddVessel = () => {
+  // Event handlers (using hooks for state, keeping UI logic here)
+  const handleAddVessel = useCallback(() => {
     setEditingVesselId(null);
     setCurrentVessel(null);
     setActiveTab("form");
     setFormTab("details");
     resetForm();
-  };
+  }, [setEditingVesselId, setCurrentVessel, setFormTab, resetForm]);
 
-  const handleEditVessel = (id: string) => {
+  const handleEditVessel = useCallback((id: string) => {
     const vesselId = parseInt(id);
     setEditingVesselId(vesselId);
     setActiveTab("form");
     setFormTab("details");
     fetchVesselById(vesselId);
-  };
+  }, [setEditingVesselId, setFormTab, fetchVesselById]);
 
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     if (hasUnsavedDocumentChanges) {
       const confirmLeave = confirm(
         "Kaydedilmemiş belge değişiklikleriniz var. Çıkmak istediğinizden emin misiniz?"
@@ -644,30 +193,10 @@ const VesselsPage = () => {
     setEditingVesselId(null);
     setCurrentVessel(null);
     resetForm();
-  };
-
-  const handleRemoveExistingImage = (imageId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      existingImages: prev.existingImages.filter((img) => img.id !== imageId),
-      imageIdsToRemove: [...prev.imageIdsToRemove, imageId],
-    }));
-
-    toast({
-      title: "Fotoğraf Kaldırıldı",
-      description: "Fotoğraf kaydedildiğinde silinecek olarak işaretlendi.",
-    });
-  };
-
-  const handleRemoveNewImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
+  }, [hasUnsavedDocumentChanges, setEditingVesselId, setCurrentVessel, resetForm]);
 
   // Handle document uploads for new boats
-  const handleDocumentUploadsForNewBoat = async (boatId: number) => {
+  const handleDocumentUploadsForNewBoat = useCallback(async (boatId: number) => {
     if (formData.documents.length === 0) return;
 
     try {
@@ -692,95 +221,12 @@ const VesselsPage = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [formData.documents]);
 
-  const handleImageUpload = async (files: FileList) => {
-    if (!files || files.length === 0) return;
-
-    try {
-      setLoading(true);
-
-      const validFiles: File[] = [];
-      const errors: string[] = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const validation = validateImageFile(file);
-
-        if (validation.isValid) {
-          validFiles.push(file);
-        } else {
-          errors.push(`${file.name}: ${validation.error}`);
-        }
-      }
-
-      if (errors.length > 0) {
-        toast({
-          title: "Dosya Hatası",
-          description: errors.join(", "),
-          variant: "destructive",
-        });
-      }
-
-      if (validFiles.length === 0) return;
-
-      const compressedImages: File[] = [];
-
-      for (const file of validFiles) {
-        try {
-          const compressedBase64 = await compressImage(file, {
-            maxWidth: 1200,
-            maxHeight: 800,
-            quality: 0.8,
-            outputFormat: "image/jpeg",
-          });
-
-          const byteCharacters = atob(compressedBase64);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const compressedFile = new File([byteArray], file.name, {
-            type: "image/jpeg",
-          });
-
-          compressedImages.push(compressedFile);
-        } catch (error) {
-          console.error(`${file.name} compress edilemedi:`, error);
-          errors.push(`${file.name} işlenemedi`);
-        }
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...compressedImages],
-      }));
-
-      toast({
-        title: "Başarılı",
-        description: `${compressedImages.length} fotoğraf optimize edildi ve eklendi.`,
-      });
-
-      if (errors.length > 0) {
-        toast({
-          title: "Uyarı",
-          description: `Bazı dosyalar işlenemedi: ${errors.join(", ")}`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Fotoğraf ekleme hatası:", error);
-      toast({
-        title: "Hata",
-        description:
-          "Fotoğraflar eklenemedi. Lütfen daha sonra tekrar deneyin.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Wrapper for handleImageUpload from hook (passes setLoading)
+  const handleImageUploadWithLoading = useCallback(async (files: FileList) => {
+    await handleImageUpload(files, setLoading);
+  }, [handleImageUpload, setLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -834,7 +280,7 @@ const VesselsPage = () => {
       setLoading(true);
 
       if (editingVesselId && currentVessel) {
-        const updateDTO = formDataToUpdateDTO(formData);
+        const updateDTO = formDataToUpdateDTO(formData, editingVesselId);
         await boatService.updateVessel(updateDTO);
 
         try {
@@ -977,72 +423,14 @@ const VesselsPage = () => {
     return dt.files;
   };
 
-  const handleDeleteVessel = async (id: string) => {
+  // Delete vessel handler with additional UI logic
+  const handleDeleteVessel = useCallback(async (id: string) => {
+    await deleteVesselFromHook(id);
     const vesselId = parseInt(id);
-
-    if (!confirm("Bu tekneyi silmek istediğinizden emin misiniz?")) {
-      return;
+    if (editingVesselId === vesselId) {
+      handleBackToList();
     }
-
-    try {
-      setLoading(true);
-      await boatService.deleteVessel(vesselId);
-
-      toast({
-        title: "Başarılı",
-        description: "Tekne silindi.",
-      });
-
-      await fetchVessels();
-
-      if (editingVesselId === vesselId) {
-        handleBackToList();
-      }
-    } catch (error) {
-      console.error("Vessel silme hatası:", error);
-      toast({
-        title: "Hata",
-        description: "Tekne silinemedi. Lütfen daha sonra tekrar deneyin.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange =
-    (field: keyof VesselFormData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-    };
-
-  const handleSelectChange =
-    (field: keyof VesselFormData) => (value: string) => {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    };
-
-  const handleMultiSelectToggle = (
-    field: keyof VesselFormData,
-    value: string
-  ) => {
-    setFormData((prev) => {
-      const currentArray = prev[field] as string[];
-      const newArray = currentArray.includes(value)
-        ? currentArray.filter((item) => item !== value)
-        : [...currentArray, value];
-
-      return {
-        ...prev,
-        [field]: newArray,
-      };
-    });
-  };
+  }, [deleteVesselFromHook, editingVesselId, handleBackToList]);
 
   return (
     <CaptainLayout>
@@ -1991,7 +1379,7 @@ const VesselsPage = () => {
                               onDrop={(e) => {
                                 e.preventDefault();
                                 if (e.dataTransfer?.files?.length) {
-                                  handleImageUpload(e.dataTransfer.files);
+                                  handleImageUploadWithLoading(e.dataTransfer.files);
                                 }
                               }}
                             >
@@ -2013,7 +1401,7 @@ const VesselsPage = () => {
                                 className="hidden"
                                 onChange={(e) => {
                                   if (e.target.files) {
-                                    handleImageUpload(e.target.files);
+                                    handleImageUploadWithLoading(e.target.files!);
                                   }
                                 }}
                               />

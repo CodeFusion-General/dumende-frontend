@@ -143,37 +143,44 @@ async function handleRequest(request) {
 async function handleApiRequest(request) {
   const cache = await caches.open(API_CACHE);
 
+  // Only apply caching for GET JSON requests
+  if (request.method !== "GET") {
+    return fetch(request);
+  }
+
+  const cachedResponse = await cache.match(request);
+
+  // Kick off network request in background (SWR)
+  const networkPromise = fetch(request)
+    .then(async (networkResponse) => {
+      if (networkResponse && networkResponse.ok) {
+        await cache.put(request, networkResponse.clone());
+        await addCacheTimestamp(request.url, API_CACHE);
+      }
+      return networkResponse;
+    })
+    .catch(() => null);
+
+  // If we have a fresh cached response, return it immediately
+  if (
+    cachedResponse &&
+    (await isCacheValid(request.url, API_CACHE, CACHE_DURATIONS.API_RESPONSES))
+  ) {
+    // Update cache in background
+    networkPromise.catch(() => {});
+    return cachedResponse;
+  }
+
   try {
-    // Try network first
-    const networkResponse = await fetch(request);
-
-    if (networkResponse.ok) {
-      // Cache successful responses
-      const responseClone = networkResponse.clone();
-      await cache.put(request, responseClone);
-
-      // Add cache timestamp for expiration
-      await addCacheTimestamp(request.url, API_CACHE);
-    }
-
-    return networkResponse;
+    // No (valid) cache: wait for network
+    const networkResponse = await networkPromise;
+    if (networkResponse) return networkResponse;
+    // As a fallback, return stale cache if any
+    if (cachedResponse) return cachedResponse;
+    throw new Error("Network failed and no cache available");
   } catch (error) {
-    // Network failed, try cache
-    console.log("[SW] Network failed for API, trying cache:", request.url);
-    const cachedResponse = await cache.match(request);
-
-    if (
-      cachedResponse &&
-      (await isCacheValid(
-        request.url,
-        API_CACHE,
-        CACHE_DURATIONS.API_RESPONSES
-      ))
-    ) {
-      return cachedResponse;
-    }
-
-    throw error;
+    // Final fallback
+    return new Response("Offline", { status: 503 });
   }
 }
 

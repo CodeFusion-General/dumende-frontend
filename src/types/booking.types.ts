@@ -35,6 +35,17 @@ export interface BookingDTO {
   services: BookingServiceDTO[]; // YENİ: Seçilen hizmetler
   createdAt: string;
   updatedAt: string;
+
+  // Payment-related fields (Backend commit 727f2f6 + 588022f)
+  paymentUrl?: string; // PayTR payment URL for frontend redirect
+  paymentRequired?: boolean; // Whether payment is required
+  isDepositPayment?: boolean; // Whether this uses deposit payment
+  depositPercentage?: number; // Deposit percentage (e.g., 20 for 20%)
+  depositAmount?: number; // Calculated deposit amount
+  paymentStatus?: string; // Current payment status
+  paymentVerificationCount?: number; // Payment verification attempts
+  lastVerificationAttempt?: string; // Last verification timestamp
+  cancellationReason?: string; // Cancellation reason if cancelled
 }
 
 export interface CreateBookingDTO {
@@ -101,7 +112,9 @@ export interface UpdatePaymentDTO {
 
 // Enum Types
 export enum BookingStatus {
+  RESERVED = "RESERVED", // ✅ YENİ: Temporary hold (payment pending, 15min TTL) - Backend commit 0499578
   PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
   CONFIRMED = "CONFIRMED",
   CANCELLED = "CANCELLED",
   COMPLETED = "COMPLETED",
@@ -111,9 +124,14 @@ export enum BookingStatus {
 
 export enum PaymentStatus {
   PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
+  TIMEOUT = "TIMEOUT",
   REFUNDED = "REFUNDED",
+  PARTIAL_REFUND = "PARTIAL_REFUND",
 }
 
 // Geriye uyumluluk için eski interface'lerin alias'ları

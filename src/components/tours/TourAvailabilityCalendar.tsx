@@ -26,10 +26,33 @@ const TourAvailabilityCalendar: React.FC<TourAvailabilityCalendarProps> = ({
   month: controlledMonth,
   onMonthChange: onMonthChangeProp,
 }) => {
-  const [serviceAvailability, setServiceAvailability] = useState<CalendarAvailability[] | null>(null);
-  const [internalMonth, setInternalMonth] = useState<Date>(selected || new Date());
+  const [serviceAvailability, setServiceAvailability] =
+    useState<CalendarAvailability[] | null>(null);
+  const [internalMonth, setInternalMonth] = useState<Date>(
+    selected || new Date()
+  );
 
   const effectiveMonth = controlledMonth || internalMonth;
+
+  // İlk yüklemede, seçili tarih yoksa ve dışarıdan month kontrol edilmiyorsa,
+  // tur tarihleri içindeki en yakın gelecekteki tarihin ayına hizala.
+  useEffect(() => {
+    if (controlledMonth || selected) return;
+    if (!tourDates || tourDates.length === 0) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dateObjs = tourDates
+      .map((d) => new Date(d.startDate))
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    const future = dateObjs.find((d) => d >= today) ?? dateObjs[0];
+    if (future) {
+      const targetMonth = startOfMonth(future);
+      setInternalMonth(targetMonth);
+    }
+  }, [tourDates, controlledMonth, selected]);
 
   useEffect(() => {
     const m = effectiveMonth || selected || new Date();

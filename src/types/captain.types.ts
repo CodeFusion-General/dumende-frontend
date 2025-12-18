@@ -1,13 +1,42 @@
+// ✅ BACKEND UYUMLU: Captain - Backend CaptainDTO.java ile tam uyumlu
 export interface Captain {
     id: number;
-    name: string;
-    experience: number;
-    bio: string;
-    photo: string;
-    rating: number;
-    available: boolean;
-    certifications: string[];
-    languages: string[];
+
+    // ✅ EKLE: Backend'deki name fields
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    name?: string; // Geriye uyumluluk için (deprecated, fullName kullan)
+
+    // ✅ EKLE: Contact information
+    email?: string;
+    phoneNumber?: string;
+
+    // Profile information
+    bio?: string;
+
+    // ✅ GÜNCELLE: photo → profileImageUrl (Backend field ismi)
+    profileImageUrl?: string;
+    photo?: string; // Geriye uyumluluk için (deprecated, profileImageUrl kullan)
+
+    // ✅ EKLE: Captain status and licensing
+    status?: string;
+    licenseNumber?: string;
+    licenseExpiryDate?: string; // LocalDate -> ISO 8601
+
+    // ✅ EKLE: Online presence (messaging için)
+    isOnline?: boolean;
+    lastSeen?: string; // LocalDateTime -> ISO 8601
+    responseRate?: number; // 0-100 arası yüzde
+    averageResponseTime?: string; // Örn: "~1 saat"
+
+    // Existing fields
+    experience?: number; // yearsOfExperience ile aynı anlama gelebilir
+    rating?: number;
+    available?: boolean; // isOnline ile overlap olabilir
+    certifications?: string[]; // ProfessionalInfoDto'da daha detaylı
+    languages?: string[];
+
     createdAt: string;
     updatedAt: string;
 }

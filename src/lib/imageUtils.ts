@@ -176,3 +176,161 @@ export const getFullImageUrl = (imageUrl: string): string => {
   // Diğer durumlarda /api/uploads/ prefix'i ekle
   return `${baseUrl}/api/uploads/${imageUrl}`;
 };
+
+// ✅ YENİ: CloudFlare variant URL priority selector
+// Selects the best available image URL from variant URLs with fallback
+export const getImageUrlPriority = (
+  image: {
+    publicUrl?: string;
+    largeUrl?: string;
+    mediumUrl?: string;
+    smallUrl?: string;
+    thumbnailUrl?: string;
+    imageUrl?: string; // Deprecated fallback
+  }
+): string => {
+  return (
+    image.publicUrl ||
+    image.largeUrl ||
+    image.mediumUrl ||
+    image.smallUrl ||
+    image.thumbnailUrl ||
+    image.imageUrl ||
+    getDefaultImageUrl()
+  );
+};
+
+// ✅ YENİ: Responsive image URL selector based on screen size
+export const getResponsiveImageUrl = (
+  image: {
+    publicUrl?: string;
+    largeUrl?: string;
+    mediumUrl?: string;
+    smallUrl?: string;
+    thumbnailUrl?: string;
+    imageUrl?: string; // Deprecated fallback
+  },
+  screenSize: 'mobile' | 'tablet' | 'desktop' | 'thumbnail' = 'desktop'
+): string => {
+  switch (screenSize) {
+    case 'thumbnail':
+      // For list views, small thumbnails
+      return (
+        image.thumbnailUrl ||
+        image.smallUrl ||
+        image.imageUrl ||
+        getDefaultImageUrl()
+      );
+    case 'mobile':
+      // For mobile detail pages (400x300)
+      return (
+        image.smallUrl ||
+        image.thumbnailUrl ||
+        image.mediumUrl ||
+        image.imageUrl ||
+        getDefaultImageUrl()
+      );
+    case 'tablet':
+      // For tablet/medium screens (800x600)
+      return (
+        image.mediumUrl ||
+        image.smallUrl ||
+        image.largeUrl ||
+        image.imageUrl ||
+        getDefaultImageUrl()
+      );
+    case 'desktop':
+      // For desktop/large screens (1600x1200)
+      return (
+        image.largeUrl ||
+        image.mediumUrl ||
+        image.publicUrl ||
+        image.imageUrl ||
+        getDefaultImageUrl()
+      );
+    default:
+      return getImageUrlPriority(image);
+  }
+};
+
+// ✅ YENİ: Get srcset for CloudFlare variants (for responsive images)
+export const getCloudFlareImageSrcSet = (image: {
+  thumbnailUrl?: string;
+  smallUrl?: string;
+  mediumUrl?: string;
+  largeUrl?: string;
+  publicUrl?: string;
+}): string => {
+  const srcSet: string[] = [];
+
+  if (image.thumbnailUrl) srcSet.push(`${image.thumbnailUrl} 200w`);
+  if (image.smallUrl) srcSet.push(`${image.smallUrl} 400w`);
+  if (image.mediumUrl) srcSet.push(`${image.mediumUrl} 800w`);
+  if (image.largeUrl) srcSet.push(`${image.largeUrl} 1600w`);
+  if (image.publicUrl) srcSet.push(`${image.publicUrl} 2000w`);
+
+  return srcSet.join(', ');
+};
+
+// ✅ OPTIMIZATION: Image preloading utility
+export const preloadImage = (url: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
+// ✅ OPTIMIZATION: Preload multiple images
+export const preloadImages = (urls: string[]): Promise<void[]> => {
+  return Promise.all(urls.map(url => preloadImage(url).catch(() => {})));
+};
+
+// ✅ OPTIMIZATION: Get responsive image srcset
+export const getResponsiveImageSrcSet = (baseUrl: string): string => {
+  // Generate responsive image sizes (if backend supports it)
+  // For now, we'll return the base URL with different quality parameters
+  return `${baseUrl}?w=400 400w, ${baseUrl}?w=800 800w, ${baseUrl}?w=1200 1200w`;
+};
+
+// ✅ OPTIMIZATION: Image lazy loading with Intersection Observer
+export const createImageObserver = (
+  callback: (entry: IntersectionObserverEntry) => void,
+  options?: IntersectionObserverInit
+): IntersectionObserver | null => {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+    return null;
+  }
+
+  return new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        callback(entry);
+      }
+    });
+  }, {
+    rootMargin: '50px', // Start loading 50px before the image enters viewport
+    threshold: 0.01,
+    ...options,
+  });
+};
+
+// ✅ OPTIMIZATION: Image dimension calculator for responsive layouts
+export const calculateImageDimensions = (
+  originalWidth: number,
+  originalHeight: number,
+  maxWidth: number,
+  maxHeight: number
+): { width: number; height: number } => {
+  const ratio = Math.min(maxWidth / originalWidth, maxHeight / originalHeight);
+
+  if (ratio >= 1) {
+    return { width: originalWidth, height: originalHeight };
+  }
+
+  return {
+    width: Math.round(originalWidth * ratio),
+    height: Math.round(originalHeight * ratio),
+  };
+};

@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Star,
   ChevronDown,
@@ -288,9 +294,7 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Yorumlar</h2>
         </div>
-        <ReviewsError
-          onRetry={handleRetry}
-        />
+        <ReviewsError onRetry={handleRetry} />
       </div>
     );
   }
@@ -348,7 +352,10 @@ const Reviews: React.FC<ReviewsProps> = ({ boatId }) => {
       ) : (
         <>
           {/* Individual Review Cards */}
-          <div ref={reviewsRef} className="space-y-4 sm:space-y-6">
+          <div
+            ref={reviewsRef}
+            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6"
+          >
             {displayedReviews.map((review, index) => (
               <VisualFeedback
                 key={review.id ?? index}

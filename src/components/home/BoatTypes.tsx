@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { boatService, TypeStatistic } from "@/services/boatService";
@@ -6,45 +7,41 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 
 const BoatTypes = () => {
-  const [boatTypes, setBoatTypes] = useState<TypeStatistic[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const navigate = useNavigate();
   const { language } = useLanguage();
   const t = translations[language];
 
-  useEffect(() => {
-    fetchBoatTypes();
-  }, []);
+  const {
+    data: typeStats,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["boat-type-statistics"],
+    queryFn: () => boatService.getTypeStatistics(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+  });
 
-  const fetchBoatTypes = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const typeStats = await boatService.getTypeStatistics();
-
-      // Tip istatistiklerini tekne sayısına göre sırala
-      const sortedTypes = typeStats.sort((a, b) => b.boatCount - a.boatCount);
-
-      setBoatTypes(sortedTypes);
-    } catch (error) {
-      console.error("BoatTypes istatistik hatası:", error);
-      setError(t.errors.somethingWentWrong);
-
-      // Error occurred - no fallback data used
-    } finally {
-      setLoading(false);
+  const boatTypes: TypeStatistic[] = useMemo(() => {
+    if (!typeStats || typeStats.length === 0) {
+      return [];
     }
-  };
+    // Tip istatistiklerini tekne sayısına göre sırala
+    return [...typeStats].sort((a, b) => b.boatCount - a.boatCount);
+  }, [typeStats]);
 
   const formatPrice = (price: number) => {
     return `₺${price.toLocaleString("tr-TR")}`;
   };
 
   const getTypeDisplayName = (type: string): string => {
-    return t.home.boatTypes.types[type as keyof typeof t.home.boatTypes.types] || type;
+    return (
+      t.home.boatTypes.types[type as keyof typeof t.home.boatTypes.types] ||
+      type
+    );
   };
 
   const getTypeIcon = (type: string): string => {
@@ -72,7 +69,6 @@ const BoatTypes = () => {
 
   // Tip filtreli tekne listesine yönlendirme
   const handleViewBoatsByType = (type: string) => {
-
     // URL parametreleri ile tip filtrelemesi
     const params = new URLSearchParams({
       type: type,
@@ -90,21 +86,18 @@ const BoatTypes = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               {t.home.boatTypes.title}
             </h2>
-            <p className="text-gray-600">
-              {t.home.boatTypes.subtitle}
-            </p>
+            <p className="text-gray-600">{t.home.boatTypes.subtitle}</p>
           </div>
         </div>
 
         {/* Error State */}
-        {error && (
+        {isError && (
           <div className="text-center py-12">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-              <p className="text-red-600 mb-4">{error}</p>
-              <button
-                onClick={fetchBoatTypes}
-                className="btn-primary"
-              >
+              <p className="text-red-600 mb-4">
+                {error?.message || t.errors.somethingWentWrong}
+              </p>
+              <button onClick={() => refetch()} className="btn-primary">
                 {t.common.tryAgain}
               </button>
             </div>
@@ -144,7 +137,9 @@ const BoatTypes = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className={`text-4xl p-2 rounded-full text-white ${getTypeColor(index)}`}
+                    className={`text-4xl p-2 rounded-full text-white ${getTypeColor(
+                      index
+                    )}`}
                   >
                     {getTypeIcon(type.type)}
                   </div>
@@ -160,18 +155,21 @@ const BoatTypes = () => {
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center justify-between">
                     <span>{t.home.boatTypes.availableBoats}</span>
-                                         <span className="font-medium">
-                       {type.boatCount} {t.home.boatTypes.boats}
-                     </span>
+                    <span className="font-medium">
+                      {type.boatCount} {t.home.boatTypes.boats}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t.home.boatTypes.averagePrice}</span>
-                    <span className="font-medium">{formatPrice(type.averagePrice)}</span>
+                    <span className="font-medium">
+                      {formatPrice(type.averagePrice)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>{t.home.boatTypes.priceRange}</span>
                     <span className="font-medium">
-                      {formatPrice(type.minPrice)} - {formatPrice(type.maxPrice)}
+                      {formatPrice(type.minPrice)} -{" "}
+                      {formatPrice(type.maxPrice)}
                     </span>
                   </div>
                 </div>
@@ -211,4 +209,3 @@ const BoatTypes = () => {
 };
 
 export default BoatTypes;
-

@@ -241,7 +241,7 @@ const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
                   />
                   {CATEGORY_NAMES[category]}
                 </h3>
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {groupedFeatures[category].map((feature) => {
                     const config = FEATURE_CONFIG[feature.featureName] || {
                       name: feature.featureName
@@ -291,7 +291,7 @@ const BoatFeatures: React.FC<BoatFeaturesProps> = ({ features }) => {
         </div>
       ) : (
         /* Show all features in a single grid if only one category or mixed */
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {allFeatures.map((feature, index) => (
             <VisualFeedback
               key={feature.id}

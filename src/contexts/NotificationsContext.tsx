@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { notificationService } from '@/services/notificationsService';
 
 interface NotificationsContextType {
@@ -25,28 +25,27 @@ interface NotificationsProviderProps {
 export function NotificationsProvider({ children, userId }: NotificationsProviderProps) {
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
-  const refreshUnreadCount = async () => {
+  const refreshUnreadCount = useCallback(async () => {
     try {
-    // console.debug('NotificationsContext: Fetching unread count for userId:', userId);
       const count = await notificationService.fetchUnreadCount(userId);
-    // console.debug('NotificationsContext: Received unread count:', count);
       setUnreadCount(count);
     } catch (error) {
-    // console.error('NotificationsContext: Failed to fetch unread count:', error);
+      // Silently fail - notification count is not critical
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
     if (userId) {
       refreshUnreadCount();
     }
-  }, [userId]);
+  }, [userId, refreshUnreadCount]);
 
-  const value = {
+  // Memoize value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     unreadCount,
     setUnreadCount,
     refreshUnreadCount,
-  };
+  }), [unreadCount, refreshUnreadCount]);
 
   return (
     <NotificationsContext.Provider value={value}>
