@@ -6,6 +6,89 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+// Store original timer functions before mocking
+const originalSetInterval = globalThis.setInterval;
+const originalClearInterval = globalThis.clearInterval;
+const originalSetTimeout = globalThis.setTimeout;
+const originalClearTimeout = globalThis.clearTimeout;
+
+// Mock window.setInterval and window.clearInterval
+window.setInterval = vi.fn((callback: TimerHandler, ms?: number) => {
+  return originalSetInterval(callback, ms) as unknown as number;
+}) as typeof window.setInterval;
+
+window.clearInterval = vi.fn((id?: number) => {
+  originalClearInterval(id);
+}) as typeof window.clearInterval;
+
+// Mock window.setTimeout and window.clearTimeout
+window.setTimeout = vi.fn((callback: TimerHandler, ms?: number) => {
+  return originalSetTimeout(callback, ms) as unknown as number;
+}) as typeof window.setTimeout;
+
+window.clearTimeout = vi.fn((id?: number) => {
+  originalClearTimeout(id);
+}) as typeof window.clearTimeout;
+
+// Mock navigator.userAgent
+Object.defineProperty(navigator, "userAgent", {
+  writable: true,
+  configurable: true,
+  value:
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+});
+
+// Mock navigator.connection
+Object.defineProperty(navigator, "connection", {
+  writable: true,
+  configurable: true,
+  value: {
+    effectiveType: "4g",
+    downlink: 10,
+    rtt: 50,
+    saveData: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  },
+});
+
+// Mock window.location
+Object.defineProperty(window, "location", {
+  writable: true,
+  configurable: true,
+  value: {
+    href: "http://localhost:3000",
+    origin: "http://localhost:3000",
+    protocol: "http:",
+    host: "localhost:3000",
+    hostname: "localhost",
+    port: "3000",
+    pathname: "/",
+    search: "",
+    hash: "",
+    assign: vi.fn(),
+    replace: vi.fn(),
+    reload: vi.fn(),
+  },
+});
+
+// Mock PerformanceObserver
+global.PerformanceObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  disconnect: vi.fn(),
+  takeRecords: vi.fn().mockReturnValue([]),
+}));
+
+// Mock performance.getEntriesByType
+if (typeof performance !== "undefined") {
+  performance.getEntriesByType = vi.fn().mockReturnValue([]);
+  performance.getEntriesByName = vi.fn().mockReturnValue([]);
+  performance.mark = vi.fn();
+  performance.measure = vi.fn();
+  performance.clearMarks = vi.fn();
+  performance.clearMeasures = vi.fn();
+}
+
 // Mock window.matchMedia for tests
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -61,10 +144,58 @@ Object.defineProperty(window, "CSS", {
   },
 });
 
-// Mock HTMLCanvasElement.getContext
-HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+// Mock HTMLCanvasElement.getContext with proper WebGL context
+const mockWebGLContext = {
   getParameter: vi.fn().mockReturnValue("WebGL 1.0"),
-});
+  getExtension: vi.fn().mockReturnValue(null),
+  createShader: vi.fn(),
+  shaderSource: vi.fn(),
+  compileShader: vi.fn(),
+  createProgram: vi.fn(),
+  attachShader: vi.fn(),
+  linkProgram: vi.fn(),
+  useProgram: vi.fn(),
+  canvas: null,
+};
+
+const mock2DContext = {
+  fillRect: vi.fn(),
+  clearRect: vi.fn(),
+  getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
+  putImageData: vi.fn(),
+  createImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(4) }),
+  setTransform: vi.fn(),
+  drawImage: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  scale: vi.fn(),
+  rotate: vi.fn(),
+  translate: vi.fn(),
+  transform: vi.fn(),
+  arc: vi.fn(),
+  beginPath: vi.fn(),
+  closePath: vi.fn(),
+  fill: vi.fn(),
+  stroke: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  rect: vi.fn(),
+  clip: vi.fn(),
+  measureText: vi.fn().mockReturnValue({ width: 0 }),
+  fillText: vi.fn(),
+  strokeText: vi.fn(),
+  canvas: null,
+};
+
+HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextType: string) => {
+  if (contextType === "webgl" || contextType === "experimental-webgl") {
+    return mockWebGLContext;
+  }
+  if (contextType === "2d") {
+    return mock2DContext;
+  }
+  return null;
+}) as typeof HTMLCanvasElement.prototype.getContext;
 
 // Mock HTMLCanvasElement.toDataURL (for WebP support check)
 HTMLCanvasElement.prototype.toDataURL = vi.fn().mockImplementation((type) => {
