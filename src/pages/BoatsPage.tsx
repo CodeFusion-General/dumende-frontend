@@ -98,12 +98,12 @@ const BoatsPage = () => {
   const searchParams = new URLSearchParams(location.search);
   const serviceParam = searchParams.get("service");
 
-  const toggleSection = (section: string) => {
-    setOpenSections({
-      ...openSections,
-      [section]: !openSections[section],
-    });
-  };
+  const toggleSection = useCallback((section: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  }, []);
 
   // ✅ PERFORMANCE: Filtre modelini ve sıralamayı memoize et
   const advancedReq = useMemo(() => {
@@ -207,12 +207,8 @@ const BoatsPage = () => {
     }
   }, [serviceParam, navigate]);
 
-  useEffect(() => {
-    parseUrlFilters();
-  }, [location.search]);
-
   // URL parametrelerini parsing eden fonksiyon
-  const parseUrlFilters = () => {
+  const parseUrlFilters = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const locationFilter = searchParams.get("location");
     const typeFilter = searchParams.get("type");
@@ -235,7 +231,11 @@ const BoatsPage = () => {
     if (start) setStartDate(start);
     if (end) setEndDate(end);
     if (guests) setCapacity(guests);
-  };
+  }, [location.search]);
+
+  useEffect(() => {
+    parseUrlFilters();
+  }, [parseUrlFilters]);
 
   // fetchInitialBoats kaldırıldı; React Query ilk veriyi yükleyecek
 
@@ -256,6 +256,56 @@ const BoatsPage = () => {
     debouncedSelectedFeatures,
     sortBy, // React to sorting changes
   ]);
+
+  // ✅ PERFORMANCE: Memoized compare toggle handler
+  const handleCompareToggle = useCallback((id: string) => {
+    setComparedBoats((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((boatId) => boatId !== id);
+      } else if (prev.length < 3) {
+        return [...prev, id];
+      } else {
+        toast({
+          title: t.pages.boats.compare.title,
+          description: "En fazla 3 tekneyi karşılaştırabilirsiniz.",
+          variant: "destructive",
+        });
+        return prev;
+      }
+    });
+  }, [t.pages.boats.compare.title]);
+
+  // ✅ PERFORMANCE: Memoized compare bar handlers
+  const handleRemoveFromCompare = useCallback((id: string) => {
+    setComparedBoats((prev) => prev.filter((boatId) => boatId !== id));
+  }, []);
+
+  const handleClearAllCompare = useCallback(() => {
+    setComparedBoats([]);
+  }, []);
+
+  // ✅ PERFORMANCE: Memoized detail link builder
+  const detailLinkBuilder = useCallback((boat: BoatDTO) => {
+    const params = new URLSearchParams(location.search);
+    const allowed = ["location", "start", "end", "guests", "filter", "type"];
+    const forwardParams = new URLSearchParams();
+    allowed.forEach((key) => {
+      const value = params.get(key);
+      if (value) forwardParams.set(key, value);
+    });
+    const qs = forwardParams.toString();
+    return qs ? `/boats/${boat.id}?${qs}` : `/boats/${boat.id}`;
+  }, [location.search]);
+
+  // ✅ PERFORMANCE: Memoized hasActiveFilters check
+  const hasActiveFilters = useMemo(() => (
+    selectedTypes.length > 0 ||
+    selectedLocations.length > 0 ||
+    selectedFeatures.length > 0 ||
+    capacity !== "" ||
+    priceRange[0] !== 500 ||
+    priceRange[1] !== 30000
+  ), [selectedTypes, selectedLocations, selectedFeatures, capacity, priceRange]);
 
   if (error) {
     return (
@@ -327,55 +377,14 @@ const BoatsPage = () => {
                   isHourlyMode={isHourlyMode}
                   comparedBoats={comparedBoats}
                   loading={loading}
-                  // Detay sayfasına geçerken mevcut arama parametrelerini koru
-                  detailLinkBuilder={(boat) => {
-                    const params = new URLSearchParams(location.search);
-                    // Arama sonuçlarından gelen temel parametreleri taşıyalım
-                    const allowed = [
-                      "location",
-                      "start",
-                      "end",
-                      "guests",
-                      "filter",
-                      "type",
-                    ];
-                    const forwardParams = new URLSearchParams();
-                    allowed.forEach((key) => {
-                      const value = params.get(key);
-                      if (value) forwardParams.set(key, value);
-                    });
-                    const qs = forwardParams.toString();
-                    return qs ? `/boats/${boat.id}?${qs}` : `/boats/${boat.id}`;
-                  }}
-                  onCompareToggle={(id) => {
-                    if (comparedBoats.includes(id)) {
-                      setComparedBoats(
-                        comparedBoats.filter((boatId) => boatId !== id)
-                      );
-                    } else if (comparedBoats.length < 3) {
-                      setComparedBoats([...comparedBoats, id]);
-                    } else {
-                      toast({
-                        title: t.pages.boats.compare.title,
-                        description:
-                          "En fazla 3 tekneyi karşılaştırabilirsiniz.",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
+                  detailLinkBuilder={detailLinkBuilder}
+                  onCompareToggle={handleCompareToggle}
                 />
               ) : (
                 <NoResults
                   onReset={handleFilterReset}
                   searchQuery={searchParams.get("search") || ""}
-                  hasActiveFilters={
-                    selectedTypes.length > 0 ||
-                    selectedLocations.length > 0 ||
-                    selectedFeatures.length > 0 ||
-                    capacity !== "" ||
-                    priceRange[0] !== 500 ||
-                    priceRange[1] !== 30000
-                  }
+                  hasActiveFilters={hasActiveFilters}
                 />
               )}
 
@@ -413,13 +422,9 @@ const BoatsPage = () => {
           {comparedBoats.length > 0 && (
             <CompareBar
               comparedBoats={comparedBoats}
-              boats={filteredBoats} // Use filtered boats instead of allBoats
-              onRemove={(id) =>
-                setComparedBoats(
-                  comparedBoats.filter((boatId) => boatId !== id)
-                )
-              }
-              onClearAll={() => setComparedBoats([])}
+              boats={filteredBoats}
+              onRemove={handleRemoveFromCompare}
+              onClearAll={handleClearAllCompare}
             />
           )}
         </div>

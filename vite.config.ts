@@ -30,14 +30,32 @@ export default defineConfig(({ mode }) => ({
           
           // Let React ecosystem go to vendor chunk naturally - don't separate it
 
-          // Admin/Dashboard - lazy loaded (heavy components)
+          // VesselsPage - very large component (2400+ lines), separate chunk
+          if (id.includes("VesselsPage")) {
+            return "admin-vessels";
+          }
+
+          // Messages - separate chunk for real-time features
+          if (id.includes("MessagesPage") || id.includes("src/components/admin/messages")) {
+            return "admin-messages";
+          }
+
+          // Ratings/Finance - contains charts
+          if (
+            id.includes("RatingsPage") ||
+            id.includes("FinancePage") ||
+            id.includes("src/components/admin/ratings")
+          ) {
+            return "admin-analytics";
+          }
+
+          // Admin Dashboard and other admin pages
           if (
             id.includes("src/pages/admin/") ||
             id.includes("src/components/admin/") ||
-            id.includes("VesselsPage") ||
             id.includes("Dashboard")
           ) {
-            return "admin-heavy";
+            return "admin-core";
           }
 
           // Authentication pages - separate chunk
@@ -112,7 +130,7 @@ export default defineConfig(({ mode }) => ({
           if (name?.includes("critical")) {
             return "assets/js/critical/[name]-[hash].js";
           }
-          if (name?.includes("heavy")) {
+          if (name?.includes("heavy") || name?.includes("admin-")) {
             return "assets/js/heavy/[name]-[hash].js";
           }
           return "assets/js/[name]-[hash].js";

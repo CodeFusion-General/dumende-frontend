@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import CaptainLayout from "@/components/admin/layout/CaptainLayout";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -63,52 +63,54 @@ const ToursPage = () => {
     }
   };
 
-  const handleAddTour = () => {
+  const handleAddTour = useCallback(() => {
     navigate("/captain/tours/new");
-  };
+  }, [navigate]);
 
-  // Filter tours based on search query and filters
-  const filteredTours = tours.filter((tour) => {
-    const matchesSearch =
-      tour.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tour.location.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter tours based on search query and filters - memoized to prevent recalculation on every render
+  const filteredTours = useMemo(() => {
+    return tours.filter((tour) => {
+      const matchesSearch =
+        tour.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tour.location.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesLocation =
-      locationFilter === "all" || tour.location.includes(locationFilter);
+      const matchesLocation =
+        locationFilter === "all" || tour.location.includes(locationFilter);
 
-    // Duration hesaplama: ilk tur tarihinin durationText'inden saat/gün çıkarımı
-    const firstDate = tour.tourDates?.[0];
-    const duration = firstDate
-      ? (() => {
-          if (firstDate.durationMinutes && firstDate.durationMinutes > 0) {
-            return Math.round(firstDate.durationMinutes / 60);
-          }
-          const text = (firstDate.durationText || "").toLowerCase();
-          const num = parseInt(text.replace(/\D/g, "")) || 0;
-          if (text.includes("gün")) return num * 24; // saat cinsinden
-          if (text.includes("saat")) return num;
-          return 0;
-        })()
-      : 0;
+      // Duration hesaplama: ilk tur tarihinin durationText'inden saat/gün çıkarımı
+      const firstDate = tour.tourDates?.[0];
+      const duration = firstDate
+        ? (() => {
+            if (firstDate.durationMinutes && firstDate.durationMinutes > 0) {
+              return Math.round(firstDate.durationMinutes / 60);
+            }
+            const text = (firstDate.durationText || "").toLowerCase();
+            const num = parseInt(text.replace(/\D/g, "")) || 0;
+            if (text.includes("gün")) return num * 24; // saat cinsinden
+            if (text.includes("saat")) return num;
+            return 0;
+          })()
+        : 0;
 
-    const matchesDuration =
-      durationFilter === "all" ||
-      (durationFilter === "1-2" && duration <= 2) ||
-      (durationFilter === "3-5" && duration >= 3 && duration <= 5) ||
-      (durationFilter === "6+" && duration >= 6);
+      const matchesDuration =
+        durationFilter === "all" ||
+        (durationFilter === "1-2" && duration <= 2) ||
+        (durationFilter === "3-5" && duration >= 3 && duration <= 5) ||
+        (durationFilter === "6+" && duration >= 6);
 
-    const matchesPrice =
-      priceFilter === "all" ||
-      (priceFilter === "0-1000" && Number(tour.price) <= 1000) ||
-      (priceFilter === "1000-3000" &&
-        Number(tour.price) > 1000 &&
-        Number(tour.price) <= 3000) ||
-      (priceFilter === "3000+" && Number(tour.price) > 3000);
+      const matchesPrice =
+        priceFilter === "all" ||
+        (priceFilter === "0-1000" && Number(tour.price) <= 1000) ||
+        (priceFilter === "1000-3000" &&
+          Number(tour.price) > 1000 &&
+          Number(tour.price) <= 3000) ||
+        (priceFilter === "3000+" && Number(tour.price) > 3000);
 
-    return matchesSearch && matchesLocation && matchesDuration && matchesPrice;
-  });
+      return matchesSearch && matchesLocation && matchesDuration && matchesPrice;
+    });
+  }, [tours, searchQuery, locationFilter, durationFilter, priceFilter]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     try {
       await tourService.deleteTour(Number(id));
       setTours((prev) => prev.filter((tour) => tour.id !== Number(id)));
@@ -124,9 +126,9 @@ const ToursPage = () => {
         variant: "destructive",
       });
     }
-  };
+  }, []);
 
-  const handleStatusChange = async (id: string, status: string) => {
+  const handleStatusChange = useCallback(async (id: string, status: string) => {
     try {
       await tourService.updateTourStatus(Number(id), status);
       await fetchTours(); // Turları yeniden yükle
@@ -142,7 +144,7 @@ const ToursPage = () => {
         variant: "destructive",
       });
     }
-  };
+  }, []);
 
   // Loading state
   if (loading) {

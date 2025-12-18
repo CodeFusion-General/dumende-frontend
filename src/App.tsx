@@ -18,29 +18,30 @@ import {
 } from "@/lib/browser-compatibility";
 import { useEffect } from "react";
 
-// Captain Panel pages
-import Dashboard from "./pages/admin/Dashboard";
-import VesselsPage from "./pages/admin/VesselsPage";
-import AvailabilityPage from "./pages/admin/AvailabilityPage";
-// PricingPage kaldırıldı
-import ToursPage from "./pages/admin/ToursPage";
-import NewTourPage from "./pages/admin/NewTourPage";
-import CompanyPage from "./pages/admin/CompanyPage";
-import VesselCalendarPage from "./pages/admin/VesselCalendarPage";
-import TourCalendarPage from "./pages/admin/TourCalendarPage";
-import TourAvailabilityPage from "./pages/admin/TourAvailabilityPage";
-import RatingsPage from "./pages/admin/RatingsPage";
-import MessagesPage from "./pages/admin/MessagesPage";
-import BookingsPage from "./pages/admin/BookingsPage";
-import ProfilePage from "./pages/admin/ProfilePage";
-import SecurityPage from "./pages/admin/SecurityPage";
-import FinancePage from "./pages/admin/FinancePage";
-import CaptainApplicationsPage from "./pages/admin/CaptainApplicationsPage";
-import CaptainApplicationDetailPage from "./pages/admin/CaptainApplicationDetailPage";
-
 // Admin Panel pages (new comprehensive admin panel)
 import { AdminPanelRouteGuard } from "./components/auth/AdminPanelRouteGuard";
 import { lazy, Suspense } from "react";
+
+// Captain Panel pages - lazy loaded for better initial load performance
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const VesselsPage = lazy(() => import("./pages/admin/VesselsPage"));
+const AvailabilityPage = lazy(() => import("./pages/admin/AvailabilityPage"));
+const ToursPage = lazy(() => import("./pages/admin/ToursPage"));
+const NewTourPage = lazy(() => import("./pages/admin/NewTourPage"));
+const CompanyPage = lazy(() => import("./pages/admin/CompanyPage"));
+const VesselCalendarPage = lazy(() => import("./pages/admin/VesselCalendarPage"));
+
+// Lazy load captain/owner pages for better performance (contains heavy charts)
+const TourCalendarPage = lazy(() => import("./pages/admin/TourCalendarPage"));
+const TourAvailabilityPage = lazy(() => import("./pages/admin/TourAvailabilityPage"));
+const RatingsPage = lazy(() => import("./pages/admin/RatingsPage"));
+const MessagesPage = lazy(() => import("./pages/admin/MessagesPage"));
+const BookingsPage = lazy(() => import("./pages/admin/BookingsPage"));
+const ProfilePage = lazy(() => import("./pages/admin/ProfilePage"));
+const SecurityPage = lazy(() => import("./pages/admin/SecurityPage"));
+const FinancePage = lazy(() => import("./pages/admin/FinancePage"));
+const CaptainApplicationsPage = lazy(() => import("./pages/admin/CaptainApplicationsPage"));
+const CaptainApplicationDetailPage = lazy(() => import("./pages/admin/CaptainApplicationDetailPage"));
 
 // Lazy load public pages
 const Index = lazy(() => import("./pages/Index"));
