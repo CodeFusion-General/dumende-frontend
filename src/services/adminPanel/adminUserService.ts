@@ -32,9 +32,29 @@ class AdminUserService extends BaseService {
     return this.get<AdminUserSearchResult>(`?${queryString}`);
   }
 
+  /**
+   * Alias for getAdminUsers - authService compatibility
+   */
+  public async getAllUsers(
+    filters?: AdminUserFilters & {
+      page?: number;
+      size?: number;
+      sort?: string;
+    }
+  ): Promise<AdminUserSearchResult> {
+    return this.getAdminUsers(filters);
+  }
+
   // Get single user with admin view
   public async getAdminUserById(id: number): Promise<AdminUserView> {
     return this.get<AdminUserView>(`/${id}`);
+  }
+
+  /**
+   * Alias for getAdminUserById - authService compatibility
+   */
+  public async getUserById(id: number): Promise<AdminUserView> {
+    return this.getAdminUserById(id);
   }
 
   // Search users with advanced filters (Backend: POST /api/admin/users/search)
@@ -139,6 +159,17 @@ class AdminUserService extends BaseService {
     const params = { page, size };
     const queryString = this.buildQueryString(params);
     return this.get<AdminUserSearchResult>(`/type/${role}?${queryString}`);
+  }
+
+  /**
+   * Alias for getUsersByRole - authService compatibility
+   */
+  public async getUsersByType(
+    userType: UserType,
+    page?: number,
+    size?: number
+  ): Promise<AdminUserSearchResult> {
+    return this.getUsersByRole(userType, page, size);
   }
 
   // Get recent users (Backend: GET /api/admin/users/recent)

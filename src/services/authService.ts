@@ -106,12 +106,17 @@ class AuthService extends BaseService {
     return this.hasRole(UserType.CUSTOMER);
   }
 
-  // ✅ DÜZELT: Account yönetimi (Backend: /api/v1/accounts)
-  // NOT: Account endpoint'leri /api/v1/accounts altında, /api/auth altında DEĞİL
+  // ✅ Account metodları artık accountService.ts'de
+  // import { accountService } from "./accountService" kullanın
+  // Aşağıdaki metodlar geriye uyumluluk için bırakıldı, accountService'e yönlendirme yaparlar
 
+  /**
+   * @deprecated accountService.getAccountById() kullanın
+   */
   public async getAccountById(accountId: number): Promise<AccountDTO> {
-    // Backend: GET /api/v1/accounts/{id}
-    return this.get<AccountDTO>(`/v1/accounts/${accountId}`);
+    // accountService'e yönlendir - doğru path kullanır
+    const { accountService } = await import("./accountService");
+    return accountService.getAccountById(accountId);
   }
 
   public async getCurrentAccount(): Promise<AccountDTO> {
@@ -122,24 +127,36 @@ class AuthService extends BaseService {
     return this.getAccountById(user.accountId);
   }
 
+  /**
+   * @deprecated accountService.createAccount() kullanın
+   */
   public async createAccount(data: CreateAccountRequest): Promise<AccountDTO> {
-    // Backend: POST /api/v1/accounts/
-    return this.post<AccountDTO>("/v1/accounts", data);
+    const { accountService } = await import("./accountService");
+    return accountService.createAccount(data);
   }
 
+  /**
+   * @deprecated accountService.updateAccount() kullanın
+   */
   public async updateAccount(accountId: number, data: UpdateAccountRequest): Promise<AccountDTO> {
-    // Backend: PUT /api/v1/accounts/{id}
-    return this.put<AccountDTO>(`/v1/accounts/${accountId}`, data);
+    const { accountService } = await import("./accountService");
+    return accountService.updateAccount(accountId, data);
   }
 
+  /**
+   * @deprecated accountService.updatePassword() kullanın
+   */
   public async updatePassword(accountId: number, data: UpdatePasswordRequest): Promise<void> {
-    // Backend: PUT /api/v1/accounts/{id}/password
-    return this.put<void>(`/v1/accounts/${accountId}/password`, data);
+    const { accountService } = await import("./accountService");
+    await accountService.updatePassword(accountId, data);
   }
 
+  /**
+   * @deprecated accountService.deleteAccount() kullanın
+   */
   public async deleteAccount(accountId: number): Promise<void> {
-    // Backend: DELETE /api/v1/accounts/{id}
-    await this.delete<void>(`/v1/accounts/${accountId}`);
+    const { accountService } = await import("./accountService");
+    await accountService.deleteAccount(accountId);
     this.logout();
   }
 
@@ -164,15 +181,17 @@ class AuthService extends BaseService {
   */
 
   // ❌ DEPRECATED: ADMİN PANELİ FONKSİYONLARI
-  // NOT: Bu metodlar adminUserService.ts'ye taşınmalı
-  // Backend endpoint'leri /api/users altında, /api/auth/admin/users DEĞİL
+  // NOT: Bu metodlar adminUserService.ts'ye taşındı
+  // Aşağıdaki metodlar geriye uyumluluk için bırakıldı
 
-  // ⚠️ DEPRECATED: adminUserService.getAllUsers() kullan
-  // Backend: GET /api/users/ (@PreAuthorize('ADMIN'))
+  /**
+   * @deprecated adminUserService.getAllUsers() kullanın
+   */
   public async getAllUsers(): Promise<AuthUser[]> {
-    // Doğru endpoint: /api/users/ (BaseService zaten /api/auth kullanıyor, o yüzden relative path)
-    // UYARI: Bu method adminUserService'e taşınmalı
-    return this.get<AuthUser[]>("/../users/");
+    // adminUserService'e yönlendir
+    const { adminUserService } = await import("./adminPanel/adminUserService");
+    const result = await adminUserService.getAllUsers();
+    return result.content as unknown as AuthUser[];
   }
 
   // ⚠️ DEPRECATED: Backend'de bu endpoint YOK - adminUserService'de implement edilmeli
@@ -186,82 +205,82 @@ class AuthService extends BaseService {
   // }
 
   // Boat owner başvurularını getir (Admin only)
+  // Backend: GET /api/admin/boat-owner-applications
   public async getBoatOwnerApplications(): Promise<{
     id: number;
     userId: number;
+    accountId: number;
     username: string;
     email: string;
     fullName: string;
     phoneNumber: string;
+    companyName?: string;
+    taxNumber?: string;
+    address?: string;
+    description?: string;
     applicationDate: string;
+    reviewDate?: string;
+    rejectionReason?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
   }[]> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.get<any[]>("/admin/boat-owner-applications");
-    
-    // Mock data - örnek boat owner başvuruları
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return [
-      {
-        id: 1,
-        userId: 101,
-        username: "ahmet_kaptan",
-        email: "ahmet@example.com",
-        fullName: "Ahmet Kaptan",
-        phoneNumber: "+90 555 123 4567",
-        applicationDate: "2024-01-15T10:00:00Z",
-        status: 'PENDING'
-      },
-      {
-        id: 2,
-        userId: 102,
-        username: "mehmet_tekne",
-        email: "mehmet@example.com",
-        fullName: "Mehmet Tekne",
-        phoneNumber: "+90 555 987 6543",
-        applicationDate: "2024-01-10T14:30:00Z",
-        status: 'APPROVED'
-      }
-    ];
+    // Admin endpoint - /api prefix'i axios'da zaten var
+    const response = await this.api.get('/admin/boat-owner-applications/pending', {
+      headers: this.getAuthHeaders()
+    });
+    return response.data;
   }
 
   // Boat owner başvurusunu onayla (Admin only)
-  public async approveBoatOwnerApplication(applicationId: number): Promise<void> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.put<void>(`/admin/boat-owner-applications/${applicationId}/approve`);
-    
-    // Mock onay işlemi
-    await new Promise(resolve => setTimeout(resolve, 500));
+  // Backend: PUT /api/admin/boat-owner-applications/{id}/approve
+  public async approveBoatOwnerApplication(applicationId: number, adminNotes?: string): Promise<void> {
+    await this.api.put(
+      `/admin/boat-owner-applications/${applicationId}/approve`,
+      null,
+      {
+        params: { adminNotes },
+        headers: this.getAuthHeaders()
+      }
+    );
   }
 
   // Boat owner başvurusunu reddet (Admin only)
-  public async rejectBoatOwnerApplication(applicationId: number, reason?: string): Promise<void> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.put<void>(`/admin/boat-owner-applications/${applicationId}/reject`, { reason });
-    
-    // Mock red işlemi
-    await new Promise(resolve => setTimeout(resolve, 500));
+  // Backend: PUT /api/admin/boat-owner-applications/{id}/reject
+  public async rejectBoatOwnerApplication(applicationId: number, reason: string, adminNotes?: string): Promise<void> {
+    await this.api.put(
+      `/admin/boat-owner-applications/${applicationId}/reject`,
+      null,
+      {
+        params: { reason, adminNotes },
+        headers: this.getAuthHeaders()
+      }
+    );
   }
 
-  // ⚠️ DEPRECATED: userService.getUserById() veya adminUserService kullan
-  // Backend: GET /api/users/{id} (@PreAuthorize)
+  /**
+   * @deprecated adminUserService.getUserById() kullanın
+   */
   public async getUserById(userId: number): Promise<AuthUser> {
-    // Doğru endpoint için relative path kullan
-    return this.get<AuthUser>(`/../users/${userId}`);
+    const { adminUserService } = await import("./adminPanel/adminUserService");
+    const result = await adminUserService.getUserById(userId);
+    return result as unknown as AuthUser;
   }
 
-  // ⚠️ DEPRECATED: adminUserService.searchUsers() kullan
-  // Backend'de search endpoint'i farklı formatta olabilir
+  /**
+   * @deprecated adminUserService.searchUsers() kullanın
+   */
   public async searchUsers(query: string): Promise<AuthUser[]> {
-    // Bu method adminUserService'e taşınmalı
-    return this.get<AuthUser[]>(`/../admin/users/search?q=${encodeURIComponent(query)}`);
+    const { adminUserService } = await import("./adminPanel/adminUserService");
+    const result = await adminUserService.searchUsers({ searchTerm: query });
+    return result.content as unknown as AuthUser[];
   }
 
-  // ⚠️ DEPRECATED: Backend'de bu exact endpoint YOK
-  // Backend: GET /api/admin/users/type/{userType} kullanılmalı
+  /**
+   * @deprecated adminUserService.getUsersByType() kullanın
+   */
   public async getUsersByRole(role: UserType): Promise<AuthUser[]> {
-    // Bu method adminUserService'e taşınmalı ve backend endpoint'i ile senkronize edilmeli
-    return this.get<AuthUser[]>(`/../admin/users/type/${role}`);
+    const { adminUserService } = await import("./adminPanel/adminUserService");
+    const result = await adminUserService.getUsersByType(role);
+    return result.content as unknown as AuthUser[];
   }
 
   // **EMAIL VERİFİCATİON API'LERİ**
@@ -284,10 +303,18 @@ class AuthService extends BaseService {
   }
 
   // Şifre sıfırla
-  public async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    return this.postPublic<{ message: string }>("/password-reset/reset-password", { 
-      token, 
-      newPassword 
+  // Backend beklediği: { email, resetToken, newPassword, confirmPassword }
+  public async resetPassword(
+    email: string,
+    resetToken: string,
+    newPassword: string,
+    confirmPassword?: string
+  ): Promise<{ message: string; success: boolean }> {
+    return this.postPublic<{ message: string; success: boolean }>("/password-reset/reset-password", {
+      email,
+      resetToken,
+      newPassword,
+      confirmPassword: confirmPassword || newPassword
     });
   }
 
@@ -299,91 +326,64 @@ class AuthService extends BaseService {
   }
 
   // **BOAT OWNER BAŞVURU FONKSİYONLARI**
-  
+
   // Boat owner başvurusu yap
+  // Backend: POST /api/auth/boat-owner-application
   public async submitBoatOwnerApplication(applicationData: {
     companyName?: string;
     taxNumber?: string;
     address?: string;
     description?: string;
-    documents?: File[];
-  }): Promise<void> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // const formData = new FormData();
-    
-    // if (applicationData.companyName) {
-    //   formData.append('companyName', applicationData.companyName);
-    // }
-    // if (applicationData.taxNumber) {
-    //   formData.append('taxNumber', applicationData.taxNumber);
-    // }
-    // if (applicationData.address) {
-    //   formData.append('address', applicationData.address);
-    // }
-    // if (applicationData.description) {
-    //   formData.append('description', applicationData.description);
-    // }
-    
-    // // Belgeler varsa ekle
-    // if (applicationData.documents) {
-    //   Array.from(applicationData.documents).forEach((file, index) => {
-    //     formData.append(`documents`, file);
-    //   });
-    // }
-
-    // try {
-    //   const response = await this.authApi.post("/auth/boat-owner-application", formData, {
-    //     headers: {
-    //       "Content-Type": "multipart/form-data",
-    //     },
-    //   });
-    //   return response.data;
-    // } catch (error) {
-    //   this.handleError(error);
-    //   throw error;
-    // }
-    
-    // Mock başvuru gönderme simülasyonu
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    phoneNumber?: string;
+    documentUrls?: string[];
+  }): Promise<{
+    id: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    applicationDate: string;
+  }> {
+    return this.post<{
+      id: number;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      applicationDate: string;
+    }>("/boat-owner-application", applicationData);
   }
 
   // Kullanıcının boat owner başvuru durumunu kontrol et
+  // Backend: GET /api/auth/boat-owner-application/my
   public async getMyBoatOwnerApplication(): Promise<{
     id: number;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     applicationDate: string;
     reviewDate?: string;
     rejectionReason?: string;
+    adminNotes?: string;
+    companyName?: string;
+    taxNumber?: string;
+    address?: string;
+    description?: string;
   } | null> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // try {
-    //   return await this.get<any>("/boat-owner-application/my");
-    // } catch (error) {
-    //   // Başvuru yoksa null döner
-    //   return null;
-    // }
-    
-    // Mock data - başvuru olmadığı durumu simüle ediyoruz
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return null; // Hiç başvuru yok
-    
-    // Aşağıdaki mock data'yı istediğiniz senaryoya göre değiştirebilirsiniz:
-    // return {
-    //   id: 1,
-    //   status: 'PENDING',
-    //   applicationDate: new Date().toISOString(),
-    //   reviewDate: undefined,
-    //   rejectionReason: undefined
-    // };
+    try {
+      const response = await this.get<any>("/boat-owner-application/my");
+      return response;
+    } catch (error: any) {
+      // 204 No Content veya başvuru yoksa null döner
+      if (error.statusCode === 204 || error.statusCode === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  // Kullanıcının bekleyen başvurusu var mı kontrol et
+  // Backend: GET /api/auth/boat-owner-application/my/exists
+  public async hasMyPendingApplication(): Promise<boolean> {
+    return this.get<boolean>("/boat-owner-application/my/exists");
   }
 
   // Boat owner başvurusu iptal et
+  // Backend: DELETE /api/auth/boat-owner-application/my
   public async cancelBoatOwnerApplication(): Promise<void> {
-    // Backend henüz hazır olmadığı için mock data kullanıyoruz
-    // return this.delete<void>("/boat-owner-application/my");
-    
-    // Mock başvuru iptal etme simülasyonu
-    await new Promise(resolve => setTimeout(resolve, 500));
+    return this.delete<void>("/boat-owner-application/my");
   }
 }
 
