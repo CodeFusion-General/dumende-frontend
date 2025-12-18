@@ -403,8 +403,11 @@ export function BookingForm({
       return false;
     }
 
+    // ✅ UPDATED: Include RESERVED and PROCESSING statuses (Backend commit 0499578)
     const allowedStatuses: BookingStatus[] = [
+      BookingStatus.RESERVED,     // Added: 15min hold status
       BookingStatus.PENDING,
+      BookingStatus.PROCESSING,   // Added: Payment processing status
       BookingStatus.CONFIRMED,
       BookingStatus.COMPLETED,
     ];

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { VisualFeedback } from "@/components/ui/VisualFeedback";
 import { TourDTO } from "@/types/tour.types";
-import { getDefaultImageUrl, getFullImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
 import { useQueryClient } from "@tanstack/react-query";
@@ -19,13 +19,14 @@ interface TourCardProps {
   onCompareToggle?: (id: string) => void;
 }
 
-// Default image helper function
+// Default image helper function with CloudFlare variant support
 const getTourImageUrl = (tour: TourDTO): string => {
-  // Backend'den gelen URL'i tam URL'e çevir
+  // Use CloudFlare variant URLs for better performance
   if (tour.tourImages && tour.tourImages.length > 0) {
     const firstImage = tour.tourImages[0];
-    if (firstImage && firstImage.imageUrl) {
-      return getFullImageUrl(firstImage.imageUrl);
+    if (firstImage) {
+      // Use thumbnail variant for grid/list views (200x200 or 400x300)
+      return getResponsiveImageUrl(firstImage, 'thumbnail');
     }
   }
 

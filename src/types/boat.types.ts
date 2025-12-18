@@ -126,11 +126,21 @@ export interface UpdateBoatFeatureDTO {
 export interface BoatImageDTO {
   id: number;
   boatId: number;
-  imageUrl: string; // URL olarak tutuluyor artık
+  imageUrl: string; // ⚠️ DEPRECATED - Use variant URLs instead (kept for backward compatibility)
   isPrimary: boolean;
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+
+  // CloudFlare Images Integration (Backend commit 7eb759e)
+  imageId?: string; // CloudFlare image ID
+  storageType?: string; // CLOUDFLARE_IMAGES, CLOUDFLARE_R2, FIREBASE, LOCAL
+  publicUrl?: string; // Default variant (original size)
+  thumbnailUrl?: string; // 200x200 - List views
+  smallUrl?: string; // 400x300 - Mobile detail pages
+  mediumUrl?: string; // 800x600 - Tablet/desktop detail pages
+  largeUrl?: string; // 1600x1200 - Full-screen views
+  fullUrl?: string; // Original quality (same as publicUrl)
 }
 
 export interface CreateBoatImageDTO {

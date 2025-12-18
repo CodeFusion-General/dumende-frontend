@@ -131,7 +131,9 @@ class BookingService extends BaseService {
       const bookings = await this.get<BookingDTO[]>(`/customer/${userId}`);
 
       // Find active/processing booking with this boat
+      // ✅ UPDATED: Include RESERVED status (Backend commit 0499578)
       const activeStatuses = [
+        "RESERVED",    // Added: 15min hold status
         "PENDING",
         "PROCESSING",
         "CONFIRMED",

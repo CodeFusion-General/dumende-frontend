@@ -6,7 +6,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { BoatDTO } from "@/types/boat.types";
-import { getFullImageUrl, getDefaultImageUrl } from "@/lib/imageUtils";
+import { getFullImageUrl, getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import { boatService } from "@/services/boatService";
 
@@ -21,14 +21,15 @@ interface BoatCardProps {
   detailLinkBuilder?: (boat: BoatDTO) => string;
 }
 
-// ✅ OPTIMIZED: Memoized image URL getter to prevent recalculation
+// ✅ OPTIMIZED: Memoized image URL getter with CloudFlare variant support
 const getBoatImageUrl = (boat: BoatDTO): string => {
-  // Backend'den gelen URL'i tam URL'e çevir
+  // Use CloudFlare variant URLs for better performance
   if (boat.images && boat.images.length > 0) {
     const primaryImage =
       boat.images.find((img) => img.isPrimary) || boat.images[0];
-    if (primaryImage && primaryImage.imageUrl) {
-      return getFullImageUrl(primaryImage.imageUrl);
+    if (primaryImage) {
+      // Use thumbnail variant for grid/list views (200x200 or 400x300)
+      return getResponsiveImageUrl(primaryImage, 'thumbnail');
     }
   }
 
