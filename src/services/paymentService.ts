@@ -4,7 +4,8 @@ import type { PaymentStatusResponseDto } from "@/types/payment.types";
 
 class PaymentService extends BaseService {
   constructor() {
-    super("/api/iyzico");
+    // NOT: httpClient zaten /api baseURL kullanıyor, bu yüzden /api prefix'i eklememeliyiz
+    super("/iyzico");
   }
 
   /**

@@ -104,8 +104,13 @@ class BookingService extends BaseService {
     return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
-  public async cancelBooking(id: number, reason?: string): Promise<BookingDTO> {
-    return this.patch<BookingDTO>(`/${id}/cancel`, { reason });
+  public async cancelBooking(id: number, reason?: string): Promise<void> {
+    // Backend'de /cancel endpoint'i yok, status endpoint'i kullanılmalı
+    const params = new URLSearchParams({ status: "CANCELLED" });
+    if (reason) {
+      params.append("reason", reason);
+    }
+    return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
   public async deleteBooking(id: number): Promise<void> {

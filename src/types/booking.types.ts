@@ -124,9 +124,14 @@ export enum BookingStatus {
 
 export enum PaymentStatus {
   PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
+  TIMEOUT = "TIMEOUT",
   REFUNDED = "REFUNDED",
+  PARTIAL_REFUND = "PARTIAL_REFUND",
 }
 
 // Geriye uyumluluk için eski interface'lerin alias'ları

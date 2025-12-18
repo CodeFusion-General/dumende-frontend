@@ -51,7 +51,7 @@ class TourService extends BaseService {
   public async createTour(data: CreateTourDTO): Promise<TourDTO> {
     try {
       // Create the tour first
-      const result = await this.post<TourDTO>("/tours", data);
+      const result = await this.post<TourDTO>("", data);
 
       // If tour documents are provided, create them
       if (data.tourDocuments && data.tourDocuments.length > 0) {
@@ -81,7 +81,7 @@ class TourService extends BaseService {
   public async updateTour(data: UpdateTourDTO): Promise<TourDTO> {
     try {
       // Update the tour first
-      const result = await this.put<TourDTO>("/tours", data);
+      const result = await this.put<TourDTO>("", data);
 
       // Handle document operations if provided
       if (data.tourDocumentsToAdd && data.tourDocumentsToAdd.length > 0) {
@@ -521,6 +521,9 @@ class TourService extends BaseService {
   }
 
   // ======= Paginated Search Method =======
+  // TODO: Backend'de /api/tours/search/advanced endpoint'i mevcut değil.
+  // Bu method şimdilik client-side pagination ile çalışacak şekilde düzenlendi.
+  // Backend'e bu endpoint eklendiğinde gerçek API çağrısına dönülmeli.
   public async advancedSearchPaginated(
     filters: {
       name?: string;
@@ -542,22 +545,41 @@ class TourService extends BaseService {
     size: number;
     number: number;
   }> {
-    const params = new URLSearchParams();
-    
-    // Add filter parameters
-    if (filters.name) params.append('name', filters.name);
-    if (filters.location) params.append('location', filters.location);
-    if (filters.type) params.append('type', filters.type);
-    if (filters.minPrice !== undefined) params.append('minPrice', filters.minPrice.toString());
-    if (filters.maxPrice !== undefined) params.append('maxPrice', filters.maxPrice.toString());
-    if (filters.minCapacity !== undefined) params.append('minCapacity', filters.minCapacity.toString());
-    
-    // Add pagination parameters
-    params.append('page', pagination.page.toString());
-    params.append('size', pagination.size.toString());
-    if (pagination.sort) params.append('sort', pagination.sort);
+    // Backend'de advanced search endpoint'i olmadığı için
+    // mevcut endpoint'leri kullanarak client-side filtreleme yapıyoruz
+    let allTours: TourDTO[] = [];
 
-    return this.get(`/search/advanced?${params.toString()}`);
+    try {
+      if (filters.name) {
+        allTours = await this.searchToursByName(filters.name);
+      } else if (filters.location) {
+        allTours = await this.searchToursByLocation(filters.location);
+      } else if (filters.type) {
+        allTours = await this.searchToursByType(filters.type);
+      } else if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
+        allTours = await this.searchToursByPriceRange(filters.minPrice, filters.maxPrice);
+      } else if (filters.minCapacity !== undefined) {
+        allTours = await this.searchToursByCapacity(filters.minCapacity);
+      } else {
+        allTours = await this.getAllTours();
+      }
+    } catch {
+      console.warn('[TourService] Advanced search fallback: fetching all tours');
+      allTours = await this.getAllTours();
+    }
+
+    // Client-side pagination
+    const startIndex = pagination.page * pagination.size;
+    const endIndex = startIndex + pagination.size;
+    const paginatedContent = allTours.slice(startIndex, endIndex);
+
+    return {
+      content: paginatedContent,
+      totalElements: allTours.length,
+      totalPages: Math.ceil(allTours.length / pagination.size),
+      size: pagination.size,
+      number: pagination.page,
+    };
   }
 
   // Backward compatibility methods

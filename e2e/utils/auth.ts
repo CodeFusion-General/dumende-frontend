@@ -148,7 +148,8 @@ export async function setAuthCookies(
 
 export function randomTestEmail(prefix: string): string {
   const suffix = Math.random().toString(36).slice(2, 8);
-  return `${prefix}.${suffix}@e2e-test.local`;
+  // Iyzico gerçek email formatı bekliyor, .local domain kabul edilmiyor
+  return `${prefix}.${suffix}@testmail.com`;
 }
 
 export function randomUsername(prefix: string): string {

@@ -185,7 +185,7 @@ const BoatCardGrid: React.FC<{
             {boat.name}
           </h3>
           <div
-            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()} flex-shrink-0`}
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${badgeStyles} flex-shrink-0`}
           >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
@@ -227,14 +227,14 @@ const BoatCardGrid: React.FC<{
             {boat.features?.slice(0, 3).map((feature, index) => (
               <span
                 key={index}
-                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} line-clamp-1 whitespace-nowrap`}
+                className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles} line-clamp-1 whitespace-nowrap`}
               >
                 {feature.featureName}
               </span>
             ))}
             {boat.features && boat.features.length > 3 && (
               <span
-                className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()} whitespace-nowrap`}
+                className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles} whitespace-nowrap`}
               >
                 +{boat.features.length - 3}
               </span>
@@ -382,7 +382,7 @@ const BoatCardList: React.FC<{
             </div>
           </div>
           <div
-            className={`flex items-center px-2.5 py-1.5 rounded-full ${getBadgeStyles()}`}
+            className={`flex items-center px-2.5 py-1.5 rounded-full ${badgeStyles}`}
           >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <span className="text-sm font-medium ml-1">{boat.rating || 0}</span>
@@ -412,7 +412,7 @@ const BoatCardList: React.FC<{
           {boat.features?.map((feature, index) => (
             <span
               key={index}
-              className={`text-xs px-3 py-1.5 rounded-full ${getBadgeStyles()}`}
+              className={`text-xs px-3 py-1.5 rounded-full ${badgeStyles}`}
             >
               {feature.featureName}
             </span>
