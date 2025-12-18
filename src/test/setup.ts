@@ -79,14 +79,28 @@ global.PerformanceObserver = vi.fn().mockImplementation(() => ({
   takeRecords: vi.fn().mockReturnValue([]),
 }));
 
-// Mock performance.getEntriesByType
+// Mock performance methods using Object.defineProperty (read-only in CI)
 if (typeof performance !== "undefined") {
-  performance.getEntriesByType = vi.fn().mockReturnValue([]);
-  performance.getEntriesByName = vi.fn().mockReturnValue([]);
-  performance.mark = vi.fn();
-  performance.measure = vi.fn();
-  performance.clearMarks = vi.fn();
-  performance.clearMeasures = vi.fn();
+  const perfMethods = {
+    getEntriesByType: vi.fn().mockReturnValue([]),
+    getEntriesByName: vi.fn().mockReturnValue([]),
+    mark: vi.fn(),
+    measure: vi.fn(),
+    clearMarks: vi.fn(),
+    clearMeasures: vi.fn(),
+  };
+
+  Object.entries(perfMethods).forEach(([key, value]) => {
+    try {
+      Object.defineProperty(performance, key, {
+        writable: true,
+        configurable: true,
+        value,
+      });
+    } catch {
+      // Property might already be defined, skip silently
+    }
+  });
 }
 
 // Mock window.matchMedia for tests
