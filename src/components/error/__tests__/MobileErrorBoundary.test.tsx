@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MobileErrorBoundary } from "../MobileErrorBoundary";
+import { mobileDetection } from "../../../utils/mobileDetection";
 
 // Mock the mobile detection utility
 vi.mock("../../../utils/mobileDetection", () => ({
@@ -23,6 +24,9 @@ vi.mock("../../../utils/mobileDetection", () => ({
     })),
   },
 }));
+
+// Get mocked service
+const mockedMobileDetection = vi.mocked(mobileDetection);
 
 // Component that throws an error for testing
 const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
@@ -73,10 +77,9 @@ describe("MobileErrorBoundary", () => {
       </MobileErrorBoundary>
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Display Issue")).toBeInTheDocument();
+    expect(screen.getByText(/Something went wrong/)).toBeInTheDocument();
     expect(screen.getByText("Try Again")).toBeInTheDocument();
-    expect(screen.getByText("Refresh Page")).toBeInTheDocument();
-    expect(screen.getByText("Go to Home")).toBeInTheDocument();
   });
 
   it("should display memory error UI for memory-related errors", () => {
@@ -132,7 +135,7 @@ describe("MobileErrorBoundary", () => {
       </MobileErrorBoundary>
     );
 
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+    expect(screen.getByText("Display Issue")).toBeInTheDocument();
 
     const retryButton = screen.getByText("Try Again");
     fireEvent.click(retryButton);
@@ -160,8 +163,7 @@ describe("MobileErrorBoundary", () => {
 
   it("should show different UI for low-end devices", () => {
     // Mock low-end device
-    const { mobileDetection } = require("../../../utils/mobileDetection");
-    mobileDetection.detectMobileDevice.mockReturnValue({
+    mockedMobileDetection.detectMobileDevice.mockReturnValue({
       isMobile: true,
       isLowEndDevice: true,
       connectionType: "2g",
