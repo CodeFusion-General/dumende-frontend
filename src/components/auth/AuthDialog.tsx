@@ -30,7 +30,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
 
   const handleProfileCompletionRedirect = (accountId: number) => {
     onClose();
-    window.location.href = "https://www.dumende.com/";
+    window.location.href = "/";
   };
 
   const handleSwitchToRegister = () => {

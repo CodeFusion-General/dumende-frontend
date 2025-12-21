@@ -9,8 +9,8 @@ import {
 
 class UserService extends BaseService {
   constructor() {
-    // ✅ DÜZELT: Backend base path - /api/users
-    super("/api/users");
+    // axios baseURL zaten /api - duplicate /api önlendi
+    super("/users");
   }
 
   public async getUsers(filters?: UserFilters): Promise<UserDTO[]> {

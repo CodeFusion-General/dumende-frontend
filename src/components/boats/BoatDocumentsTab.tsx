@@ -22,6 +22,7 @@ interface BoatDocumentsTabProps {
   boatId?: number; // undefined for new boats
   documents: BoatDocumentDTO[];
   onDocumentsChange: (documents: BoatDocumentDTO[]) => void;
+  onPendingDocumentAdd?: (document: CreateBoatDocumentDTO) => void; // For new boats - stores base64 data
   loading?: boolean;
   className?: string;
 }
@@ -30,6 +31,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
   boatId,
   documents,
   onDocumentsChange,
+  onPendingDocumentAdd,
   loading = false,
   className,
 }) => {
@@ -173,7 +175,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
           // Convert file to base64
           const { base64 } = await documentService.convertFileToBase64(file);
 
-          // Create a temporary document object
+          // Create a temporary document object for display
           const tempDocument: BoatDocumentDTO = {
             id: Date.now(), // Temporary ID
             boatId: 0, // Will be set when boat is created
@@ -189,8 +191,25 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
             updatedAt: new Date().toISOString(),
           };
 
-          // Add to documents list
+          // Add to documents list (for display)
           onDocumentsChange([...documents, tempDocument]);
+
+          // CRITICAL: Also store the document with base64 data for actual upload
+          if (onPendingDocumentAdd) {
+            const pendingDocument: CreateBoatDocumentDTO = {
+              documentType,
+              documentName: metadata.documentName || file.name,
+              documentData: base64, // This is the key - storing base64 data!
+              expiryDate: metadata.expiryDate,
+              isVerified: true,
+              verificationNotes: metadata.verificationNotes,
+              displayOrder: documents.length + 1,
+            };
+            console.log('[DEBUG] Calling onPendingDocumentAdd with:', pendingDocument.documentName, 'base64 length:', base64.length);
+            onPendingDocumentAdd(pendingDocument);
+          } else {
+            console.warn('[DEBUG] onPendingDocumentAdd is NOT defined! Documents will not be saved on create.');
+          }
 
           toast({
             title: t("documents.upload.success", "Upload successful!"),
@@ -270,7 +289,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
         }
       }
     },
-    [boatId, documents, onDocumentsChange, t]
+    [boatId, documents, onDocumentsChange, onPendingDocumentAdd, t]
   );
 
   // Handle document deletion

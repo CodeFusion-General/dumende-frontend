@@ -19,7 +19,7 @@ import {
 
 class AdminDocumentService extends BaseService {
   constructor() {
-    super("/api/admin"); // Base path for both boat-documents and tour-documents
+    super("/admin"); // axios baseURL zaten /api - Base path for both boat-documents and tour-documents
   }
 
   /**

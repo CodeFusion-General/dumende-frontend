@@ -1,7 +1,7 @@
 // VesselsPage form için type tanımları
 
 import { BoatImageDTO, ServiceType, BoatServiceDTO } from "./boat.types";
-import { BoatDocumentDTO } from "./document.types";
+import { BoatDocumentDTO, CreateBoatDocumentDTO } from "./document.types";
 
 // Form data interface - VesselsPage formunda kullanılır
 export interface VesselFormData {
@@ -68,6 +68,8 @@ export interface VesselFormData {
 
   // Documents
   documents: BoatDocumentDTO[];
+  // Pending documents for new boats (with base64 data)
+  pendingDocuments: CreateBoatDocumentDTO[];
 }
 
 // Initial form state
@@ -110,4 +112,5 @@ export const INITIAL_VESSEL_FORM_DATA: VesselFormData = {
   features: [],
   boatServices: [],
   documents: [],
+  pendingDocuments: [],
 };

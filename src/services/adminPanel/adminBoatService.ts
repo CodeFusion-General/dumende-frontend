@@ -22,7 +22,7 @@ import { BoatDocumentDTO } from "@/types/document.types";
 
 class AdminBoatService extends BaseService {
   constructor() {
-    super("/api/admin/boats");
+    super("/admin/boats"); // axios baseURL zaten /api
   }
 
   // Get boats with admin-specific information

@@ -460,7 +460,7 @@ export const CustomerCaptainChat: React.FC<CustomerCaptainChatProps> = ({
 
                     {currentErrorType === ErrorType.AUTHENTICATION && (
                       <Button
-                        onClick={() => (window.location.href = "/login")}
+                        onClick={() => (window.location.href = "/?auth=true")}
                         size="sm"
                         variant="default"
                       >

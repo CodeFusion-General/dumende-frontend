@@ -1,6 +1,7 @@
 import { BaseService } from "./base/BaseService";
 import {
   BoatDTO,
+  BoatImageDTO,
   CreateBoatDTO,
   UpdateBoatDTO,
   BoatFilters,
@@ -141,14 +142,27 @@ class BoatService extends BaseService {
     isPrimary = false,
     displayOrder = 1
   ): Promise<BoatDTO> {
-    return this.uploadFile<BoatDTO>(`/boat-images/boat/${boatId}`, file, {
-      isPrimary,
-      displayOrder,
+    // Use api.post directly - endpoint is /api/boat-images, not /api/boats/boat-images
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("isPrimary", String(isPrimary));
+    formData.append("displayOrder", String(displayOrder));
+
+    const response = await this.api.post(`/boat-images/boat/${boatId}/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...this.getAuthHeaders(),
+      },
     });
+    return response.data;
   }
 
   public async deleteBoatImage(boatId: number, imageId: number): Promise<void> {
-    return this.delete<void>(`/boat-images/${imageId}`);
+    // Use api.delete directly to avoid baseUrl prefix (/boats)
+    // Correct endpoint is /api/boat-images/{id}, not /api/boats/boat-images/{id}
+    await this.api.delete(`/boat-images/${imageId}`, {
+      headers: this.getAuthHeaders(),
+    });
   }
 
   // Feature Management
@@ -156,16 +170,23 @@ class BoatService extends BaseService {
     boatId: number,
     featureName: string
   ): Promise<BoatDTO> {
-    return this.post<BoatDTO>(`/boat-features/boat/${boatId}`, {
+    // Use api.post directly - endpoint is /api/boat-features, not /api/boats/boat-features
+    const response = await this.api.post(`/boat-features/boat/${boatId}`, {
       featureName,
+    }, {
+      headers: this.getAuthHeaders(),
     });
+    return response.data;
   }
 
   public async removeBoatFeature(
     boatId: number,
     featureId: number
   ): Promise<void> {
-    return this.delete<void>(`/boat-features/${featureId}`);
+    // Use api.delete directly - endpoint is /api/boat-features, not /api/boats/boat-features
+    await this.api.delete(`/boat-features/${featureId}`, {
+      headers: this.getAuthHeaders(),
+    });
   }
 
   // Search and Filter (BoatListing sayfası için public)
@@ -326,20 +347,19 @@ class BoatService extends BaseService {
     );
   }
 
-  // Tekne fotoğrafları yönetimi
+  // Tekne fotoğrafları yönetimi - Batch upload
   public async uploadVesselImages(
     boatId: number,
     files: FileList
-  ): Promise<BoatDTO> {
+  ): Promise<BoatImageDTO[]> {
     const formData = new FormData();
-    Array.from(files).forEach((file, index) => {
-      formData.append("images", file);
-      formData.append(`displayOrder_${index}`, (index + 1).toString());
+    Array.from(files).forEach((file) => {
+      formData.append("files", file); // Backend "files" parametresi bekliyor
     });
 
     try {
       const response = await this.api.post(
-        `/boat-images/boat/${boatId}`,
+        `/boat-images/boat/${boatId}/upload-batch`, // Doğru endpoint
         formData,
         {
           headers: {

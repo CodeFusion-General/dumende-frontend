@@ -19,7 +19,7 @@ import {
 } from "@/types/booking.types";
 class AdminBookingService extends BaseService {
   constructor() {
-    super("/api/admin/bookings");
+    super("/admin/bookings"); // axios baseURL zaten /api
   }
 
   // Get all bookings from backend API (Backend: GET /api/admin/bookings)

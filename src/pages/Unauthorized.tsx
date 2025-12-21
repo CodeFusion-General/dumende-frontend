@@ -33,7 +33,7 @@ const Unauthorized: React.FC = () => {
   };
 
   const handleLogin = () => {
-    navigate("/login");
+    navigate("/?auth=true");
   };
 
   return (

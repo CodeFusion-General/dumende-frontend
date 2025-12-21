@@ -19,7 +19,7 @@ import { messageService } from "@/services/messageService";
  */
 class AdminDashboardService extends BaseService {
   constructor() {
-    super("/api/admin/statistics");
+    super("/admin/statistics"); // axios baseURL zaten /api
   }
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 dakika

@@ -123,7 +123,7 @@ const Register = () => {
             : "Your account has been created. Please complete your profile.",
       });
 
-      window.location.href = "https://www.dumende.com/";
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Registration failed:", error);
 

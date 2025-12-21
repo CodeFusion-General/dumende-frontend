@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BoatDTO } from "@/types/boat.types";
-import { getDefaultImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl, getImageUrlPriority } from "@/lib/imageUtils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { SimilarBoatsError } from "@/components/ui/ErrorStates";
@@ -98,7 +98,7 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
     if (boat.images?.length > 0) {
       const primaryImage =
         boat.images.find((img) => img.isPrimary) || boat.images[0];
-      return primaryImage.imageUrl || getDefaultImageUrl();
+      return getImageUrlPriority(primaryImage) || getDefaultImageUrl();
     }
     return getDefaultImageUrl();
   };
@@ -286,7 +286,7 @@ const SimilarBoats: React.FC<SimilarBoatsProps> = ({
                 {/* Price Badge */}
                 <div className="absolute bottom-3 left-3">
                   <Badge className="bg-white/95 text-gray-900 hover:bg-white font-semibold">
-                    ₺{boat.dailyPrice.toLocaleString()}/gün
+                    ₺{(boat.dailyPrice ?? 0).toLocaleString()}/gün
                   </Badge>
                 </div>
               </div>

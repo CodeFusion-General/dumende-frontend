@@ -95,8 +95,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
       const response = await registerUser(registerData);
 
-      // Direct redirect to main website
-      window.location.href = "https://www.dumende.com/";
+      // Redirect to homepage after successful registration
+      window.location.href = "/";
     } catch (err: any) {
       console.error("Registration error:", err);
 

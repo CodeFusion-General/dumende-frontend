@@ -15,7 +15,7 @@ import { tokenUtils } from "@/lib/utils";
 
 class AuthService extends BaseService {
   constructor() {
-    super("/api/auth");
+    super("/auth"); // axios baseURL zaten /api
   }
 
 

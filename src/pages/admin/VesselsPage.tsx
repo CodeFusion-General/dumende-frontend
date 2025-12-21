@@ -360,8 +360,12 @@ const VesselsPage = () => {
 
           const imagesDTOs = await Promise.all(imagePromises);
 
+          console.log('[DEBUG] Creating vessel with images - pendingDocuments count:', formData.pendingDocuments.length);
+          const baseDTO = await formDataToCreateDTO(formData);
+          console.log('[DEBUG] baseDTO documents:', baseDTO.documents?.length || 0, baseDTO.documents);
+
           const createDTO: CreateVesselDTO = {
-            ...(await formDataToCreateDTO(formData)),
+            ...baseDTO,
             images: imagesDTOs,
           };
 
@@ -377,7 +381,9 @@ const VesselsPage = () => {
             description: "Yeni tekne eklendi.",
           });
         } else {
+          console.log('[DEBUG] Creating vessel - pendingDocuments count:', formData.pendingDocuments.length);
           const createDTO = await formDataToCreateDTO(formData);
+          console.log('[DEBUG] createDTO documents:', createDTO.documents?.length || 0, createDTO.documents);
           const newVessel = await boatService.createVessel(createDTO);
 
           // Handle document uploads for new boat
@@ -522,7 +528,7 @@ const VesselsPage = () => {
                 }}
               >
                 <Tabs
-                  defaultValue={formTab}
+                  value={formTab}
                   className="w-full"
                   onValueChange={setFormTab}
                 >
@@ -929,18 +935,21 @@ const VesselsPage = () => {
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Sigara İçme Kuralı
                               </label>
-                              <Select>
+                              <Select
+                                value={formData.smokingRule}
+                                onValueChange={handleSelectChange("smokingRule")}
+                              >
                                 <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
                                   <SelectValue placeholder="Seçiniz" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="allowed">
+                                  <SelectItem value="ALLOWED">
                                     İzin Verilir
                                   </SelectItem>
-                                  <SelectItem value="restricted">
-                                    Belirli Alanlarda
+                                  <SelectItem value="ASK_FIRST">
+                                    Önce Sorun
                                   </SelectItem>
-                                  <SelectItem value="prohibited">
+                                  <SelectItem value="NOT_ALLOWED">
                                     Yasaktır
                                   </SelectItem>
                                 </SelectContent>
@@ -950,15 +959,21 @@ const VesselsPage = () => {
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Evcil Hayvan
                               </label>
-                              <Select>
+                              <Select
+                                value={formData.petPolicy}
+                                onValueChange={handleSelectChange("petPolicy")}
+                              >
                                 <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
                                   <SelectValue placeholder="Seçiniz" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="allowed">
+                                  <SelectItem value="ALLOWED">
                                     İzin Verilir
                                   </SelectItem>
-                                  <SelectItem value="prohibited">
+                                  <SelectItem value="ASK_FIRST">
+                                    Önce Sorun
+                                  </SelectItem>
+                                  <SelectItem value="NOT_ALLOWED">
                                     İzin Verilmez
                                   </SelectItem>
                                 </SelectContent>
@@ -968,19 +983,22 @@ const VesselsPage = () => {
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Alkol
                               </label>
-                              <Select>
+                              <Select
+                                value={formData.alcoholPolicy}
+                                onValueChange={handleSelectChange("alcoholPolicy")}
+                              >
                                 <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
                                   <SelectValue placeholder="Seçiniz" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="allowed">
+                                  <SelectItem value="ALLOWED">
                                     İzin Verilir
                                   </SelectItem>
-                                  <SelectItem value="prohibited">
-                                    İzin Verilmez
+                                  <SelectItem value="ASK_FIRST">
+                                    Önce Sorun
                                   </SelectItem>
-                                  <SelectItem value="byo">
-                                    Kendi Getir
+                                  <SelectItem value="NOT_ALLOWED">
+                                    İzin Verilmez
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
@@ -989,18 +1007,21 @@ const VesselsPage = () => {
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Müzik
                               </label>
-                              <Select>
+                              <Select
+                                value={formData.musicPolicy}
+                                onValueChange={handleSelectChange("musicPolicy")}
+                              >
                                 <SelectTrigger className="h-12 border-2 hover:border-primary focus:border-primary transition-colors">
                                   <SelectValue placeholder="Seçiniz" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="allowed">
+                                  <SelectItem value="ALLOWED">
                                     İzin Verilir
                                   </SelectItem>
-                                  <SelectItem value="restricted">
-                                    Belirli Saatlerde
+                                  <SelectItem value="ASK_FIRST">
+                                    Önce Sorun
                                   </SelectItem>
-                                  <SelectItem value="prohibited">
+                                  <SelectItem value="NOT_ALLOWED">
                                     İzin Verilmez
                                   </SelectItem>
                                 </SelectContent>
@@ -1013,6 +1034,8 @@ const VesselsPage = () => {
                               Ek Kurallar
                             </label>
                             <Textarea
+                              value={formData.additionalRules}
+                              onChange={handleInputChange("additionalRules")}
                               placeholder="Müşterilerinizin bilmesi gereken diğer kuralları veya şartları buraya yazabilirsiniz..."
                               className="min-h-[120px] border-2 hover:border-primary focus:border-primary transition-colors resize-none"
                             />
@@ -1516,6 +1539,19 @@ const VesselsPage = () => {
                               });
                             }
                           }}
+                          onPendingDocumentAdd={(pendingDoc) => {
+                            // CRITICAL: Store pending documents with base64 data for new boat creation
+                            console.log('[DEBUG] VesselsPage received pendingDoc:', pendingDoc.documentName, 'base64 length:', pendingDoc.documentData?.length);
+                            setFormData((prev) => {
+                              console.log('[DEBUG] Previous pendingDocuments count:', prev.pendingDocuments.length);
+                              const updated = [...prev.pendingDocuments, pendingDoc];
+                              console.log('[DEBUG] New pendingDocuments count:', updated.length);
+                              return {
+                                ...prev,
+                                pendingDocuments: updated,
+                              };
+                            });
+                          }}
                           loading={loading}
                         />
                       </div>
@@ -1732,48 +1768,90 @@ const VesselsPage = () => {
                       </div>
                     </TabsContent>
 
-                    {/* Modern Bottom Action Bar */}
+                    {/* Modern Bottom Action Bar with Step Navigation */}
                     <div className="sticky bottom-0 z-20 w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 px-8 py-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600 hidden sm:block">
-                          <Info className="inline h-4 w-4 mr-1" />
-                          Tüm sekmelerdeki bilgiler tek seferde kaydedilir.
-                        </p>
-                        <div className="flex gap-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleBackToList}
-                            disabled={loading}
-                            className="hover:bg-gray-50"
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Vazgeç
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <span className="flex items-center">
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                Kaydediliyor...
+                      {(() => {
+                        const tabOrder = ["details", "terms", "services", "location", "photos", "documents", "features", "descriptions"];
+                        const currentIndex = tabOrder.indexOf(formTab);
+                        const isFirstTab = currentIndex === 0;
+                        const isLastTab = currentIndex === tabOrder.length - 1;
+                        const prevTab = !isFirstTab ? tabOrder[currentIndex - 1] : null;
+                        const nextTab = !isLastTab ? tabOrder[currentIndex + 1] : null;
+
+                        return (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleBackToList}
+                                disabled={loading}
+                                className="hover:bg-gray-50"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Vazgeç
+                              </Button>
+                              <span className="text-sm text-gray-500 hidden sm:inline ml-2">
+                                Adım {currentIndex + 1} / {tabOrder.length}
                               </span>
-                            ) : editingVesselId ? (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Güncellemeyi Kaydet
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Tekneyi Kaydet
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
+                            </div>
+                            <div className="flex gap-3">
+                              {/* Geri Butonu - İlk adımda gizli */}
+                              {!isFirstTab && prevTab && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => setFormTab(prevTab)}
+                                  disabled={loading}
+                                  className="hover:bg-gray-50"
+                                >
+                                  <ArrowLeft className="h-4 w-4 mr-2" />
+                                  Geri
+                                </Button>
+                              )}
+
+                              {/* İleri Butonu - Son adımda gizli */}
+                              {!isLastTab && nextTab && (
+                                <Button
+                                  type="button"
+                                  onClick={() => setFormTab(nextTab)}
+                                  disabled={loading}
+                                  className="px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                                >
+                                  İleri
+                                  <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                                </Button>
+                              )}
+
+                              {/* Kaydet Butonu - Sadece son adımda görünür */}
+                              {isLastTab && (
+                                <Button
+                                  type="submit"
+                                  className="px-6 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                                  disabled={loading}
+                                >
+                                  {loading ? (
+                                    <span className="flex items-center">
+                                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                      Kaydediliyor...
+                                    </span>
+                                  ) : editingVesselId ? (
+                                    <>
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Güncellemeyi Kaydet
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="h-4 w-4 mr-2" />
+                                      Tekneyi Kaydet
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </Tabs>

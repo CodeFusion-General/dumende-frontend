@@ -162,6 +162,7 @@ export interface BoatDTO {
   ownerId: number;
   name: string;
   description: string;
+  shortDescription?: string;
   model: string;
   year: number;
   length: number; // Double -> number
@@ -189,6 +190,7 @@ export interface BoatDTO {
 export interface CreateBoatDTO {
   name: string;
   description?: string;
+  shortDescription?: string;
   model?: string;
   year?: number;
   length?: number; // Double -> number
@@ -213,6 +215,7 @@ export interface UpdateBoatDTO {
   id: number;
   name?: string;
   description?: string;
+  shortDescription?: string;
   model?: string;
   year?: number;
   length?: number; // Double -> number

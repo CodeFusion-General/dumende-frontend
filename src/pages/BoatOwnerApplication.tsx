@@ -343,7 +343,7 @@ const BoatOwnerApplication = () => {
                   </AlertDescription>
                 </Alert>
                 <div className="mt-4 space-y-2">
-                  <Button onClick={() => navigate("/login")} className="w-full">
+                  <Button onClick={() => navigate("/?auth=true")} className="w-full">
                     {t.boatOwnerApplication.loginRequired.loginButton}
                   </Button>
                   <Button

@@ -22,9 +22,9 @@ export const AdminPanelRouteGuard: React.FC<AdminPanelRouteGuardProps> = ({
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // 1. Oturum kontrolü - Giriş yapmamış kullanıcıları login sayfasına yönlendir
+  // 1. Oturum kontrolü - Giriş yapmamış kullanıcıları ana sayfaya yönlendir (login modalı açılır)
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/?auth=true" state={{ from: location }} replace />;
   }
 
   // 2. Rol kontrolü - Sadece ADMIN rolü erişebilir

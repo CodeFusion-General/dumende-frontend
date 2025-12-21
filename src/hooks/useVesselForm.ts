@@ -175,17 +175,17 @@ export function useVesselForm(): UseVesselFormReturn {
       longitude: vessel.longitude,
       departurePoint: "",
       returnPoint: "",
-      smokingRule: "",
-      petPolicy: "",
-      alcoholPolicy: "",
-      musicPolicy: "",
-      additionalRules: "",
+      smokingRule: vessel.smokingRule || "",
+      petPolicy: vessel.petPolicy || "",
+      alcoholPolicy: vessel.alcoholPolicy || "",
+      musicPolicy: vessel.musicPolicy || "",
+      additionalRules: vessel.additionalRules || "",
       mealService: "",
       djService: "",
       waterSports: "",
       otherServices: "",
-      shortDescription: "",
-      detailedDescription: "",
+      shortDescription: vessel.shortDescription || "",
+      detailedDescription: vessel.description || "",
       organizationTypes: [],
       organizationDetails: "",
       images: [],
@@ -201,6 +201,7 @@ export function useVesselForm(): UseVesselFormReturn {
           quantity: s.quantity,
         })) || [],
       documents: vessel.documents || [],
+      pendingDocuments: [], // Reset pending documents when editing existing vessel
     });
 
     // Reset unsaved changes flag when loading existing vessel
@@ -234,9 +235,13 @@ export function useVesselForm(): UseVesselFormReturn {
 
     const imagesDTOs = await Promise.all(imagePromises);
 
+    console.log('[DEBUG] formDataToCreateDTO - shortDescription:', data.shortDescription);
+    console.log('[DEBUG] formDataToCreateDTO - detailedDescription:', data.detailedDescription);
+
     return {
       name: data.name.trim(),
-      description: data.detailedDescription || data.shortDescription || "",
+      description: data.detailedDescription || "",
+      shortDescription: data.shortDescription || "",
       model: data.brandModel,
       year: parseInt(data.buildYear) || new Date().getFullYear(),
       length: parseFloat(data.length) || 0,
@@ -251,6 +256,12 @@ export function useVesselForm(): UseVesselFormReturn {
       brandModel: data.brandModel,
       buildYear: parseInt(data.buildYear) || new Date().getFullYear(),
       captainIncluded: false,
+      // Boat Rules/Policies (Şartlar)
+      smokingRule: data.smokingRule || undefined,
+      petPolicy: data.petPolicy || undefined,
+      alcoholPolicy: data.alcoholPolicy || undefined,
+      musicPolicy: data.musicPolicy || undefined,
+      additionalRules: data.additionalRules || undefined,
       images: imagesDTOs,
       features: data.features.map((name) => ({ featureName: name })),
       services: data.boatServices.map((service) => ({
@@ -261,6 +272,8 @@ export function useVesselForm(): UseVesselFormReturn {
         price: service.price,
         quantity: service.quantity,
       })),
+      // CRITICAL: Include pending documents with base64 data for new boat creation
+      documents: data.pendingDocuments.length > 0 ? data.pendingDocuments : undefined,
     };
   }, []);
 
@@ -268,7 +281,8 @@ export function useVesselForm(): UseVesselFormReturn {
     return {
       id: vesselId,
       name: data.name,
-      description: data.description,
+      description: data.detailedDescription || "",
+      shortDescription: data.shortDescription || "",
       model: data.brandModel,
       buildYear: parseInt(data.buildYear) || undefined,
       length: parseFloat(data.length) || undefined,
@@ -281,6 +295,12 @@ export function useVesselForm(): UseVesselFormReturn {
       type: data.type,
       brandModel: data.brandModel,
       imageIdsToRemove: data.imageIdsToRemove,
+      // Boat Rules/Policies (Şartlar)
+      smokingRule: data.smokingRule || undefined,
+      petPolicy: data.petPolicy || undefined,
+      alcoholPolicy: data.alcoholPolicy || undefined,
+      musicPolicy: data.musicPolicy || undefined,
+      additionalRules: data.additionalRules || undefined,
     };
   }, []);
 

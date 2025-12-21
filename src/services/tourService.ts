@@ -561,11 +561,11 @@ class TourService extends BaseService {
       } else if (filters.minCapacity !== undefined) {
         allTours = await this.searchToursByCapacity(filters.minCapacity);
       } else {
-        allTours = await this.getAllTours();
+        allTours = await this.getTours();
       }
     } catch {
       console.warn('[TourService] Advanced search fallback: fetching all tours');
-      allTours = await this.getAllTours();
+      allTours = await this.getTours();
     }
 
     // Client-side pagination

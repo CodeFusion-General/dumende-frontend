@@ -30,7 +30,7 @@ import { captainService } from "@/services/captainService";
 import { useQuery } from "@tanstack/react-query";
 import { useMicroInteractions } from "@/hooks/useMicroInteractions";
 import { VisualFeedback } from "@/components/ui/VisualFeedback";
-import { isValidImageUrl } from "@/lib/imageUtils";
+import { isValidImageUrl, getImageUrlPriority } from "@/lib/imageUtils";
 import { Button } from "@/components/ui/button";
 import { CustomerCaptainChat } from "@/components/boats/messaging/CustomerCaptainChat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -251,8 +251,11 @@ const BoatListing = () => {
     }
 
     const validImageUrls = boatData.images
-      .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
-      .map((img) => img.imageUrl);
+      .filter((img) => {
+        const url = getImageUrlPriority(img);
+        return img && url && isValidImageUrl(url);
+      })
+      .map((img) => getImageUrlPriority(img));
 
     return validImageUrls.length > 0 ? validImageUrls : [];
   }, [boatData?.images]);
@@ -267,15 +270,18 @@ const BoatListing = () => {
     }
 
     return finalBoatData.images
-      .filter((img) => img && img.imageUrl && isValidImageUrl(img.imageUrl))
+      .filter((img) => {
+        const url = getImageUrlPriority(img);
+        return img && url && isValidImageUrl(url);
+      })
       .sort((a, b) => ((a as any).order || 0) - ((b as any).order || 0))
       .map((img, index) => ({
         id: img.id?.toString() || index.toString(),
-        imageUrl: img.imageUrl,
+        imageUrl: getImageUrlPriority(img),
         altText: `${finalBoatData.name} - Image ${index + 1}`,
         caption: (img as any).caption || undefined,
         order: (img as any).order || index + 1,
-        thumbnailUrl: img.imageUrl, // Could be optimized thumbnail URL
+        thumbnailUrl: img.thumbnailUrl || img.smallUrl || getImageUrlPriority(img),
         isHeroImage: img.isPrimary || index === 0,
       }));
   }, [finalBoatData?.images, finalBoatData?.name]);

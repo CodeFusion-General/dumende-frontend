@@ -61,9 +61,9 @@ interface ApplicationFilters {
 
 class AdminCaptainApplicationService extends BaseService {
   constructor() {
-    // ✅ DÜZELT: Backend base path - /api prefix eksikti
+    // axios baseURL zaten /api - duplicate /api önlendi
     // Backend: POST /api/admin/captain-applications/bulk
-    super("/api/admin/captain-applications");
+    super("/admin/captain-applications");
   }
 
   // Get comprehensive statistics

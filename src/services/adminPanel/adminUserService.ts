@@ -17,7 +17,7 @@ import { UserType } from "@/types/auth.types";
 
 class AdminUserService extends BaseService {
   constructor() {
-    super("/api/admin/users");
+    super("/admin/users"); // axios baseURL zaten /api
   }
 
   // Get all users with admin-specific information

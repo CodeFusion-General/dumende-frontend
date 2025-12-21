@@ -15,7 +15,7 @@ import { documentService } from "../documentService";
 
 class AdminTourService extends BaseService {
   constructor() {
-    super("/api/admin/tours");
+    super("/admin/tours"); // axios baseURL zaten /api
   }
 
   // ======= Tour Management Operations =======

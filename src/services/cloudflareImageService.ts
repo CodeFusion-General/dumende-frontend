@@ -36,7 +36,7 @@ export interface CloudFlareImageUploadResponse {
  */
 class CloudFlareImageService extends BaseService {
   constructor() {
-    super("/api/images");
+    super("/images"); // axios baseURL zaten /api
   }
 
   /**
