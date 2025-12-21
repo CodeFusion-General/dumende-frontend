@@ -13,6 +13,14 @@ import SimilarTours from "@/components/tours/SimilarTours";
 import { useSimilarTours } from "@/hooks/useSimilarTours";
 import Layout from "@/components/layout/Layout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+// New rich detail components
+import TourHighlights from "@/components/tours/TourHighlights";
+import TourIncluded from "@/components/tours/TourIncluded";
+import TourLanguages from "@/components/tours/TourLanguages";
+import TourRequirements from "@/components/tours/TourRequirements";
+import TourRestrictions from "@/components/tours/TourRestrictions";
+import TourRoute from "@/components/tours/TourRoute";
+import TourCancellation from "@/components/tours/TourCancellation";
 
 const TourDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -112,29 +120,75 @@ const TourDetailPage: React.FC = () => {
           onShare={handleShare}
         />
 
-        {/* Content - Two Column Layout */}
+        {/* Content */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-8">
+          {/* Highlights Section - Full Width */}
+          <TourHighlights highlights={tour.highlights} />
+
+          {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              <TourInfoSection tour={tour} />
+            {/* Main Content - 2 cols */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Tour Info with Languages */}
+              <div className="space-y-4">
+                <TourInfoSection tour={tour} />
+                {/* Languages inline display */}
+                {tour.languages && tour.languages.length > 0 && (
+                  <div className="px-6">
+                    <TourLanguages languages={tour.languages} variant="inline" />
+                  </div>
+                )}
+              </div>
+
+              {/* Route/Itinerary */}
+              <TourRoute
+                route={tour.routeDescription}
+                locationDescription={tour.locationDescription}
+              />
+
+              {/* Features */}
               <TourFeatures tour={tour} features={tour.features || []} />
+
+              {/* What's Included */}
+              <TourIncluded included={tour.includedServices} />
+
+              {/* Requirements */}
+              <TourRequirements requirements={tour.requirements} />
+
+              {/* Restrictions */}
+              <TourRestrictions
+                notAllowed={tour.notAllowed}
+                notSuitableFor={tour.notSuitableFor}
+              />
             </div>
 
-            {/* Sidebar - Booking */}
-            <div className="lg:col-span-1">
-              <TourBookingForm tour={tour} />
+            {/* Sidebar - 1 col */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Cancellation Policy */}
+              <TourCancellation policy={tour.cancellationPolicy} />
+
+              {/* Languages Card (for mobile/tablet) */}
+              <div className="hidden sm:block lg:hidden">
+                <TourLanguages languages={tour.languages} variant="card" />
+              </div>
+
+              {/* Booking Form - Sticky */}
+              <div className="lg:sticky lg:top-24">
+                <TourBookingForm tour={tour} />
+              </div>
             </div>
           </div>
 
           {/* Similar Tours Section */}
-          <SimilarTours
-            tours={similarTours}
-            isLoading={similarToursLoading}
-            currentTourId={tour.id}
-            error={similarToursError}
-            onRetry={refetchSimilarTours}
-          />
+          <div className="mt-12">
+            <SimilarTours
+              tours={similarTours}
+              isLoading={similarToursLoading}
+              currentTourId={tour.id}
+              error={similarToursError}
+              onRetry={refetchSimilarTours}
+            />
+          </div>
         </div>
       </div>
     </Layout>

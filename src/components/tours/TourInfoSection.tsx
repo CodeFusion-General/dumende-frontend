@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Users,
@@ -10,6 +11,8 @@ import {
   Award,
   Shield,
   Info,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { TourDTO } from "@/types/tour.types";
 
@@ -18,6 +21,11 @@ interface TourInfoSectionProps {
 }
 
 const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  // Check if there's additional content to show
+  const hasFullDescription = tour.fullDescription && tour.fullDescription.trim().length > 0;
+
   const getStatusBadge = (status: string) => {
     const badgeClasses =
       "bg-white/60 text-[#2c3e50] backdrop-blur-sm border border-white/30 font-roboto";
@@ -143,9 +151,46 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
           <Info className="h-6 w-6 text-[#3498db]" />
           Tur Hakkında
         </h2>
+
+        {/* Short Description */}
         <p className="text-gray-700 leading-relaxed font-roboto text-lg">
           {tour.description}
         </p>
+
+        {/* Full Description (Expandable) */}
+        {hasFullDescription && (
+          <div className="mt-4">
+            <div
+              className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                isDescriptionExpanded ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="pt-4 border-t border-gray-200/50">
+                <p className="text-gray-700 leading-relaxed font-roboto text-base whitespace-pre-line">
+                  {tour.fullDescription}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+              className="mt-4 text-[#3498db] hover:text-[#2c3e50] hover:bg-[#3498db]/10 font-roboto font-medium group"
+            >
+              {isDescriptionExpanded ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-2 transition-transform group-hover:-translate-y-0.5" />
+                  Daha Az Göster
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2 transition-transform group-hover:translate-y-0.5" />
+                  Daha Fazla Göster
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </GlassCard>
 
       {/* Location & Details */}

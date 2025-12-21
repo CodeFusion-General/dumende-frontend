@@ -36,7 +36,6 @@ export default function NotificationsPage() {
             // console.debug('Loading notifications for userId:', userId, 'currentPage:', currentPage);
 
             const pageData = await notificationService.fetchNotificationsPage(
-                userId!,
                 currentPage,
                 NOTIFICATIONS_PER_PAGE
             );
@@ -70,7 +69,7 @@ export default function NotificationsPage() {
 
     const handleMarkAllRead = async () => {
         try {
-            await notificationService.markAllNotificationsRead(userId!);
+            await notificationService.markAllNotificationsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             if (refreshUnreadCount) {
                 await refreshUnreadCount();

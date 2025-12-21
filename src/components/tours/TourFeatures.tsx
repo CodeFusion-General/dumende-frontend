@@ -294,10 +294,6 @@ const TourFeatures: React.FC<TourFeaturesProps> = ({ tour, features }) => {
                         key={feature.id}
                         variant="lift"
                         intensity="sm"
-                        className="opacity-0 animate-fade-in"
-                        style={{
-                          animationDelay: `${index * 50}ms`,
-                        }}
                       >
                         <Card className="group p-4 flex items-center space-x-3 bg-white/40 backdrop-blur-sm border border-white/20 hover:border-white/30 hover:bg-white/50 transition-all duration-300 cursor-pointer">
                           <div
@@ -332,8 +328,6 @@ const TourFeatures: React.FC<TourFeaturesProps> = ({ tour, features }) => {
               key={feature.id}
               variant="lift"
               intensity="sm"
-              className="opacity-0 animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
             >
               <Card className="group p-4 flex items-center space-x-3 bg-white/40 backdrop-blur-sm border border-white/20 hover:border-white/30 hover:bg-white/50 transition-all duration-300 cursor-pointer">
                 <div
