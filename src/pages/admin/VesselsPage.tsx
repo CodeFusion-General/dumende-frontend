@@ -205,12 +205,7 @@ const VesselsPage = () => {
         // Skip if this is already an uploaded document (has a real ID and boatId)
         if (document.boatId && document.boatId > 0) continue;
 
-        // For temporary documents, we need to re-upload them
-        // Note: The actual file data should be stored somewhere accessible
-        // For now, we'll skip this as the BoatDocumentsTab handles it internally
-        console.log(
-          `Document ${document.documentName} will be handled by BoatDocumentsTab`
-        );
+        // Temporary documents are handled by the create flow via pendingDocuments
       }
     } catch (error) {
       console.error("Error uploading documents for new boat:", error);
@@ -360,9 +355,7 @@ const VesselsPage = () => {
 
           const imagesDTOs = await Promise.all(imagePromises);
 
-          console.log('[DEBUG] Creating vessel with images - pendingDocuments count:', formData.pendingDocuments.length);
           const baseDTO = await formDataToCreateDTO(formData);
-          console.log('[DEBUG] baseDTO documents:', baseDTO.documents?.length || 0, baseDTO.documents);
 
           const createDTO: CreateVesselDTO = {
             ...baseDTO,
@@ -381,9 +374,7 @@ const VesselsPage = () => {
             description: "Yeni tekne eklendi.",
           });
         } else {
-          console.log('[DEBUG] Creating vessel - pendingDocuments count:', formData.pendingDocuments.length);
           const createDTO = await formDataToCreateDTO(formData);
-          console.log('[DEBUG] createDTO documents:', createDTO.documents?.length || 0, createDTO.documents);
           const newVessel = await boatService.createVessel(createDTO);
 
           // Handle document uploads for new boat
@@ -1540,17 +1531,11 @@ const VesselsPage = () => {
                             }
                           }}
                           onPendingDocumentAdd={(pendingDoc) => {
-                            // CRITICAL: Store pending documents with base64 data for new boat creation
-                            console.log('[DEBUG] VesselsPage received pendingDoc:', pendingDoc.documentName, 'base64 length:', pendingDoc.documentData?.length);
-                            setFormData((prev) => {
-                              console.log('[DEBUG] Previous pendingDocuments count:', prev.pendingDocuments.length);
-                              const updated = [...prev.pendingDocuments, pendingDoc];
-                              console.log('[DEBUG] New pendingDocuments count:', updated.length);
-                              return {
-                                ...prev,
-                                pendingDocuments: updated,
-                              };
-                            });
+                            // Store pending documents with base64 data for new boat creation
+                            setFormData((prev) => ({
+                              ...prev,
+                              pendingDocuments: [...prev.pendingDocuments, pendingDoc],
+                            }));
                           }}
                           loading={loading}
                         />

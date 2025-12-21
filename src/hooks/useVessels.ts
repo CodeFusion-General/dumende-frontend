@@ -54,11 +54,9 @@ export function useVessels(): UseVesselsReturn {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching vessels for user ID:", user.id);
       const ownerId = user.id;
       const data = await boatService.getVesselsByOwner(ownerId);
 
-      console.log("Vessels fetched successfully:", data.length);
       setVessels(data);
     } catch (err) {
       console.error("Vessels yükleme hatası:", err);

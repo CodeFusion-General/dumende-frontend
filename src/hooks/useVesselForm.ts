@@ -235,9 +235,6 @@ export function useVesselForm(): UseVesselFormReturn {
 
     const imagesDTOs = await Promise.all(imagePromises);
 
-    console.log('[DEBUG] formDataToCreateDTO - shortDescription:', data.shortDescription);
-    console.log('[DEBUG] formDataToCreateDTO - detailedDescription:', data.detailedDescription);
-
     return {
       name: data.name.trim(),
       description: data.detailedDescription || "",

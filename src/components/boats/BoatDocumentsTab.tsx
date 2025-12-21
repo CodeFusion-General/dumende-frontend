@@ -205,10 +205,7 @@ const BoatDocumentsTab: React.FC<BoatDocumentsTabProps> = ({
               verificationNotes: metadata.verificationNotes,
               displayOrder: documents.length + 1,
             };
-            console.log('[DEBUG] Calling onPendingDocumentAdd with:', pendingDocument.documentName, 'base64 length:', base64.length);
             onPendingDocumentAdd(pendingDocument);
-          } else {
-            console.warn('[DEBUG] onPendingDocumentAdd is NOT defined! Documents will not be saved on create.');
           }
 
           toast({
