@@ -3,26 +3,35 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Upload, 
-  X, 
-  Star, 
-  Image as ImageIcon, 
-  Move, 
+import {
+  Upload,
+  X,
+  Star,
+  Image as ImageIcon,
+  Move,
   AlertCircle,
   CheckCircle,
   Camera,
   Sparkles,
   Grid3x3,
-  FileImage
+  FileImage,
+  Cloud
 } from "lucide-react";
+import { TourImageDTO } from "@/types/tour.types";
 
 interface TourPhotosTabProps {
   photos: File[];
+  existingImages?: TourImageDTO[];
   onChange: (photos: File[]) => void;
+  onDeleteExisting?: (imageId: number) => void;
 }
 
-const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
+const TourPhotosTab: React.FC<TourPhotosTabProps> = ({
+  photos,
+  existingImages = [],
+  onChange,
+  onDeleteExisting
+}) => {
   const [featuredIndex, setFeaturedIndex] = useState<number>(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -73,7 +82,7 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
     const errors: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      if (newPhotos.length >= 10) {
+      if (existingImages.length + newPhotos.length >= 10) {
         errors.push("Maksimum 10 fotoğraf yükleyebilirsiniz");
         break;
       }
@@ -176,7 +185,9 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
     return URL.createObjectURL(file);
   };
 
-  const uploadPercentage = (photos.length / 10) * 100;
+  // Total photos count including existing images from CloudFlare
+  const totalPhotosCount = existingImages.length + photos.length;
+  const uploadPercentage = (totalPhotosCount / 10) * 100;
 
   return (
     <div className="space-y-8">
@@ -197,12 +208,15 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
       </div>
 
       {/* Upload Progress Bar */}
-      {photos.length > 0 && (
+      {totalPhotosCount > 0 && (
         <Card className="p-4 border-0 shadow-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Yükleme Durumu</span>
+            <span className="text-sm font-medium text-gray-700">Fotoğraf Durumu</span>
             <Badge variant={uploadPercentage === 100 ? "default" : "outline"} className="bg-[#15847c]/10 text-[#15847c] border-[#15847c]">
-              {photos.length}/10 Fotoğraf
+              {totalPhotosCount}/10 Fotoğraf
+              {existingImages.length > 0 && photos.length > 0 && (
+                <span className="ml-1 text-xs">({existingImages.length} mevcut + {photos.length} yeni)</span>
+              )}
             </Badge>
           </div>
           <Progress value={uploadPercentage} className="h-2" />
@@ -210,12 +224,12 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
       )}
 
       {/* Upload Area */}
-      <Card 
+      <Card
         className={`border-2 border-dashed transition-all duration-300 ${
-          isDraggingOver 
-            ? 'border-[#15847c] bg-[#15847c]/5 shadow-xl scale-[1.02]' 
+          isDraggingOver
+            ? 'border-[#15847c] bg-[#15847c]/5 shadow-xl scale-[1.02]'
             : 'border-gray-300 hover:border-[#15847c] hover:shadow-lg'
-        } ${photos.length >= 10 ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${totalPhotosCount >= 10 ? 'opacity-50 cursor-not-allowed' : ''}`}
         onDragOver={handleDragOver}
         onDrop={handleDropFiles}
         onDragLeave={handleDragLeave}
@@ -245,17 +259,17 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
               multiple
               onChange={handleFileChange}
               className="hidden"
-              disabled={photos.length >= 10}
+              disabled={totalPhotosCount >= 10}
             />
-            
+
             <Button
               type="button"
               onClick={handleFileSelectClick}
-              disabled={photos.length >= 10}
+              disabled={totalPhotosCount >= 10}
               className="bg-[#15847c] hover:bg-[#0e5c56] text-white disabled:opacity-50"
             >
               <FileImage className="h-4 w-4 mr-2" />
-              {photos.length >= 10 ? "Maksimum Sayıya Ulaşıldı" : "Bilgisayardan Seç"}
+              {totalPhotosCount >= 10 ? "Maksimum Sayıya Ulaşıldı" : "Bilgisayardan Seç"}
             </Button>
             
             <Button
@@ -289,18 +303,106 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
         </div>
       </Card>
 
-      {/* Photo Grid */}
+      {/* Existing Images from CloudFlare (Edit Mode) */}
+      {existingImages.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Cloud className="h-5 w-5 text-[#15847c]" />
+                Mevcut Fotoğraflar
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">CloudFlare'de kayıtlı fotoğraflar</p>
+            </div>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+              {existingImages.length} Fotoğraf
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {existingImages.map((image, index) => (
+              <div key={image.id} className="relative group">
+                <Card className={`overflow-hidden border-2 transition-all duration-300 ${
+                  index === 0
+                    ? "border-[#15847c] shadow-xl ring-2 ring-[#15847c]/20"
+                    : "border-gray-200 hover:border-gray-300 hover:shadow-lg"
+                }`}>
+                  <div className="aspect-square relative">
+                    <img
+                      src={image.mediumUrl || image.publicUrl || image.thumbnailUrl || ''}
+                      alt={`Tour photo ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to other URLs if primary fails
+                        const target = e.target as HTMLImageElement;
+                        if (image.publicUrl && target.src !== image.publicUrl) {
+                          target.src = image.publicUrl;
+                        } else if (image.thumbnailUrl && target.src !== image.thumbnailUrl) {
+                          target.src = image.thumbnailUrl;
+                        }
+                      }}
+                    />
+
+                    {/* Overlay with delete button */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute top-2 right-2">
+                        {onDeleteExisting && (
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="secondary"
+                            className="h-8 w-8 bg-white/90 hover:bg-red-500 hover:text-white text-gray-700 transition-all duration-300"
+                            onClick={() => onDeleteExisting(image.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Photo Number */}
+                      <div className="absolute bottom-2 left-2">
+                        <Badge className="bg-black/70 text-white border-0">
+                          #{index + 1}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Featured Badge for first image */}
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <Badge className="bg-gradient-to-r from-[#15847c] to-[#0e5c56] text-white border-0 shadow-lg">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Ana Fotoğraf
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* CloudFlare indicator */}
+                    <div className="absolute bottom-2 right-2">
+                      <Badge className="bg-blue-500/80 text-white border-0 text-xs">
+                        <Cloud className="h-3 w-3" />
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* New Photo Grid (Local uploads) */}
       {photos.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Grid3x3 className="h-5 w-5 text-[#15847c]" />
-                Yüklenen Fotoğraflar
+                {existingImages.length > 0 ? "Yeni Eklenen Fotoğraflar" : "Yüklenen Fotoğraflar"}
               </h3>
               <p className="text-sm text-gray-600 mt-1">Sürükleyerek sırayı değiştirebilirsiniz</p>
             </div>
-            
+
             {photos.length > 1 && (
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
                 <Move className="h-3 w-3 mr-1" />
@@ -308,7 +410,7 @@ const TourPhotosTab: React.FC<TourPhotosTabProps> = ({ photos, onChange }) => {
               </Badge>
             )}
           </div>
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {photos.map((photo, index) => (
               <div

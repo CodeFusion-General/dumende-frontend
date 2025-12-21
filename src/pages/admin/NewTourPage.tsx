@@ -22,6 +22,7 @@ import {
   UpdateTourDTO,
   CreateTourDateDTO,
   CreateTourImageDTO,
+  TourImageDTO,
 } from "@/types/tour.types";
 import { TourDocumentDTO } from "@/types/document.types";
 import {
@@ -101,6 +102,9 @@ const NewTourPage = () => {
   const [loadingTourData, setLoadingTourData] = useState(false);
   const [completedTabs, setCompletedTabs] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // Existing images from CloudFlare (for edit mode)
+  const [existingImages, setExistingImages] = useState<TourImageDTO[]>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (isEditMode && id) {
@@ -124,11 +128,15 @@ const NewTourPage = () => {
       // Load tour documents
       const tourDocuments = await documentService.getTourDocuments(tourId);
 
+      // Store existing images for display in edit mode
+      setExistingImages(tourImages);
+      setDeletedImageIds([]); // Reset deleted images
+
       // Parse location (region)
       const locationParts = tour.location?.split(", ") || [];
       const region = locationParts[0] || tour.location || "";
 
-      // Convert base64 images to File objects (for display only)
+      // New photos will be stored here (empty initially in edit mode)
       const photoFiles: File[] = [];
 
       // Set form data
@@ -461,7 +469,7 @@ const NewTourPage = () => {
           tourDateIdsToRemove: [],
           tourImagesToUpdate: [],
           tourImagesToAdd: [],
-          tourImageIdsToRemove: [],
+          tourImageIdsToRemove: deletedImageIds, // Include deleted image IDs
         };
 
         const updatedTour = await tourService.updateTour(updateTourDTO);
@@ -469,14 +477,20 @@ const NewTourPage = () => {
         // Handle document updates for existing tours
         // Note: For new documents added during editing, we need to upload them
         const newDocuments = formData.documents.filter(
-          (doc) => doc.id > 1000000
-        ); // Temporary IDs are large numbers
+          (doc) => doc.id > 1000000 && doc.documentData
+        ); // Temporary IDs are large numbers and have base64 data
 
         for (const doc of newDocuments) {
           try {
-            // This would need the base64 data stored somewhere during editing
-            // For now, we'll skip this as it requires more complex state management
-            console.log("New document to upload:", doc.documentName);
+            await documentService.createTourDocument(tourId!, {
+              documentType: doc.documentType,
+              documentName: doc.documentName,
+              documentData: doc.documentData!,
+              expiryDate: doc.expiryDate,
+              isVerified: doc.isVerified,
+              verificationNotes: doc.verificationNotes,
+              displayOrder: doc.displayOrder,
+            });
           } catch (error) {
             console.error("Error uploading new document:", error);
           }
@@ -507,18 +521,19 @@ const NewTourPage = () => {
           }
         }
 
+        // duration'u dakikaya çevir
+        const durationMinutes = formData.dates.duration.hours * 60 + formData.dates.duration.minutes;
+        const durationText = formData.dates.duration.hours > 0
+          ? `${formData.dates.duration.hours} Saat${formData.dates.duration.minutes > 0 ? ` ${formData.dates.duration.minutes} Dakika` : ''}`
+          : `${formData.dates.duration.minutes} Dakika`;
+
         const tourDates: CreateTourDateDTO[] = formData.dates.tourDates.map(
           (date) => ({
             tourId: 0,
             startDate: new Date(date.startDate).toISOString(),
-            durationText: `${Math.max(
-              1,
-              Math.round(
-                (new Date(date.endDate).getTime() -
-                  new Date(date.startDate).getTime()) /
-                  (60 * 60 * 1000)
-              )
-            )} Saat`,
+            endDate: new Date(date.endDate).toISOString(),
+            durationText,
+            durationMinutes,
             availabilityStatus: date.availabilityStatus || "AVAILABLE",
             maxGuests:
               Number(date.maxGuests) || Number(formData.dates.capacity),
@@ -565,13 +580,18 @@ const NewTourPage = () => {
         if (formData.documents.length > 0) {
           try {
             for (const doc of formData.documents) {
-              // For new tours, documents are stored temporarily with base64 data
-              // The TourDocumentsTab component handles this by storing the data
-              // We would need to implement a way to store the base64 data during form filling
-              console.log("Document to upload:", doc.documentName);
-
-              // This would require the base64 data to be stored in the document object
-              // For now, we'll skip the actual upload as it requires more complex state management
+              // Upload documents that have base64 data stored
+              if (doc.documentData) {
+                await documentService.createTourDocument(newTour.id, {
+                  documentType: doc.documentType,
+                  documentName: doc.documentName,
+                  documentData: doc.documentData,
+                  expiryDate: doc.expiryDate,
+                  isVerified: doc.isVerified,
+                  verificationNotes: doc.verificationNotes,
+                  displayOrder: doc.displayOrder,
+                });
+              }
             }
           } catch (error) {
             console.error("Error uploading documents:", error);
@@ -839,9 +859,16 @@ const NewTourPage = () => {
               >
                 <TourPhotosTab
                   photos={formData.photos}
+                  existingImages={existingImages}
                   onChange={(photos) =>
                     setFormData((prev) => ({ ...prev, photos }))
                   }
+                  onDeleteExisting={(imageId) => {
+                    setExistingImages((prev) =>
+                      prev.filter((img) => img.id !== imageId)
+                    );
+                    setDeletedImageIds((prev) => [...prev, imageId]);
+                  }}
                 />
               </TabsContent>
 

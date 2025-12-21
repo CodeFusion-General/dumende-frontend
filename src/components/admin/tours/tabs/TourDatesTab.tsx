@@ -35,6 +35,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+interface TourDateItem {
+  startDate: string;
+  endDate: string;
+  availabilityStatus: string;
+  maxGuests: number;
+}
+
 interface TourDatesData {
   duration: {
     hours: number;
@@ -42,6 +49,7 @@ interface TourDatesData {
   };
   capacity: number;
   price: number;
+  tourDates: TourDateItem[];
 }
 
 interface TourDatesTabProps {
@@ -53,11 +61,13 @@ const TourDatesTab: React.FC<TourDatesTabProps> = ({ data, onChange }) => {
   const form = useForm({
     defaultValues: data,
   });
-  
+
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [newTimeInput, setNewTimeInput] = useState<string>('');
-  const [scheduledDates, setScheduledDates] = useState<Array<{date: Date, times: string[]}>>([]);
+
+  // Parent'tan gelen tourDates'i kullan - artık LOCAL state YOK
+  const scheduledDates = data.tourDates || [];
 
   // Generate hour options (1-12)
   const hourOptions = Array.from({ length: 12 }, (_, i) => ({
@@ -87,14 +97,39 @@ const TourDatesTab: React.FC<TourDatesTabProps> = ({ data, onChange }) => {
 
   const addScheduledDate = () => {
     if (selectedDate && selectedTimes.length > 0) {
-      setScheduledDates([...scheduledDates, { date: selectedDate, times: [...selectedTimes] }]);
+      // Her seçilen saat için ayrı bir TourDateItem oluştur
+      const newDates: TourDateItem[] = selectedTimes.map((time) => {
+        const [hours, minutes] = time.split(':').map(Number);
+        const startDate = new Date(selectedDate);
+        startDate.setHours(hours, minutes, 0, 0);
+
+        // duration'a göre endDate hesapla
+        const durationMs = (data.duration.hours * 60 + data.duration.minutes) * 60 * 1000;
+        const endDate = new Date(startDate.getTime() + durationMs);
+
+        return {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          availabilityStatus: 'AVAILABLE',
+          maxGuests: data.capacity,
+        };
+      });
+
+      // Parent'a güncellenmiş tourDates gönder
+      onChange({
+        tourDates: [...scheduledDates, ...newDates],
+      });
+
       setSelectedTimes([]);
       setSelectedDate(new Date());
     }
   };
 
   const removeScheduledDate = (index: number) => {
-    setScheduledDates(scheduledDates.filter((_, i) => i !== index));
+    // Parent'a güncellenmiş tourDates gönder
+    onChange({
+      tourDates: scheduledDates.filter((_, i) => i !== index),
+    });
   };
 
   // Calculate estimated earnings
@@ -475,32 +510,38 @@ const TourDatesTab: React.FC<TourDatesTabProps> = ({ data, onChange }) => {
                 Eklenen Tarihler ({scheduledDates.length})
               </h3>
               <div className="space-y-3">
-                {scheduledDates.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">{item.date.toLocaleDateString('tr-TR')}</span>
+                {scheduledDates.map((item, index) => {
+                  const startDate = new Date(item.startDate);
+                  const endDate = new Date(item.endDate);
+                  const timeStr = startDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                  const endTimeStr = endDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+                  return (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium">{startDate.toLocaleDateString('tr-TR')}</span>
+                        </div>
+                        <Badge variant="outline" className="bg-white">
+                          {timeStr} - {endTimeStr}
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                          {item.maxGuests} kişi
+                        </Badge>
                       </div>
-                      <div className="flex gap-2">
-                        {item.times.map((time, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-white">
-                            {time}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeScheduledDate(index)}
+                        className="hover:bg-red-50 hover:text-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeScheduledDate(index)}
-                      className="hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Card>
           )}

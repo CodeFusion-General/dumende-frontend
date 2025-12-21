@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import { tourService } from "@/services/tourService";
 import { TourDateDTO, TourDTO } from "@/types/tour.types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CalendarEvent {
   id: number;
@@ -21,6 +22,7 @@ interface CalendarEvent {
 }
 
 const TourCalendarPage: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     new Date()
   );
@@ -30,8 +32,10 @@ const TourCalendarPage: React.FC = () => {
   const [tours, setTours] = useState<TourDTO[]>([]);
 
   useEffect(() => {
-    fetchTourCalendarData();
-  }, []);
+    if (isAuthenticated && user?.id) {
+      fetchTourCalendarData();
+    }
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -40,12 +44,17 @@ const TourCalendarPage: React.FC = () => {
   }, [selectedDate]);
 
   const fetchTourCalendarData = async () => {
+    if (!isAuthenticated || !user?.id) {
+      setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      // TODO: guideId'yi auth context'ten al
-      const currentGuideId = 1;
+      const currentGuideId = Number(user.id);
 
       // Get all tours for the guide
       const toursData = await tourService.getToursByGuideId(currentGuideId);

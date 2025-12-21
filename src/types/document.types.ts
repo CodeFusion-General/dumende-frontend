@@ -36,6 +36,8 @@ interface BaseDocumentDTO {
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+  // Optional: base64 data for temporary storage during form filling (before upload)
+  documentData?: string;
 }
 
 // Boat Document DTOs

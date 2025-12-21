@@ -19,6 +19,7 @@ import {
   UpdateTourDocumentDTO,
 } from "@/types/document.types";
 import { documentService } from "./documentService";
+import { compressImage, validateImageFile } from "@/lib/imageUtils";
 
 class TourService extends BaseService {
   constructor() {
@@ -392,6 +393,76 @@ class TourService extends BaseService {
         `/tour-images/${id}/display-order?displayOrder=${displayOrder}`
       )
       .then((res) => res.data);
+  }
+
+  /**
+   * Optimized base64 image upload to CloudFlare Images.
+   * Frontend'den compress edilmiş görselleri base64 formatında backend'e gönderir.
+   */
+  public async uploadOptimizedImages(
+    tourId: number,
+    images: Array<{
+      imageData: string;
+      displayOrder: number;
+    }>
+  ): Promise<TourImageDTO[]> {
+    try {
+      const response = await this.api.post<TourImageDTO[]>(
+        `/tour-images/tour/${tourId}/batch-from-base64`,
+        images
+      );
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Compress and upload images to CloudFlare Images.
+   * Dosyaları otomatik olarak optimize eder ve backend'e base64 olarak gönderir.
+   */
+  public async compressAndUploadImages(
+    tourId: number,
+    files: FileList | File[]
+  ): Promise<TourImageDTO[]> {
+    const compressedImages: Array<{
+      imageData: string;
+      displayOrder: number;
+    }> = [];
+
+    const fileArray = Array.from(files);
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+
+      // Dosya validasyonu
+      const validation = validateImageFile(file);
+      if (!validation.isValid) {
+        throw new Error(`Dosya ${file.name}: ${validation.error}`);
+      }
+
+      try {
+        // Resmi compress et
+        const compressedBase64 = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 800,
+          quality: 0.8,
+          outputFormat: "image/jpeg",
+        });
+
+        compressedImages.push({
+          imageData: compressedBase64,
+          displayOrder: i + 1,
+        });
+      } catch (error) {
+        console.error(`${file.name} compress edilemedi:`, error);
+        throw new Error(`Resim işlenemedi: ${file.name}`);
+      }
+    }
+
+    // Compress edilmiş resimleri backend'e gönder
+    return this.uploadOptimizedImages(tourId, compressedImages);
   }
 
   // ======= Tour Document Operations =======

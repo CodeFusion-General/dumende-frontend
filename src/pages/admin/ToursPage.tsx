@@ -9,6 +9,7 @@ import EmptyTours from "@/components/admin/tours/EmptyTours";
 import { toast } from "@/components/ui/use-toast";
 import { tourService } from "@/services/tourService";
 import { TourDTO } from "@/types/tour.types";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* Backend hazır olduğunda kullanılacak interface:
 interface Tour {
@@ -25,6 +26,7 @@ interface Tour {
 
 const ToursPage = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [durationFilter, setDurationFilter] = useState("all");
@@ -36,16 +38,23 @@ const ToursPage = () => {
   const [tours, setTours] = useState<TourDTO[]>([]);
 
   useEffect(() => {
-    fetchTours();
-  }, []);
+    if (isAuthenticated && user?.id) {
+      fetchTours();
+    }
+  }, [isAuthenticated, user?.id]);
 
   const fetchTours = async () => {
+    if (!isAuthenticated || !user?.id) {
+      setError("Oturum süresi dolmuş. Lütfen tekrar giriş yapın.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      // TODO: guideId'yi auth context'ten al
-      const currentGuideId = 1; // Geçici olarak sabit değer
+      const currentGuideId = Number(user.id);
       const toursData = await tourService.getToursByGuideId(currentGuideId);
       setTours(toursData);
 

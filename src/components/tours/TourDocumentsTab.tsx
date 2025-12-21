@@ -178,7 +178,7 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
           // Convert file to base64
           const { base64 } = await documentService.convertFileToBase64(file);
 
-          // Create a temporary document object
+          // Create a temporary document object with base64 data for upload later
           const tempDocument: TourDocumentDTO = {
             id: Date.now(), // Temporary ID
             tourId: 0, // Will be set when tour is created
@@ -192,6 +192,7 @@ const TourDocumentsTab: React.FC<TourDocumentsTabProps> = ({
             displayOrder: documents.length + 1,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            documentData: base64, // Store base64 data for upload when tour is created
           };
 
           // Add to documents list
