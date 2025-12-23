@@ -42,6 +42,7 @@ const SecurityPage = lazy(() => import("./pages/admin/SecurityPage"));
 const FinancePage = lazy(() => import("./pages/admin/FinancePage"));
 const CaptainApplicationsPage = lazy(() => import("./pages/admin/CaptainApplicationsPage"));
 const CaptainApplicationDetailPage = lazy(() => import("./pages/admin/CaptainApplicationDetailPage"));
+const PendingApprovalsPage = lazy(() => import("./pages/admin/PendingApprovalsPage"));
 
 // Lazy load public pages
 const Index = lazy(() => import("./pages/Index"));
@@ -311,6 +312,16 @@ const App = () => {
                           requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
                         >
                           <TourAvailabilityPage />
+                        </RoleGuard>
+                      }
+                    />
+                    <Route
+                      path="/captain/pending-approvals"
+                      element={
+                        <RoleGuard
+                          requiredRoles={[UserType.BOAT_OWNER, UserType.ADMIN]}
+                        >
+                          <PendingApprovalsPage />
                         </RoleGuard>
                       }
                     />

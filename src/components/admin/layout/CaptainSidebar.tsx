@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -6,6 +6,7 @@ import {
   Map,
   Calendar,
   Clock,
+  ClockAlert,
   MessageSquare,
   DollarSign,
   ClipboardList,
@@ -16,6 +17,7 @@ import {
   LogOut,
   Menu,
 } from "lucide-react";
+import { bookingService } from "@/services/bookingService";
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +38,25 @@ const CaptainSidebar = () => {
   const { state } = useSidebar();
   const { logout } = useAuth();
   const isCollapsed = state === "collapsed";
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Fetch pending approval count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const bookings = await bookingService.getPendingApprovalBookings();
+        setPendingCount(bookings.length);
+      } catch (error) {
+        console.error("Failed to fetch pending approval count:", error);
+        setPendingCount(0);
+      }
+    };
+
+    fetchPendingCount();
+    // Refresh every 2 minutes
+    const interval = setInterval(fetchPendingCount, 120000);
+    return () => clearInterval(interval);
+  }, []);
 
   const menuItems = [
     {
@@ -58,6 +79,12 @@ const CaptainSidebar = () => {
       label: "Tur Müsaitlik",
       icon: <Clock size={20} />,
       path: "/captain/tour-availability",
+    },
+    {
+      label: "Bekleyen Rezervasyonlar",
+      icon: <ClockAlert size={20} />,
+      path: "/captain/pending-approvals",
+      badge: pendingCount > 0 ? pendingCount : undefined,
     },
     {
       label: "Mesajlar",
@@ -132,7 +159,7 @@ const CaptainSidebar = () => {
                       <TooltipTrigger asChild>
                         <Link
                           to={item.path}
-                          className={`flex justify-center items-center p-2 rounded-md transition-colors ${
+                          className={`relative flex justify-center items-center p-2 rounded-md transition-colors ${
                             isActive
                               ? "bg-[#15847c] text-white"
                               : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -140,9 +167,17 @@ const CaptainSidebar = () => {
                           aria-label={item.label}
                         >
                           <span>{item.icon}</span>
+                          {item.badge && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {item.badge > 9 ? "9+" : item.badge}
+                            </span>
+                          )}
                         </Link>
                       </TooltipTrigger>
-                      <TooltipContent side="right">{item.label}</TooltipContent>
+                      <TooltipContent side="right">
+                        {item.label}
+                        {item.badge && ` (${item.badge})`}
+                      </TooltipContent>
                     </Tooltip>
                   </li>
                 );
@@ -152,15 +187,22 @@ const CaptainSidebar = () => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center justify-start px-3 py-2.5 rounded-md transition-colors text-left ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-md transition-colors ${
                       isActive
                         ? "bg-[#15847c] text-white"
                         : "text-gray-300 hover:bg-gray-700 hover:text-white"
                     }`}
                     aria-label={item.label}
                   >
-                    <span className="mr-3 flex-shrink-0">{item.icon}</span>
-                    <span className="text-left">{item.label}</span>
+                    <div className="flex items-center">
+                      <span className="mr-3 flex-shrink-0">{item.icon}</span>
+                      <span className="text-left">{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

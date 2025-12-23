@@ -46,6 +46,14 @@ export interface BookingDTO {
   paymentVerificationCount?: number; // Payment verification attempts
   lastVerificationAttempt?: string; // Last verification timestamp
   cancellationReason?: string; // Cancellation reason if cancelled
+
+  // Normal reservation / Owner approval fields
+  ownerApprovalDeadline?: string; // Kaptan onay son tarihi (48 saat TTL)
+  paymentDeadline?: string; // Ödeme son tarihi (24 saat TTL)
+  rejectionReason?: string; // Ret sebebi
+  isInstantConfirmation?: boolean; // Anında rezervasyon mu?
+  ownerApprovedAt?: string; // Kaptan onay zamanı
+  ownerApprovedBy?: number; // Onaylayan kaptan ID
 }
 
 export interface CreateBookingDTO {
@@ -113,6 +121,8 @@ export interface UpdatePaymentDTO {
 // Enum Types
 export enum BookingStatus {
   RESERVED = "RESERVED", // ✅ YENİ: Temporary hold (payment pending, 15min TTL) - Backend commit 0499578
+  AWAITING_OWNER_APPROVAL = "AWAITING_OWNER_APPROVAL", // ✅ Normal rezervasyon - Kaptan onayı bekliyor (48 saat TTL)
+  APPROVED_PENDING_PAYMENT = "APPROVED_PENDING_PAYMENT", // ✅ Kaptan onayladı, ödeme bekleniyor (24 saat TTL)
   PENDING = "PENDING",
   PROCESSING = "PROCESSING",
   CONFIRMED = "CONFIRMED",

@@ -18,13 +18,18 @@ interface Booking {
   id: string;
   startDate: string;
   endDate: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW" | "AWAITING_OWNER_APPROVAL" | "APPROVED_PENDING_PAYMENT" | "RESERVED" | "REJECTED";
   customerId: number;
   boatId: number;
   boatName: string;
   passengerCount: number;
   notes?: string;
   createdAt: string;
+  ownerApprovalDeadline?: string;
+  paymentDeadline?: string;
+  rejectionReason?: string;
+  isInstantConfirmation?: boolean;
+  totalPrice?: number;
 }
 
 const getStatusBadgeVariant = (status: Booking["status"]) => {
@@ -34,11 +39,18 @@ const getStatusBadgeVariant = (status: Booking["status"]) => {
     case "CONFIRMED":
       return "default";
     case "CANCELLED":
+    case "REJECTED":
       return "destructive";
     case "COMPLETED":
       return "success";
     case "NO_SHOW":
       return "warning";
+    case "AWAITING_OWNER_APPROVAL":
+      return "outline";
+    case "APPROVED_PENDING_PAYMENT":
+      return "warning";
+    case "RESERVED":
+      return "outline";
     default:
       return "outline";
   }
@@ -51,13 +63,45 @@ const getStatusColor = (status: Booking["status"]) => {
     case "CONFIRMED":
       return "text-blue-600 bg-blue-100";
     case "CANCELLED":
+    case "REJECTED":
       return "text-red-600 bg-red-100";
     case "COMPLETED":
       return "text-green-600 bg-green-100";
     case "NO_SHOW":
       return "text-orange-600 bg-orange-100";
+    case "AWAITING_OWNER_APPROVAL":
+      return "text-purple-600 bg-purple-100";
+    case "APPROVED_PENDING_PAYMENT":
+      return "text-amber-600 bg-amber-100";
+    case "RESERVED":
+      return "text-cyan-600 bg-cyan-100";
     default:
       return "text-gray-600 bg-gray-100";
+  }
+};
+
+const getStatusLabel = (status: Booking["status"]) => {
+  switch (status) {
+    case "PENDING":
+      return "Beklemede";
+    case "CONFIRMED":
+      return "Onaylandı";
+    case "CANCELLED":
+      return "İptal";
+    case "COMPLETED":
+      return "Tamamlandı";
+    case "NO_SHOW":
+      return "Gelmedi";
+    case "REJECTED":
+      return "Reddedildi";
+    case "AWAITING_OWNER_APPROVAL":
+      return "Onay Bekliyor";
+    case "APPROVED_PENDING_PAYMENT":
+      return "Ödeme Bekliyor";
+    case "RESERVED":
+      return "Rezerve";
+    default:
+      return status;
   }
 };
 
@@ -83,11 +127,18 @@ const BookingCard: React.FC<{ booking: Booking; onClick: () => void }> = ({
       case "CONFIRMED":
         return "from-blue-50 to-indigo-50";
       case "CANCELLED":
+      case "REJECTED":
         return "from-red-50 to-pink-50";
       case "COMPLETED":
         return "from-green-50 to-emerald-50";
       case "NO_SHOW":
         return "from-gray-50 to-slate-50";
+      case "AWAITING_OWNER_APPROVAL":
+        return "from-purple-50 to-violet-50";
+      case "APPROVED_PENDING_PAYMENT":
+        return "from-amber-50 to-yellow-50";
+      case "RESERVED":
+        return "from-cyan-50 to-sky-50";
       default:
         return "from-gray-50 to-slate-50";
     }
@@ -100,11 +151,18 @@ const BookingCard: React.FC<{ booking: Booking; onClick: () => void }> = ({
       case "CONFIRMED":
         return "from-blue-400 to-indigo-400";
       case "CANCELLED":
+      case "REJECTED":
         return "from-red-400 to-pink-400";
       case "COMPLETED":
         return "from-green-400 to-emerald-400";
       case "NO_SHOW":
         return "from-gray-400 to-slate-400";
+      case "AWAITING_OWNER_APPROVAL":
+        return "from-purple-400 to-violet-400";
+      case "APPROVED_PENDING_PAYMENT":
+        return "from-amber-400 to-yellow-400";
+      case "RESERVED":
+        return "from-cyan-400 to-sky-400";
       default:
         return "from-gray-400 to-slate-400";
     }
@@ -162,7 +220,7 @@ const BookingCard: React.FC<{ booking: Booking; onClick: () => void }> = ({
               booking.status
             )} backdrop-blur-sm`}
           >
-            {booking.status}
+            {getStatusLabel(booking.status)}
           </Badge>
         </div>
       </CardHeader>
@@ -308,6 +366,11 @@ const BookingsPage: React.FC = () => {
           passengerCount: b.passengerCount,
           notes: b.notes,
           createdAt: b.createdAt,
+          ownerApprovalDeadline: b.ownerApprovalDeadline,
+          paymentDeadline: b.paymentDeadline,
+          rejectionReason: b.rejectionReason,
+          isInstantConfirmation: b.isInstantConfirmation,
+          totalPrice: b.totalPrice,
         }));
 
         // Bookings mapped successfully
@@ -421,6 +484,11 @@ const BookingsPage: React.FC = () => {
             passengerCount: b.passengerCount,
             notes: b.notes,
             createdAt: b.createdAt,
+            ownerApprovalDeadline: b.ownerApprovalDeadline,
+            paymentDeadline: b.paymentDeadline,
+            rejectionReason: b.rejectionReason,
+            isInstantConfirmation: b.isInstantConfirmation,
+            totalPrice: b.totalPrice,
           }));
 
           setBookings(mappedData);
@@ -543,7 +611,42 @@ const BookingsPage: React.FC = () => {
         </div>
 
         {/* Enhanced Status Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+          {/* Onay Bekleyen - Priority card with animation */}
+          <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1 focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2 col-span-2 md:col-span-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-violet-50 opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-violet-400" />
+            {(statusCounts.AWAITING_OWNER_APPROVAL || 0) > 0 && (
+              <div className="absolute top-2 right-2 w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+            )}
+            <CardContent className="relative p-6 text-center">
+              <div className="text-3xl font-bold text-[#2c3e50] font-montserrat mb-2">
+                {statusCounts.AWAITING_OWNER_APPROVAL || 0}
+              </div>
+              <div className="text-sm text-gray-600 font-roboto uppercase tracking-wide">
+                Onay Bekliyor
+              </div>
+            </CardContent>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 to-violet-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+          </Card>
+
+          {/* Ödeme Bekleyen */}
+          <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1 focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-yellow-50 opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-yellow-400" />
+            <CardContent className="relative p-6 text-center">
+              <div className="text-3xl font-bold text-[#2c3e50] font-montserrat mb-2">
+                {statusCounts.APPROVED_PENDING_PAYMENT || 0}
+              </div>
+              <div className="text-sm text-gray-600 font-roboto uppercase tracking-wide">
+                Ödeme Bekliyor
+              </div>
+            </CardContent>
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-yellow-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+          </Card>
+
           <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1 focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2">
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50 opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -645,7 +748,7 @@ const BookingsPage: React.FC = () => {
                       : "bg-white/60 backdrop-blur-sm text-gray-700 hover:bg-white/80 hover:shadow-md hover:scale-105"
                   }`}
                 >
-                  {status} ({count})
+                  {getStatusLabel(status as Booking["status"])} ({count})
                 </button>
               ))}
             </div>

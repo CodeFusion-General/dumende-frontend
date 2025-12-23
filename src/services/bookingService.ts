@@ -113,6 +113,46 @@ class BookingService extends BaseService {
     return this.patch<void>(`/${id}/status?${params.toString()}`, null);
   }
 
+  // ========== Normal Reservation (Owner Approval) Methods ==========
+
+  /**
+   * Approve a booking that is awaiting owner approval.
+   * Only boat owners/captains can approve bookings.
+   * This will generate a payment link and notify the customer.
+   */
+  public async approveBooking(id: number): Promise<BookingDTO> {
+    return this.post<BookingDTO>(`/${id}/approve`, {});
+  }
+
+  /**
+   * Reject a booking that is awaiting owner approval.
+   * Only boat owners/captains can reject bookings.
+   * A rejection reason is required.
+   */
+  public async rejectBooking(id: number, reason: string): Promise<BookingDTO> {
+    return this.post<BookingDTO>(`/${id}/reject`, { reason });
+  }
+
+  /**
+   * Get all bookings awaiting owner approval for the current owner's boats.
+   */
+  public async getPendingApprovalBookings(): Promise<BookingDTO[]> {
+    const userId = tokenUtils.getUserId();
+    if (!userId)
+      throw new Error("Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın");
+    return this.get<BookingDTO[]>(`/owner/${userId}/pending-approval`);
+  }
+
+  /**
+   * Get count of pending approval bookings for the current owner.
+   */
+  public async getPendingApprovalCount(): Promise<number> {
+    const userId = tokenUtils.getUserId();
+    if (!userId)
+      throw new Error("Kullanıcı ID'si bulunamadı - lütfen tekrar giriş yapın");
+    return this.get<number>(`/owner/${userId}/pending-approval/count`);
+  }
+
   public async deleteBooking(id: number): Promise<void> {
     return this.delete<void>(`/${id}`);
   }
@@ -136,9 +176,11 @@ class BookingService extends BaseService {
       const bookings = await this.get<BookingDTO[]>(`/customer/${userId}`);
 
       // Find active/processing booking with this boat
-      // ✅ UPDATED: Include RESERVED status (Backend commit 0499578)
+      // ✅ UPDATED: Include new owner approval statuses
       const activeStatuses = [
-        "RESERVED",    // Added: 15min hold status
+        "RESERVED",                    // 15min hold status (instant confirmation)
+        "AWAITING_OWNER_APPROVAL",     // Normal reservation - waiting for captain approval
+        "APPROVED_PENDING_PAYMENT",    // Approved, waiting for customer payment
         "PENDING",
         "PROCESSING",
         "CONFIRMED",
@@ -441,6 +483,28 @@ export const bookingCommandService = {
     reason?: string
   ): Promise<void> => {
     return bookingService.updateBookingStatusById(id, status, reason);
+  },
+
+  // ========== Normal Reservation (Owner Approval) Methods ==========
+
+  // Approve a booking awaiting owner approval
+  approveBooking: async (id: number): Promise<BookingDTO> => {
+    return bookingService.approveBooking(id);
+  },
+
+  // Reject a booking awaiting owner approval
+  rejectBooking: async (id: number, reason: string): Promise<BookingDTO> => {
+    return bookingService.rejectBooking(id, reason);
+  },
+
+  // Get all bookings awaiting owner approval
+  getPendingApprovalBookings: async (): Promise<BookingDTO[]> => {
+    return bookingService.getPendingApprovalBookings();
+  },
+
+  // Get count of pending approval bookings
+  getPendingApprovalCount: async (): Promise<number> => {
+    return bookingService.getPendingApprovalCount();
   },
 };
 
