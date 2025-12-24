@@ -273,7 +273,33 @@ class BoatService extends BaseService {
         },
       }
     );
-    return response.data;
+
+    const data = response.data;
+
+    // Spring Boot 3.x returns { content, page: { totalElements, totalPages, ... } }
+    // Normalize to flat structure expected by frontend
+    if (data.page && typeof data.page === 'object') {
+      return {
+        content: data.content || [],
+        totalElements: data.page.totalElements ?? 0,
+        totalPages: data.page.totalPages ?? 0,
+        size: data.page.size ?? size,
+        number: data.page.number ?? 0,
+        first: data.page.number === 0,
+        last: data.page.number >= (data.page.totalPages - 1),
+      };
+    }
+
+    // Fallback for older format or already normalized data
+    return {
+      content: data.content || [],
+      totalElements: data.totalElements ?? 0,
+      totalPages: data.totalPages ?? 0,
+      size: data.size ?? size,
+      number: data.number ?? 0,
+      first: data.first ?? (data.number === 0),
+      last: data.last ?? false,
+    };
   }
 
   // Arama önerileri (Ana sayfa için public)

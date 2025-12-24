@@ -163,6 +163,17 @@ const BoatsPage = () => {
   // ✅ Sunucu yanıtını yerel state'e yansıt
   useEffect(() => {
     if (!pageResp) return;
+
+    // Debug: API response'unu logla
+    console.log('[BoatsPage] API Response:', {
+      totalElements: pageResp.totalElements,
+      totalPages: pageResp.totalPages,
+      currentPage: pageResp.number,
+      size: pageResp.size,
+      contentLength: pageResp.content?.length,
+      firstBoatImages: pageResp.content?.[0]?.images?.slice(0, 1)
+    });
+
     setFilteredBoats(pageResp.content || []);
     setCurrentPage(pageResp.number ?? 0);
     setTotalPages(pageResp.totalPages ?? 0);

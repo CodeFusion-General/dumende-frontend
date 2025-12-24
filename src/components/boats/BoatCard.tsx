@@ -29,7 +29,13 @@ const getBoatImageUrl = (boat: BoatDTO): string => {
       boat.images.find((img) => img.isPrimary) || boat.images[0];
     if (primaryImage) {
       // Use thumbnail variant for grid/list views (200x200 or 400x300)
-      return getResponsiveImageUrl(primaryImage, 'thumbnail');
+      return (
+        primaryImage.publicUrl ||
+        primaryImage.thumbnailUrl ||
+        primaryImage.smallUrl ||
+        primaryImage.imageUrl ||
+        getDefaultImageUrl()
+      );
     }
   }
 

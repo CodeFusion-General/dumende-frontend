@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { paymentService } from "@/services/paymentService";
 import { bookingService } from "@/services/bookingService";
-import api from "@/services/api";
+import { httpClient } from "@/lib/axios";
 
 const PaymentReturn: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -35,7 +35,7 @@ const PaymentReturn: React.FC = () => {
       setLoading(true);
 
       // Call backend to refresh token
-      const response = await api.post(`/api/iyzico/booking/${bookingId}/refresh-token`);
+      const response = await httpClient.post(`/iyzico/booking/${bookingId}/refresh-token`);
       const data = response.data?.data;
 
       if (data?.paymentUrl) {
@@ -152,7 +152,7 @@ const PaymentReturn: React.FC = () => {
 
         // Check if token needs refresh
         try {
-          const tokenStatus = await api.get(`/api/iyzico/booking/${bookingId}/token-status`);
+          const tokenStatus = await httpClient.get(`/iyzico/booking/${bookingId}/token-status`);
           if (tokenStatus.data?.data?.needsRefresh) {
             // Token expired, show refresh option
             setError("Ödeme süresi doldu. Yeni bir ödeme oturumu başlatmak için aşağıdaki butona tıklayın.");
@@ -174,7 +174,7 @@ const PaymentReturn: React.FC = () => {
           if (booking && (booking.status === "RESERVED" || booking.status === "APPROVED_PENDING_PAYMENT")) {
             // Try to check token status more explicitly
             try {
-              const tokenStatus = await api.get(`/api/iyzico/booking/${bookingId}/token-status`);
+              const tokenStatus = await httpClient.get(`/iyzico/booking/${bookingId}/token-status`);
               if (tokenStatus.data?.data?.needsRefresh) {
                 setError("Ödeme süresi doldu. Yeni bir ödeme oturumu başlatmak için aşağıdaki butona tıklayın.");
                 setErrorType("token_expired");
