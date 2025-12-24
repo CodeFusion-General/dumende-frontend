@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { paymentService } from "@/services/paymentService";
 import { bookingService } from "@/services/bookingService";
+import api from "@/services/api";
 
 const PaymentReturn: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -17,10 +18,42 @@ const PaymentReturn: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorType, setErrorType] = useState<"awaiting_approval" | "payment_disabled" | "general" | null>(null);
+  const [errorType, setErrorType] = useState<"awaiting_approval" | "payment_disabled" | "token_expired" | "general" | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [refreshingToken, setRefreshingToken] = useState(false);
+
+  // Refresh payment token
+  const handleRefreshToken = useCallback(async () => {
+    if (!bookingId || refreshingToken) return;
+
+    try {
+      setRefreshingToken(true);
+      setError(null);
+      setErrorType(null);
+      setLoading(true);
+
+      // Call backend to refresh token
+      const response = await api.post(`/api/iyzico/booking/${bookingId}/refresh-token`);
+      const data = response.data?.data;
+
+      if (data?.paymentUrl) {
+        const url = paymentService.buildIframeUrl(data.paymentUrl);
+        setIframeUrl(url);
+        setLoading(false);
+      } else {
+        throw new Error("Yeni ödeme bağlantısı oluşturulamadı");
+      }
+    } catch (e: any) {
+      console.error("Error refreshing token:", e);
+      setError(e?.response?.data?.message || e?.message || "Token yenileme başarısız oldu");
+      setErrorType("general");
+      setLoading(false);
+    } finally {
+      setRefreshingToken(false);
+    }
+  }, [bookingId, refreshingToken]);
 
   // Check payment status periodically
   const checkPaymentStatus = useCallback(async () => {
@@ -117,14 +150,41 @@ const PaymentReturn: React.FC = () => {
           return;
         }
 
+        // Check if token needs refresh
+        try {
+          const tokenStatus = await api.get(`/api/iyzico/booking/${bookingId}/token-status`);
+          if (tokenStatus.data?.data?.needsRefresh) {
+            // Token expired, show refresh option
+            setError("Ödeme süresi doldu. Yeni bir ödeme oturumu başlatmak için aşağıdaki butona tıklayın.");
+            setErrorType("token_expired");
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Token status check failed, continue with normal flow
+        }
+
         const status = await paymentService.getPaymentStatus(bookingId);
         if (status.paymentCompleted) {
           navigate("/my-bookings?payment=success");
           return;
         }
         if (!status.paymentUrl) {
-          // Check if it's a configuration issue
+          // Check if it's a token expiry issue
           if (booking && (booking.status === "RESERVED" || booking.status === "APPROVED_PENDING_PAYMENT")) {
+            // Try to check token status more explicitly
+            try {
+              const tokenStatus = await api.get(`/api/iyzico/booking/${bookingId}/token-status`);
+              if (tokenStatus.data?.data?.needsRefresh) {
+                setError("Ödeme süresi doldu. Yeni bir ödeme oturumu başlatmak için aşağıdaki butona tıklayın.");
+                setErrorType("token_expired");
+                setLoading(false);
+                return;
+              }
+            } catch {
+              // Ignore
+            }
+            
             setError("Ödeme sistemi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin veya destek ile iletişime geçin.");
             setErrorType("payment_disabled");
           } else {
@@ -140,8 +200,15 @@ const PaymentReturn: React.FC = () => {
           setLoading(false);
         }
       } catch (e: any) {
-        setError(e?.message || "Ödeme durumu alınamadı.");
-        setErrorType("general");
+        // Check if error indicates token expiry
+        const errorMessage = e?.response?.data?.message || e?.message || "";
+        if (errorMessage.toLowerCase().includes("expired") || errorMessage.toLowerCase().includes("token")) {
+          setError("Ödeme süresi doldu. Yeni bir ödeme oturumu başlatmak için aşağıdaki butona tıklayın.");
+          setErrorType("token_expired");
+        } else {
+          setError(errorMessage || "Ödeme durumu alınamadı.");
+          setErrorType("general");
+        }
         setLoading(false);
       }
     };
@@ -200,6 +267,11 @@ const PaymentReturn: React.FC = () => {
               <div style={{ fontSize: 48, marginBottom: 16 }}>🔧</div>
               <h2 style={{ marginBottom: 12, color: "#6b7280" }}>Ödeme Sistemi</h2>
             </>
+          ) : errorType === "token_expired" ? (
+            <>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>⏰</div>
+              <h2 style={{ marginBottom: 12, color: "#f59e0b" }}>Ödeme Süresi Doldu</h2>
+            </>
           ) : (
             <>
               <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
@@ -207,8 +279,26 @@ const PaymentReturn: React.FC = () => {
             </>
           )}
           <p style={{ color: "#666", marginBottom: 24 }}>{error}</p>
-          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-            {errorType !== "awaiting_approval" && (
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            {errorType === "token_expired" && (
+              <button
+                onClick={handleRefreshToken}
+                disabled={refreshingToken}
+                style={{ 
+                  padding: "12px 24px", 
+                  borderRadius: 6, 
+                  background: refreshingToken ? "#9ca3af" : "#16a34a", 
+                  color: "#fff", 
+                  border: "none", 
+                  cursor: refreshingToken ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                {refreshingToken ? "Yenileniyor..." : "🔄 Yeni Ödeme Oturumu Başlat"}
+              </button>
+            )}
+            {errorType !== "awaiting_approval" && errorType !== "token_expired" && (
               <button
                 onClick={() => window.location.reload()}
                 style={{ padding: "10px 16px", borderRadius: 6, background: "#2563eb", color: "#fff", border: "none", cursor: "pointer" }}
@@ -245,7 +335,9 @@ const PaymentReturn: React.FC = () => {
                 animation: "spin 1s linear infinite",
               }}
             />
-            <div style={{ color: "#64748b" }}>Ödeme formu hazırlanıyor...</div>
+            <div style={{ color: "#64748b" }}>
+              {refreshingToken ? "Yeni ödeme oturumu başlatılıyor..." : "Ödeme formu hazırlanıyor..."}
+            </div>
             <style>
               {`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}
             </style>

@@ -15,6 +15,7 @@ import { BoatDTO } from "@/types/boat.types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/locales/translations";
 import { createRippleEffect } from "@/lib/animations";
+import { Pagination, PaginationInfo } from "@/components/ui/Pagination";
 
 const serviceBoatMap: Record<string, string[]> = {
   "evlilik-teklifi": ["Lüks Yat", "Motorlu Yat"],
@@ -390,30 +391,29 @@ const BoatsPage = () => {
 
               {/* ✅ PERFORMANCE: Pagination Controls */}
               {totalPages > 1 && (
-                <div className="mt-8 flex justify-center items-center space-x-2">
-                  <button
-                    onClick={() => applyFilters(currentPage - 1)}
-                    disabled={currentPage === 0 || loading}
-                    className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    ← Önceki
-                  </button>
+                <div className="mt-8 space-y-4">
+                  {/* Page info */}
+                  <div className="flex justify-center">
+                    <PaginationInfo
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalBoats}
+                      itemsPerPage={24}
+                      itemName="tekne"
+                      className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-gray-100"
+                    />
+                  </div>
 
-                  <span className="px-4 py-2 bg-gray-100 rounded">
-                    Sayfa {currentPage + 1} / {totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => applyFilters(currentPage + 1)}
-                    disabled={!hasNextPage || loading}
-                    className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    Sonraki →
-                  </button>
-
-                  <span className="text-sm text-gray-600 ml-4">
-                    Toplam {totalBoats} tekne
-                  </span>
+                  {/* Pagination */}
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={applyFilters}
+                    disabled={loading}
+                    showFirstLast={true}
+                    siblingCount={1}
+                    className="bg-white/50 backdrop-blur-sm py-3 px-4 rounded-2xl shadow-sm border border-gray-100"
+                  />
                 </div>
               )}
             </div>
