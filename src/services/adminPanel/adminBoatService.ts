@@ -1,7 +1,8 @@
 import { BaseService } from "../base/BaseService";
 import { boatService } from "../boatService";
 import { userService } from "../userService";
-import { documentService } from "../documentService";
+// TODO: Backend'de /api/admin/documents endpoint'i oluşturulduğunda tekrar import et
+// import { adminDocumentService } from "./adminDocumentService";
 import {
   AdminBoatView,
   AdminBoatFilters,
@@ -83,8 +84,8 @@ class AdminBoatService extends BaseService {
     command: BoatApprovalCommand
   ): Promise<AdminBoatView> {
     try {
-      // Update boat status
-      const status = command.approved ? "approved" : "rejected";
+      // Update boat status - Backend expects BoatStatus enum values (ACTIVE, REJECTED, etc.)
+      const status = command.approved ? "ACTIVE" : "REJECTED";
       await boatService.updateBoatStatus(command.boatId, status);
 
       // If rejected, save rejection reason
@@ -96,16 +97,26 @@ class AdminBoatService extends BaseService {
       }
 
       // Process document verifications if provided
-      if (command.documentVerifications) {
-        await Promise.all(
-          command.documentVerifications.map(async (verification) => {
-            await documentService.updateDocumentVerificationStatus(
-              verification.documentId,
-              verification.verified,
-              verification.notes
-            );
-          })
+      // TODO: Backend'de /api/admin/documents endpoint'i oluşturulduğunda aktif et
+      if (
+        command.documentVerifications &&
+        command.documentVerifications.length > 0
+      ) {
+        console.warn(
+          "Document verification update skipped - backend endpoint not available yet.",
+          "Documents to verify:",
+          command.documentVerifications.length
         );
+        // Backend hazır olduğunda:
+        // await Promise.all(
+        //   command.documentVerifications.map(async (verification) => {
+        //     await adminDocumentService.updateDocumentVerification({
+        //       documentId: verification.documentId,
+        //       isVerified: verification.verified,
+        //       verificationNotes: verification.notes,
+        //     });
+        //   })
+        // );
       }
 
       // Save approval history
@@ -150,15 +161,25 @@ class AdminBoatService extends BaseService {
   public async getBoatStatistics(): Promise<BoatStatistics> {
     try {
       const boats = await boatService.getBoats();
-      const documents = await documentService.getAllDocuments();
 
       // Calculate statistics
       const totalBoats = boats.length;
-      const activeBoats = boats.filter((b) => b.status === "active").length;
-      const pendingBoats = boats.filter((b) => b.status === "pending").length;
-      const rejectedBoats = boats.filter((b) => b.status === "rejected").length;
+      // Backend returns BoatStatus enum values (ACTIVE, PENDING, REJECTED, etc.)
+      // Use case-insensitive comparison to handle both "active" and "ACTIVE"
+      const normalizeStatus = (status: string) => status?.toUpperCase();
+      const activeBoats = boats.filter(
+        (b) => normalizeStatus(b.status) === "ACTIVE"
+      ).length;
+      const pendingBoats = boats.filter(
+        (b) => normalizeStatus(b.status) === "PENDING"
+      ).length;
+      const rejectedBoats = boats.filter(
+        (b) => normalizeStatus(b.status) === "REJECTED"
+      ).length;
       const suspendedBoats = boats.filter(
-        (b) => b.status === "suspended"
+        (b) =>
+          normalizeStatus(b.status) === "INACTIVE" ||
+          normalizeStatus(b.status) === "SUSPENDED"
       ).length;
 
       // New boats this month
@@ -181,28 +202,25 @@ class AdminBoatService extends BaseService {
           (boatsByLocation[boat.location] || 0) + 1;
       });
 
-      // Document statistics
-      const boatDocuments = documents.filter((d) => d.entityType === "boat");
-      const totalDocuments = boatDocuments.length;
-      const verifiedDocuments = boatDocuments.filter(
-        (d) => d.verificationStatus === "verified"
-      ).length;
-      const pendingDocuments = boatDocuments.filter(
-        (d) => d.verificationStatus === "pending"
-      ).length;
-      const expiredDocuments = boatDocuments.filter(
-        (d) => d.expiryDate && new Date(d.expiryDate) < new Date()
-      ).length;
-
-      // Expiring soon (within 30 days)
+      // Document statistics from boats' embedded documents (no external API call)
+      const allDocuments = boats.flatMap((boat) => boat.documents || []);
+      const now = new Date();
       const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      const expiringSoonDocuments = boatDocuments.filter(
-        (d) =>
-          d.expiryDate &&
-          new Date(d.expiryDate) > new Date() &&
-          new Date(d.expiryDate) <= thirtyDaysFromNow
-      ).length;
+      thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+      const documentStats = {
+        totalDocuments: allDocuments.length,
+        verifiedDocuments: allDocuments.filter((d) => d.isVerified).length,
+        pendingDocuments: allDocuments.filter((d) => !d.isVerified).length,
+        expiredDocuments: allDocuments.filter(
+          (d) => d.expiryDate && new Date(d.expiryDate) < now
+        ).length,
+        expiringSoonDocuments: allDocuments.filter((d) => {
+          if (!d.expiryDate) return false;
+          const expiry = new Date(d.expiryDate);
+          return expiry > now && expiry <= thirtyDaysFromNow;
+        }).length,
+      };
 
       return {
         totalBoats,
@@ -213,13 +231,7 @@ class AdminBoatService extends BaseService {
         newBoatsThisMonth,
         boatsByType,
         boatsByLocation,
-        documentStats: {
-          totalDocuments,
-          verifiedDocuments,
-          pendingDocuments,
-          expiredDocuments,
-          expiringSoonDocuments,
-        },
+        documentStats,
       };
     } catch (error) {
       this.handleError(error);
@@ -234,12 +246,8 @@ class AdminBoatService extends BaseService {
     try {
       const documents = await boatService.getBoatDocuments(boatId);
 
-      const verified = documents.filter(
-        (d) => d.verificationStatus === "verified"
-      );
-      const pending = documents.filter(
-        (d) => d.verificationStatus === "pending"
-      );
+      const verified = documents.filter((d) => d.isVerified === true);
+      const pending = documents.filter((d) => d.isVerified === false);
       const expired = documents.filter(
         (d) => d.expiryDate && new Date(d.expiryDate) < new Date()
       );
@@ -290,7 +298,7 @@ class AdminBoatService extends BaseService {
 
       const totalBoats = ownerBoats.length;
       const activeBoats = ownerBoats.filter(
-        (b) => b.status === "active"
+        (b) => b.status?.toUpperCase() === "ACTIVE"
       ).length;
 
       // TODO: Get actual booking and revenue data from booking service
@@ -302,7 +310,7 @@ class AdminBoatService extends BaseService {
       return {
         id: user.id,
         fullName: user.fullName,
-        email: user.email || "",
+        email: user.account?.email || "",
         phoneNumber: user.phoneNumber || "",
         joinDate: user.createdAt,
         totalBoats,
@@ -362,10 +370,8 @@ class AdminBoatService extends BaseService {
       const documents = boat.documents || [];
       const documentStatus = {
         total: documents.length,
-        verified: documents.filter((d) => d.verificationStatus === "verified")
-          .length,
-        pending: documents.filter((d) => d.verificationStatus === "pending")
-          .length,
+        verified: documents.filter((d) => d.isVerified === true).length,
+        pending: documents.filter((d) => d.isVerified === false).length,
         expired: documents.filter(
           (d) => d.expiryDate && new Date(d.expiryDate) < new Date()
         ).length,
@@ -384,7 +390,7 @@ class AdminBoatService extends BaseService {
         ownerInfo: {
           id: owner.id,
           name: owner.fullName,
-          email: owner.email || "",
+          email: owner.account?.email || "",
           phone: owner.phoneNumber || "",
           joinDate: owner.createdAt,
         },
@@ -424,10 +430,12 @@ class AdminBoatService extends BaseService {
   private mapStatusToApprovalStatus(
     status: string
   ): "pending" | "approved" | "rejected" {
-    switch (status) {
-      case "active":
+    // Backend returns BoatStatus enum values (ACTIVE, PENDING, REJECTED, etc.)
+    const normalizedStatus = status?.toUpperCase();
+    switch (normalizedStatus) {
+      case "ACTIVE":
         return "approved";
-      case "rejected":
+      case "REJECTED":
         return "rejected";
       default:
         return "pending";

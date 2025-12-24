@@ -8,6 +8,8 @@ export interface NotificationDTO {
   isRead: boolean;
   relatedEntityId: number;
   relatedEntityType: string;
+  actionUrl?: string; // Payment URL, booking details URL, etc.
+  actionLabel?: string; // "Ödeme Yap", "Detayları Gör", etc.
   createdAt: string; // ISO timestamp
   updatedAt: string;
 }

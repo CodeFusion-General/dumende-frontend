@@ -19,8 +19,19 @@ interface AdminPanelRouteGuardProps {
 export const AdminPanelRouteGuard: React.FC<AdminPanelRouteGuardProps> = ({
   children,
 }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  // 0. Auth yüklenirken bekle - bu kritik!
+  // isLoading true iken user henüz null olabilir, bu yüzden yönlendirme yapmamalıyız
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Yetki kontrol ediliyor...</span>
+      </div>
+    );
+  }
 
   // 1. Oturum kontrolü - Giriş yapmamış kullanıcıları ana sayfaya yönlendir (login modalı açılır)
   if (!isAuthenticated || !user) {

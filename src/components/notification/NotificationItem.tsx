@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   AlertCircle,
@@ -8,7 +9,8 @@ import {
   Check,
   CalendarPlus,
   Anchor,
-  MapPin
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 import { NotificationDTO } from '@/types/notification.types';
 import { formatDistanceToNow } from 'date-fns';
@@ -29,6 +31,7 @@ export function NotificationItem({
   onMarkRead,
   showMarkAsRead = false
 }: NotificationItemProps) {
+  const navigate = useNavigate();
   const getIcon = (type: NotificationDTO['type']) => {
     switch (type) {
       case 'INFO':
@@ -249,19 +252,44 @@ export function NotificationItem({
                   {timeAgo(notification.createdAt)}
                 </span>
 
-                {showMarkAsRead && !notification.isRead && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkRead?.(notification.id);
-                    }}
-                    className="text-xs h-8 px-4 text-[#3498db] hover:bg-[#3498db]/10 hover:text-[#2c3e50] opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full font-roboto font-semibold backdrop-blur-sm border border-[#3498db]/20 bg-white/50 shadow-sm"
-                  >
-                    Mark as read
-                  </Button>
-                )}
+                <div className="flex items-center space-x-2">
+                  {/* Action Button (e.g., Payment) */}
+                  {notification.actionUrl && notification.actionLabel && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle navigation
+                        if (notification.actionUrl?.startsWith('/')) {
+                          navigate(notification.actionUrl);
+                        } else if (notification.actionUrl?.startsWith('http')) {
+                          window.open(notification.actionUrl, '_blank');
+                        } else {
+                          navigate(notification.actionUrl || '/');
+                        }
+                      }}
+                      className="text-xs h-8 px-4 bg-[#3498db] hover:bg-[#2980b9] text-white rounded-full font-roboto font-semibold shadow-md hover:shadow-lg transition-all duration-300 flex items-center space-x-1"
+                    >
+                      <CreditCard className="h-3 w-3" />
+                      <span>{notification.actionLabel}</span>
+                    </Button>
+                  )}
+                  
+                  {showMarkAsRead && !notification.isRead && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMarkRead?.(notification.id);
+                      }}
+                      className="text-xs h-8 px-4 text-[#3498db] hover:bg-[#3498db]/10 hover:text-[#2c3e50] opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-full font-roboto font-semibold backdrop-blur-sm border border-[#3498db]/20 bg-white/50 shadow-sm"
+                    >
+                      Mark as read
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

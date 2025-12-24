@@ -634,26 +634,59 @@ export function BookingForm({
       // Load captain info for messaging
       await loadCaptainInfo(response);
 
-      toast({
-        title: "Rezervasyon oluşturuldu",
-        description: "Ödeme sayfasına yönlendiriliyorsunuz...",
-      });
+      // Check if booking requires owner approval before payment
+      if (response.status === "AWAITING_OWNER_APPROVAL") {
+        // Owner approval required - don't redirect to payment yet
+        toast({
+          title: "Rezervasyon oluşturuldu",
+          description:
+            "Tekne sahibinin onayı bekleniyor. Onay sonrası ödeme yapabileceksiniz.",
+        });
 
-      // Get payment status and redirect to payment (3DS fallback yoksa PaymentReturn'da başlatılacak)
-      await handlePaymentRedirect(response.id);
+        // Redirect to my-bookings page to track status
+        setTimeout(() => {
+          navigate("/my-bookings");
+        }, 2000);
+        return;
+      }
 
+      // Instant confirmation or already confirmed - proceed with payment
+      // First check if payment URL is available (backend might have payment system disabled)
       try {
         const status = await paymentService.getPaymentStatus(response.id);
-        const hasLink = !!status.paymentUrl;
-        if (!hasLink) {
-          // PaymentReturn sayfasında start=3ds parametresi ile kart formu gösterilecek
-          const amount = status.depositAmount ?? status.totalAmount ?? 0;
-          navigate(
-            `/payment/return?bookingId=${response.id}&start=3ds&amount=${amount}`
-          );
+
+        if (status.paymentUrl) {
+          // Payment URL available - redirect to payment
+          toast({
+            title: "Rezervasyon oluşturuldu",
+            description: "Ödeme sayfasına yönlendiriliyorsunuz...",
+          });
+
+          await handlePaymentRedirect(response.id);
+        } else if (status.paymentCompleted) {
+          // Payment already completed
+          toast({
+            title: "Rezervasyon tamamlandı",
+            description: "Rezervasyonunuz başarıyla oluşturuldu.",
+          });
+          navigate("/my-bookings");
+        } else {
+          // Payment system not available - redirect to my-bookings with info
+          toast({
+            title: "Rezervasyon oluşturuldu",
+            description:
+              "Ödeme sistemi şu an kullanılamıyor. Rezervasyonlarım sayfasından ödemenizi tamamlayabilirsiniz.",
+          });
+          navigate("/my-bookings");
         }
       } catch (e) {
-        // Sessiz geç, kullanıcı zaten ödeme modali/redirect deneyimini gördü
+        // Payment status check failed - still redirect to my-bookings
+        toast({
+          title: "Rezervasyon oluşturuldu",
+          description:
+            "Rezervasyonlarım sayfasından ödeme durumunu kontrol edebilirsiniz.",
+        });
+        navigate("/my-bookings");
       }
     } catch (error) {
       console.error("Booking failed:", error);

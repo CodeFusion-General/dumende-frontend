@@ -1,4 +1,5 @@
 import { BaseService } from "../base/BaseService";
+import { boatService } from "../boatService";
 import {
   AdminDocumentView,
   AdminDocumentFilter,
@@ -17,13 +18,22 @@ import {
   TourDocumentType,
 } from "@/types/document.types";
 
+/**
+ * AdminDocumentService - Admin panel için doküman yönetimi servisi
+ * 
+ * NOT: Backend'de /api/admin/documents endpoint'i henüz mevcut değil.
+ * Bu servis geçici olarak mevcut boat/tour endpoint'lerini kullanarak çalışıyor.
+ * Backend endpoint'i oluşturulduğunda bu servis güncellenecek.
+ */
 class AdminDocumentService extends BaseService {
   constructor() {
-    super("/admin"); // axios baseURL zaten /api - Base path for both boat-documents and tour-documents
+    // TODO: Backend'de /api/admin/documents endpoint'i oluşturulduğunda değiştirilecek
+    super("/boats"); // Geçici olarak boats endpoint'ini kullanıyoruz
   }
 
   /**
    * Get all documents with admin view and filtering
+   * Geçici implementasyon: Tüm teknelerden dokümanları toplar
    */
   async getAllDocuments(
     filter?: AdminDocumentFilter,
@@ -32,33 +42,159 @@ class AdminDocumentService extends BaseService {
     limit: number = 20
   ): Promise<AdminDocumentListResponse> {
     try {
-      const params = new URLSearchParams();
+      // Geçici: Tüm teknelerden dokümanları topla
+      const boats = await boatService.getBoats();
+      const now = new Date();
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(now.getDate() + 30);
 
+      // Tüm dokümanları AdminDocumentView formatına dönüştür
+      let allDocuments: AdminDocumentView[] = boats.flatMap((boat) =>
+        (boat.documents || []).map((doc) => {
+          const expiryDate = doc.expiryDate ? new Date(doc.expiryDate) : null;
+          const isExpired = expiryDate ? expiryDate < now : false;
+          const isExpiringSoon = expiryDate
+            ? expiryDate > now && expiryDate <= thirtyDaysFromNow
+            : false;
+
+          return {
+            id: doc.id,
+            documentName: doc.documentName,
+            documentType: doc.documentType,
+            entityType: "boat" as const,
+            entityId: boat.id,
+            entityName: boat.name,
+            ownerInfo: {
+              id: boat.ownerId,
+              name: boat.ownerName || "Bilinmiyor",
+              email: "",
+              phone: "",
+            },
+            filePath: doc.filePath,
+            documentUrl: doc.documentUrl,
+            expiryDate: doc.expiryDate,
+            isVerified: doc.isVerified,
+            verificationNotes: doc.verificationNotes,
+            displayOrder: doc.displayOrder,
+            createdAt: doc.createdAt,
+            updatedAt: doc.updatedAt,
+            isExpired,
+            isExpiringSoon,
+            daysUntilExpiry: expiryDate
+              ? Math.ceil(
+                  (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+                )
+              : undefined,
+          };
+        })
+      );
+
+      // Filtreleme uygula
       if (filter) {
-        if (filter.entityType) params.append("entityType", filter.entityType);
-        if (filter.documentType)
-          params.append("documentType", filter.documentType);
-        if (filter.verificationStatus)
-          params.append("verificationStatus", filter.verificationStatus);
-        if (filter.expiryStatus)
-          params.append("expiryStatus", filter.expiryStatus);
-        if (filter.ownerId) params.append("ownerId", filter.ownerId.toString());
-        if (filter.search) params.append("search", filter.search);
-        if (filter.dateRange) {
-          params.append("startDate", filter.dateRange.start);
-          params.append("endDate", filter.dateRange.end);
+        if (filter.entityType) {
+          allDocuments = allDocuments.filter(
+            (d) => d.entityType === filter.entityType
+          );
+        }
+        if (filter.documentType) {
+          allDocuments = allDocuments.filter(
+            (d) => d.documentType === filter.documentType
+          );
+        }
+        if (filter.verificationStatus) {
+          if (filter.verificationStatus === "verified") {
+            allDocuments = allDocuments.filter((d) => d.isVerified);
+          } else if (filter.verificationStatus === "pending") {
+            allDocuments = allDocuments.filter((d) => !d.isVerified);
+          }
+        }
+        if (filter.expiryStatus) {
+          if (filter.expiryStatus === "expired") {
+            allDocuments = allDocuments.filter((d) => d.isExpired);
+          } else if (filter.expiryStatus === "expiring_soon") {
+            allDocuments = allDocuments.filter((d) => d.isExpiringSoon);
+          } else if (filter.expiryStatus === "valid") {
+            allDocuments = allDocuments.filter(
+              (d) => !d.isExpired && !d.isExpiringSoon
+            );
+          }
+        }
+        if (filter.ownerId) {
+          allDocuments = allDocuments.filter(
+            (d) => d.ownerInfo.id === filter.ownerId
+          );
+        }
+        if (filter.search) {
+          const searchLower = filter.search.toLowerCase();
+          allDocuments = allDocuments.filter(
+            (d) =>
+              d.documentName.toLowerCase().includes(searchLower) ||
+              d.entityName.toLowerCase().includes(searchLower)
+          );
         }
       }
 
+      // Sıralama uygula
       if (sort) {
-        params.append("sortField", sort.field);
-        params.append("sortDirection", sort.direction);
+        allDocuments.sort((a, b) => {
+          const aVal = a[sort.field as keyof AdminDocumentView];
+          const bVal = b[sort.field as keyof AdminDocumentView];
+          const compare =
+            typeof aVal === "string"
+              ? aVal.localeCompare(bVal as string)
+              : (aVal as number) - (bVal as number);
+          return sort.direction === "asc" ? compare : -compare;
+        });
       }
 
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
+      // İstatistikleri hesapla
+      const stats: AdminDocumentStats = {
+        total: allDocuments.length,
+        verified: allDocuments.filter((d) => d.isVerified).length,
+        pending: allDocuments.filter((d) => !d.isVerified).length,
+        rejected: 0, // Backend'den gelecek
+        expired: allDocuments.filter((d) => d.isExpired).length,
+        expiringSoon: allDocuments.filter((d) => d.isExpiringSoon).length,
+        byType: {
+          boat: {
+            total: allDocuments.filter((d) => d.entityType === "boat").length,
+            verified: allDocuments.filter(
+              (d) => d.entityType === "boat" && d.isVerified
+            ).length,
+            pending: allDocuments.filter(
+              (d) => d.entityType === "boat" && !d.isVerified
+            ).length,
+          },
+          tour: {
+            total: allDocuments.filter((d) => d.entityType === "tour").length,
+            verified: allDocuments.filter(
+              (d) => d.entityType === "tour" && d.isVerified
+            ).length,
+            pending: allDocuments.filter(
+              (d) => d.entityType === "tour" && !d.isVerified
+            ).length,
+          },
+        },
+        byDocumentType: {},
+      };
 
-      return await this.get<AdminDocumentListResponse>(`?${params.toString()}`);
+      // Sayfalama uygula
+      const startIndex = (page - 1) * limit;
+      const paginatedDocuments = allDocuments.slice(
+        startIndex,
+        startIndex + limit
+      );
+
+      return {
+        documents: paginatedDocuments,
+        pagination: {
+          page,
+          limit,
+          total: allDocuments.length,
+          totalPages: Math.ceil(allDocuments.length / limit),
+        },
+        stats,
+      };
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -67,10 +203,12 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get document statistics for admin dashboard
+   * Geçici implementasyon: getAllDocuments'tan istatistikleri döndürür
    */
   async getDocumentStats(): Promise<AdminDocumentStats> {
     try {
-      return await this.get<AdminDocumentStats>("/stats");
+      const response = await this.getAllDocuments();
+      return response.stats;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -79,10 +217,16 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get single document with admin view
+   * Geçici implementasyon: getAllDocuments'tan filtreleyerek döndürür
    */
   async getDocument(documentId: number): Promise<AdminDocumentView> {
     try {
-      return await this.get<AdminDocumentView>(`/${documentId}`);
+      const response = await this.getAllDocuments();
+      const document = response.documents.find((d) => d.id === documentId);
+      if (!document) {
+        throw new Error(`Document with id ${documentId} not found`);
+      }
+      return document;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -91,79 +235,68 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Update document verification status
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async updateDocumentVerification(
     update: DocumentVerificationUpdate
   ): Promise<AdminDocumentView> {
-    try {
-      return await this.patch<AdminDocumentView>(
-        `/${update.documentId}/verification`,
-        {
-          isVerified: update.isVerified,
-          verificationNotes: update.verificationNotes,
-        }
-      );
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "updateDocumentVerification: Backend endpoint henüz mevcut değil",
+      update
+    );
+    // Geçici: Mevcut dokümanı döndür
+    return await this.getDocument(update.documentId);
   }
 
   /**
    * Bulk document operations (approve/reject/delete)
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async bulkDocumentOperation(
     operation: BulkDocumentOperation
   ): Promise<{ success: number; failed: number; errors?: string[] }> {
-    try {
-      return await this.post<{
-        success: number;
-        failed: number;
-        errors?: string[];
-      }>("/bulk-operation", operation);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "bulkDocumentOperation: Backend endpoint henüz mevcut değil",
+      operation
+    );
+    return { success: 0, failed: operation.documentIds.length, errors: ["Backend endpoint not available"] };
   }
 
   /**
    * Request document reupload
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async requestDocumentReupload(
     request: DocumentReuploadRequest
   ): Promise<void> {
-    try {
-      await this.post<void>("/reupload-request", request);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "requestDocumentReupload: Backend endpoint henüz mevcut değil",
+      request
+    );
   }
 
   /**
    * Delete document (admin only)
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async deleteDocument(documentId: number): Promise<void> {
-    try {
-      await this.delete<void>(`/${documentId}`);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "deleteDocument: Backend endpoint henüz mevcut değil",
+      documentId
+    );
   }
 
   /**
    * Get documents by entity (boat or tour)
+   * Geçici implementasyon: getAllDocuments ile filtreleyerek döndürür
    */
   async getDocumentsByEntity(
     entityType: "boat" | "tour",
     entityId: number
   ): Promise<AdminDocumentView[]> {
     try {
-      return await this.get<AdminDocumentView[]>(
-        `/entity/${entityType}/${entityId}`
-      );
+      const response = await this.getAllDocuments({ entityType });
+      return response.documents.filter((d) => d.entityId === entityId);
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -172,10 +305,12 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get documents by owner
+   * Geçici implementasyon: getAllDocuments ile filtreleyerek döndürür
    */
   async getDocumentsByOwner(ownerId: number): Promise<AdminDocumentView[]> {
     try {
-      return await this.get<AdminDocumentView[]>(`/owner/${ownerId}`);
+      const response = await this.getAllDocuments({ ownerId });
+      return response.documents;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -184,10 +319,12 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get expired documents
+   * Geçici implementasyon: getAllDocuments ile filtreleyerek döndürür
    */
   async getExpiredDocuments(): Promise<AdminDocumentView[]> {
     try {
-      return await this.get<AdminDocumentView[]>("/expired");
+      const response = await this.getAllDocuments({ expiryStatus: "expired" });
+      return response.documents;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -196,12 +333,17 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get documents expiring soon
+   * Geçici implementasyon: getAllDocuments ile filtreleyerek döndürür
    */
   async getExpiringSoonDocuments(
     days: number = 30
   ): Promise<AdminDocumentView[]> {
     try {
-      return await this.get<AdminDocumentView[]>(`/expiring-soon?days=${days}`);
+      const response = await this.getAllDocuments({
+        expiryStatus: "expiring_soon",
+      });
+      // days parametresi şimdilik kullanılmıyor, 30 gün varsayılan
+      return response.documents;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -210,10 +352,14 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get pending verification documents
+   * Geçici implementasyon: getAllDocuments ile filtreleyerek döndürür
    */
   async getPendingDocuments(): Promise<AdminDocumentView[]> {
     try {
-      return await this.get<AdminDocumentView[]>("/pending");
+      const response = await this.getAllDocuments({
+        verificationStatus: "pending",
+      });
+      return response.documents;
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -222,59 +368,56 @@ class AdminDocumentService extends BaseService {
 
   /**
    * Get document type configurations
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async getDocumentTypeConfigs(): Promise<DocumentTypeConfig[]> {
-    try {
-      return await this.get<DocumentTypeConfig[]>("/types/config");
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn("getDocumentTypeConfigs: Backend endpoint henüz mevcut değil");
+    // Varsayılan konfigürasyonları döndür
+    return [];
   }
 
   /**
    * Update document type configuration
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async updateDocumentTypeConfig(
     config: DocumentTypeConfig
   ): Promise<DocumentTypeConfig> {
-    try {
-      return await this.put<DocumentTypeConfig>("/types/config", config);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "updateDocumentTypeConfig: Backend endpoint henüz mevcut değil",
+      config
+    );
+    return config;
   }
 
   /**
    * Create new document type configuration
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async createDocumentTypeConfig(
     config: Omit<DocumentTypeConfig, "displayOrder">
   ): Promise<DocumentTypeConfig> {
-    try {
-      return await this.post<DocumentTypeConfig>("/types/config", config);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "createDocumentTypeConfig: Backend endpoint henüz mevcut değil",
+      config
+    );
+    return { ...config, displayOrder: 0 };
   }
-
 
   /**
    * Send expiry notifications
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async sendExpiryNotifications(documentIds: number[]): Promise<void> {
-    try {
-      await this.post<void>("/notifications/expiry", { documentIds });
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "sendExpiryNotifications: Backend endpoint henüz mevcut değil",
+      documentIds
+    );
   }
 
   /**
    * Get document verification history
+   * TODO: Backend /api/admin/documents endpoint'i oluşturulduğunda aktif edilecek
    */
   async getDocumentVerificationHistory(documentId: number): Promise<
     Array<{
@@ -286,21 +429,11 @@ class AdminDocumentService extends BaseService {
       timestamp: string;
     }>
   > {
-    try {
-      return await this.get<
-        Array<{
-          id: number;
-          adminId: number;
-          adminName: string;
-          action: "approved" | "rejected" | "updated";
-          verificationNotes?: string;
-          timestamp: string;
-        }>
-      >(`/${documentId}/verification-history`);
-    } catch (error) {
-      this.handleError(error);
-      throw error;
-    }
+    console.warn(
+      "getDocumentVerificationHistory: Backend endpoint henüz mevcut değil",
+      documentId
+    );
+    return [];
   }
 
   /**
