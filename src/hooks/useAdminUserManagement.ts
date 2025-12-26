@@ -9,6 +9,7 @@ import {
   BulkUserAction,
 } from "@/types/adminUser";
 import { UserType } from "@/types/auth.types";
+import { SortingConfig } from "@/components/admin/ui/DataTable";
 
 interface UseAdminUserManagementOptions {
   initialFilters?: AdminUserFilters;
@@ -41,6 +42,7 @@ export const useAdminUserManagement = (
     totalPages: 0,
   });
   const [statistics, setStatistics] = useState<UserStatistics | null>(null);
+  const [sorting, setSorting] = useState<SortingConfig | null>(null);
 
   // Load users
   const loadUsers = useCallback(
@@ -54,16 +56,17 @@ export const useAdminUserManagement = (
           ...filters,
           page: currentPage,
           size: pagination.size,
+          sort: sorting ? `${sorting.field},${sorting.direction}` : undefined,
         };
 
         let result: AdminUserSearchResult;
 
         if (searchQuery.trim()) {
           // Use search if query exists
-          const searchResults = await adminUserService.searchUsers(
-            searchQuery,
-            filters
-          );
+          const searchResults = await adminUserService.searchUsers({
+            ...filters,
+            query: searchQuery,
+          });
           result = {
             users: searchResults,
             totalCount: searchResults.length,
@@ -72,10 +75,8 @@ export const useAdminUserManagement = (
             totalPages: Math.ceil(searchResults.length / pagination.size),
           };
         } else {
-          // Use regular filtered query
-          result = await adminUserService.getAdminUsersFromUserService(
-            searchFilters
-          );
+          // Use real admin users endpoint
+          result = await adminUserService.getAdminUsers(searchFilters);
         }
 
         setUsers(result.users);
@@ -92,16 +93,25 @@ export const useAdminUserManagement = (
         setLoading(false);
       }
     },
-    [filters, searchQuery, pagination.page, pagination.size]
+    [filters, searchQuery, pagination.page, pagination.size, sorting]
   );
 
   // Load statistics
   const loadStatistics = useCallback(async () => {
     try {
-      const stats = await adminUserService.getMockUserStatistics();
+      const stats = await adminUserService.getUserStatistics();
       setStatistics(stats);
     } catch (err) {
       console.error("Error loading user statistics:", err);
+      setStatistics({
+        totalUsers: 0,
+        activeUsers: 0,
+        suspendedUsers: 0,
+        bannedUsers: 0,
+        newUsersThisMonth: 0,
+        usersByRole: { customers: 0, boatOwners: 0, admins: 0 },
+        verificationStats: { verified: 0, pending: 0, rejected: 0 },
+      });
     }
   }, []);
 
@@ -113,6 +123,7 @@ export const useAdminUserManagement = (
   const clearFilters = useCallback(() => {
     setFilters({});
     setSearchQuery("");
+    setSorting(null);
   }, []);
 
   const filterByRole = useCallback(
@@ -149,6 +160,11 @@ export const useAdminUserManagement = (
 
   const changePageSize = useCallback((size: number) => {
     setPagination((prev) => ({ ...prev, size, page: 0 }));
+  }, []);
+
+  // Sorting function
+  const updateSorting = useCallback((newSorting: SortingConfig) => {
+    setSorting(newSorting);
   }, []);
 
   // Selection functions
@@ -244,8 +260,8 @@ export const useAdminUserManagement = (
 
   // Effects
   useEffect(() => {
-    loadUsers(true); // Reset page when filters change
-  }, [filters, searchQuery]);
+    loadUsers(true); // Reset page when filters/sorting change
+  }, [filters, searchQuery, sorting]);
 
   useEffect(() => {
     loadUsers(); // Don't reset page when pagination changes
@@ -278,6 +294,7 @@ export const useAdminUserManagement = (
     filters,
     searchQuery,
     pagination,
+    sorting,
 
     // Actions
     loadUsers,
@@ -288,6 +305,7 @@ export const useAdminUserManagement = (
     search,
     goToPage,
     changePageSize,
+    updateSorting,
     selectUser,
     selectAllUsers,
     clearSelection,

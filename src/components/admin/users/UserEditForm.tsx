@@ -48,6 +48,11 @@ export const UserEditForm: React.FC<UserEditFormProps> = ({
   onClose,
   onUserUpdate,
 }) => {
+  // Null guard - user yoksa bileşeni render etme
+  if (!user) {
+    return null;
+  }
+
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
 

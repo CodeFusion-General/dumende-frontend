@@ -28,8 +28,82 @@ class AdminUserService extends BaseService {
       sort?: string;
     }
   ): Promise<AdminUserSearchResult> {
-    const queryString = filters ? this.buildQueryString(filters) : "";
-    return this.get<AdminUserSearchResult>(`?${queryString}`);
+    // Transform frontend filter keys to backend expected keys
+    const backendFilters: Record<string, any> = {};
+    if (filters) {
+      // Map role -> userType (backend enum name)
+      if (filters.role) {
+        backendFilters.userType = filters.role;
+      }
+      // Map status -> isEnabled (active=true, suspended=false)
+      if (filters.status === "active") {
+        backendFilters.isEnabled = true;
+      } else if (filters.status === "suspended") {
+        backendFilters.isEnabled = false;
+      }
+      // Pass pagination params directly
+      if (filters.page !== undefined) backendFilters.page = filters.page;
+      if (filters.size !== undefined) backendFilters.size = filters.size;
+      // Map frontend sort field names to backend field names
+      if (filters.sort) {
+        const sortFieldMapping: Record<string, string> = {
+          user: "fullName",
+          role: "account.userType",
+          status: "account.isEnabled",
+          verification: "account.isEmailVerified",
+          fullName: "fullName",
+          email: "account.email",
+          createdAt: "createdAt",
+        };
+        const [field, direction] = filters.sort.split(",");
+        const mappedField = sortFieldMapping[field] || field;
+        backendFilters.sort = `${mappedField},${direction}`;
+      }
+    }
+    const queryString = Object.keys(backendFilters).length > 0
+      ? this.buildQueryString(backendFilters)
+      : "";
+    console.log("[AdminUserService] getAdminUsers called with filters:", filters);
+    console.log("[AdminUserService] Backend filters:", backendFilters);
+    console.log("[AdminUserService] Query string:", queryString);
+    // Backend returns Spring Page format, convert to AdminUserSearchResult
+    const response = await this.get<{
+      content: any[];
+      totalElements: number;
+      number: number;
+      size: number;
+      totalPages: number;
+    }>(`?${queryString}`);
+
+    // Convert backend AdminUserListDTO to frontend AdminUserView format
+    const users: AdminUserView[] = response.content.map((user: any) => ({
+      id: user.id,
+      fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phoneNumber: user.phoneNumber,
+      profileImage: user.profileImage,
+      registrationDate: user.createdAt,
+      lastLoginDate: user.lastLoginDate,
+      status: user.isEnabled ? 'active' : 'suspended',
+      verificationStatus: user.isEmailVerified ? 'verified' : 'pending',
+      totalBookings: user.bookingCount || 0,
+      totalSpent: 0, // Backend doesn't provide this yet
+      riskScore: 0, // Backend doesn't provide this yet
+      notes: [],
+      role: user.userType as UserType,
+      email: user.email,
+      username: user.email?.split('@')[0] || '',
+      isEnabled: user.isEnabled ?? true,
+    }));
+
+    return {
+      users,
+      totalCount: response.page?.totalElements ?? 0,
+      page: response.page?.number ?? 0,
+      size: response.page?.size ?? 20,
+      totalPages: response.page?.totalPages ?? 0,
+    };
   }
 
   /**
@@ -106,7 +180,36 @@ class AdminUserService extends BaseService {
 
   // Get user statistics
   public async getUserStatistics(): Promise<UserStatistics> {
-    return this.get<UserStatistics>("/statistics");
+    // Backend returns AdminUserStatisticsDTO, convert to frontend UserStatistics format
+    const response = await this.get<{
+      totalUsers: number;
+      activeUsers: number;
+      suspendedUsers: number;
+      customerCount: number;
+      boatOwnerCount: number;
+      adminCount: number;
+      newUsersThisMonth: number;
+      verifiedUsers: number;
+      unverifiedUsers: number;
+    }>("/statistics");
+
+    return {
+      totalUsers: response.totalUsers || 0,
+      activeUsers: response.activeUsers || 0,
+      suspendedUsers: response.suspendedUsers || 0,
+      bannedUsers: 0, // Backend doesn't track banned users separately yet
+      newUsersThisMonth: response.newUsersThisMonth || 0,
+      usersByRole: {
+        customers: response.customerCount || 0,
+        boatOwners: response.boatOwnerCount || 0,
+        admins: response.adminCount || 0,
+      },
+      verificationStats: {
+        verified: response.verifiedUsers || 0,
+        pending: response.unverifiedUsers || 0,
+        rejected: 0, // Backend doesn't track rejected separately
+      },
+    };
   }
 
   // Get user activity log
@@ -352,3 +455,4 @@ class AdminUserService extends BaseService {
 }
 
 export const adminUserService = new AdminUserService();
+

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Pagination,
+  PaginationNav as Pagination,
   PaginationContent,
   PaginationItem,
   PaginationLink,
@@ -79,6 +79,8 @@ export interface DataTableProps<T> {
   columns: ColumnDef<T>[];
   loading?: boolean;
   pagination?: PaginationConfig;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   sorting?: SortingConfig;
   onSortingChange?: (sorting: SortingConfig) => void;
   selection?: SelectionConfig;
@@ -96,6 +98,8 @@ export function DataTable<T>({
   columns,
   loading = false,
   pagination,
+  onPageChange,
+  onPageSizeChange,
   sorting,
   onSortingChange,
   selection,
@@ -189,8 +193,49 @@ export function DataTable<T>({
 
     const { page, pageSize, total } = pagination;
     const totalPages = Math.ceil(total / pageSize);
-    const startItem = (page - 1) * pageSize + 1;
-    const endItem = Math.min(page * pageSize, total);
+    // page is 0-indexed from backend, display as 1-indexed
+    const currentPage = page + 1;
+    const startItem = page * pageSize + 1;
+    const endItem = Math.min((page + 1) * pageSize, total);
+
+    // Calculate which page numbers to show
+    const getPageNumbers = () => {
+      const pages: (number | 'ellipsis')[] = [];
+      const maxVisible = 5;
+
+      if (totalPages <= maxVisible) {
+        // Show all pages
+        for (let i = 1; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Always show first page
+        pages.push(1);
+
+        if (currentPage > 3) {
+          pages.push('ellipsis');
+        }
+
+        // Show pages around current
+        const start = Math.max(2, currentPage - 1);
+        const end = Math.min(totalPages - 1, currentPage + 1);
+
+        for (let i = start; i <= end; i++) {
+          pages.push(i);
+        }
+
+        if (currentPage < totalPages - 2) {
+          pages.push('ellipsis');
+        }
+
+        // Always show last page
+        if (totalPages > 1) {
+          pages.push(totalPages);
+        }
+      }
+
+      return pages;
+    };
 
     return (
       <div className="flex items-center justify-between px-2 py-4">
@@ -212,25 +257,34 @@ export function DataTable<T>({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (page > 1) {
-                      // Handle page change
+                    if (currentPage > 1 && onPageChange) {
+                      onPageChange(page - 1); // 0-indexed
                     }
                   }}
-                  className={page <= 1 ? "pointer-events-none opacity-50" : ""}
+                  className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
 
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = i + 1;
+              {getPageNumbers().map((pageNum, idx) => {
+                if (pageNum === 'ellipsis') {
+                  return (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <span className="px-3 py-2">...</span>
+                    </PaginationItem>
+                  );
+                }
                 return (
                   <PaginationItem key={pageNum}>
                     <PaginationLink
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        // Handle page change
+                        if (onPageChange) {
+                          onPageChange(pageNum - 1); // Convert to 0-indexed
+                        }
                       }}
-                      isActive={pageNum === page}
+                      isActive={pageNum === currentPage}
+                      className="cursor-pointer"
                     >
                       {pageNum}
                     </PaginationLink>
@@ -243,12 +297,12 @@ export function DataTable<T>({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (page < totalPages) {
-                      // Handle page change
+                    if (currentPage < totalPages && onPageChange) {
+                      onPageChange(page + 1); // 0-indexed
                     }
                   }}
                   className={
-                    page >= totalPages ? "pointer-events-none opacity-50" : ""
+                    currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
                   }
                 />
               </PaginationItem>

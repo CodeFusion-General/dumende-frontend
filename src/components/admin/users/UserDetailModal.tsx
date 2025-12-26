@@ -36,6 +36,11 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onClose,
   onUserUpdate,
 }) => {
+  // Null guard - user yoksa bileşeni render etme
+  if (!user) {
+    return null;
+  }
+
   const [activeTab, setActiveTab] = useState<"overview" | "activity" | "notes">(
     "overview"
   );

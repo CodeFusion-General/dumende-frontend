@@ -43,6 +43,8 @@ const UserManagement: React.FC = () => {
     search,
     goToPage,
     changePageSize,
+    updateSorting,
+    sorting,
     selectUser,
     selectAllUsers,
     clearSelection,
@@ -203,7 +205,6 @@ const UserManagement: React.FC = () => {
     {
       key: "bookings",
       header: "Rezervasyonlar",
-      sortable: true,
       render: (value, user: AdminUserView) => (
         <div className="text-sm">
           <div className="font-medium">{user.totalBookings}</div>
@@ -216,7 +217,6 @@ const UserManagement: React.FC = () => {
     {
       key: "risk",
       header: "Risk Skoru",
-      sortable: true,
       render: (value, user: AdminUserView) => {
         const riskColor =
           user.riskScore >= 7
@@ -232,7 +232,6 @@ const UserManagement: React.FC = () => {
     {
       key: "lastLogin",
       header: "Son Giriş",
-      sortable: true,
       render: (value, user: AdminUserView) => (
         <div className="text-sm text-gray-500">
           {user.lastLoginDate
@@ -600,6 +599,10 @@ const UserManagement: React.FC = () => {
               pageSize: pagination.size,
               total: pagination.totalCount,
             }}
+            onPageChange={goToPage}
+            onPageSizeChange={changePageSize}
+            sorting={sorting || undefined}
+            onSortingChange={updateSorting}
             emptyMessage="Kullanıcı bulunamadı"
           />
         </div>
