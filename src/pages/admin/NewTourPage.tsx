@@ -23,6 +23,7 @@ import {
   CreateTourDateDTO,
   CreateTourImageDTO,
   TourImageDTO,
+  RentalDurationType,
 } from "@/types/tour.types";
 import { TourDocumentDTO } from "@/types/document.types";
 import {
@@ -172,7 +173,9 @@ const NewTourPage = () => {
         dates: {
           duration: { hours: 2, minutes: 0 },
           capacity: tour.capacity,
-          price: Number(tour.price),
+          basePrice: Number(tour.basePrice) || 0,
+          price: Number(tour.price) || 0,
+          rentalDurationType: (tour.rentalDurationType || "HOURLY") as RentalDurationType,
           tourDates: tourDates.map((date) => {
             const start = new Date(date.startDate);
             const hours =
@@ -233,7 +236,9 @@ const NewTourPage = () => {
     dates: {
       duration: { hours: 2, minutes: 0 },
       capacity: 10,
+      basePrice: 0,
       price: 0,
+      rentalDurationType: "HOURLY" as RentalDurationType,
       tourDates: [] as Array<{
         startDate: string;
         endDate: string;
@@ -324,10 +329,10 @@ const NewTourPage = () => {
       return false;
     }
 
-    if (formData.dates.price <= 0) {
+    if (formData.dates.basePrice <= 0 && formData.dates.price <= 0) {
       toast({
         title: "Hata",
-        description: "Geçerli bir fiyat giriniz.",
+        description: "Fix fiyat veya kişi başı fiyattan en az birini giriniz.",
         variant: "destructive",
       });
       setActiveTab("dates");
@@ -442,7 +447,8 @@ const NewTourPage = () => {
             formData.details.description ||
             "",
           guideId: Number(user?.id),
-          price: Number(formData.dates.price),
+          basePrice: Number(formData.dates.basePrice) || 0,
+          price: Number(formData.dates.price) || 0,
           capacity: Number(formData.dates.capacity),
           location: formData.location.region,
           status: "DRAFT",
@@ -451,6 +457,8 @@ const NewTourPage = () => {
           tourType: formData.details.category as any,
           // terms & policies
           cancellationPolicy: formData.terms.cancellationPolicy || undefined,
+          // Rental duration type
+          rentalDurationType: formData.dates.rentalDurationType || undefined,
           // additional info
           includedServices: formData.additional.included || undefined,
           requirements: formData.additional.requirements || undefined,
@@ -548,7 +556,8 @@ const NewTourPage = () => {
             formData.details.description ||
             "",
           guideId: Number(user?.id),
-          price: Number(formData.dates.price),
+          basePrice: Number(formData.dates.basePrice) || 0,
+          price: Number(formData.dates.price) || 0,
           capacity: Number(formData.dates.capacity),
           location: formData.location.region,
           status: "DRAFT",
@@ -557,6 +566,8 @@ const NewTourPage = () => {
           tourType: formData.details.category as any,
           // terms & policies
           cancellationPolicy: formData.terms.cancellationPolicy || undefined,
+          // Rental duration type
+          rentalDurationType: formData.dates.rentalDurationType || undefined,
           // additional info
           includedServices: formData.additional.included || undefined,
           requirements: formData.additional.requirements || undefined,

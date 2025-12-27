@@ -109,7 +109,8 @@ export interface TourDTO {
   description: string;
   fullDescription?: string;
   guideId: number; // Rehber/Kaptan ID'si
-  price: number; // BigDecimal -> number
+  basePrice?: number; // Fix fiyat - kişi sayısından bağımsız
+  price: number; // Kişi başı fiyat
   capacity: number;
   location: string;
   latitude?: number;
@@ -123,6 +124,8 @@ export interface TourDTO {
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;
+  // Kiralama süresi tipi
+  rentalDurationType?: RentalDurationType;
   // Additional Info
   includedServices?: string;
   requirements?: string;
@@ -143,7 +146,8 @@ export interface CreateTourDTO {
   description: string;
   fullDescription?: string;
   guideId: number; // Rehber/Kaptan ID'si
-  price: number; // BigDecimal -> number
+  basePrice?: number; // Fix fiyat - kişi sayısından bağımsız
+  price: number; // Kişi başı fiyat
   capacity: number;
   location: string;
   latitude?: number;
@@ -156,6 +160,8 @@ export interface CreateTourDTO {
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;
+  // Kiralama süresi tipi
+  rentalDurationType?: RentalDurationType;
   // Additional Info
   includedServices?: string;
   requirements?: string;
@@ -175,7 +181,8 @@ export interface UpdateTourDTO {
   description?: string;
   fullDescription?: string;
   guideId?: number; // Rehber/Kaptan ID'si
-  price?: number; // BigDecimal -> number
+  basePrice?: number; // Fix fiyat - kişi sayısından bağımsız
+  price?: number; // Kişi başı fiyat
   capacity?: number;
   location?: string;
   latitude?: number;
@@ -194,6 +201,8 @@ export interface UpdateTourDTO {
   features?: string[];
   // Terms & Policies
   cancellationPolicy?: string;
+  // Kiralama süresi tipi
+  rentalDurationType?: RentalDurationType;
   // Additional Info
   includedServices?: string;
   requirements?: string;
@@ -232,6 +241,14 @@ export enum TourType {
   BOAT = "BOAT",
   PHOTOGRAPHY = "PHOTOGRAPHY",
   DIVING = "DIVING",
+}
+
+// Kiralama süresi tipi enum'u
+export enum RentalDurationType {
+  HOURLY = "HOURLY",     // Saatlik Tur
+  HALF_DAY = "HALF_DAY", // Yarım Gün
+  FULL_DAY = "FULL_DAY", // Tam Gün
+  MULTI_DAY = "MULTI_DAY", // Çok Günlü
 }
 
 // Filtreleme için kullanılan interface

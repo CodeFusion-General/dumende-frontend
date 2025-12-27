@@ -48,7 +48,9 @@ interface TourDatesData {
     minutes: number;
   };
   capacity: number;
-  price: number;
+  basePrice: number;  // Fix fiyat - kişi sayısından bağımsız
+  price: number;      // Kişi başı fiyat
+  rentalDurationType?: string; // HOURLY, HALF_DAY, FULL_DAY, MULTI_DAY
   tourDates: TourDateItem[];
 }
 
@@ -132,10 +134,12 @@ const TourDatesTab: React.FC<TourDatesTabProps> = ({ data, onChange }) => {
     });
   };
 
-  // Calculate estimated earnings
-  const estimatedEarnings = data.price * data.capacity;
-  const commission = estimatedEarnings * 0.15; // 15% commission
-  const netEarnings = estimatedEarnings - commission;
+  // Calculate estimated earnings: basePrice + (pricePerPerson × capacity)
+  const basePrice = data.basePrice || 0;
+  const pricePerPerson = data.price || 0;
+  const grossRevenue = basePrice + (pricePerPerson * data.capacity);
+  const commission = grossRevenue * 0.15; // 15% commission
+  const netEarnings = grossRevenue - commission;
 
   return (
     <div className="space-y-8">
@@ -293,83 +297,169 @@ const TourDatesTab: React.FC<TourDatesTabProps> = ({ data, onChange }) => {
               />
             </Card>
           </div>
-          
+
+          {/* Rental Duration Type Card */}
+          <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex items-center gap-2 mb-4">
+              <Timer className="h-5 w-5 text-[#15847c]" />
+              <FormLabel className="text-base font-semibold">Tur Süresi Tipi</FormLabel>
+            </div>
+
+            <Select
+              value={data.rentalDurationType || "HOURLY"}
+              onValueChange={(value) => onChange({ rentalDurationType: value })}
+            >
+              <SelectTrigger className="h-11 border-2 hover:border-[#15847c] focus:border-[#15847c] transition-colors">
+                <SelectValue placeholder="Süre tipi seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HOURLY">Saatlik Tur</SelectItem>
+                <SelectItem value="HALF_DAY">Yarım Gün</SelectItem>
+                <SelectItem value="FULL_DAY">Tam Gün</SelectItem>
+                <SelectItem value="MULTI_DAY">Çok Günlü</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <p className="text-sm text-gray-600 mt-3">
+              Turunuzun süre tipini seçin. Bu bilgi tur kartlarında görüntülenecektir.
+            </p>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <Info className="h-4 w-4" />
+                <span>
+                  {data.rentalDurationType === "HOURLY" && "Saatlik turlar genellikle 1-8 saat arasındadır."}
+                  {data.rentalDurationType === "HALF_DAY" && "Yarım günlük turlar genellikle 4-6 saat arasındadır."}
+                  {data.rentalDurationType === "FULL_DAY" && "Tam günlük turlar genellikle 8-12 saat arasındadır."}
+                  {data.rentalDurationType === "MULTI_DAY" && "Çok günlü turlar 2 veya daha fazla gün sürer."}
+                  {!data.rentalDurationType && "Saatlik turlar genellikle 1-8 saat arasındadır."}
+                </span>
+              </div>
+            </div>
+          </Card>
+
           {/* Pricing Card */}
           <Card className="p-6 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#15847c] text-lg">₺</span>
-                      <FormLabel className="text-base font-semibold">Kişi Başı Fiyat</FormLabel>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      Komisyon dahil
-                    </Badge>
-                  </div>
-                  
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₺</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        value={data.price}
-                        onChange={(e) => onChange({ price: Number(e.target.value) })}
-                        className="h-12 pl-10 text-xl font-semibold border-2 hover:border-[#15847c] focus:border-[#15847c] transition-colors"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                  
-                  {/* Price Suggestions */}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="text-sm text-gray-600">Önerilen fiyatlar:</span>
-                    {[250, 350, 500, 750, 1000].map((price) => (
-                      <Button
-                        key={price}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onChange({ price })}
-                        className="hover:bg-[#15847c] hover:text-white hover:border-[#15847c]"
-                      >
-                        ₺{price}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  {/* Earnings Calculator */}
-                  {data.price > 0 && data.capacity > 0 && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                      <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-green-600" />
-                        Tahmini Kazanç (Tam Kapasite)
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Brüt Gelir:</span>
-                          <span className="font-medium">₺{estimatedEarnings.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Platform Komisyonu (%15):</span>
-                          <span className="text-red-600">-₺{commission.toFixed(2)}</span>
-                        </div>
-                        <div className="border-t pt-2 flex justify-between">
-                          <span className="font-semibold text-gray-800">Net Kazanç:</span>
-                          <span className="font-bold text-green-600 text-lg">₺{netEarnings.toFixed(2)}</span>
-                        </div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-[#15847c]" />
+                <h3 className="text-base font-semibold">Fiyatlandırma</h3>
+              </div>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Komisyon dahil
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Fix Fiyat */}
+              <FormField
+                control={form.control}
+                name="basePrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Fix Fiyat (Sabit Ücret)</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₺</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={data.basePrice || 0}
+                          onChange={(e) => onChange({ basePrice: Number(e.target.value) })}
+                          className="h-12 pl-10 text-xl font-semibold border-2 hover:border-[#15847c] focus:border-[#15847c] transition-colors"
+                          placeholder="0"
+                        />
                       </div>
+                    </FormControl>
+                    <p className="text-xs text-gray-500 mt-1">Kişi sayısından bağımsız temel ücret</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Kişi Başı Fiyat */}
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">Kişi Başı Fiyat</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₺</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="any"
+                          value={data.price}
+                          onChange={(e) => onChange({ price: Number(e.target.value) })}
+                          className="h-12 pl-10 text-xl font-semibold border-2 hover:border-[#15847c] focus:border-[#15847c] transition-colors"
+                        />
+                      </div>
+                    </FormControl>
+                    <p className="text-xs text-gray-500 mt-1">Her misafir için ek ücret</p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Price Suggestions */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="text-sm text-gray-600">Önerilen kişi başı fiyatlar:</span>
+              {[250, 350, 500, 750, 1000].map((price) => (
+                <Button
+                  key={price}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onChange({ price })}
+                  className="hover:bg-[#15847c] hover:text-white hover:border-[#15847c]"
+                >
+                  ₺{price}
+                </Button>
+              ))}
+            </div>
+
+            {/* Earnings Calculator */}
+            {(basePrice > 0 || pricePerPerson > 0) && data.capacity > 0 && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-green-600" />
+                  Tahmini Kazanç ({data.capacity} kişi - Tam Kapasite)
+                </h4>
+                <div className="space-y-2">
+                  {basePrice > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Fix Fiyat:</span>
+                      <span className="font-medium">₺{basePrice.toFixed(2)}</span>
                     </div>
                   )}
-                </FormItem>
-              )}
-            />
+                  {pricePerPerson > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Kişi Başı ({data.capacity} × ₺{pricePerPerson}):</span>
+                      <span className="font-medium">₺{(pricePerPerson * data.capacity).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Brüt Gelir:</span>
+                      <span className="font-medium">₺{grossRevenue.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Platform Komisyonu (%15):</span>
+                    <span className="text-red-600">-₺{commission.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between">
+                    <span className="font-semibold text-gray-800">Net Kazanç:</span>
+                    <span className="font-bold text-green-600 text-lg">₺{netEarnings.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
           
           {/* Date and Time Selection */}

@@ -4,7 +4,7 @@ import { Star, Users, MapPin, Calendar, Heart, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { VisualFeedback } from "@/components/ui/VisualFeedback";
-import { TourDTO } from "@/types/tour.types";
+import { TourDTO, RentalDurationType } from "@/types/tour.types";
 import { getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
@@ -32,6 +32,26 @@ const getTourImageUrl = (tour: TourDTO): string => {
 
   // Fallback to default image
   return getDefaultImageUrl();
+};
+
+// Helper function to get Turkish label for rental duration type
+const getRentalDurationLabel = (type?: string | RentalDurationType): string | null => {
+  switch (type) {
+    case RentalDurationType.HOURLY:
+    case "HOURLY":
+      return "Saatlik Tur";
+    case RentalDurationType.HALF_DAY:
+    case "HALF_DAY":
+      return "Yarım Gün";
+    case RentalDurationType.FULL_DAY:
+    case "FULL_DAY":
+      return "Tam Gün";
+    case RentalDurationType.MULTI_DAY:
+    case "MULTI_DAY":
+      return "Çok Günlü";
+    default:
+      return null;
+  }
 };
 
 export const TourCard: React.FC<TourCardProps> = ({
@@ -173,6 +193,16 @@ const TourCardGrid: React.FC<{
 
       {/* Content Section with enhanced styling - Flexible height */}
       <div className="p-4 sm:p-5 md:p-6 bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm flex-1 flex flex-col">
+        {/* Rental Duration Type Label */}
+        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType) && (
+          <div className="mb-2 sm:mb-3">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+              <Clock className="h-3 w-3 mr-1" />
+              {getRentalDurationLabel(tour.rentalDurationType)}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between items-start mb-2 sm:mb-3">
           <h3
             className={`font-bold text-base sm:text-lg ${getTextColor()} group-hover:text-[#3498db] transition-all duration-300 font-montserrat line-clamp-2 flex-1 mr-2`}
@@ -379,6 +409,16 @@ const TourCardList: React.FC<{
 
       {/* Content Section with enhanced styling */}
       <div className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm">
+        {/* Rental Duration Type Label */}
+        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType) && (
+          <div className="mb-2 sm:mb-3">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+              <Clock className="h-3 w-3 mr-1" />
+              {getRentalDurationLabel(tour.rentalDurationType)}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between items-start mb-2 sm:mb-3">
           <div>
             <h3
