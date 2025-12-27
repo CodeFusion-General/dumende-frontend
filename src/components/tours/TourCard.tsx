@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { VisualFeedback } from "@/components/ui/VisualFeedback";
 import { TourDTO, RentalDurationType } from "@/types/tour.types";
-import { getDefaultImageUrl, getResponsiveImageUrl } from "@/lib/imageUtils";
+import { getDefaultImageUrl, getFullImageUrl } from "@/lib/imageUtils";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,8 +25,16 @@ const getTourImageUrl = (tour: TourDTO): string => {
   if (tour.tourImages && tour.tourImages.length > 0) {
     const firstImage = tour.tourImages[0];
     if (firstImage) {
-      // Use thumbnail variant for grid/list views (200x200 or 400x300)
-      return getResponsiveImageUrl(firstImage, 'thumbnail');
+      // CloudFlare variant URL'leri önce kontrol et
+      // Sonra imageUrl'yi getFullImageUrl() ile işle (relative path -> full URL)
+      return (
+        firstImage.publicUrl ||
+        firstImage.thumbnailUrl ||
+        firstImage.smallUrl ||
+        firstImage.mediumUrl ||
+        (firstImage.imageUrl ? getFullImageUrl(firstImage.imageUrl) : null) ||
+        getDefaultImageUrl()
+      );
     }
   }
 
