@@ -18,7 +18,7 @@ class MessageService extends BaseService {
   }
 
   public async getAllMessages(): Promise<MessageDTO[]> {
-    return this.get<MessageDTO[]>("/messages");
+    return this.get<MessageDTO[]>("");
   }
 
   public async queryMessages(query: MessageQuery): Promise<MessageDTO[]> {
@@ -72,7 +72,7 @@ class MessageService extends BaseService {
   public async createMessage(
     command: CreateMessageCommand
   ): Promise<MessageDTO> {
-    return this.post<MessageDTO>("/messages", command);
+    return this.post<MessageDTO>("", command);
   }
 
   public async updateMessageReadStatus(
