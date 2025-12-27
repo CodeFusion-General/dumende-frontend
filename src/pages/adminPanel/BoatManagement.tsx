@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import AdminPanelLayout from "@/components/admin/layout/AdminPanelLayout";
-import { DataTable } from "@/components/admin/ui/DataTable";
+import { DataTable, ColumnDef, SortingConfig } from "@/components/admin/ui/DataTable";
 import { FilterPanel } from "@/components/admin/ui/FilterPanel";
+import { toast } from "react-hot-toast";
 import { SearchBar } from "@/components/admin/ui/SearchBar";
 import StatCard from "@/components/admin/ui/StatCard";
 import { BoatDetailModal } from "@/components/admin/boats/BoatDetailModal";
@@ -48,18 +49,23 @@ const BoatManagement: React.FC = () => {
     activeTab,
     searchQuery,
     selectedBoats,
+    sortBy,
+    filters,
     isLoading,
     isProcessing,
     error,
     handleTabChange,
     handlePageChange,
     handleSearchChange,
+    handleFiltersChange,
+    handleSortChange,
     handleBoatSelection,
     handleSelectAll,
     handleApproveBoat,
     handleRejectBoat,
     handleBulkApprove,
     handleBulkReject,
+    resetFilters,
     refreshData,
   } = useAdminBoatManagement();
 
@@ -88,53 +94,57 @@ const BoatManagement: React.FC = () => {
         <div className="flex items-center space-x-2">
           <Ship className="h-4 w-4 text-blue-500" />
           <div>
-            <div className="font-medium">{boat.name}</div>
-            <div className="text-sm text-gray-500">{boat.type}</div>
+            <div className="font-medium">{boat.name ?? "İsimsiz"}</div>
+            <div className="text-sm text-gray-500">{boat.type ?? "-"}</div>
           </div>
         </div>
       ),
     },
     {
-      accessorKey: "ownerInfo.name",
+      key: "ownerName",
       header: "Sahip",
-      cell: ({ row }) => (
+      sortable: true,
+      render: (value, boat: AdminBoatView) => (
         <div>
-          <div className="font-medium">{row.original.ownerInfo.name}</div>
+          <div className="font-medium">{boat.ownerInfo?.name ?? "Bilinmiyor"}</div>
           <div className="text-sm text-gray-500">
-            {row.original.ownerInfo.email}
+            {boat.ownerInfo?.email ?? "-"}
           </div>
         </div>
       ),
     },
     {
-      accessorKey: "location",
+      key: "location",
       header: "Lokasyon",
-      cell: ({ row }) => <div className="text-sm">{row.original.location}</div>,
+      sortable: true,
+      render: (value, boat: AdminBoatView) => <div className="text-sm">{boat.location ?? "-"}</div>,
     },
     {
-      accessorKey: "capacity",
+      key: "capacity",
       header: "Kapasite",
-      cell: ({ row }) => (
+      sortable: true,
+      render: (value, boat: AdminBoatView) => (
         <div className="flex items-center space-x-1">
           <Users className="h-4 w-4 text-gray-400" />
-          <span>{row.original.capacity}</span>
+          <span>{boat.capacity ?? 0}</span>
         </div>
       ),
     },
     {
-      accessorKey: "dailyPrice",
+      key: "dailyPrice",
       header: "Günlük Fiyat",
-      cell: ({ row }) => (
+      sortable: true,
+      render: (value, boat: AdminBoatView) => (
         <div className="font-medium">
-          ₺{row.original.dailyPrice.toLocaleString()}
+          ₺{(boat.dailyPrice ?? 0).toLocaleString()}
         </div>
       ),
     },
     {
-      accessorKey: "approvalStatus",
+      key: "approvalStatus",
       header: "Durum",
-      cell: ({ row }) => {
-        const status = row.original.approvalStatus;
+      render: (value, boat: AdminBoatView) => {
+        const status = boat.approvalStatus;
         const statusConfig = BOAT_APPROVAL_STATUS_OPTIONS.find(
           (s) => s.value === status
         );
@@ -162,11 +172,11 @@ const BoatManagement: React.FC = () => {
       },
     },
     {
-      accessorKey: "documentStatus",
+      key: "documentStatus",
       header: "Belgeler",
-      cell: ({ row }) => {
-        const { verified, pending, expired, total } =
-          row.original.documentStatus;
+      render: (value, boat: AdminBoatView) => {
+        const docStatus = boat.documentStatus ?? { verified: 0, pending: 0, expired: 0, total: 0 };
+        const { verified, pending, expired, total } = docStatus;
 
         if (total === 0) {
           return <Badge variant="secondary">Belge Yok</Badge>;
@@ -188,18 +198,20 @@ const BoatManagement: React.FC = () => {
       },
     },
     {
-      accessorKey: "createdAt",
+      key: "createdAt",
       header: "Oluşturulma",
-      cell: ({ row }) => (
+      sortable: true,
+      render: (value, boat: AdminBoatView) => (
         <div className="text-sm text-gray-500">
-          {new Date(row.original.createdAt).toLocaleDateString("tr-TR")}
+          {new Date(boat.createdAt).toLocaleDateString("tr-TR")}
         </div>
       ),
     },
     {
-      id: "actions",
+      key: "actions",
       header: "İşlemler",
-      cell: ({ row }) => (
+      width: "100px",
+      render: (value, boat: AdminBoatView) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -207,15 +219,15 @@ const BoatManagement: React.FC = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setSelectedBoat(row.original)}>
+            <DropdownMenuItem onClick={() => setSelectedBoat(boat)}>
               <Eye className="mr-2 h-4 w-4" />
               Detayları Görüntüle
             </DropdownMenuItem>
-            {row.original.approvalStatus === "pending" && (
+            {boat.approvalStatus === "pending" && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => handleApproveBoat(row.original.id)}
+                  onClick={() => handleApproveBoat(boat.id)}
                   className="text-green-600"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -225,7 +237,7 @@ const BoatManagement: React.FC = () => {
                   onClick={() => {
                     const reason = prompt("Red sebebini giriniz:");
                     if (reason) {
-                      handleRejectBoat(row.original.id, reason);
+                      handleRejectBoat(boat.id, reason);
                     }
                   }}
                   className="text-red-600"
@@ -401,9 +413,9 @@ const BoatManagement: React.FC = () => {
               {showFilters && (
                 <FilterPanel
                   filters={filterConfig}
-                  values={{}}
-                  onChange={() => {}}
-                  onReset={() => {}}
+                  values={filters}
+                  onChange={handleFiltersChange}
+                  onReset={resetFilters}
                 />
               )}
 
@@ -466,6 +478,10 @@ const BoatManagement: React.FC = () => {
                       pageSize: 20,
                       total: totalCount,
                     }}
+                    onPageChange={handlePageChange}
+                    sorting={sortBy ? { field: sortBy.split(',')[0], direction: sortBy.split(',')[1] as 'asc' | 'desc' } : undefined}
+                    onSortingChange={(sort: SortingConfig) => handleSortChange(`${sort.field},${sort.direction}`)}
+                    emptyMessage="Tekne bulunamadı"
                   />
                 </TabsContent>
               </Tabs>

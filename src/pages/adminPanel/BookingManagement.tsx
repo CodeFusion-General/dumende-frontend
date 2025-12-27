@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import AdminPanelLayout from "@/components/admin/layout/AdminPanelLayout";
-import { DataTable, ColumnDef } from "@/components/admin/ui/DataTable";
+import { DataTable, ColumnDef, SortingConfig } from "@/components/admin/ui/DataTable";
 import { FilterPanel } from "@/components/admin/ui/FilterPanel";
 import { SearchBar } from "@/components/admin/ui/SearchBar";
 import StatCard from "@/components/admin/ui/StatCard";
@@ -371,35 +371,35 @@ const BookingManagement: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <StatCard
             title="Toplam Rezervasyon"
-            value={statistics.total.toLocaleString("tr-TR")}
+            value={(statistics.total ?? 0).toLocaleString("tr-TR")}
             icon={<Calendar className="w-6 h-6" />}
             color="blue"
           />
           <StatCard
             title="Bekleyen"
-            value={statistics.pending.toLocaleString("tr-TR")}
+            value={(statistics.pending ?? 0).toLocaleString("tr-TR")}
             icon={<Clock className="w-6 h-6" />}
             color="yellow"
             change={{
-              value: statistics.todayBookings,
+              value: statistics.todayBookings ?? 0,
               type: "increase",
               period: "bugün",
             }}
           />
           <StatCard
             title="Bu Ay Gelir"
-            value={`₺${statistics.thisMonthRevenue.toLocaleString("tr-TR")}`}
+            value={`₺${(statistics.thisMonthRevenue ?? 0).toLocaleString("tr-TR")}`}
             icon={<DollarSign className="w-6 h-6" />}
             color="green"
             change={{
-              value: statistics.thisMonthBookings,
+              value: statistics.thisMonthBookings ?? 0,
               type: "increase",
               period: "rezervasyon",
             }}
           />
           <StatCard
             title="Ortalama Değer"
-            value={`₺${statistics.averageBookingValue.toLocaleString("tr-TR")}`}
+            value={`₺${(statistics.averageBookingValue ?? 0).toLocaleString("tr-TR")}`}
             icon={<DollarSign className="w-6 h-6" />}
             color="purple"
           />
@@ -539,7 +539,9 @@ const BookingManagement: React.FC = () => {
                 pageSize: pageSize,
                 total: totalElements,
               }}
+              onPageChange={setPage}
               onRowClick={handleBookingClick}
+              emptyMessage="Rezervasyon bulunamadı"
             />
           </div>
         </>

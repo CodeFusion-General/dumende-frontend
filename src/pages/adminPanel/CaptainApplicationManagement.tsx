@@ -49,11 +49,7 @@ interface FilterValues {
     start: string;
     end: string;
   };
-  experienceRange: {
-    min: number;
-    max: number;
-  };
-  hasDocuments: boolean | null;
+  hasDocuments: string;
   priority: "high" | "medium" | "low" | "all";
 }
 
@@ -81,8 +77,7 @@ const CaptainApplicationManagement: React.FC = () => {
   const [filters, setFilters] = useState<FilterValues>({
     status: "ALL",
     dateRange: { start: "", end: "" },
-    experienceRange: { min: 0, max: 50 },
-    hasDocuments: null,
+    hasDocuments: "all",
     priority: "all",
   });
 
@@ -106,9 +101,7 @@ const CaptainApplicationManagement: React.FC = () => {
         search: searchQuery || undefined,
         startDate: filters.dateRange.start || undefined,
         endDate: filters.dateRange.end || undefined,
-        minExperience: filters.experienceRange.min,
-        maxExperience: filters.experienceRange.max,
-        hasDocuments: filters.hasDocuments,
+        hasDocuments: filters.hasDocuments === "all" ? undefined : filters.hasDocuments === "true",
       };
 
       const response = await captainApplicationService.list(params);
@@ -273,7 +266,7 @@ const CaptainApplicationManagement: React.FC = () => {
     {
       key: "select",
       header: "",
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <Checkbox
           checked={selectedApplications.includes(app.id)}
           onCheckedChange={(checked) => {
@@ -292,7 +285,7 @@ const CaptainApplicationManagement: React.FC = () => {
       key: "id",
       header: "ID",
       sortable: true,
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <Button
           variant="link"
           className="p-0 h-auto font-medium text-primary"
@@ -305,7 +298,7 @@ const CaptainApplicationManagement: React.FC = () => {
     {
       key: "priority",
       header: "Öncelik",
-      render: (app: CaptainApplication) => {
+      render: (_value, app: CaptainApplication) => {
         const priority = calculatePriority(app);
         const colors = {
           high: "bg-red-100 text-red-800",
@@ -324,7 +317,7 @@ const CaptainApplicationManagement: React.FC = () => {
       key: "fullName",
       header: "Başvuran",
       sortable: true,
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <div className="flex flex-col">
           <span className="font-medium">{app.fullName || "-"}</span>
           <span className="text-sm text-muted-foreground">
@@ -336,7 +329,7 @@ const CaptainApplicationManagement: React.FC = () => {
     {
       key: "licenseNumber",
       header: "Lisans",
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <div className="flex flex-col">
           <span>{app.professionalInfo?.licenseNumber || "-"}</span>
           <span className="text-xs text-muted-foreground">
@@ -352,7 +345,7 @@ const CaptainApplicationManagement: React.FC = () => {
       key: "yearsOfExperience",
       header: "Deneyim",
       sortable: true,
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <span>{app.professionalInfo?.yearsOfExperience ?? "-"} yıl</span>
       ),
     },
@@ -360,14 +353,14 @@ const CaptainApplicationManagement: React.FC = () => {
       key: "createdAt",
       header: "Başvuru Tarihi",
       sortable: true,
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <span>{new Date(app.createdAt).toLocaleDateString("tr-TR")}</span>
       ),
     },
     {
       key: "status",
       header: "Durum",
-      render: (app: CaptainApplication) => {
+      render: (_value, app: CaptainApplication) => {
         const statusConfig = {
           PENDING: { label: "Beklemede", variant: "secondary" as const },
           APPROVED: {
@@ -387,7 +380,7 @@ const CaptainApplicationManagement: React.FC = () => {
     {
       key: "documents",
       header: "Belgeler",
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4" />
           <span>{app.documentFilePaths?.length || 0}</span>
@@ -397,7 +390,7 @@ const CaptainApplicationManagement: React.FC = () => {
     {
       key: "actions",
       header: "İşlemler",
-      render: (app: CaptainApplication) => (
+      render: (_value, app: CaptainApplication) => (
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -467,20 +460,13 @@ const CaptainApplicationManagement: React.FC = () => {
       type: "daterange" as const,
     },
     {
-      key: "experienceRange",
-      label: "Deneyim (Yıl)",
-      type: "numberRange" as const,
-      min: 0,
-      max: 50,
-    },
-    {
       key: "hasDocuments",
       label: "Belge Durumu",
       type: "select" as const,
       options: [
-        { value: null, label: "Tümü" },
-        { value: true, label: "Belgeli" },
-        { value: false, label: "Belgesiz" },
+        { value: "all", label: "Tümü" },
+        { value: "true", label: "Belgeli" },
+        { value: "false", label: "Belgesiz" },
       ],
     },
   ];
@@ -572,8 +558,7 @@ const CaptainApplicationManagement: React.FC = () => {
               setFilters({
                 status: "ALL",
                 dateRange: { start: "", end: "" },
-                experienceRange: { min: 0, max: 50 },
-                hasDocuments: null,
+                hasDocuments: "all",
                 priority: "all",
               })
             }

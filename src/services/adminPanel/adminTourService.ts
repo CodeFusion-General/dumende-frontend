@@ -21,7 +21,7 @@ class AdminTourService extends BaseService {
   // ======= Tour Management Operations =======
 
   /**
-   * Get all tours with admin-specific information
+   * Get all tours with admin-specific information from backend
    */
   public async getAdminTours(options?: AdminTourSearchOptions): Promise<{
     tours: AdminTourView[];
@@ -30,24 +30,59 @@ class AdminTourService extends BaseService {
     limit: number;
   }> {
     try {
-      // For now, use existing tour service and enhance data
-      const tours = await tourService.getTours();
-      const adminTours = await Promise.all(
-        tours.map((tour) => this.enhanceTourWithAdminData(tour))
-      );
+      // Build query params
+      const params = new URLSearchParams();
+      params.set("page", String((options?.page || 1) - 1)); // Backend uses 0-indexed pages
+      params.set("size", String(options?.limit || 20));
 
-      // Apply filters if provided
-      let filteredTours = adminTours;
-      if (options?.filters) {
-        filteredTours = this.applyFilters(adminTours, options.filters);
+      if (options?.filters?.approvalStatus?.length) {
+        params.set("approvalStatus", options.filters.approvalStatus[0]);
       }
-
-      // Apply search if provided
       if (options?.query) {
-        filteredTours = this.applySearch(filteredTours, options.query);
+        params.set("guideName", options.query);
       }
 
-      // Apply sorting
+      // Call backend endpoint - returns AdminTourListResponseDTO
+      const response = await this.get<{
+        tours: Array<{
+          id: number;
+          name: string;
+          description: string;
+          type: string | null;
+          duration: number | null;
+          price: number | null;
+          location: string;
+          status: string | null;
+          rating: number | null;
+          reviewCount: number | null;
+          createdAt: string;
+          updatedAt: string;
+          guideInfo: {
+            id: number;
+            name: string;
+            email: string;
+            phone: string;
+          } | null;
+          approvalStatus: string;
+          approvalDate: string | null;
+          rejectionReason: string | null;
+        }>;
+        totalCount: number;
+        page: number;
+        size: number;
+        totalPages: number;
+      }>(`?${params.toString()}`);
+
+      // Map backend response to frontend AdminTourView
+      const tours: AdminTourView[] = (response.tours || []).map((tour) => this.mapBackendTourToAdminView(tour));
+
+      // Apply client-side search if needed (backend may not support full-text search)
+      let filteredTours = tours;
+      if (options?.query) {
+        filteredTours = this.applySearch(tours, options.query);
+      }
+
+      // Apply client-side sorting if needed
       if (options?.sortBy) {
         filteredTours = this.applySorting(
           filteredTours,
@@ -56,14 +91,53 @@ class AdminTourService extends BaseService {
         );
       }
 
-      // Apply pagination
+      return {
+        tours: filteredTours,
+        total: response.totalCount || 0,
+        page: (response.page || 0) + 1, // Convert to 1-indexed for frontend
+        limit: response.size || 20,
+      };
+    } catch (error) {
+      console.error("AdminTourService.getAdminTours error:", error);
+      // Fallback to client-side approach if backend fails
+      return this.getAdminToursClientSide(options);
+    }
+  }
+
+  /**
+   * Fallback: Get tours using client-side approach
+   */
+  private async getAdminToursClientSide(options?: AdminTourSearchOptions): Promise<{
+    tours: AdminTourView[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    try {
+      const tours = await tourService.getTours();
+      const adminTours = await Promise.all(
+        tours.map((tour) => this.enhanceTourWithAdminData(tour))
+      );
+
+      let filteredTours = adminTours;
+      if (options?.filters) {
+        filteredTours = this.applyFilters(adminTours, options.filters);
+      }
+      if (options?.query) {
+        filteredTours = this.applySearch(filteredTours, options.query);
+      }
+      if (options?.sortBy) {
+        filteredTours = this.applySorting(
+          filteredTours,
+          options.sortBy,
+          options.sortOrder || "desc"
+        );
+      }
+
       const page = options?.page || 1;
       const limit = options?.limit || 20;
       const startIndex = (page - 1) * limit;
-      const paginatedTours = filteredTours.slice(
-        startIndex,
-        startIndex + limit
-      );
+      const paginatedTours = filteredTours.slice(startIndex, startIndex + limit);
 
       return {
         tours: paginatedTours,
@@ -72,9 +146,88 @@ class AdminTourService extends BaseService {
         limit,
       };
     } catch (error) {
-      console.error("AdminTourService.getAdminTours error:", error);
+      console.error("AdminTourService.getAdminToursClientSide error:", error);
       throw error;
     }
+  }
+
+  /**
+   * Map backend tour response to frontend AdminTourView
+   */
+  private mapBackendTourToAdminView(tour: {
+    id: number;
+    name: string;
+    description: string;
+    type: string | null;
+    duration: number | null;
+    price: number | null;
+    location: string;
+    status: string | null;
+    rating: number | null;
+    reviewCount: number | null;
+    createdAt: string;
+    updatedAt: string;
+    guideInfo: {
+      id: number;
+      name: string;
+      email: string;
+      phone: string;
+    } | null;
+    approvalStatus: string;
+    approvalDate: string | null;
+    rejectionReason: string | null;
+  }): AdminTourView {
+    return {
+      id: tour.id,
+      name: tour.name || "",
+      description: tour.description || "",
+      tourType: tour.type || undefined,
+      price: tour.price || 0,
+      location: tour.location || "",
+      status: (tour.status as TourStatus) || "DRAFT",
+      rating: tour.rating || 0,
+      createdAt: tour.createdAt,
+      updatedAt: tour.updatedAt,
+      guideId: tour.guideInfo?.id || 0,
+      guideInfo: tour.guideInfo ? {
+        id: tour.guideInfo.id,
+        name: tour.guideInfo.name || "Bilinmiyor",
+        email: tour.guideInfo.email || "",
+        phone: tour.guideInfo.phone || "",
+        joinDate: "",
+        isVerified: true,
+        isCertified: true,
+        totalTours: 0,
+        rating: 0,
+        responseRate: 0,
+      } : {
+        id: 0,
+        name: "Bilinmiyor",
+        email: "",
+        phone: "",
+        joinDate: "",
+        isVerified: false,
+        isCertified: false,
+        totalTours: 0,
+        rating: 0,
+        responseRate: 0,
+      },
+      approvalStatus: (tour.approvalStatus as "pending" | "approved" | "rejected" | "suspended") || "pending",
+      approvalDate: tour.approvalDate || undefined,
+      rejectionReason: tour.rejectionReason || undefined,
+      moderationNotes: [],
+      documentStatus: { total: 0, verified: 0, pending: 0, expired: 0, expiringSoon: 0 },
+      bookingStats: { totalBookings: 0, thisMonthBookings: 0, revenue: 0, averageRating: 0, completionRate: 0 },
+      lastActivity: tour.updatedAt,
+      isActive: tour.status === "ACTIVE",
+      isFeatured: false,
+      viewCount: 0,
+      reportCount: 0,
+      maxGuests: 0,
+      tourImages: [],
+      tourDates: [],
+      capacity: 0,
+    } as AdminTourView;
   }
 
   /**
@@ -627,39 +780,82 @@ class AdminTourService extends BaseService {
   // ======= Statistics =======
 
   /**
-   * Get tour statistics for admin dashboard
+   * Get tour statistics for admin dashboard from backend
    */
   public async getTourStats(): Promise<AdminTourStats> {
     try {
-      const tours = await tourService.getTours();
+      // Call backend statistics endpoint
+      const response = await this.get<{
+        success: boolean;
+        data: {
+          totalTours: number;
+          activeTours: number;
+          pendingTours: number;
+          rejectedTours: number;
+          newToursThisMonth: number;
+          toursByType: Record<string, number>;
+          toursByLocation: Record<string, number>;
+        };
+        message: string;
+      }>("/statistics");
 
-      // Calculate document statistics
-      const documentStats = await this.calculateDocumentStats(tours);
+      const backendStats = response.data;
 
-      // Calculate booking statistics (would be enhanced with real booking data)
-      const bookingStats = await this.calculateBookingStats(tours);
-
+      // Map backend response to frontend AdminTourStats
       const stats: AdminTourStats = {
-        total: tours.length,
-        active: tours.filter((t) => t.status === "ACTIVE").length,
-        pending: tours.filter((t) => t.status === "DRAFT").length,
-        rejected: tours.filter((t) => t.status === "INACTIVE").length,
-        suspended: 0, // Would be calculated from moderation status
-        draft: tours.filter((t) => t.status === "DRAFT").length,
-        newThisMonth: this.getNewThisMonth(tours),
-        totalRevenue: bookingStats.totalRevenue,
-        thisMonthRevenue: bookingStats.thisMonthRevenue,
-        averageRating: this.calculateAverageRating(tours),
-        totalBookings: bookingStats.totalBookings,
-        completionRate: bookingStats.completionRate,
-        reportedTours: 0, // Would be calculated from reports
-        expiredDocuments: documentStats.expired,
-        expiringSoonDocuments: documentStats.expiringSoon,
+        total: backendStats.totalTours,
+        active: backendStats.activeTours,
+        pending: backendStats.pendingTours,
+        rejected: backendStats.rejectedTours,
+        suspended: 0, // Backend doesn't track this separately
+        draft: 0, // Backend doesn't track this separately
+        newThisMonth: backendStats.newToursThisMonth,
+        totalRevenue: 0, // Would need booking integration
+        thisMonthRevenue: 0, // Would need booking integration
+        averageRating: 0, // Would need review integration
+        totalBookings: 0, // Would need booking integration
+        completionRate: 0, // Would need booking integration
+        reportedTours: 0, // Would need report integration
+        expiredDocuments: 0, // Would need document integration
+        expiringSoonDocuments: 0, // Would need document integration
       };
 
       return stats;
     } catch (error) {
       console.error("AdminTourService.getTourStats error:", error);
+      // Fallback to client-side calculation
+      return this.getTourStatsClientSide();
+    }
+  }
+
+  /**
+   * Fallback: Calculate tour statistics client-side
+   */
+  private async getTourStatsClientSide(): Promise<AdminTourStats> {
+    try {
+      const tours = await tourService.getTours();
+
+      const stats: AdminTourStats = {
+        total: tours.length,
+        active: tours.filter((t) => t.status === "ACTIVE").length,
+        pending: tours.filter((t) => t.status === "DRAFT" || t.status === "PENDING").length,
+        rejected: tours.filter((t) => t.status === "INACTIVE" || t.status === "REJECTED").length,
+        suspended: 0,
+        draft: tours.filter((t) => t.status === "DRAFT").length,
+        newThisMonth: this.getNewThisMonth(tours),
+        totalRevenue: 0,
+        thisMonthRevenue: 0,
+        averageRating: this.calculateAverageRating(tours),
+        totalBookings: 0,
+        completionRate: 0,
+        reportedTours: 0,
+        expiredDocuments: 0,
+        expiringSoonDocuments: 0,
+      };
+
+      return stats;
+    } catch (error) {
+      console.error("AdminTourService.getTourStatsClientSide error:", error);
       throw error;
     }
   }

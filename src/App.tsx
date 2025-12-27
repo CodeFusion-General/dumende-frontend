@@ -74,6 +74,7 @@ const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 const AdminDashboard = lazy(() => import("./pages/adminPanel/AdminDashboard"));
 const UserManagement = lazy(() => import("./pages/adminPanel/UserManagement"));
 const BoatManagement = lazy(() => import("./pages/adminPanel/BoatManagement"));
+const TourManagement = lazy(() => import("./pages/adminPanel/TourManagement"));
 const BookingManagement = lazy(
   () => import("./pages/adminPanel/BookingManagement")
 );
@@ -503,6 +504,14 @@ const App = () => {
                       element={
                         <AdminPanelRouteGuard>
                           <BoatManagement />
+                        </AdminPanelRouteGuard>
+                      }
+                    />
+                    <Route
+                      path="/adminPanel/tours"
+                      element={
+                        <AdminPanelRouteGuard>
+                          <TourManagement />
                         </AdminPanelRouteGuard>
                       }
                     />

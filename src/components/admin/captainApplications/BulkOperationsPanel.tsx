@@ -266,7 +266,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
         title={`Toplu ${operationType === "approve" ? "Onay" : "Red"} İşlemi`}
         size="lg"
         open={showBulkModal}
-        onClose={() => setShowBulkModal(false)}
+        onOpenChange={setShowBulkModal}
       >
         <div className="space-y-6">
           <Alert>
