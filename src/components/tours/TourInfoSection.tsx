@@ -13,8 +13,11 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
+  Timer,
 } from "lucide-react";
-import { TourDTO } from "@/types/tour.types";
+import { TourDTO, RentalDurationType } from "@/types/tour.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface TourInfoSectionProps {
   tour: TourDTO;
@@ -22,6 +25,8 @@ interface TourInfoSectionProps {
 
 const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const { language } = useLanguage();
+  const t = translations[language];
 
   // Check if there's additional content to show
   const hasFullDescription = tour.fullDescription && tour.fullDescription.trim().length > 0;
@@ -34,25 +39,25 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
       case "active":
         return (
           <Badge className={`${badgeClasses} bg-green-500/60 text-green-800`}>
-            Aktif
+            {t.tours.status.active}
           </Badge>
         );
       case "draft":
         return (
           <Badge className={`${badgeClasses} bg-yellow-500/60 text-yellow-800`}>
-            Taslak
+            {t.tours.status.draft}
           </Badge>
         );
       case "inactive":
         return (
           <Badge className={`${badgeClasses} bg-gray-500/60 text-gray-800`}>
-            Yayında Değil
+            {t.tours.status.inactive}
           </Badge>
         );
       case "cancelled":
         return (
           <Badge className={`${badgeClasses} bg-red-500/60 text-red-800`}>
-            İptal
+            {t.tours.status.cancelled}
           </Badge>
         );
       default:
@@ -62,14 +67,34 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
 
   const getDuration = () => {
     if (tour.tourDates && tour.tourDates.length > 0) {
-      return tour.tourDates[0].durationText || "Tam Gün";
+      return tour.tourDates[0].durationText || t.tours.durationType.fullDay;
     }
-    return "Tam Gün";
+    return t.tours.durationType.fullDay;
   };
 
   const getDifficulty = () => {
     // This would typically come from tour data
-    return "Orta";
+    return t.tours.difficultyLevel.medium;
+  };
+
+  // Helper function to get label for rental duration type
+  const getRentalDurationLabel = (type?: string | RentalDurationType): string => {
+    switch (type) {
+      case RentalDurationType.HOURLY:
+      case "HOURLY":
+        return t.tours.durationType.hourly;
+      case RentalDurationType.HALF_DAY:
+      case "HALF_DAY":
+        return t.tours.durationType.halfDay;
+      case RentalDurationType.FULL_DAY:
+      case "FULL_DAY":
+        return t.tours.durationType.fullDay;
+      case RentalDurationType.MULTI_DAY:
+      case "MULTI_DAY":
+        return t.tours.durationType.multiDay;
+      default:
+        return t.tours.info.notSpecified;
+    }
   };
 
   const getNextAvailableDate = () => {
@@ -83,11 +108,11 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
 
       if (availableDates.length > 0) {
         return new Date(availableDates[0].startDate).toLocaleDateString(
-          "tr-TR"
+          language === 'tr' ? 'tr-TR' : 'en-US'
         );
       }
     }
-    return "Tarih belirtilmemiş";
+    return t.tours.info.dateNotSpecified;
   };
 
   return (
@@ -95,16 +120,16 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
       {/* Quick Info Grid */}
       <GlassCard className="bg-white/40 backdrop-blur-sm border border-white/20 p-6">
         <h2 className="text-2xl font-semibold mb-6 font-montserrat text-[#2c3e50]">
-          Tur Bilgileri
+          {t.tours.info.title}
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Duration */}
           <div className="flex flex-col items-center p-4 bg-gradient-to-b from-white/30 to-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:shadow-lg transition-all duration-300 group">
             <div className="bg-[#3498db]/20 p-3 rounded-full mb-3 group-hover:bg-[#3498db]/30 transition-colors duration-300">
               <Clock className="h-6 w-6 text-[#3498db]" />
             </div>
-            <span className="text-sm text-gray-600 font-roboto">Süre</span>
+            <span className="text-sm text-gray-600 font-roboto">{t.tours.info.duration}</span>
             <span className="font-semibold text-[#2c3e50] font-montserrat">
               {getDuration()}
             </span>
@@ -115,9 +140,9 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
             <div className="bg-[#3498db]/20 p-3 rounded-full mb-3 group-hover:bg-[#3498db]/30 transition-colors duration-300">
               <Users className="h-6 w-6 text-[#3498db]" />
             </div>
-            <span className="text-sm text-gray-600 font-roboto">Kapasite</span>
+            <span className="text-sm text-gray-600 font-roboto">{t.tours.info.capacity}</span>
             <span className="font-semibold text-[#2c3e50] font-montserrat">
-              {tour.capacity} kişi
+              {tour.capacity} {t.common.person}
             </span>
           </div>
 
@@ -126,7 +151,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
             <div className="bg-[#3498db]/20 p-3 rounded-full mb-3 group-hover:bg-[#3498db]/30 transition-colors duration-300">
               <Award className="h-6 w-6 text-[#3498db]" />
             </div>
-            <span className="text-sm text-gray-600 font-roboto">Zorluk</span>
+            <span className="text-sm text-gray-600 font-roboto">{t.tours.info.difficulty}</span>
             <span className="font-semibold text-[#2c3e50] font-montserrat">
               {getDifficulty()}
             </span>
@@ -137,9 +162,20 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
             <div className="bg-[#3498db]/20 p-3 rounded-full mb-3 group-hover:bg-[#3498db]/30 transition-colors duration-300">
               <Star className="h-6 w-6 text-[#3498db]" />
             </div>
-            <span className="text-sm text-gray-600 font-roboto">Puan</span>
+            <span className="text-sm text-gray-600 font-roboto">{t.tours.info.rating}</span>
             <span className="font-semibold text-[#2c3e50] font-montserrat">
               {typeof tour.rating === "number" ? tour.rating.toFixed(1) : "N/A"}
+            </span>
+          </div>
+
+          {/* Rental Duration Type */}
+          <div className="flex flex-col items-center p-4 bg-gradient-to-b from-white/30 to-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:shadow-lg transition-all duration-300 group">
+            <div className="bg-[#3498db]/20 p-3 rounded-full mb-3 group-hover:bg-[#3498db]/30 transition-colors duration-300">
+              <Timer className="h-6 w-6 text-[#3498db]" />
+            </div>
+            <span className="text-sm text-gray-600 font-roboto">{t.tours.info.tourType}</span>
+            <span className="font-semibold text-[#2c3e50] font-montserrat text-center">
+              {getRentalDurationLabel(tour.rentalDurationType)}
             </span>
           </div>
         </div>
@@ -149,7 +185,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
       <GlassCard className="bg-white/40 backdrop-blur-sm border border-white/20 p-6">
         <h2 className="text-2xl font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
           <Info className="h-6 w-6 text-[#3498db]" />
-          Tur Hakkında
+          {t.tours.info.about}
         </h2>
 
         {/* Short Description */}
@@ -180,12 +216,12 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
               {isDescriptionExpanded ? (
                 <>
                   <ChevronUp className="w-4 h-4 mr-2 transition-transform group-hover:-translate-y-0.5" />
-                  Daha Az Göster
+                  {t.tours.info.showLess}
                 </>
               ) : (
                 <>
                   <ChevronDown className="w-4 h-4 mr-2 transition-transform group-hover:translate-y-0.5" />
-                  Daha Fazla Göster
+                  {t.tours.info.showMore}
                 </>
               )}
             </Button>
@@ -197,7 +233,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
       <GlassCard className="bg-white/40 backdrop-blur-sm border border-white/20 p-6">
         <h2 className="text-2xl font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
           <MapPin className="h-6 w-6 text-[#3498db]" />
-          Konum ve Detaylar
+          {t.tours.info.locationDetails}
         </h2>
 
         <div className="space-y-4">
@@ -205,7 +241,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
             <MapPin className="h-5 w-5 text-[#3498db]" />
             <div>
               <span className="text-sm text-gray-600 font-roboto">
-                Başlangıç Noktası
+                {t.tours.info.startPoint}
               </span>
               <div className="font-semibold text-[#2c3e50] font-montserrat">
                 {tour.location}
@@ -217,7 +253,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
             <Calendar className="h-5 w-5 text-[#3498db]" />
             <div>
               <span className="text-sm text-gray-600 font-roboto">
-                Sonraki Müsait Tarih
+                {t.tours.info.nextAvailableDate}
               </span>
               <div className="font-semibold text-[#2c3e50] font-montserrat">
                 {getNextAvailableDate()}
@@ -228,7 +264,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
           <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-lg border border-white/20">
             <Shield className="h-5 w-5 text-[#3498db]" />
             <div>
-              <span className="text-sm text-gray-600 font-roboto">Durum</span>
+              <span className="text-sm text-gray-600 font-roboto">{t.tours.info.status}</span>
               <div className="font-semibold text-[#2c3e50] font-montserrat">
                 {getStatusBadge(tour.status)}
               </div>
@@ -241,7 +277,7 @@ const TourInfoSection: React.FC<TourInfoSectionProps> = ({ tour }) => {
           typeof tour.longitude === "number" && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-3 font-montserrat text-[#2c3e50]">
-                Harita
+                {t.tours.info.map}
               </h3>
               <div className="rounded-xl overflow-hidden border border-white/20 shadow-lg">
                 <iframe

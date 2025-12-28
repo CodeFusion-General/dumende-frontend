@@ -14,6 +14,7 @@ import {
   Settings,
   Shield,
   LogOut,
+  Globe,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,8 +29,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserType } from "@/types/auth.types";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 /**
  * AdminPanelSidebar - Kapsamlı admin paneli için navigasyon sidebar'ı
@@ -41,6 +50,8 @@ const AdminPanelSidebar = () => {
   const location = useLocation();
   const { state } = useSidebar();
   const { logout, user } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const t = translations[language];
   const isCollapsed = state === "collapsed";
 
   // Güvenlik kontrolü - sadece admin kullanıcılar bu sidebar'ı görebilir
@@ -50,62 +61,62 @@ const AdminPanelSidebar = () => {
 
   const menuItems = [
     {
-      label: "Dashboard",
+      label: t.admin.sidebar.dashboard,
       icon: <LayoutDashboard size={20} />,
       path: "/adminPanel",
     },
     {
-      label: "Kullanıcı Yönetimi",
+      label: t.admin.sidebar.userManagement,
       icon: <Users size={20} />,
       path: "/adminPanel/users",
     },
     {
-      label: "Tekne Yönetimi",
+      label: t.admin.sidebar.boatManagement,
       icon: <Ship size={20} />,
       path: "/adminPanel/boats",
     },
     {
-      label: "Tur Yönetimi",
+      label: t.admin.sidebar.tourManagement,
       icon: <Map size={20} />,
       path: "/adminPanel/tours",
     },
     {
-      label: "Rezervasyon Yönetimi",
+      label: t.admin.sidebar.bookingManagement,
       icon: <ClipboardList size={20} />,
       path: "/adminPanel/bookings",
     },
     {
-      label: "Ödeme Yönetimi",
+      label: t.admin.sidebar.paymentManagement,
       icon: <CreditCard size={20} />,
       path: "/adminPanel/payments",
     },
     {
-      label: "Belge Yönetimi",
+      label: t.admin.sidebar.documentManagement,
       icon: <FileText size={20} />,
       path: "/adminPanel/documents",
     },
     {
-      label: "Mesaj Yönetimi",
+      label: t.admin.sidebar.messageManagement,
       icon: <MessageSquare size={20} />,
       path: "/adminPanel/messages",
     },
     {
-      label: "Kaptan Başvuruları",
+      label: t.admin.sidebar.captainApplications,
       icon: <UserCheck size={20} />,
       path: "/adminPanel/captain-applications",
     },
     {
-      label: "Raporlar",
+      label: t.admin.sidebar.reports,
       icon: <BarChart3 size={20} />,
       path: "/adminPanel/reports",
     },
     {
-      label: "Sistem Yönetimi",
+      label: t.admin.sidebar.systemManagement,
       icon: <Settings size={20} />,
       path: "/adminPanel/system",
     },
     {
-      label: "Güvenlik",
+      label: t.admin.sidebar.security,
       icon: <Shield size={20} />,
       path: "/adminPanel/security",
     },
@@ -196,31 +207,85 @@ const AdminPanelSidebar = () => {
           </ul>
         </nav>
 
-        {/* Logout Button */}
-        <div className={`mt-auto ${isCollapsed ? "px-1 pb-2" : "px-2 pb-4"}`}>
+        {/* Language Switcher & Logout */}
+        <div className={`mt-auto ${isCollapsed ? "px-1 pb-2" : "px-2 pb-4"} space-y-1`}>
+          {/* Language Switcher */}
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex justify-center items-center p-2 rounded-md transition-colors text-gray-300 hover:bg-gray-700 hover:text-white w-full">
+                      <Globe size={20} />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" className="bg-[#1e293b] border-gray-700">
+                      <DropdownMenuItem
+                        onClick={() => setLanguage("tr")}
+                        className={`cursor-pointer ${language === "tr" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                      >
+                        🇹🇷 Türkçe
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setLanguage("en")}
+                        className={`cursor-pointer ${language === "en" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                      >
+                        🇬🇧 English
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t.admin.sidebar.language}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center px-3 py-2.5 rounded-md transition-colors text-gray-300 hover:bg-gray-700 hover:text-white w-full text-left">
+                <span className="mr-3 flex-shrink-0">
+                  <Globe size={20} />
+                </span>
+                <span className="text-left">{language === "tr" ? "Türkçe" : "English"}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" className="bg-[#1e293b] border-gray-700">
+                <DropdownMenuItem
+                  onClick={() => setLanguage("tr")}
+                  className={`cursor-pointer ${language === "tr" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                >
+                  🇹🇷 Türkçe
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLanguage("en")}
+                  className={`cursor-pointer ${language === "en" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                >
+                  🇬🇧 English
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Logout Button */}
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleLogout}
                   className="flex justify-center items-center p-2 rounded-md transition-colors text-gray-300 hover:bg-red-600 hover:text-white w-full"
-                  aria-label="Çıkış Yap"
+                  aria-label={t.admin.sidebar.logout}
                 >
                   <LogOut size={20} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Çıkış Yap</TooltipContent>
+              <TooltipContent side="right">{t.admin.sidebar.logout}</TooltipContent>
             </Tooltip>
           ) : (
             <button
               onClick={handleLogout}
               className="flex items-center px-3 py-2.5 rounded-md transition-colors text-gray-300 hover:bg-red-600 hover:text-white w-full text-left"
-              aria-label="Çıkış Yap"
+              aria-label={t.admin.sidebar.logout}
             >
               <span className="mr-3 flex-shrink-0">
                 <LogOut size={20} />
               </span>
-              <span className="text-left">Çıkış Yap</span>
+              <span className="text-left">{t.admin.sidebar.logout}</span>
             </button>
           )}
         </div>

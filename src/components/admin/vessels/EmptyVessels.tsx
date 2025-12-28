@@ -2,12 +2,17 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Sailboat, Plus, Anchor, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface EmptyVesselsProps {
   onAddClick: () => void;
 }
 
 const EmptyVessels: React.FC<EmptyVesselsProps> = ({ onAddClick }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   return (
     <div className="relative">
       {/* Main Empty State Container */}
@@ -31,29 +36,29 @@ const EmptyVessels: React.FC<EmptyVesselsProps> = ({ onAddClick }) => {
         {/* Content */}
         <div className="space-y-4 mb-8 max-w-lg">
           <h3 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
-            İlk Taşıtınızı Ekleyin
+            {t.admin.emptyVessels.title}
           </h3>
           <p className="text-gray-600 leading-relaxed text-lg">
-            Teknelerinizi ekleyerek müşterilerinizin kolayca rezervasyon yapmasını sağlayın ve işinizi büyütün.
+            {t.admin.emptyVessels.description}
           </p>
           
           {/* Feature List */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 text-sm">
             <div className="flex items-center gap-2 text-gray-600">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>Kolay rezervasyon sistemi</span>
+              <span>{t.admin.emptyVessels.features.easyBooking}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>Otomatik fiyatlandırma</span>
+              <span>{t.admin.emptyVessels.features.autoPricing}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>Müşteri yönetimi</span>
+              <span>{t.admin.emptyVessels.features.customerManagement}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span>Gelir takibi</span>
+              <span>{t.admin.emptyVessels.features.incomeTracking}</span>
             </div>
           </div>
         </div>
@@ -63,8 +68,8 @@ const EmptyVessels: React.FC<EmptyVesselsProps> = ({ onAddClick }) => {
           onClick={onAddClick}
           className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 px-8 py-3 text-lg font-semibold group"
         >
-          <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" /> 
-          İlk Taşıtımı Ekle
+          <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-300" />
+          {t.admin.emptyVessels.addButton}
           <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
         </Button>
       </div>

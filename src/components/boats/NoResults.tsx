@@ -35,38 +35,26 @@ const NoResults: React.FC<NoResultsProps> = ({
     if (searchQuery) {
       return {
         icon: <Search className="w-20 h-20 text-white/40 animate-float" />,
-        title:
-          language === "tr"
-            ? `"${searchQuery}" için sonuç bulunamadı`
-            : `No results found for "${searchQuery}"`,
-        description:
-          language === "tr"
-            ? "Arama teriminizi değiştirmeyi veya filtreleri temizlemeyi deneyin."
-            : "Try changing your search term or clearing the filters.",
-        buttonText: language === "tr" ? "Aramayı Temizle" : "Clear Search",
+        title: `"${searchQuery}" ${t.boats.noResults.noResultsFor}`,
+        description: t.boats.noResults.searchDescription,
+        buttonText: t.boats.noResults.clearSearch,
       };
     }
 
     if (hasActiveFilters) {
       return {
         icon: <Filter className="w-20 h-20 text-white/40 animate-float" />,
-        title: t.pages.boats.noResults,
-        description:
-          language === "tr"
-            ? "Seçili filtrelerle eşleşen tekne bulunamadı. Filtreleri genişletmeyi deneyin."
-            : "No boats match your selected filters. Try broadening your criteria.",
-        buttonText: t.pages.boats.filters.clearFilters,
+        title: t.boats.noResults.title,
+        description: t.boats.noResults.filterDescription,
+        buttonText: t.boats.noResults.clearFilters,
       };
     }
 
     return {
       icon: <Compass className="w-20 h-20 text-white/40 animate-float" />,
-      title: language === "tr" ? "Henüz tekne yok" : "No boats available",
-      description:
-        language === "tr"
-          ? "Şu anda mevcut tekne bulunmuyor. Lütfen daha sonra tekrar kontrol edin."
-          : "There are no boats available at the moment. Please check back later.",
-      buttonText: language === "tr" ? "Yenile" : "Refresh",
+      title: t.boats.noResults.noBoatsAvailable,
+      description: t.boats.noResults.noBoatsAvailableDescription,
+      buttonText: t.boats.noResults.refresh,
     };
   };
 
@@ -156,29 +144,20 @@ const NoResults: React.FC<NoResultsProps> = ({
         >
           <div className="glass-card bg-white/5 backdrop-blur-lg rounded-2xl p-6 max-w-lg mx-auto border border-white/10">
             <h4 className="text-white/90 font-semibold mb-4">
-              {language === "tr" ? "Arama önerileri:" : "Search suggestions:"}
+              {t.boats.noResults.searchSuggestions}
             </h4>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="text-white/70">
-                •{" "}
-                {language === "tr"
-                  ? "Daha genel terimler kullanın"
-                  : "Use more general terms"}
+                • {t.boats.noResults.suggestionsList.useGeneralTerms}
               </div>
               <div className="text-white/70">
-                •{" "}
-                {language === "tr"
-                  ? "Yazım hatalarını kontrol edin"
-                  : "Check for typos"}
+                • {t.boats.noResults.suggestionsList.checkTypos}
               </div>
               <div className="text-white/70">
-                • {language === "tr" ? "Filtreleri azaltın" : "Reduce filters"}
+                • {t.boats.noResults.suggestionsList.reduceFilters}
               </div>
               <div className="text-white/70">
-                •{" "}
-                {language === "tr"
-                  ? "Farklı lokasyon deneyin"
-                  : "Try different location"}
+                • {t.boats.noResults.suggestionsList.tryDifferentLocation}
               </div>
             </div>
           </div>

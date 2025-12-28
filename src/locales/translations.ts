@@ -104,7 +104,8 @@ export const translations = {
       rememberMe: "Beni Hatırla",
       agreeTerms: "Kullanım koşullarını kabul ediyorum",
       privacyPolicy: "Gizlilik Politikası",
-      termsOfService: "Kullanım Koşulları"
+      termsOfService: "Kullanım Koşulları",
+      language: "Dil"
     },
 
     // Hero Section
@@ -513,6 +514,7 @@ export const translations = {
       },
       booking: {
         title: "Rezervasyon Yap",
+        bookThisBoat: "Bu tekneyi rezerve et",
         checkIn: "Giriş Tarihi",
         checkOut: "Çıkış Tarihi",
         guests: "Misafir Sayısı",
@@ -524,7 +526,85 @@ export const translations = {
         submit: "Rezervasyon Yap",
         processing: "İşleniyor...",
         success: "Rezervasyon başarıyla oluşturuldu",
-        error: "Rezervasyon yapılırken bir hata oluştu"
+        error: "Rezervasyon yapılırken bir hata oluştu",
+        // Button texts
+        loginRequired: "Giriş Yapın",
+        customerAccessOnly: "Sadece Müşteri Erişimi",
+        noAvailability: "Müsait Değil",
+        bookNow: "Rezervasyon Yap",
+        // Form fields
+        hourly: "Saatlik",
+        daily: "Günlük",
+        date: "Tarih",
+        selectDate: "Tarih seçin",
+        startTime: "Başlangıç Saati",
+        selectTime: "Saat seçin",
+        duration: "Süre",
+        selectDuration: "Süre seçin",
+        numberOfGuests: "Misafir Sayısı",
+        selectGuests: "Misafir seçin",
+        hours: "saat",
+        hour: "saat",
+        day: "gün",
+        days: "gün",
+        guest: "misafir",
+        guestPlural: "misafir",
+        perHour: "/saat",
+        perDay: "/gün",
+        // Service section
+        extraServices: "Ek Hizmetler",
+        selectService: "Hizmet Seç",
+        selectedServices: "Seçilen Hizmetler",
+        serviceTotal: "Hizmet Toplamı",
+        selectYourExtras: "Ekstralarınızı Seçiniz",
+        cancel: "İptal",
+        completeSelection: "Seçimi Tamamla",
+        services: "hizmet",
+        // Price summary
+        additionalServices: "Ek hizmetler",
+        totalAmount: "Toplam tutar",
+        onlinePrePayment: "Online ön ödeme tutarı",
+        amountOnBoat: "Teknede ödenecek tutar",
+        priceNote: "*Gerçek fiyat rezervasyon sırasında hesaplanacaktır",
+        notChargedYet: "Henüz ücretlendirilmeyeceksiniz",
+        loading: "Yükleniyor...",
+        messageCaptain: "Kaptana Mesaj At",
+        // Payment modal
+        redirectingToPayment: "Ödeme Sayfasına Yönlendiriliyorsunuz",
+        bookingSuccessfullyCreated: "Rezervasyon Başarıyla Oluşturuldu!",
+        bookingId: "Rezervasyon ID",
+        totalAmountLabel: "Toplam Tutar",
+        payNowDeposit: "Şimdi Ödenecek (Depozito)",
+        payOnBoat: "Teknede Ödenecek",
+        redirectingToSecure: "Güvenli ödeme sayfasına yönlendiriliyorsunuz...",
+        preparingPaymentPage: "Ödeme sayfası hazırlanıyor...",
+        // Toast messages
+        availableDatesError: "Müsait tarihler yüklenemedi",
+        availableTimesError: "Müsait saatler yüklenemedi",
+        tryAgainLater: "Lütfen daha sonra tekrar deneyin.",
+        captainInfoError: "Kaptan bilgileri yüklenemedi",
+        messagingUnavailable: "Mesajlaşma özelliği şu anda kullanılamıyor.",
+        paymentAlreadyCompleted: "Ödeme zaten tamamlanmış",
+        paymentAlreadyCompletedDesc: "Bu rezervasyon için ödeme zaten tamamlanmış durumda.",
+        bookingCompleted: "Rezervasyon tamamlandı",
+        paymentPageError: "Ödeme sayfası yüklenemedi",
+        missingInfo: "Eksik bilgi",
+        selectDateAndTime: "Lütfen tarih ve saat seçin.",
+        notAvailable: "Müsait değil",
+        selectedDateNotAvailable: "Seçilen tarih müsait değil.",
+        selectedTimeNotAvailable: "Seçilen saat aralığı müsait değil.",
+        selectedDateOrTimeNotAvailable: "Seçilen tarih veya saat için tekne müsait değil. Lütfen başka bir tarih veya saat seçin.",
+        selectedHourlyNotAvailable: "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin.",
+        selectedDailyNotAvailable: "Seçilen tarih aralığında tekne müsait değil. Lütfen başka tarihler seçin.",
+        paymentRedirectFailedDesc: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+        bookingCreated: "Rezervasyon oluşturuldu",
+        redirectingPayment: "Ödeme sayfasına yönlendiriliyorsunuz...",
+        bookingSuccessDesc: "Rezervasyonunuz başarıyla oluşturuldu.",
+        bookingFailed: "Rezervasyon yapılamadı",
+        servicesLoadError: "Hizmetler yüklenirken bir hata oluştu.",
+        noPaymentRequiredDesc: "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
+        paymentSystemUnavailable: "Ödeme sistemi şu an kullanılamıyor. Rezervasyonlarım sayfasından ödemenizi tamamlayabilirsiniz.",
+        checkPaymentStatusFromBookings: "Rezervasyonlarım sayfasından ödeme durumunu kontrol edebilirsiniz."
       },
       noResults: {
         title: "Tekne bulunamadı",
@@ -533,7 +613,21 @@ export const translations = {
         broadenSearch: "Arama kriterlerinizi genişletin",
         checkFilters: "Filtrelerinizi kontrol edin",
         tryDifferentLocation: "Farklı bir konum deneyin",
-        clearFilters: "Filtreleri Temizle"
+        clearFilters: "Filtreleri Temizle",
+        noResultsFor: "için sonuç bulunamadı",
+        searchDescription: "Arama teriminizi değiştirmeyi veya filtreleri temizlemeyi deneyin.",
+        clearSearch: "Aramayı Temizle",
+        filterDescription: "Seçili filtrelerle eşleşen tekne bulunamadı. Filtreleri genişletmeyi deneyin.",
+        noBoatsAvailable: "Henüz tekne yok",
+        noBoatsAvailableDescription: "Şu anda mevcut tekne bulunmuyor. Lütfen daha sonra tekrar kontrol edin.",
+        refresh: "Yenile",
+        searchSuggestions: "Arama önerileri:",
+        suggestionsList: {
+          useGeneralTerms: "Daha genel terimler kullanın",
+          checkTypos: "Yazım hatalarını kontrol edin",
+          reduceFilters: "Filtreleri azaltın",
+          tryDifferentLocation: "Farklı lokasyon deneyin"
+        }
       }
     },
 
@@ -630,7 +724,7 @@ export const translations = {
       title: "Admin Paneli",
       subtitle: "Sistem yönetimi",
       menu: {
-        dashboard: "Anasayfa",
+        dashboard: "Dashboard",
         boats: "Tekneler",
         bookings: "Rezervasyonlar",
         users: "Kullanıcılar",
@@ -638,6 +732,22 @@ export const translations = {
         reviews: "Yorumlar",
         settings: "Ayarlar",
         reports: "Raporlar"
+      },
+      sidebar: {
+        dashboard: "Dashboard",
+        userManagement: "Kullanıcı Yönetimi",
+        boatManagement: "Tekne Yönetimi",
+        tourManagement: "Tur Yönetimi",
+        bookingManagement: "Rezervasyon Yönetimi",
+        paymentManagement: "Ödeme Yönetimi",
+        documentManagement: "Belge Yönetimi",
+        messageManagement: "Mesaj Yönetimi",
+        captainApplications: "Kaptan Başvuruları",
+        reports: "Raporlar",
+        systemManagement: "Sistem Yönetimi",
+        security: "Güvenlik",
+        logout: "Çıkış Yap",
+        language: "Dil"
       },
       dashboard: {
         stats: {
@@ -650,6 +760,31 @@ export const translations = {
           newUsers: "Yeni Kullanıcı",
           monthlyRevenue: "Aylık Gelir"
         }
+      },
+      emptyTours: {
+        title: "Henüz tur eklemediniz",
+        description: "Tekne turlarınızı ekleyerek müşterilerinizin hemen rezervasyon yapmasına olanak sağlayabilirsiniz.",
+        addButton: "Tur Ekle"
+      },
+      emptyVessels: {
+        title: "İlk Taşıtınızı Ekleyin",
+        description: "Teknelerinizi ekleyerek müşterilerinizin kolayca rezervasyon yapmasını sağlayın ve işinizi büyütün.",
+        addButton: "İlk Taşıtımı Ekle",
+        features: {
+          easyBooking: "Kolay rezervasyon sistemi",
+          autoPricing: "Otomatik fiyatlandırma",
+          customerManagement: "Müşteri yönetimi",
+          incomeTracking: "Gelir takibi"
+        }
+      },
+      confirmation: {
+        confirm: "Onayla",
+        cancel: "İptal",
+        processing: "İşleniyor...",
+        retrying: "Yeniden Deneniyor...",
+        retry: "Yeniden deneniyor... (Deneme {count}/3)",
+        errorOccurred: "Hata Oluştu",
+        dialogLoadError: "Dialog yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin."
       }
     },
 
@@ -666,6 +801,23 @@ export const translations = {
         reviews: "Yorumlar",
         earnings: "Kazançlar",
         settings: "Ayarlar"
+      },
+      sidebar: {
+        home: "Anasayfa",
+        vessels: "Taşıtlarım",
+        tours: "Turlarım",
+        availability: "Müsaitlik",
+        tourAvailability: "Tur Müsaitlik",
+        pendingBookings: "Bekleyen Rezervasyonlar",
+        messages: "Mesajlar",
+        finance: "Finans",
+        bookings: "Rezervasyonlar",
+        company: "Şirket",
+        profile: "Profil",
+        ratings: "Puanlarım",
+        security: "Güvenlik",
+        logout: "Çıkış Yap",
+        language: "Dil"
       },
       noAccess: {
         title: "Kaptan Değilsiniz",
@@ -751,7 +903,316 @@ export const translations = {
       forbidden: "Erişim yasak",
       somethingWentWrong: "Bir şeyler yanlış gitti",
       tryAgainLater: "Lütfen daha sonra tekrar deneyin",
-      contactSupport: "Destek ile iletişime geçin"
+      contactSupport: "Destek ile iletişime geçin",
+      notFound: {
+        title: "404",
+        heading: "Sayfa Bulunamadı",
+        description: "Aradığınız sayfa mevcut değil veya taşınmış olabilir.",
+        backHome: "Ana Sayfaya Dön"
+      },
+      unauthorizedPage: {
+        title: "Yetkisiz Erişim",
+        noPermission: "Bu sayfaya erişim yetkiniz bulunmamaktadır.",
+        adminOnly: "Admin paneline sadece yöneticiler erişebilir.",
+        loginRequired: "Bu sayfaya erişmek için giriş yapmanız ve gerekli yetkilere sahip olmanız gerekmektedir.",
+        clickHere: "buraya tıklayın",
+        login: "Giriş Yap",
+        goBack: "Geri Dön"
+      },
+      connection: "Bağlantı Hatası",
+      authentication: "Kimlik Doğrulama Hatası",
+      authorization: "Yetkilendirme Hatası",
+      validation: "Doğrulama Hatası",
+      server: "Sunucu Hatası",
+      client: "İstemci Hatası",
+      generic: "Hata",
+      developerDetails: "Geliştirici Detayları",
+      solutionSuggestions: "Çözüm Önerileri:",
+      retry: "Tekrar Dene"
+    },
+
+    // Payment
+    payment: {
+      success: {
+        title: "Ödeme Başarılı",
+        description: "Ödemeniz başarıyla tamamlandı. Rezervasyonunuz onaylandı ve kısa süre içinde e-posta ile bilgilendirileceksiniz.",
+        conversationId: "Konuşma ID",
+        myBookings: "Rezervasyonlarım",
+        homePage: "Ana Sayfa"
+      },
+      failure: {
+        title: "Ödeme Başarısız",
+        description: "Üzgünüz, ödemeniz tamamlanamadı. Lütfen aşağıdaki bilgileri kontrol ederek tekrar deneyin.",
+        error: "Hata",
+        tryAgain: "Tekrar Dene",
+        myBookings: "Rezervasyonlarım"
+      }
+    },
+
+    // Profile
+    profile: {
+      myProfile: {
+        title: "Profilim",
+        username: "Kullanıcı Adı",
+        email: "E-posta",
+        phone: "Telefon",
+        notProvided: "Belirtilmedi",
+        editProfile: "Profili Düzenle",
+        myBookings: "Rezervasyonlarım",
+        roles: {
+          admin: "Yönetici",
+          boatOwner: "Tekne Sahibi",
+          captain: "Kaptan",
+          customer: "Müşteri"
+        }
+      },
+      completion: {
+        title: "Profil Tamamlama",
+        subtitle: "Hesabınızı tamamlamak için lütfen aşağıdaki bilgileri doldurun",
+        firstName: "Ad",
+        firstNamePlaceholder: "Adınız",
+        lastName: "Soyad",
+        lastNamePlaceholder: "Soyadınız",
+        phone: "Telefon",
+        phonePlaceholder: "5XX XXX XX XX",
+        address: "Adres",
+        addressPlaceholder: "Adresiniz (Opsiyonel)",
+        submit: "Profili Tamamla",
+        submitting: "Kaydediliyor...",
+        success: "Profiliniz başarıyla güncellendi!",
+        error: "Profil güncellenirken bir hata oluştu",
+        validation: {
+          firstNameRequired: "Ad zorunludur",
+          firstNameMin: "Ad en az 2 karakter olmalıdır",
+          lastNameRequired: "Soyad zorunludur",
+          lastNameMin: "Soyad en az 2 karakter olmalıdır",
+          phoneRequired: "Telefon numarası zorunludur",
+          phoneInvalid: "Geçerli bir telefon numarası giriniz"
+        }
+      }
+    },
+
+    // Tours
+    tours: {
+      title: "Turlar",
+      subtitle: "Unutulmaz tur deneyimleri",
+      hero: {
+        save: "Kaydet",
+        share: "Paylaş",
+        perPerson: "kişi başı",
+        noPhotos: "Bu tur için fotoğraf bulunmuyor",
+        photosComingSoon: "Yakında fotoğraflar eklenecek"
+      },
+      info: {
+        title: "Tur Bilgileri",
+        duration: "Süre",
+        capacity: "Kapasite",
+        difficulty: "Zorluk",
+        rating: "Puan",
+        tourType: "Tur Tipi",
+        about: "Tur Hakkında",
+        showLess: "Daha Az Göster",
+        showMore: "Daha Fazla Göster",
+        locationDetails: "Konum ve Detaylar",
+        startPoint: "Başlangıç Noktası",
+        nextAvailableDate: "Sonraki Müsait Tarih",
+        status: "Durum",
+        map: "Harita",
+        dateNotSpecified: "Tarih belirtilmemiş",
+        notSpecified: "Belirtilmemiş"
+      },
+      card: {
+        perPerson: "kişi başı",
+        perTour: "/tur",
+        view: "İncele",
+        details: "Detaylar",
+        compare: "Karşılaştır",
+        compared: "Karşılaştırıldı",
+        comingSoon: "Yakında",
+        tourExperience: "Tur Deneyimi",
+        difficulty: "Zorluk"
+      },
+      noResults: {
+        searchNotFound: "Arama sonucu bulunamadı",
+        tourNotFound: "Tur bulunamadı",
+        searchDescription: "Farklı anahtar kelimeler deneyin.",
+        filterDescription: "Seçtiğiniz filtrelere uygun tur bulunamadı. Filtreleri değiştirmeyi deneyin.",
+        emptyDescription: "Henüz tur bulunmuyor. Daha sonra tekrar kontrol edin.",
+        clearFilters: "Filtreleri Temizle",
+        suggestions: {
+          tryDifferentLocations: "Farklı lokasyonları deneyin",
+          useGeneralKeywords: "Daha genel anahtar kelimeler kullanın"
+        }
+      },
+      booking: {
+        title: "Rezervasyon Yap",
+        tourBooking: "Tur Rezervasyonu",
+        selectDate: "Tarih seçiniz",
+        selectDateTitle: "Tarih Seçin",
+        groupSize: "Grup Büyüklüğü",
+        groupSizeExceeded: "Grup büyüklüğü kapasiteyi aşıyor",
+        selectPerson: "Kişi sayısı seçin",
+        priceDetails: "Fiyat Detayı",
+        serviceFee: "Hizmet bedeli",
+        total: "Toplam",
+        totalFor: "kişi için toplam",
+        selectedDate: "Seçilen Tarih",
+        duration: "Süre",
+        processing: "İşleniyor...",
+        confirm: "Rezervasyonu Onayla",
+        created: "Rezervasyon oluşturuldu",
+        failed: "Rezervasyon başarısız",
+        tourInfo: "Tur Bilgileri",
+        location: "Konum",
+        maxCapacity: "Maksimum Kapasite",
+        rating: "Değerlendirme",
+        status: "Durum",
+        redirectingToPayment: "Ödeme sayfasına yönlendiriliyorsunuz",
+        paymentAlreadyCompleted: "Ödeme zaten tamamlanmış",
+        paymentPageFailed: "Ödeme sayfası yüklenemedi",
+        paymentPageFailedDesc: "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın."
+      },
+      durationType: {
+        hourly: "Saatlik Tur",
+        halfDay: "Yarım Gün",
+        fullDay: "Tam Gün",
+        multiDay: "Çok Günlü"
+      },
+      difficultyLevel: {
+        easy: "Kolay",
+        medium: "Orta",
+        hard: "Zor"
+      },
+      status: {
+        active: "Aktif",
+        draft: "Taslak",
+        inactive: "Yayında Değil",
+        cancelled: "İptal"
+      },
+      refresh: "Yenile",
+      refreshed: "Turlar yenilendi",
+      refreshError: "Turlar yenilenirken bir hata oluştu",
+      compareLimit: "Karşılaştırma Limiti",
+      compareLimitMessage: "En fazla 3 turu karşılaştırabilirsiniz.",
+      notFound: "tur bulunamadı"
+    },
+
+    // Admin Dashboard Extended
+    adminDashboard: {
+      welcome: "Hoş Geldiniz, Kaptan",
+      gettingStarted: "Başlamak İçin",
+      welcomeDescription: "dümende platformuna hoş geldiniz. Teknenizi kiralamaya başlamak için aşağıdaki adımları tamamlayın.",
+      tasks: {
+        enterCompanyInfo: "Şirket bilgilerini gir",
+        completeProfile: "Profil bilgilerini tamamla",
+        addBoat: "Tekneni ekle",
+        enterPricing: "Fiyat bilgilerini gir",
+        createAvailability: "Müsaitlik takvimini oluştur"
+      },
+      completed: "Tamamlandı",
+      taskDescription: "Bu görevi tamamlamak için aşağıdaki butona tıklayın.",
+      continue: "Devam Et",
+      announcements: "Duyurular",
+      noAnnouncements: "Henüz okunmamış duyurunuz bulunmamaktadır.",
+      stats: {
+        totalBoats: "Toplam Tekne",
+        pendingBookings: "Bekleyen Rezervasyonlar",
+        monthlyBookings: "Bu Ay Rezervasyonlar",
+        totalBookings: "Toplam Rezervasyonlar",
+        monthlyRevenue: "Bu Ay Gelir"
+      }
+    },
+
+    // Admin Sidebar
+    adminSidebar: {
+      dashboard: "Dashboard",
+      userManagement: "Kullanıcı Yönetimi",
+      boatManagement: "Tekne Yönetimi",
+      tourManagement: "Tur Yönetimi",
+      bookingManagement: "Rezervasyon Yönetimi",
+      paymentManagement: "Ödeme Yönetimi"
+    },
+
+    // Admin Empty States
+    adminEmpty: {
+      tours: {
+        title: "Henüz tur eklemediniz",
+        description: "Tekne turlarınızı ekleyerek müşterilerinizin hemen rezervasyon yapmasına olanak sağlayabilirsiniz.",
+        addTour: "Tur Ekle"
+      },
+      vessels: {
+        title: "İlk Taşıtınızı Ekleyin",
+        description: "Teknelerinizi ekleyerek müşterilerinizin kolayca rezervasyon yapmasını sağlayın ve işinizi büyütün.",
+        features: {
+          easyBooking: "Kolay rezervasyon sistemi",
+          autoPricing: "Otomatik fiyatlandırma",
+          customerManagement: "Müşteri yönetimi",
+          revenueTracking: "Gelir takibi"
+        },
+        addVessel: "İlk Taşıtımı Ekle"
+      }
+    },
+
+    // Admin Confirmation Dialog
+    adminConfirmation: {
+      confirm: "Onayla",
+      cancel: "İptal",
+      retrying: "Yeniden deneniyor... (Deneme {count}/3)",
+      processing: "İşleniyor...",
+      errorTitle: "Hata Oluştu",
+      errorDescription: "Dialog yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin."
+    },
+
+    // Validation Messages
+    validation: {
+      required: "Bu alan zorunludur",
+      email: {
+        required: "E-posta zorunludur",
+        invalid: "Geçerli bir e-posta adresi giriniz"
+      },
+      password: {
+        required: "Şifre zorunludur",
+        minLength: "Şifre en az {min} karakter olmalıdır",
+        maxLength: "Şifre en fazla {max} karakter olabilir"
+      },
+      phone: {
+        required: "Telefon numarası zorunludur",
+        invalid: "Geçerli bir telefon numarası giriniz"
+      },
+      username: {
+        required: "Kullanıcı adı zorunludur",
+        minLength: "Kullanıcı adı en az {min} karakter olmalıdır",
+        maxLength: "Kullanıcı adı en fazla {max} karakter olabilir"
+      },
+      fullName: {
+        required: "Ad soyad zorunludur",
+        minLength: "Ad soyad en az {min} karakter olmalıdır",
+        maxLength: "Ad soyad en fazla {max} karakter olabilir"
+      },
+      message: {
+        required: "Mesaj zorunludur",
+        minLength: "Mesaj en az {min} karakter olmalıdır"
+      },
+      passwordsNotMatch: "Şifreler eşleşmiyor",
+      termsRequired: "Hizmet sözleşmesini kabul etmelisiniz"
+    },
+
+    // Toast Messages
+    toast: {
+      success: "Başarılı",
+      error: "Hata",
+      registrationSuccess: "Kayıt Başarılı",
+      registrationSuccessDesc: "Hesabınız oluşturuldu. Şimdi profilinizi tamamlayın.",
+      loginSuccess: "Giriş Başarılı",
+      loginSuccessDesc: "Hoş geldiniz!"
+    },
+
+    // Register Page Extended
+    registerPage: {
+      title: "Kayıt Ol",
+      serviceContract: "Kullanıcı Hizmet Sözleşmesi",
+      contractVersion: "Sözleşme Versiyonu",
+      approvalDate: "Onay Tarihi"
     }
   },
 
@@ -859,7 +1320,8 @@ export const translations = {
       rememberMe: "Remember Me",
       agreeTerms: "I agree to the terms and conditions",
       privacyPolicy: "Privacy Policy",
-      termsOfService: "Terms of Service"
+      termsOfService: "Terms of Service",
+      language: "Language"
     },
 
     // Hero Section
@@ -1268,6 +1730,7 @@ export const translations = {
       },
       booking: {
         title: "Book Now",
+        bookThisBoat: "Book this boat",
         checkIn: "Check In",
         checkOut: "Check Out",
         guests: "Guests",
@@ -1279,7 +1742,85 @@ export const translations = {
         submit: "Book Now",
         processing: "Processing...",
         success: "Booking created successfully",
-        error: "An error occurred while booking"
+        error: "An error occurred while booking",
+        // Button texts
+        loginRequired: "Login Required",
+        customerAccessOnly: "Customer Access Only",
+        noAvailability: "No Availability",
+        bookNow: "Book Now",
+        // Form fields
+        hourly: "Hourly",
+        daily: "Daily",
+        date: "Date",
+        selectDate: "Select date",
+        startTime: "Start Time",
+        selectTime: "Select time",
+        duration: "Duration",
+        selectDuration: "Select duration",
+        numberOfGuests: "Number of Guests",
+        selectGuests: "Select guests",
+        hours: "hours",
+        hour: "hour",
+        day: "day",
+        days: "days",
+        guest: "guest",
+        guestPlural: "guests",
+        perHour: "/hour",
+        perDay: "/day",
+        // Service section
+        extraServices: "Extra Services",
+        selectService: "Select Service",
+        selectedServices: "Selected Services",
+        serviceTotal: "Service Total",
+        selectYourExtras: "Select Your Extras",
+        cancel: "Cancel",
+        completeSelection: "Complete Selection",
+        services: "service(s)",
+        // Price summary
+        additionalServices: "Additional services",
+        totalAmount: "Total amount",
+        onlinePrePayment: "Online prepayment amount",
+        amountOnBoat: "Amount to be paid on boat",
+        priceNote: "*Actual price will be calculated during booking",
+        notChargedYet: "You won't be charged yet",
+        loading: "Loading...",
+        messageCaptain: "Message Captain",
+        // Payment modal
+        redirectingToPayment: "Redirecting to Payment Page",
+        bookingSuccessfullyCreated: "Booking Successfully Created!",
+        bookingId: "Booking ID",
+        totalAmountLabel: "Total Amount",
+        payNowDeposit: "To be paid now (Deposit)",
+        payOnBoat: "To be paid on boat",
+        redirectingToSecure: "Redirecting to secure payment page...",
+        preparingPaymentPage: "Preparing payment page...",
+        // Toast messages
+        availableDatesError: "Could not load available dates",
+        availableTimesError: "Could not load available times",
+        tryAgainLater: "Please try again later.",
+        captainInfoError: "Could not load captain info",
+        messagingUnavailable: "Messaging feature is currently unavailable.",
+        paymentAlreadyCompleted: "Payment already completed",
+        paymentAlreadyCompletedDesc: "Payment has already been completed for this booking.",
+        bookingCompleted: "Booking completed",
+        paymentPageError: "Could not load payment page",
+        missingInfo: "Missing information",
+        selectDateAndTime: "Please select date and time.",
+        notAvailable: "Not available",
+        selectedDateNotAvailable: "Selected date is not available.",
+        selectedTimeNotAvailable: "Selected time slot is not available.",
+        selectedDateOrTimeNotAvailable: "Selected date or time is not available. Please choose another date or time.",
+        selectedHourlyNotAvailable: "The boat is not available on the selected date. Please choose another date.",
+        selectedDailyNotAvailable: "The boat is not available in the selected date range. Please choose other dates.",
+        paymentRedirectFailedDesc: "Booking created but could not redirect to payment page. Please complete payment from My Bookings page.",
+        bookingCreated: "Booking created",
+        redirectingPayment: "Redirecting to payment page...",
+        bookingSuccessDesc: "Your booking has been successfully created.",
+        bookingFailed: "Booking failed",
+        servicesLoadError: "An error occurred while loading services.",
+        noPaymentRequiredDesc: "Booking created successfully without payment required.",
+        paymentSystemUnavailable: "Payment system is currently unavailable. You can complete your payment from My Bookings page.",
+        checkPaymentStatusFromBookings: "You can check payment status from My Bookings page."
       },
       noResults: {
         title: "No boats found",
@@ -1288,7 +1829,21 @@ export const translations = {
         broadenSearch: "Broaden your search criteria",
         checkFilters: "Check your filters",
         tryDifferentLocation: "Try a different location",
-        clearFilters: "Clear Filters"
+        clearFilters: "Clear Filters",
+        noResultsFor: "No results found for",
+        searchDescription: "Try changing your search term or clearing the filters.",
+        clearSearch: "Clear Search",
+        filterDescription: "No boats match your selected filters. Try broadening your criteria.",
+        noBoatsAvailable: "No boats available",
+        noBoatsAvailableDescription: "There are no boats available at the moment. Please check back later.",
+        refresh: "Refresh",
+        searchSuggestions: "Search suggestions:",
+        suggestionsList: {
+          useGeneralTerms: "Use more general terms",
+          checkTypos: "Check for typos",
+          reduceFilters: "Reduce filters",
+          tryDifferentLocation: "Try different location"
+        }
       }
     },
 
@@ -1394,6 +1949,22 @@ export const translations = {
         settings: "Settings",
         reports: "Reports"
       },
+      sidebar: {
+        dashboard: "Dashboard",
+        userManagement: "User Management",
+        boatManagement: "Boat Management",
+        tourManagement: "Tour Management",
+        bookingManagement: "Booking Management",
+        paymentManagement: "Payment Management",
+        documentManagement: "Document Management",
+        messageManagement: "Message Management",
+        captainApplications: "Captain Applications",
+        reports: "Reports",
+        systemManagement: "System Management",
+        security: "Security",
+        logout: "Logout",
+        language: "Language"
+      },
       dashboard: {
         stats: {
           totalBoats: "Total Boats",
@@ -1405,6 +1976,31 @@ export const translations = {
           newUsers: "New Users",
           monthlyRevenue: "Monthly Revenue"
         }
+      },
+      emptyTours: {
+        title: "You haven't added any tours yet",
+        description: "Add your boat tours to allow customers to make reservations right away.",
+        addButton: "Add Tour"
+      },
+      emptyVessels: {
+        title: "Add Your First Vessel",
+        description: "Add your boats to allow customers to easily make reservations and grow your business.",
+        addButton: "Add My First Vessel",
+        features: {
+          easyBooking: "Easy booking system",
+          autoPricing: "Automatic pricing",
+          customerManagement: "Customer management",
+          incomeTracking: "Income tracking"
+        }
+      },
+      confirmation: {
+        confirm: "Confirm",
+        cancel: "Cancel",
+        processing: "Processing...",
+        retrying: "Retrying...",
+        retry: "Retrying... (Attempt {count}/3)",
+        errorOccurred: "Error Occurred",
+        dialogLoadError: "An error occurred while loading the dialog. Please refresh the page."
       }
     },
 
@@ -1421,6 +2017,23 @@ export const translations = {
         reviews: "Reviews",
         earnings: "Earnings",
         settings: "Settings"
+      },
+      sidebar: {
+        home: "Home",
+        vessels: "My Vessels",
+        tours: "My Tours",
+        availability: "Availability",
+        tourAvailability: "Tour Availability",
+        pendingBookings: "Pending Reservations",
+        messages: "Messages",
+        finance: "Finance",
+        bookings: "Bookings",
+        company: "Company",
+        profile: "Profile",
+        ratings: "My Ratings",
+        security: "Security",
+        logout: "Logout",
+        language: "Language"
       },
       noAccess: {
         title: "You are not a Captain",
@@ -1506,7 +2119,316 @@ export const translations = {
       forbidden: "Access forbidden",
       somethingWentWrong: "Something went wrong",
       tryAgainLater: "Please try again later",
-      contactSupport: "Contact support"
+      contactSupport: "Contact support",
+      notFound: {
+        title: "404",
+        heading: "Page Not Found",
+        description: "The page you are looking for does not exist or has been moved.",
+        backHome: "Return to Home"
+      },
+      unauthorizedPage: {
+        title: "Unauthorized Access",
+        noPermission: "You do not have permission to access this page.",
+        adminOnly: "Only administrators can access the admin panel.",
+        loginRequired: "You need to log in and have the required permissions to access this page.",
+        clickHere: "click here",
+        login: "Login",
+        goBack: "Go Back"
+      },
+      connection: "Connection Error",
+      authentication: "Authentication Error",
+      authorization: "Authorization Error",
+      validation: "Validation Error",
+      server: "Server Error",
+      client: "Client Error",
+      generic: "Error",
+      developerDetails: "Developer Details",
+      solutionSuggestions: "Solution Suggestions:",
+      retry: "Retry"
+    },
+
+    // Payment
+    payment: {
+      success: {
+        title: "Payment Successful",
+        description: "Your payment has been completed successfully. Your reservation is confirmed and you will be notified via email shortly.",
+        conversationId: "Conversation ID",
+        myBookings: "My Bookings",
+        homePage: "Home Page"
+      },
+      failure: {
+        title: "Payment Failed",
+        description: "Sorry, your payment could not be completed. Please check the information below and try again.",
+        error: "Error",
+        tryAgain: "Try Again",
+        myBookings: "My Bookings"
+      }
+    },
+
+    // Profile
+    profile: {
+      myProfile: {
+        title: "My Profile",
+        username: "Username",
+        email: "Email",
+        phone: "Phone",
+        notProvided: "Not provided",
+        editProfile: "Edit Profile",
+        myBookings: "My Bookings",
+        roles: {
+          admin: "Administrator",
+          boatOwner: "Boat Owner",
+          captain: "Captain",
+          customer: "Customer"
+        }
+      },
+      completion: {
+        title: "Profile Completion",
+        subtitle: "Please fill in the following information to complete your account",
+        firstName: "First Name",
+        firstNamePlaceholder: "Your first name",
+        lastName: "Last Name",
+        lastNamePlaceholder: "Your last name",
+        phone: "Phone",
+        phonePlaceholder: "5XX XXX XX XX",
+        address: "Address",
+        addressPlaceholder: "Your address (Optional)",
+        submit: "Complete Profile",
+        submitting: "Saving...",
+        success: "Your profile has been updated successfully!",
+        error: "An error occurred while updating your profile",
+        validation: {
+          firstNameRequired: "First name is required",
+          firstNameMin: "First name must be at least 2 characters",
+          lastNameRequired: "Last name is required",
+          lastNameMin: "Last name must be at least 2 characters",
+          phoneRequired: "Phone number is required",
+          phoneInvalid: "Please enter a valid phone number"
+        }
+      }
+    },
+
+    // Tours
+    tours: {
+      title: "Tours",
+      subtitle: "Unforgettable tour experiences",
+      hero: {
+        save: "Save",
+        share: "Share",
+        perPerson: "per person",
+        noPhotos: "No photos available for this tour",
+        photosComingSoon: "Photos coming soon"
+      },
+      info: {
+        title: "Tour Information",
+        duration: "Duration",
+        capacity: "Capacity",
+        difficulty: "Difficulty",
+        rating: "Rating",
+        tourType: "Tour Type",
+        about: "About the Tour",
+        showLess: "Show Less",
+        showMore: "Show More",
+        locationDetails: "Location and Details",
+        startPoint: "Starting Point",
+        nextAvailableDate: "Next Available Date",
+        status: "Status",
+        map: "Map",
+        dateNotSpecified: "Date not specified",
+        notSpecified: "Not specified"
+      },
+      card: {
+        perPerson: "per person",
+        perTour: "/tour",
+        view: "View",
+        details: "Details",
+        compare: "Compare",
+        compared: "Compared",
+        comingSoon: "Coming Soon",
+        tourExperience: "Tour Experience",
+        difficulty: "Difficulty"
+      },
+      noResults: {
+        searchNotFound: "No search results found",
+        tourNotFound: "Tour not found",
+        searchDescription: "Try different keywords.",
+        filterDescription: "No tours found matching your filters. Try changing the filters.",
+        emptyDescription: "No tours available yet. Please check back later.",
+        clearFilters: "Clear Filters",
+        suggestions: {
+          tryDifferentLocations: "Try different locations",
+          useGeneralKeywords: "Use more general keywords"
+        }
+      },
+      booking: {
+        title: "Book Now",
+        tourBooking: "Tour Booking",
+        selectDate: "Select a date",
+        selectDateTitle: "Select Date",
+        groupSize: "Group Size",
+        groupSizeExceeded: "Group size exceeds capacity",
+        selectPerson: "Select number of people",
+        priceDetails: "Price Details",
+        serviceFee: "Service fee",
+        total: "Total",
+        totalFor: "total for people",
+        selectedDate: "Selected Date",
+        duration: "Duration",
+        processing: "Processing...",
+        confirm: "Confirm Booking",
+        created: "Booking created",
+        failed: "Booking failed",
+        tourInfo: "Tour Information",
+        location: "Location",
+        maxCapacity: "Maximum Capacity",
+        rating: "Rating",
+        status: "Status",
+        redirectingToPayment: "Redirecting to payment page",
+        paymentAlreadyCompleted: "Payment already completed",
+        paymentPageFailed: "Payment page could not be loaded",
+        paymentPageFailedDesc: "Booking was created but could not redirect to payment page. Please complete the payment from My Bookings page."
+      },
+      durationType: {
+        hourly: "Hourly Tour",
+        halfDay: "Half Day",
+        fullDay: "Full Day",
+        multiDay: "Multi Day"
+      },
+      difficultyLevel: {
+        easy: "Easy",
+        medium: "Medium",
+        hard: "Hard"
+      },
+      status: {
+        active: "Active",
+        draft: "Draft",
+        inactive: "Inactive",
+        cancelled: "Cancelled"
+      },
+      refresh: "Refresh",
+      refreshed: "Tours refreshed",
+      refreshError: "An error occurred while refreshing tours",
+      compareLimit: "Comparison Limit",
+      compareLimitMessage: "You can compare up to 3 tours.",
+      notFound: "tours found"
+    },
+
+    // Admin Dashboard Extended
+    adminDashboard: {
+      welcome: "Welcome, Captain",
+      gettingStarted: "Getting Started",
+      welcomeDescription: "Welcome to the dumende platform. Complete the following steps to start renting your boat.",
+      tasks: {
+        enterCompanyInfo: "Enter company information",
+        completeProfile: "Complete profile information",
+        addBoat: "Add your boat",
+        enterPricing: "Enter pricing information",
+        createAvailability: "Create availability calendar"
+      },
+      completed: "Completed",
+      taskDescription: "Click the button below to complete this task.",
+      continue: "Continue",
+      announcements: "Announcements",
+      noAnnouncements: "No unread announcements.",
+      stats: {
+        totalBoats: "Total Boats",
+        pendingBookings: "Pending Bookings",
+        monthlyBookings: "Monthly Bookings",
+        totalBookings: "Total Bookings",
+        monthlyRevenue: "Monthly Revenue"
+      }
+    },
+
+    // Admin Sidebar
+    adminSidebar: {
+      dashboard: "Dashboard",
+      userManagement: "User Management",
+      boatManagement: "Boat Management",
+      tourManagement: "Tour Management",
+      bookingManagement: "Booking Management",
+      paymentManagement: "Payment Management"
+    },
+
+    // Admin Empty States
+    adminEmpty: {
+      tours: {
+        title: "No tours added yet",
+        description: "Add your boat tours to allow customers to make reservations right away.",
+        addTour: "Add Tour"
+      },
+      vessels: {
+        title: "Add Your First Vessel",
+        description: "Add your boats to help customers easily make reservations and grow your business.",
+        features: {
+          easyBooking: "Easy booking system",
+          autoPricing: "Automatic pricing",
+          customerManagement: "Customer management",
+          revenueTracking: "Revenue tracking"
+        },
+        addVessel: "Add My First Vessel"
+      }
+    },
+
+    // Admin Confirmation Dialog
+    adminConfirmation: {
+      confirm: "Confirm",
+      cancel: "Cancel",
+      retrying: "Retrying... (Attempt {count}/3)",
+      processing: "Processing...",
+      errorTitle: "Error Occurred",
+      errorDescription: "An error occurred while loading the dialog. Please refresh the page."
+    },
+
+    // Validation Messages
+    validation: {
+      required: "This field is required",
+      email: {
+        required: "Email is required",
+        invalid: "Please enter a valid email address"
+      },
+      password: {
+        required: "Password is required",
+        minLength: "Password must be at least {min} characters",
+        maxLength: "Password cannot exceed {max} characters"
+      },
+      phone: {
+        required: "Phone number is required",
+        invalid: "Please enter a valid phone number"
+      },
+      username: {
+        required: "Username is required",
+        minLength: "Username must be at least {min} characters",
+        maxLength: "Username cannot exceed {max} characters"
+      },
+      fullName: {
+        required: "Full name is required",
+        minLength: "Full name must be at least {min} characters",
+        maxLength: "Full name cannot exceed {max} characters"
+      },
+      message: {
+        required: "Message is required",
+        minLength: "Message must be at least {min} characters"
+      },
+      passwordsNotMatch: "Passwords do not match",
+      termsRequired: "You must accept the service agreement"
+    },
+
+    // Toast Messages
+    toast: {
+      success: "Success",
+      error: "Error",
+      registrationSuccess: "Registration Successful",
+      registrationSuccessDesc: "Your account has been created. Please complete your profile.",
+      loginSuccess: "Login Successful",
+      loginSuccessDesc: "Welcome!"
+    },
+
+    // Register Page Extended
+    registerPage: {
+      title: "Register",
+      serviceContract: "User Service Agreement",
+      contractVersion: "Contract Version",
+      approvalDate: "Approval Date"
     }
   }
 } as const;

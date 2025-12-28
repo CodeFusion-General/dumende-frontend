@@ -14,6 +14,8 @@ import {
   ErrorType,
   getErrorRecoverySuggestions,
 } from "@/utils/errorHandling";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface ErrorDisplayProps {
   error: AppError | Error | string;
@@ -34,6 +36,9 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   className = "",
   variant = "default",
 }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
   // Parse error to AppError format
   const appError: AppError = React.useMemo(() => {
     if (typeof error === "string") {
@@ -123,7 +128,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
             className="h-6 px-2 text-xs"
           >
             <RefreshCw className="h-3 w-3 mr-1" />
-            Tekrar Dene
+            {t.errors.retry}
           </Button>
         )}
       </div>
@@ -156,7 +161,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
               <h4 className={`font-medium ${getErrorColor()}`}>
-                {getErrorTypeTitle(appError.type)}
+                {getErrorTypeTitle(appError.type, t)}
               </h4>
               <p className="text-sm text-gray-700 mt-1">
                 {appError.userMessage || appError.message}
@@ -179,7 +184,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
           {showDetails && process.env.NODE_ENV === "development" && (
             <details className="mt-3">
               <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
-                Geliştirici Detayları
+                {t.errors.developerDetails}
               </summary>
               <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono text-gray-600 overflow-auto max-h-32">
                 <div>
@@ -211,7 +216,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
               <div className="flex items-center gap-1 mb-2">
                 <Info className="h-4 w-4 text-gray-500" />
                 <span className="text-xs font-medium text-gray-600">
-                  Çözüm Önerileri:
+                  {t.errors.solutionSuggestions}
                 </span>
               </div>
               <ul className="text-xs text-gray-600 space-y-1">
@@ -234,7 +239,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Tekrar Dene
+                {t.errors.retry}
               </Button>
             </div>
           )}
@@ -244,21 +249,21 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   );
 };
 
-function getErrorTypeTitle(type: ErrorType): string {
+function getErrorTypeTitle(type: ErrorType, t: typeof translations.tr): string {
   switch (type) {
     case ErrorType.NETWORK:
-      return "Bağlantı Hatası";
+      return t.errors.connection;
     case ErrorType.AUTHENTICATION:
-      return "Kimlik Doğrulama Hatası";
+      return t.errors.authentication;
     case ErrorType.AUTHORIZATION:
-      return "Yetkilendirme Hatası";
+      return t.errors.authorization;
     case ErrorType.VALIDATION:
-      return "Doğrulama Hatası";
+      return t.errors.validation;
     case ErrorType.SERVER:
-      return "Sunucu Hatası";
+      return t.errors.server;
     case ErrorType.CLIENT:
-      return "İstemci Hatası";
+      return t.errors.client;
     default:
-      return "Hata";
+      return t.errors.generic;
   }
 }

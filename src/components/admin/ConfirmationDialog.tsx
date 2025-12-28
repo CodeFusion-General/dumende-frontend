@@ -14,6 +14,8 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { useRetry } from "@/hooks/useRetry";
 import { parseApiError, AppError } from "@/utils/errorHandling";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -33,11 +35,18 @@ const ConfirmationDialogContent: React.FC<ConfirmationDialogProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Onayla",
-  cancelText = "İptal",
+  confirmText,
+  cancelText,
   variant = "default",
   loading = false,
 }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
+
+  // Use provided text or fall back to translations
+  const actualConfirmText = confirmText || t.admin.confirmation.confirm;
+  const actualCancelText = cancelText || t.admin.confirmation.cancel;
+
   const [apiError, setApiError] = useState<AppError | null>(null);
 
   const {
@@ -109,7 +118,7 @@ const ConfirmationDialogContent: React.FC<ConfirmationDialogProps> = ({
           <div className="px-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-700">
-                Yeniden deneniyor... (Deneme {retryCount}/3)
+                {t.admin.confirmation.retry.replace("{count}", retryCount.toString())}
               </p>
             </div>
           </div>
@@ -117,7 +126,7 @@ const ConfirmationDialogContent: React.FC<ConfirmationDialogProps> = ({
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose} disabled={isProcessing}>
-            {cancelText}
+            {actualCancelText}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
@@ -128,11 +137,11 @@ const ConfirmationDialogContent: React.FC<ConfirmationDialogProps> = ({
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {retryCount > 0
-                  ? `Yeniden Deneniyor... (${retryCount}/3)`
-                  : "İşleniyor..."}
+                  ? t.admin.confirmation.retry.replace("{count}", retryCount.toString())
+                  : t.admin.confirmation.processing}
               </>
             ) : (
-              confirmText
+              actualConfirmText
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

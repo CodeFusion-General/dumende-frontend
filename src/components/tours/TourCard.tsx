@@ -10,6 +10,8 @@ import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
 import { useQueryClient } from "@tanstack/react-query";
 import { tourService } from "@/services/tourService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface TourCardProps {
   tour: TourDTO;
@@ -42,21 +44,21 @@ const getTourImageUrl = (tour: TourDTO): string => {
   return getDefaultImageUrl();
 };
 
-// Helper function to get Turkish label for rental duration type
-const getRentalDurationLabel = (type?: string | RentalDurationType): string | null => {
+// Helper function to get translated label for rental duration type
+const getRentalDurationLabel = (type: string | RentalDurationType | undefined, t: typeof translations.tr): string | null => {
   switch (type) {
     case RentalDurationType.HOURLY:
     case "HOURLY":
-      return "Saatlik Tur";
+      return t.tours.durationType.hourly;
     case RentalDurationType.HALF_DAY:
     case "HALF_DAY":
-      return "Yarım Gün";
+      return t.tours.durationType.halfDay;
     case RentalDurationType.FULL_DAY:
     case "FULL_DAY":
-      return "Tam Gün";
+      return t.tours.durationType.fullDay;
     case RentalDurationType.MULTI_DAY:
     case "MULTI_DAY":
-      return "Çok Günlü";
+      return t.tours.durationType.multiDay;
     default:
       return null;
   }
@@ -99,6 +101,8 @@ const TourCardGrid: React.FC<{
   const { isMobile, isTouch } = useViewport();
   const { getTouchTargetProps } = useTouchTarget();
   const queryClient = useQueryClient();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     const url = getTourImageUrl(tour);
@@ -193,7 +197,7 @@ const TourCardGrid: React.FC<{
               className={`absolute bottom-3 sm:bottom-4 right-3 sm:right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 font-montserrat font-medium ${getCompareButtonStyles()}`}
               {...getTouchTargetProps(44)}
             >
-              {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
+              {isCompared ? t.tours.card.compared : t.tours.card.compare}
             </button>
           </VisualFeedback>
         )}
@@ -202,11 +206,11 @@ const TourCardGrid: React.FC<{
       {/* Content Section with enhanced styling - Flexible height */}
       <div className="p-4 sm:p-5 md:p-6 bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm flex-1 flex flex-col">
         {/* Rental Duration Type Label */}
-        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType) && (
+        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType, t) && (
           <div className="mb-2 sm:mb-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
               <Clock className="h-3 w-3 mr-1" />
-              {getRentalDurationLabel(tour.rentalDurationType)}
+              {getRentalDurationLabel(tour.rentalDurationType, t)}
             </span>
           </div>
         )}
@@ -243,7 +247,7 @@ const TourCardGrid: React.FC<{
             )} font-roboto`}
           >
             <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-[#3498db]" />
-            <span>{tour.capacity} kişi</span>
+            <span>{tour.capacity} {t.common.person}</span>
           </div>
           <div
             className={`flex items-center text-xs sm:text-sm ${getTextColor(
@@ -252,7 +256,7 @@ const TourCardGrid: React.FC<{
           >
             <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-[#3498db]" />
             <span>
-              {nextDate ? nextDate.toLocaleDateString("tr-TR") : "Yakında"}
+              {nextDate ? nextDate.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US') : t.tours.card.comingSoon}
             </span>
           </div>
         </div>
@@ -274,7 +278,7 @@ const TourCardGrid: React.FC<{
             <span
               className={`text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${getBadgeStyles()} whitespace-nowrap`}
             >
-              Tur Deneyimi
+              {t.tours.card.tourExperience}
             </span>
           </div>
         </div>
@@ -283,14 +287,14 @@ const TourCardGrid: React.FC<{
         <div className="flex justify-between items-center mt-auto pt-3 sm:pt-4 border-t border-white/10">
           <div>
             <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent font-montserrat">
-              {Number(tour.price).toLocaleString("tr-TR")} ₺
+              {Number(tour.price).toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')} {t.common.currency}
             </span>
             <span
               className={`text-xs sm:text-sm ${getTextColor(
                 "60"
               )} ml-1 font-roboto`}
             >
-              /tur
+              {t.tours.card.perTour}
             </span>
           </div>
           <Link to={`/tours/${tour.id}`} onMouseEnter={prefetchTour} onFocus={prefetchTour}>
@@ -298,7 +302,7 @@ const TourCardGrid: React.FC<{
               className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-4 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat"
               {...getTouchTargetProps(44)}
             >
-              İncele
+              {t.tours.card.view}
             </Button>
           </Link>
         </div>
@@ -317,6 +321,8 @@ const TourCardList: React.FC<{
   const { isMobile, isTouch } = useViewport();
   const { getTouchTargetProps } = useTouchTarget();
   const queryClient = useQueryClient();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   useEffect(() => {
     const url = getTourImageUrl(tour);
@@ -409,7 +415,7 @@ const TourCardList: React.FC<{
               className={`absolute bottom-3 sm:bottom-4 right-3 sm:right-4 text-xs py-2 px-3 rounded-full backdrop-blur-sm transition-all duration-300 ${getCompareButtonStyles()}`}
               {...getTouchTargetProps(44)}
             >
-              {isCompared ? "Karşılaştırıldı" : "Karşılaştır"}
+              {isCompared ? t.tours.card.compared : t.tours.card.compare}
             </button>
           </VisualFeedback>
         )}
@@ -418,11 +424,11 @@ const TourCardList: React.FC<{
       {/* Content Section with enhanced styling */}
       <div className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col bg-gradient-to-b from-white/20 to-white/40 backdrop-blur-sm">
         {/* Rental Duration Type Label */}
-        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType) && (
+        {tour.rentalDurationType && getRentalDurationLabel(tour.rentalDurationType, t) && (
           <div className="mb-2 sm:mb-3">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
               <Clock className="h-3 w-3 mr-1" />
-              {getRentalDurationLabel(tour.rentalDurationType)}
+              {getRentalDurationLabel(tour.rentalDurationType, t)}
             </span>
           </div>
         )}
@@ -460,7 +466,7 @@ const TourCardList: React.FC<{
             )} font-roboto`}
           >
             <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-[#3498db]" />
-            <span>{tour.capacity} Kişi</span>
+            <span>{tour.capacity} {t.common.person}</span>
           </div>
           <div
             className={`flex items-center text-xs sm:text-sm ${getTextColor(
@@ -469,7 +475,7 @@ const TourCardList: React.FC<{
           >
             <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 text-[#3498db]" />
             <span>
-              {nextDate ? nextDate.toLocaleDateString("tr-TR") : "Yakında"}
+              {nextDate ? nextDate.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US') : t.tours.card.comingSoon}
             </span>
           </div>
           {tour.tourDates &&
@@ -490,7 +496,7 @@ const TourCardList: React.FC<{
           <span
             className={`text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${getBadgeStyles()}`}
           >
-            Tur Deneyimi
+            {t.tours.card.tourExperience}
           </span>
           {/* Add more tour-specific features here if available */}
         </div>
@@ -498,12 +504,12 @@ const TourCardList: React.FC<{
         <div className="flex justify-between items-center mt-2">
           <div>
             <span className="font-bold text-lg sm:text-xl bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent font-montserrat">
-              {Number(tour.price).toLocaleString("tr-TR")} ₺
+              {Number(tour.price).toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')} {t.common.currency}
             </span>
             <span
               className={`text-xs sm:text-sm ${getTextColor("60")} font-roboto`}
             >
-              /tur
+              {t.tours.card.perTour}
             </span>
           </div>
           <div className="flex space-x-1 sm:space-x-2">
@@ -512,7 +518,7 @@ const TourCardList: React.FC<{
                 className="bg-white/60 text-[#2c3e50] border border-white/30 hover:bg-white/80 font-medium px-3 sm:px-4 py-2 text-sm sm:text-base rounded-xl transition-all duration-300 font-montserrat"
                 {...getTouchTargetProps(44)}
               >
-                Detaylar
+                {t.tours.card.details}
               </Button>
             </Link>
             <Link to={`/tours/${tour.id}`} onMouseEnter={prefetchTour} onFocus={prefetchTour}>
@@ -520,7 +526,7 @@ const TourCardList: React.FC<{
                 className="bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-3 sm:px-4 py-2 text-sm sm:text-base rounded-xl transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-montserrat"
                 {...getTouchTargetProps(44)}
               >
-                İncele
+                {t.tours.card.view}
               </Button>
             </Link>
           </div>

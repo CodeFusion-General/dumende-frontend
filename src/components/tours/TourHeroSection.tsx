@@ -12,12 +12,15 @@ import {
   Clock,
   Star,
   Calendar,
+  Timer,
 } from "lucide-react";
-import { TourDTO } from "@/types/tour.types";
+import { TourDTO, RentalDurationType } from "@/types/tour.types";
 import { getFullImageUrl } from "@/lib/imageUtils";
 import { useSwipeGestures } from "@/hooks/useMobileGestures";
 import { useViewport } from "@/hooks/useResponsiveAnimations";
 import { useTouchTarget } from "@/hooks/useMobileGestures";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface TourHeroSectionProps {
   tour: TourDTO;
@@ -33,6 +36,8 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { isMobile } = useViewport();
   const { getTouchTargetProps } = useTouchTarget();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   // Process tour images
   const validImages =
@@ -83,15 +88,35 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
   // Get tour duration from first available date
   const getDuration = () => {
     if (tour.tourDates && tour.tourDates.length > 0) {
-      return tour.tourDates[0].durationText || "Tam Gün";
+      return tour.tourDates[0].durationText || t.tours.durationType.fullDay;
     }
-    return "Tam Gün";
+    return t.tours.durationType.fullDay;
   };
 
   // Get difficulty level (placeholder - would come from tour data)
   const getDifficulty = () => {
     // This would typically come from tour data
-    return "Orta";
+    return t.tours.difficultyLevel.medium;
+  };
+
+  // Helper function to get label for rental duration type
+  const getRentalDurationLabel = (type?: string | RentalDurationType): string | null => {
+    switch (type) {
+      case RentalDurationType.HOURLY:
+      case "HOURLY":
+        return t.tours.durationType.hourly;
+      case RentalDurationType.HALF_DAY:
+      case "HALF_DAY":
+        return t.tours.durationType.halfDay;
+      case RentalDurationType.FULL_DAY:
+      case "FULL_DAY":
+        return t.tours.durationType.fullDay;
+      case RentalDurationType.MULTI_DAY:
+      case "MULTI_DAY":
+        return t.tours.durationType.multiDay;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -116,7 +141,7 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
                 onClick={onSave}
               >
                 <Heart className="h-4 w-4 mr-2" />
-                Kaydet
+                {t.tours.hero.save}
               </Button>
               <Button
                 variant="outline"
@@ -125,7 +150,7 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
                 onClick={onShare}
               >
                 <Share2 className="h-4 w-4 mr-2" />
-                Paylaş
+                {t.tours.hero.share}
               </Button>
             </div>
 
@@ -170,6 +195,12 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
                               <Calendar className="h-4 w-4" />
                               <span className="font-roboto">Zorluk: {getDifficulty()}</span>
                             </div>
+                            {getRentalDurationLabel(tour.rentalDurationType) && (
+                              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full border border-white/30">
+                                <Timer className="h-4 w-4" />
+                                <span className="font-roboto">{getRentalDurationLabel(tour.rentalDurationType)}</span>
+                              </div>
+                            )}
                             {typeof tour.rating === "number" && (
                               <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full border border-white/30">
                                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -182,9 +213,9 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
                         {/* Price Section */}
                         <div className="text-right">
                           <div className="text-3xl font-bold text-white mb-2 font-montserrat bg-gradient-to-r from-white to-white/80 bg-clip-text">
-                            {Number(tour.price).toLocaleString("tr-TR")} ₺
+                            {Number(tour.price).toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')} {t.common.currency}
                           </div>
-                          <div className="text-white/80 font-roboto">kişi başı</div>
+                          <div className="text-white/80 font-roboto">{t.tours.hero.perPerson}</div>
                         </div>
                       </div>
                     </div>
@@ -227,8 +258,8 @@ const TourHeroSection: React.FC<TourHeroSectionProps> = ({
                       <div className="w-24 h-24 bg-gradient-to-br from-[#3498db]/20 to-[#2c3e50]/20 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Camera className="h-12 w-12 text-[#3498db]" />
                       </div>
-                      <p className="text-gray-600 text-lg font-medium">Bu tur için fotoğraf bulunmuyor</p>
-                      <p className="text-gray-400 text-sm mt-2">Yakında fotoğraflar eklenecek</p>
+                      <p className="text-gray-600 text-lg font-medium">{t.tours.hero.noPhotos}</p>
+                      <p className="text-gray-400 text-sm mt-2">{t.tours.hero.photosComingSoon}</p>
                     </div>
                   </div>
                 )}

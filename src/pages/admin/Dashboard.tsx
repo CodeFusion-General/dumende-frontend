@@ -7,9 +7,13 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { bookingHelperService } from "@/services/bookingService";
 import { BookingStatistics } from "@/types/booking.types";
 import { boatService } from "@/services/boatService";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
   // TODO: Replace with actual logged-in user ID
   const ownerId = 2; // Ahmet Yılmaz (test data)
 
@@ -21,26 +25,26 @@ const Dashboard = () => {
   const onboardingTasks = [
     {
       id: 1,
-      title: "Şirket bilgilerini gir",
+      title: t.adminDashboard.tasks.enterCompanyInfo,
       completed: false,
       path: "/admin/company",
     },
     {
       id: 2,
-      title: "Profil bilgilerini tamamla",
+      title: t.adminDashboard.tasks.completeProfile,
       completed: false,
       path: "/admin/profile",
     },
-    { id: 3, title: "Tekneni ekle", completed: false, path: "/admin/vessels" },
+    { id: 3, title: t.adminDashboard.tasks.addBoat, completed: false, path: "/admin/vessels" },
     {
       id: 4,
-      title: "Fiyat bilgilerini gir",
+      title: t.adminDashboard.tasks.enterPricing,
       completed: false,
       path: "/admin/pricing",
     },
     {
       id: 5,
-      title: "Müsaitlik takvimini oluştur",
+      title: t.adminDashboard.tasks.createAvailability,
       completed: false,
       path: "/admin/availability",
     },
@@ -75,19 +79,18 @@ const Dashboard = () => {
       <CaptainLayout>
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Hoş Geldiniz, Kaptan</h1>
+            <h1 className="text-2xl font-bold">{t.adminDashboard.welcome}</h1>
             <p className="text-gray-500">
-              Son Giriş: {new Date().toLocaleDateString("tr-TR")}
+              {new Date().toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US')}
             </p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
             <h2 className="text-xl font-semibold mb-4 text-[#2c3e50]">
-              Başlamak İçin
+              {t.adminDashboard.gettingStarted}
             </h2>
             <p className="text-gray-600 mb-6">
-              dümende platformuna hoş geldiniz. Teknenizi kiralamaya başlamak
-              için aşağıdaki adımları tamamlayın.
+              {t.adminDashboard.welcomeDescription}
             </p>
 
             <div className="space-y-4">
@@ -113,15 +116,15 @@ const Dashboard = () => {
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
                       {task.completed
-                        ? "Tamamlandı"
-                        : "Bu görevi tamamlamak için aşağıdaki butona tıklayın."}
+                        ? t.adminDashboard.completed
+                        : t.adminDashboard.taskDescription}
                     </p>
                     {!task.completed && (
                       <Button
                         className="mt-2 bg-[#15847c] hover:bg-[#0e5c56] shadow-sm"
                         onClick={() => navigate(task.path)}
                       >
-                        Devam Et
+                        {t.adminDashboard.continue}
                       </Button>
                     )}
                   </div>
@@ -133,55 +136,55 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
               <h2 className="text-xl font-semibold mb-4 text-[#2c3e50]">
-                Duyurular
+                {t.adminDashboard.announcements}
               </h2>
               <p className="text-gray-600">
-                Henüz okunmamış duyurunuz bulunmamaktadır.
+                {t.adminDashboard.noAnnouncements}
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
               <h2 className="text-xl font-semibold mb-4 text-[#2c3e50]">
-                İstatistikler
+                {t.admin.dashboard.stats.totalBoats}
               </h2>
 
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-[#15847c]" />
-                  <span className="ml-2 text-gray-500">Yükleniyor...</span>
+                  <span className="ml-2 text-gray-500">{t.common.loading}</span>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
-                    <span className="text-gray-600">Toplam Tekne</span>
+                    <span className="text-gray-600">{t.adminDashboard.stats.totalBoats}</span>
                     <span className="font-medium bg-gray-100 px-3 py-1 rounded-full text-[#15847c]">
                       {boatCount}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
                     <span className="text-gray-600">
-                      Bekleyen Rezervasyonlar
+                      {t.adminDashboard.stats.pendingBookings}
                     </span>
                     <span className="font-medium bg-yellow-100 px-3 py-1 rounded-full text-yellow-700">
                       {stats?.pendingBookings || 0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
-                    <span className="text-gray-600">Bu Ay Rezervasyonlar</span>
+                    <span className="text-gray-600">{t.adminDashboard.stats.monthlyBookings}</span>
                     <span className="font-medium bg-blue-100 px-3 py-1 rounded-full text-blue-700">
                       {stats?.thisMonthBookings || 0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
-                    <span className="text-gray-600">Toplam Rezervasyonlar</span>
+                    <span className="text-gray-600">{t.adminDashboard.stats.totalBookings}</span>
                     <span className="font-medium bg-green-100 px-3 py-1 rounded-full text-green-700">
                       {stats?.totalBookings || 0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded transition-colors">
-                    <span className="text-gray-600">Bu Ay Gelir</span>
+                    <span className="text-gray-600">{t.adminDashboard.stats.monthlyRevenue}</span>
                     <span className="font-medium bg-emerald-100 px-3 py-1 rounded-full text-emerald-700">
-                      {stats?.thisMonthRevenue?.toLocaleString("tr-TR") || 0} ₺
+                      {stats?.thisMonthRevenue?.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US') || 0} {t.common.currency}
                     </span>
                   </div>
                 </div>

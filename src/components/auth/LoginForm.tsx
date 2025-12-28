@@ -91,7 +91,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </svg>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          Hesabınıza giriş yapın
+          {t.auth.login.subtitle}
         </h1>
       </div>
 
@@ -107,12 +107,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             htmlFor="emailOrUsername"
             className="text-sm font-medium text-gray-700"
           >
-            E-posta veya Kullanıcı Adı
+            {t.auth.login.emailOrUsername}
           </Label>
           <Input
             id="emailOrUsername"
             type="text"
-            placeholder="E-posta adresiniz veya kullanıcı adınız"
+            placeholder={t.auth.login.emailOrUsername}
             disabled={isSubmitting || isLoading}
             className="h-12 px-4 rounded-xl border-gray-200 focus:border-primary focus:ring-primary"
             {...register("emailOrUsername")}
@@ -129,13 +129,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             htmlFor="password"
             className="text-sm font-medium text-gray-700"
           >
-            Şifre
+            {t.auth.login.password}
           </Label>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Şifreniz"
+              placeholder={t.auth.login.password}
               disabled={isSubmitting || isLoading}
               className="h-12 px-4 pr-12 rounded-xl border-gray-200 focus:border-primary focus:ring-primary"
               {...register("password")}
@@ -170,14 +170,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               {...register("rememberMe")}
             />
             <Label htmlFor="rememberMe" className="text-sm text-gray-600">
-              Beni hatırla
+              {t.auth.login.rememberMe}
             </Label>
           </div>
           <Button
             variant="link"
             className="p-0 h-auto text-sm text-primary hover:text-primary/80"
           >
-            Şifremi unuttum
+            {t.auth.login.forgotPassword}
           </Button>
         </div>
 
@@ -189,22 +189,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {isSubmitting || isLoading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Giriş yapılıyor...
+              {t.common.loading}
             </>
           ) : (
-            "Giriş Yap"
+            t.auth.login.loginButton
           )}
         </Button>
       </form>
 
       <div className="text-center text-sm">
-        <span className="text-gray-600">Henüz hesabınız yok mu? </span>
+        <span className="text-gray-600">{t.auth.login.noAccount} </span>
         <Button
           variant="link"
           className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
           onClick={onSwitchToRegister}
         >
-          Hesap Oluştur
+          {t.auth.login.registerLink}
         </Button>
       </div>
     </div>

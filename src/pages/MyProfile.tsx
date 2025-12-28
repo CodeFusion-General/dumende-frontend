@@ -5,10 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const MyProfile: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   if (!user) {
     return null;
@@ -16,10 +20,12 @@ const MyProfile: React.FC = () => {
 
   const roleText =
     user.role === "ADMIN"
-      ? "Yönetici"
+      ? t.profile.myProfile.roles.admin
       : user.role === "BOAT_OWNER"
-      ? "Tekne Sahibi"
-      : "Müşteri";
+      ? t.profile.myProfile.roles.boatOwner
+      : user.role === "CAPTAIN"
+      ? t.profile.myProfile.roles.captain
+      : t.profile.myProfile.roles.customer;
 
   const targetId = user.accountId ?? user.id;
 
@@ -52,16 +58,16 @@ const MyProfile: React.FC = () => {
           <CardContent className="grid gap-6 p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <div className="text-xs text-muted-foreground">Kullanıcı Adı</div>
+                <div className="text-xs text-muted-foreground">{t.profile.myProfile.username}</div>
                 <div className="font-medium break-all">{user.username}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">E-posta</div>
+                <div className="text-xs text-muted-foreground">{t.profile.myProfile.email}</div>
                 <div className="font-medium break-all">{user.email}</div>
               </div>
               {user.phoneNumber && (
                 <div>
-                  <div className="text-xs text-muted-foreground">Telefon</div>
+                  <div className="text-xs text-muted-foreground">{t.profile.myProfile.phone}</div>
                   <div className="font-medium">{user.phoneNumber}</div>
                 </div>
               )}
@@ -72,14 +78,14 @@ const MyProfile: React.FC = () => {
                 className="sm:w-auto"
                 onClick={() => navigate(`/profile-completion/${targetId}`)}
               >
-                Profili Düzenle
+                {t.profile.myProfile.editProfile}
               </Button>
               <Button
                 variant="outline"
                 className="sm:w-auto"
                 onClick={() => navigate("/my-bookings")}
               >
-                Rezervasyonlarım
+                {t.profile.myProfile.myBookings}
               </Button>
             </div>
           </CardContent>

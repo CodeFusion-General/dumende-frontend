@@ -1,6 +1,8 @@
 import React from "react";
 import { Search, MapPin, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface NoTourResultsProps {
   onReset: () => void;
@@ -13,6 +15,8 @@ const NoTourResults: React.FC<NoTourResultsProps> = ({
   searchQuery,
   hasActiveFilters,
 }) => {
+  const { language } = useLanguage();
+  const t = translations[language];
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-200/50 shadow-sm text-center max-w-md">
@@ -21,15 +25,15 @@ const NoTourResults: React.FC<NoTourResultsProps> = ({
         </div>
 
         <h3 className="text-xl font-semibold text-gray-800 mb-3 font-montserrat">
-          {searchQuery ? "Arama sonucu bulunamadı" : "Tur bulunamadı"}
+          {searchQuery ? t.tours.noResults.searchNotFound : t.tours.noResults.tourNotFound}
         </h3>
 
         <p className="text-gray-600 mb-6 font-roboto">
           {searchQuery
-            ? `"${searchQuery}" için tur bulunamadı. Farklı anahtar kelimeler deneyin.`
+            ? `"${searchQuery}" ${t.tours.noResults.searchDescription}`
             : hasActiveFilters
-            ? "Seçtiğiniz filtrelere uygun tur bulunamadı. Filtreleri değiştirmeyi deneyin."
-            : "Henüz tur bulunmuyor. Daha sonra tekrar kontrol edin."}
+            ? t.tours.noResults.filterDescription
+            : t.tours.noResults.emptyDescription}
         </p>
 
         <div className="space-y-3">
@@ -39,18 +43,18 @@ const NoTourResults: React.FC<NoTourResultsProps> = ({
               className="w-full bg-gradient-to-r from-[#3498db] to-[#2c3e50] text-white hover:from-[#2c3e50] hover:to-[#3498db] font-medium px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg font-montserrat"
             >
               <Filter className="w-4 h-4 mr-2" />
-              Filtreleri Temizle
+              {t.tours.noResults.clearFilters}
             </Button>
           )}
 
           <div className="flex flex-col space-y-2 text-sm text-gray-500 font-roboto">
             <div className="flex items-center justify-center space-x-2">
               <MapPin className="w-4 h-4" />
-              <span>Farklı lokasyonları deneyin</span>
+              <span>{t.tours.noResults.suggestions.tryDifferentLocations}</span>
             </div>
             <div className="flex items-center justify-center space-x-2">
               <Search className="w-4 h-4" />
-              <span>Daha genel anahtar kelimeler kullanın</span>
+              <span>{t.tours.noResults.suggestions.useGeneralKeywords}</span>
             </div>
           </div>
         </div>

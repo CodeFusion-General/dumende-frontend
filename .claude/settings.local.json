@@ -21,7 +21,8 @@
       "Bash(export VITE_API_BASE_URL=https://dumenden-backend-pliz2d45kq-ew.a.run.app/api)",
       "Bash(grep:*)",
       "Bash(npm run dev:*)",
-      "Bash(npm run preview:*)"
+      "Bash(npm run preview:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

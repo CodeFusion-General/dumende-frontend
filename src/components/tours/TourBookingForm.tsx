@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { paymentService } from "@/services/paymentService";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 interface TourBookingFormProps {
   tour: TourDTO;
@@ -40,6 +42,8 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
   className,
 }) => {
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [groupSize, setGroupSize] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
@@ -68,12 +72,12 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
 
   const handleCreateBooking = async () => {
     if (!selectedDate) {
-      toast({ title: "Tarih seçiniz", variant: "destructive" });
+      toast({ title: t.tours.booking.selectDate, variant: "destructive" });
       return;
     }
     if (groupSize > maxGuests) {
       toast({
-        title: "Grup büyüklüğü kapasiteyi aşıyor",
+        title: t.tours.booking.groupSizeExceeded,
         variant: "destructive",
       });
       return;
@@ -126,7 +130,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
         passengerCount: groupSize,
       };
       const created: BookingDTO = await bookingService.createBooking(command);
-      toast({ title: "Rezervasyon oluşturuldu" });
+      toast({ title: t.tours.booking.created });
       setIsFormOpen(false); // Close mobile form on success
 
       // Ödeme sayfasına yönlendirme (BookingForm akışına benzer)
@@ -134,11 +138,11 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
         const paymentInfo = await paymentService.getPaymentStatus(created.id);
 
         if (paymentInfo.paymentRequired && paymentInfo.paymentUrl) {
-          toast({ title: "Ödeme sayfasına yönlendiriliyorsunuz" });
+          toast({ title: t.tours.booking.redirectingToPayment });
           // Backend'in döndürdüğü URL'i doğrudan kullan
           paymentService.redirectToPayment(paymentInfo.paymentUrl);
         } else if (paymentInfo.paymentCompleted) {
-          toast({ title: "Ödeme zaten tamamlanmış" });
+          toast({ title: t.tours.booking.paymentAlreadyCompleted });
           navigate("/my-bookings");
         } else {
           // Ödeme gerekmiyorsa rezervasyonlar sayfasına yönlendir
@@ -147,9 +151,8 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
       } catch (err) {
         console.error("Payment redirect failed:", err);
         toast({
-          title: "Ödeme sayfası yüklenemedi",
-          description:
-            "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+          title: t.tours.booking.paymentPageFailed,
+          description: t.tours.booking.paymentPageFailedDesc,
           variant: "destructive",
         });
         // Yine de rezervasyonlar sayfasına yönlendir
@@ -157,7 +160,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
       }
     } catch (e) {
       console.error(e);
-      toast({ title: "Rezervasyon başarısız", variant: "destructive" });
+      toast({ title: t.tours.booking.failed, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -169,10 +172,10 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
       <div className="flex justify-between items-center">
         <div className="text-left">
           <div className="font-bold text-lg text-[#2c3e50] font-montserrat bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent">
-            ₺{finalPrice.toLocaleString("tr-TR")}
+            {t.common.currency}{finalPrice.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
           </div>
           <div className="text-sm text-gray-600 font-roboto">
-            {groupSize} kişi için toplam
+            {groupSize} {t.tours.booking.totalFor}
           </div>
         </div>
 
@@ -181,7 +184,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           onClick={() => setIsFormOpen(true)}
           disabled={!selectedTourDate}
         >
-          Rezervasyon Yap
+          {t.tours.booking.title}
         </Button>
       </div>
     </div>
@@ -197,7 +200,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
     >
       <div className="flex justify-between items-center p-4 border-b border-white/20 bg-white/40 backdrop-blur-sm">
         <h2 className="font-semibold text-lg font-montserrat text-[#2c3e50]">
-          Tur Rezervasyonu
+          {t.tours.booking.tourBooking}
         </h2>
         <Button
           variant="ghost"
@@ -215,7 +218,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
               <Calendar className="h-5 w-5 text-[#3498db]" />
-              Tarih Seçin
+              {t.tours.booking.selectDateTitle}
             </h3>
             <TourAvailabilityCalendar
               tourDates={tour.tourDates || []}
@@ -231,20 +234,20 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
               <Users className="h-5 w-5 text-[#3498db]" />
-              Grup Büyüklüğü
+              {t.tours.booking.groupSize}
             </h3>
             <Select
               value={groupSize.toString()}
               onValueChange={(value) => setGroupSize(parseInt(value))}
             >
               <SelectTrigger className="w-full bg-white/60 backdrop-blur-sm border-white/30">
-                <SelectValue placeholder="Kişi sayısı seçin" />
+                <SelectValue placeholder={t.tours.booking.selectPerson} />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
                   (num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? "kişi" : "kişi"}
+                      {num} {t.common.person}
                     </SelectItem>
                   )
                 )}
@@ -256,30 +259,30 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-4">
             <h3 className="text-lg font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-[#3498db]" />
-              Fiyat Detayı
+              {t.tours.booking.priceDetails}
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-roboto">
-                  ₺{price.toLocaleString("tr-TR")} x {groupSize} kişi
+                  {t.common.currency}{price.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')} x {groupSize} {t.common.person}
                 </span>
                 <span className="font-semibold text-[#2c3e50] font-montserrat">
-                  ₺{totalPrice.toLocaleString("tr-TR")}
+                  {t.common.currency}{totalPrice.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600 font-roboto">Hizmet bedeli</span>
+                <span className="text-gray-600 font-roboto">{t.tours.booking.serviceFee}</span>
                 <span className="font-semibold text-[#2c3e50] font-montserrat">
-                  ₺{serviceFee.toLocaleString("tr-TR")}
+                  {t.common.currency}{serviceFee.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                 </span>
               </div>
               <div className="border-t border-white/20 pt-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-[#2c3e50] font-montserrat">
-                    Toplam
+                    {t.tours.booking.total}
                   </span>
                   <span className="text-xl font-bold text-[#2c3e50] font-montserrat bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent">
-                    ₺{finalPrice.toLocaleString("tr-TR")}
+                    {t.common.currency}{finalPrice.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                   </span>
                 </div>
               </div>
@@ -292,11 +295,11 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <span className="font-semibold text-[#2c3e50] font-montserrat">
-                  Seçilen Tarih
+                  {t.tours.booking.selectedDate}
                 </span>
               </div>
               <div className="text-gray-700 font-roboto">
-                {new Date(selectedTourDate.startDate).toLocaleString("tr-TR", {
+                {new Date(selectedTourDate.startDate).toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US', {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -306,7 +309,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
                 })}
               </div>
               <div className="text-sm text-gray-600 font-roboto mt-1">
-                Süre: {selectedTourDate.durationText}
+                {t.tours.booking.duration}: {selectedTourDate.durationText}
               </div>
             </div>
           )}
@@ -317,7 +320,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             onClick={handleCreateBooking}
           disabled={!selectedDate || submitting}
           >
-            {submitting ? "İşleniyor..." : "Rezervasyonu Onayla"}
+            {submitting ? t.tours.booking.processing : t.tours.booking.confirm}
           </Button>
         </div>
       </div>
@@ -331,7 +334,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
         <GlassCard className="bg-white/40 backdrop-blur-sm border border-white/20 p-6 sticky top-6 shadow-lg hover:shadow-xl transition-all duration-300">
           <h3 className="text-xl font-semibold mb-6 font-montserrat text-[#2c3e50] flex items-center gap-2">
             <Calendar className="h-5 w-5 text-[#3498db]" />
-            Rezervasyon Yap
+            {t.tours.booking.title}
           </h3>
 
           {/* Calendar */}
@@ -348,20 +351,20 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
           <div className="mb-6">
             <label className="block text-sm font-medium mb-3 text-gray-700 font-roboto flex items-center gap-2">
               <Users className="h-4 w-4 text-[#3498db]" />
-              Grup Büyüklüğü
+              {t.tours.booking.groupSize}
             </label>
             <Select
               value={groupSize.toString()}
               onValueChange={(value) => setGroupSize(parseInt(value))}
             >
               <SelectTrigger className="w-full bg-white/60 backdrop-blur-sm border-white/30 hover:bg-white/70 transition-all duration-200">
-                <SelectValue placeholder="Kişi sayısı seçin" />
+                <SelectValue placeholder={t.tours.booking.selectPerson} />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
                   (num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? "kişi" : "kişi"}
+                      {num} {t.common.person}
                     </SelectItem>
                   )
                 )}
@@ -375,11 +378,11 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4 text-[#3498db]" />
                 <span className="text-sm text-gray-600 font-roboto">
-                  Seçilen Tarih
+                  {t.tours.booking.selectedDate}
                 </span>
               </div>
               <div className="font-semibold text-[#2c3e50] font-montserrat">
-                {new Date(selectedTourDate.startDate).toLocaleString("tr-TR", {
+                {new Date(selectedTourDate.startDate).toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US', {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -389,7 +392,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
                 })}
               </div>
               <div className="text-sm text-gray-600 font-roboto mt-1">
-                Süre: {selectedTourDate.durationText}
+                {t.tours.booking.duration}: {selectedTourDate.durationText}
               </div>
             </div>
           )}
@@ -399,33 +402,33 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             <div className="flex items-center gap-2 mb-3">
               <CreditCard className="h-4 w-4 text-[#3498db]" />
               <span className="text-sm text-gray-600 font-roboto">
-                Fiyat Detayı
+                {t.tours.booking.priceDetails}
               </span>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600 font-roboto">
-                  ₺{price.toLocaleString("tr-TR")} x {groupSize} kişi
+                  {t.common.currency}{price.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')} x {groupSize} {t.common.person}
                 </span>
                 <span className="font-semibold text-[#2c3e50] font-montserrat">
-                  ₺{totalPrice.toLocaleString("tr-TR")}
+                  {t.common.currency}{totalPrice.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600 font-roboto">
-                  Hizmet bedeli
+                  {t.tours.booking.serviceFee}
                 </span>
                 <span className="font-semibold text-[#2c3e50] font-montserrat">
-                  ₺{serviceFee.toLocaleString("tr-TR")}
+                  {t.common.currency}{serviceFee.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                 </span>
               </div>
               <div className="border-t border-white/20 pt-2">
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-[#2c3e50] font-montserrat">
-                    Toplam
+                    {t.tours.booking.total}
                   </span>
                   <span className="font-bold text-xl text-[#2c3e50] font-montserrat bg-gradient-to-r from-[#3498db] to-[#2c3e50] bg-clip-text text-transparent">
-                    ₺{finalPrice.toLocaleString("tr-TR")}
+                    {t.common.currency}{finalPrice.toLocaleString(language === 'tr' ? 'tr-TR' : 'en-US')}
                   </span>
                 </div>
               </div>
@@ -441,10 +444,10 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             {submitting ? (
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                İşleniyor...
+                {t.tours.booking.processing}
               </div>
             ) : (
-              "Rezervasyon Yap"
+              t.tours.booking.title
             )}
           </Button>
         </GlassCard>
@@ -453,13 +456,13 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
         <GlassCard className="bg-white/40 backdrop-blur-sm border border-white/20 p-6 shadow-lg hover:shadow-xl transition-all duration-300">
           <h3 className="text-xl font-semibold mb-4 font-montserrat text-[#2c3e50] flex items-center gap-2">
             <MapPin className="h-5 w-5 text-[#3498db]" />
-            Tur Bilgileri
+            {t.tours.booking.tourInfo}
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/30 transition-all duration-200">
               <span className="text-gray-600 font-roboto flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Konum:
+                {t.tours.booking.location}:
               </span>
               <span className="font-semibold text-[#2c3e50] font-montserrat">
                 {tour.location}
@@ -468,17 +471,17 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             <div className="flex justify-between items-center p-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/30 transition-all duration-200">
               <span className="text-gray-600 font-roboto flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Maksimum Kapasite:
+                {t.tours.booking.maxCapacity}:
               </span>
               <span className="font-semibold text-[#2c3e50] font-montserrat">
-                {tour.capacity} kişi
+                {tour.capacity} {t.common.person}
               </span>
             </div>
             {tour.rating && (
               <div className="flex justify-between items-center p-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/30 transition-all duration-200">
                 <span className="text-gray-600 font-roboto flex items-center gap-2">
                   <Star className="h-4 w-4" />
-                  Değerlendirme:
+                  {t.tours.booking.rating}:
                 </span>
                 <span className="font-semibold text-[#2c3e50] font-montserrat flex items-center gap-1">
                   {tour.rating.toFixed(1)}
@@ -489,7 +492,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
             <div className="flex justify-between items-center p-3 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/30 transition-all duration-200">
               <span className="text-gray-600 font-roboto flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                Durum:
+                {t.tours.booking.status}:
               </span>
               <span className="font-semibold text-[#2c3e50] font-montserrat">
                 <span
@@ -499,7 +502,7 @@ const TourBookingForm: React.FC<TourBookingFormProps> = ({
                       : "bg-gray-500/20 text-gray-700 border border-gray-500/30"
                   } backdrop-blur-sm`}
                 >
-                  {tour.status === "active" ? "Aktif" : tour.status}
+                  {tour.status.toLowerCase() === "active" ? t.tours.status.active : tour.status}
                 </span>
               </span>
             </div>

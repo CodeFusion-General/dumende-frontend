@@ -49,6 +49,7 @@ import { captainService } from "@/services/captainService";
 import AvailabilityCalendar from "./AvailabilityCalendar";
 import { CalendarAvailability } from "@/types/availability.types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomerCaptainChat } from "./messaging/CustomerCaptainChat";
 import {
@@ -81,6 +82,7 @@ export function BookingForm({
 }: BookingFormProps) {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const t = translations[language];
   const { isCustomer, isAuthenticated, user } = useAuth();
   const [date, setDate] = useState<Date>();
   const [startTime, setStartTime] = useState<string>("10:00");
@@ -153,7 +155,7 @@ export function BookingForm({
 
   const boatServicesErrorMessage: string | null = isBoatServicesError
     ? ((boatServicesError as any)?.message as string) ||
-      "Hizmetler yüklenirken bir hata oluştu."
+      t.boats.booking.servicesLoadError
     : null;
 
   // Memoize date formatting to prevent unnecessary calculations
@@ -228,8 +230,8 @@ export function BookingForm({
         console.error("Failed to fetch available dates:", error);
         if (isMounted) {
           toast({
-            title: "Müsait tarihler yüklenemedi",
-            description: "Lütfen daha sonra tekrar deneyin.",
+            title: t.boats.booking.availableDatesError,
+            description: t.boats.booking.tryAgainLater,
             variant: "destructive",
           });
         }
@@ -289,8 +291,8 @@ export function BookingForm({
         console.error("Failed to fetch available time slots:", error);
         if (isMounted) {
           toast({
-            title: "Müsait saatler yüklenemedi",
-            description: "Lütfen daha sonra tekrar deneyin.",
+            title: t.boats.booking.availableTimesError,
+            description: t.boats.booking.tryAgainLater,
             variant: "destructive",
           });
           setAvailableTimeSlots([]);
@@ -350,20 +352,19 @@ export function BookingForm({
   // Helper function to get appropriate button text
   const getBookingButtonText = () => {
     if (!isAuthenticated) {
-      return "Login Required";
+      return t.boats.booking.loginRequired;
     }
     if (!isCustomer()) {
-      return "Customer Access Only";
+      return t.boats.booking.customerAccessOnly;
     }
     if (loading) {
-      return "Processing...";
+      return t.boats.booking.processing;
     }
     if (!isBookingValid()) {
-      return "No Availability";
+      return t.boats.booking.noAvailability;
     }
     // E2E testleri ve kurumsal UX için masaüstü/mobil akışta tek bir ana CTA kullanıyoruz
-    // Testler `Book Now` metnini beklediği için burada bunu döndürüyoruz.
-    return "Book Now";
+    return t.boats.booking.bookNow;
   };
 
   // Messaging functions
@@ -378,8 +379,8 @@ export function BookingForm({
     } catch (error) {
       console.error("Failed to load captain info:", error);
       toast({
-        title: "Kaptan bilgileri yüklenemedi",
-        description: "Mesajlaşma özelliği şu anda kullanılamıyor.",
+        title: t.boats.booking.captainInfoError,
+        description: t.boats.booking.messagingUnavailable,
         variant: "destructive",
       });
     } finally {
@@ -441,8 +442,8 @@ export function BookingForm({
         } else if (paymentInfo.paymentCompleted) {
           // Payment already completed
           toast({
-            title: "Ödeme zaten tamamlanmış",
-            description: "Bu rezervasyon için ödeme zaten tamamlanmış durumda.",
+            title: t.boats.booking.paymentAlreadyCompleted,
+            description: t.boats.booking.paymentAlreadyCompletedDesc,
           });
 
           // Redirect to bookings page
@@ -450,9 +451,8 @@ export function BookingForm({
         } else {
           // No payment required
           toast({
-            title: "Rezervasyon tamamlandı",
-            description:
-              "Ödeme gerektirmeyen rezervasyon başarıyla oluşturuldu.",
+            title: t.boats.booking.bookingCompleted,
+            description: t.boats.booking.noPaymentRequiredDesc,
           });
 
           // Redirect to bookings page
@@ -461,9 +461,8 @@ export function BookingForm({
       } catch (error) {
         console.error("Payment redirect failed:", error);
         toast({
-          title: "Ödeme sayfası yüklenemedi",
-          description:
-            "Rezervasyon oluşturuldu ancak ödeme sayfasına yönlendirilemedi. Lütfen rezervasyonlarım sayfasından ödemeyi tamamlayın.",
+          title: t.boats.booking.paymentPageError,
+          description: t.boats.booking.paymentRedirectFailedDesc,
           variant: "destructive",
         });
 
@@ -542,8 +541,8 @@ export function BookingForm({
   const handleBooking = async () => {
     if (!date || !startTime) {
       toast({
-        title: "Eksik bilgi",
-        description: "Lütfen tarih ve saat seçin.",
+        title: t.boats.booking.missingInfo,
+        description: t.boats.booking.selectDateAndTime,
         variant: "destructive",
       });
       return;
@@ -552,9 +551,8 @@ export function BookingForm({
     // Check if the selected date and time are available
     if (!isBookingValid()) {
       toast({
-        title: "Müsait değil",
-        description:
-          "Seçilen tarih veya saat için tekne müsait değil. Lütfen başka bir tarih veya saat seçin.",
+        title: t.boats.booking.notAvailable,
+        description: t.boats.booking.selectedDateOrTimeNotAvailable,
         variant: "destructive",
       });
       return;
@@ -604,10 +602,10 @@ export function BookingForm({
 
       if (!isAvailable) {
         toast({
-          title: "Müsait değil",
+          title: t.boats.booking.notAvailable,
           description: isHourlyMode
-            ? "Seçilen tarih için tekne müsait değil. Lütfen başka bir tarih seçin."
-            : "Seçilen tarih aralığında tekne müsait değil. Lütfen başka tarihler seçin.",
+            ? t.boats.booking.selectedHourlyNotAvailable
+            : t.boats.booking.selectedDailyNotAvailable,
           variant: "destructive",
         });
         setLoading(false);
@@ -638,7 +636,7 @@ export function BookingForm({
       if (response.status === "AWAITING_OWNER_APPROVAL") {
         // Owner approval required - don't redirect to payment yet
         toast({
-          title: "Rezervasyon oluşturuldu",
+          title: t.boats.booking.bookingCreated,
           description:
             "Tekne sahibinin onayı bekleniyor. Onay sonrası ödeme yapabileceksiniz.",
         });
@@ -658,41 +656,39 @@ export function BookingForm({
         if (status.paymentUrl) {
           // Payment URL available - redirect to payment
           toast({
-            title: "Rezervasyon oluşturuldu",
-            description: "Ödeme sayfasına yönlendiriliyorsunuz...",
+            title: t.boats.booking.bookingCreated,
+            description: t.boats.booking.redirectingPayment,
           });
 
           await handlePaymentRedirect(response.id);
         } else if (status.paymentCompleted) {
           // Payment already completed
           toast({
-            title: "Rezervasyon tamamlandı",
-            description: "Rezervasyonunuz başarıyla oluşturuldu.",
+            title: t.boats.booking.bookingCompleted,
+            description: t.boats.booking.bookingSuccessDesc,
           });
           navigate("/my-bookings");
         } else {
           // Payment system not available - redirect to my-bookings with info
           toast({
-            title: "Rezervasyon oluşturuldu",
-            description:
-              "Ödeme sistemi şu an kullanılamıyor. Rezervasyonlarım sayfasından ödemenizi tamamlayabilirsiniz.",
+            title: t.boats.booking.bookingCreated,
+            description: t.boats.booking.paymentSystemUnavailable,
           });
           navigate("/my-bookings");
         }
       } catch (e) {
         // Payment status check failed - still redirect to my-bookings
         toast({
-          title: "Rezervasyon oluşturuldu",
-          description:
-            "Rezervasyonlarım sayfasından ödeme durumunu kontrol edebilirsiniz.",
+          title: t.boats.booking.bookingCreated,
+          description: t.boats.booking.checkPaymentStatusFromBookings,
         });
         navigate("/my-bookings");
       }
     } catch (error) {
       console.error("Booking failed:", error);
       toast({
-        title: "Rezervasyon yapılamadı",
-        description: "Lütfen daha sonra tekrar deneyin.",
+        title: t.boats.booking.bookingFailed,
+        description: t.boats.booking.tryAgainLater,
         variant: "destructive",
       });
     } finally {
@@ -709,7 +705,7 @@ export function BookingForm({
             ₺{isHourlyMode ? hourlyPrice : dailyPrice}
           </span>
           <span className="text-gray-500 ml-1">
-            {isHourlyMode ? "/saat" : "/gün"}
+            {isHourlyMode ? t.boats.booking.perHour : t.boats.booking.perDay}
           </span>
         </div>
 
@@ -719,10 +715,10 @@ export function BookingForm({
           disabled={!canUserBook()}
         >
           {!isAuthenticated
-            ? "Login Required"
+            ? t.boats.booking.loginRequired
             : !isCustomer()
-            ? "Customer Access Only"
-            : "Book Now"}
+            ? t.boats.booking.customerAccessOnly
+            : t.boats.booking.bookNow}
         </Button>
       </div>
     </div>
@@ -737,7 +733,7 @@ export function BookingForm({
       )}
     >
       <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="font-semibold">Book this boat</h2>
+        <h2 className="font-semibold">{t.boats.booking.bookThisBoat}</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -757,7 +753,7 @@ export function BookingForm({
             )}
             onClick={() => setIsHourlyMode(true)}
           >
-            Hourly
+            {t.boats.booking.hourly}
           </Button>
           <Button
             variant="outline"
@@ -767,13 +763,13 @@ export function BookingForm({
             )}
             onClick={() => setIsHourlyMode(false)}
           >
-            Daily
+            {t.boats.booking.daily}
           </Button>
         </div>
         {/* Form fields - duplicate of desktop for mobile */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Date</label>
+            <label className="block text-sm font-medium mb-1">{t.boats.booking.date}</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -784,7 +780,7 @@ export function BookingForm({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : "Select date"}
+                  {date ? format(date, "PPP") : t.boats.booking.selectDate}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -803,11 +799,11 @@ export function BookingForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Start Time
+                {t.boats.booking.startTime}
               </label>
               <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder={t.boats.booking.selectTime} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   {timeSlots.map((time) => (
@@ -820,19 +816,19 @@ export function BookingForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Duration</label>
+              <label className="block text-sm font-medium mb-1">{t.boats.booking.duration}</label>
               <Select
                 value={duration.toString()}
                 onValueChange={(value) => setDuration(parseInt(value))}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder={t.boats.booking.selectDuration} />
                 </SelectTrigger>
                 <SelectContent>
                   {durationOptions.map((val) => (
                     <SelectItem key={val} value={val.toString()}>
                       {val}{" "}
-                      {isHourlyMode ? "hours" : val === 1 ? "day" : "days"}
+                      {isHourlyMode ? t.boats.booking.hours : val === 1 ? t.boats.booking.day : t.boats.booking.days}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -842,20 +838,20 @@ export function BookingForm({
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Number of Guests
+              {t.boats.booking.numberOfGuests}
             </label>
             <Select
               value={guests.toString()}
               onValueChange={(value) => setGuests(parseInt(value))}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select guests" />
+                <SelectValue placeholder={t.boats.booking.selectGuests} />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
                   (num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? "guest" : "guests"}
+                      {num} {num === 1 ? t.boats.booking.guest : t.boats.booking.guestPlural}
                     </SelectItem>
                   )
                 )}
@@ -868,7 +864,7 @@ export function BookingForm({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium">
-                  Ek Hizmetler
+                  {t.boats.booking.extraServices}
                 </label>
                 <Button
                   type="button"
@@ -878,7 +874,7 @@ export function BookingForm({
                   className="text-primary border-primary hover:bg-primary/10"
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  Hizmet Seç ({selectedServices.length})
+                  {t.boats.booking.selectService} ({selectedServices.length})
                 </Button>
               </div>
 
@@ -886,7 +882,7 @@ export function BookingForm({
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
                   <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Seçilen Hizmetler ({selectedServices.length})
+                    {t.boats.booking.selectedServices} ({selectedServices.length})
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto">
                     {selectedServices.map((selected) => {
@@ -913,7 +909,7 @@ export function BookingForm({
                     })}
                   </div>
                   <div className="border-t border-primary/20 pt-2 flex justify-between font-bold text-sm text-primary">
-                    <span>Hizmet Toplamı:</span>
+                    <span>{t.boats.booking.serviceTotal}:</span>
                     <span>₺{servicesPrice.toLocaleString()}</span>
                   </div>
                 </div>
@@ -927,18 +923,18 @@ export function BookingForm({
           <div className="flex justify-between">
             <span className="text-gray-600">
               ₺{isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
-              {isHourlyMode ? "saat" : totalUnits === 1 ? "gün" : "gün"}
+              {isHourlyMode ? t.boats.booking.hour : t.boats.booking.day}
             </span>
             <span>₺{rentalPrice.toLocaleString()}</span>
           </div>
           {servicesPrice > 0 && (
             <div className="flex justify-between">
-              <span className="text-gray-600">Ek hizmetler</span>
+              <span className="text-gray-600">{t.boats.booking.additionalServices}</span>
               <span>₺{servicesPrice.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between font-semibold pt-3 border-t">
-            <span>Toplam tutar</span>
+            <span>{t.boats.booking.totalAmount}</span>
             <span>₺{estimatedTotal.toLocaleString()}</span>
           </div>
 
@@ -946,7 +942,7 @@ export function BookingForm({
           <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
             <div className="flex justify-between text-sm">
               <span className="text-blue-700 font-medium flex items-center">
-                💳 Online ön ödeme tutarı
+                💳 {t.boats.booking.onlinePrePayment}
                 <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">
                   %20
                 </span>
@@ -956,7 +952,7 @@ export function BookingForm({
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Teknede ödenecek tutar</span>
+              <span className="text-gray-600">{t.boats.booking.amountOnBoat}</span>
               <span className="text-gray-700">
                 ₺{remainingAmount.toLocaleString()}
               </span>
@@ -964,7 +960,7 @@ export function BookingForm({
           </div>
 
           <p className="text-xs text-gray-500 text-center">
-            *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
+            {t.boats.booking.priceNote}
           </p>
         </div>
 
@@ -985,12 +981,12 @@ export function BookingForm({
             disabled={captainLoading || !captain}
           >
             <MessageCircle className="w-4 h-4 mr-2" />
-            {captainLoading ? "Loading..." : "Message Captain"}
+            {captainLoading ? t.boats.booking.loading : t.boats.booking.messageCaptain}
           </Button>
         )}
 
         <p className="text-center text-sm text-gray-500 mt-4">
-          You won't be charged yet
+          {t.boats.booking.notChargedYet}
         </p>
       </div>
     </div>
@@ -1041,7 +1037,7 @@ export function BookingForm({
 
         <CardContent className="space-y-3 sm:space-y-4 px-4 sm:px-6 py-4 sm:py-6">
           <div>
-            <label className="block text-sm font-medium mb-1">Date</label>
+            <label className="block text-sm font-medium mb-1">{t.boats.booking.date}</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -1052,7 +1048,7 @@ export function BookingForm({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : "Select date"}
+                  {date ? format(date, "PPP") : t.boats.booking.selectDate}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -1083,11 +1079,11 @@ export function BookingForm({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Start Time
+                {t.boats.booking.startTime}
               </label>
               <Select value={startTime} onValueChange={setStartTime}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder={t.boats.booking.selectTime} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   {timeSlots.map((time) => (
@@ -1100,19 +1096,19 @@ export function BookingForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Duration</label>
+              <label className="block text-sm font-medium mb-1">{t.boats.booking.duration}</label>
               <Select
                 value={duration.toString()}
                 onValueChange={(value) => setDuration(parseInt(value))}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder={t.boats.booking.selectDuration} />
                 </SelectTrigger>
                 <SelectContent>
                   {durationOptions.map((val) => (
                     <SelectItem key={val} value={val.toString()}>
                       {val}{" "}
-                      {isHourlyMode ? "hours" : val === 1 ? "day" : "days"}
+                      {isHourlyMode ? t.boats.booking.hours : val === 1 ? t.boats.booking.day : t.boats.booking.days}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1122,20 +1118,20 @@ export function BookingForm({
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Number of Guests
+              {t.boats.booking.numberOfGuests}
             </label>
             <Select
               value={guests.toString()}
               onValueChange={(value) => setGuests(parseInt(value))}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select guests" />
+                <SelectValue placeholder={t.boats.booking.selectGuests} />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: maxGuests }, (_, i) => i + 1).map(
                   (num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? "guest" : "guests"}
+                      {num} {num === 1 ? t.boats.booking.guest : t.boats.booking.guestPlural}
                     </SelectItem>
                   )
                 )}
@@ -1148,7 +1144,7 @@ export function BookingForm({
             <div className="space-y-2 sm:space-y-3 lg:space-y-2 xl:space-y-3">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium">
-                  Ek Hizmetler
+                  {t.boats.booking.extraServices}
                 </label>
                 <Button
                   type="button"
@@ -1158,7 +1154,7 @@ export function BookingForm({
                   className="text-primary border-primary hover:bg-primary/10"
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  Hizmet Seç ({selectedServices.length})
+                  {t.boats.booking.selectService} ({selectedServices.length})
                 </Button>
               </div>
 
@@ -1166,7 +1162,7 @@ export function BookingForm({
                 <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 space-y-2 border border-primary/20">
                   <div className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    Seçilen Hizmetler ({selectedServices.length})
+                    {t.boats.booking.selectedServices} ({selectedServices.length})
                   </div>
                   <div className="space-y-1 max-h-24 overflow-y-auto">
                     {selectedServices.map((selected) => {
@@ -1193,7 +1189,7 @@ export function BookingForm({
                     })}
                   </div>
                   <div className="border-t border-primary/20 pt-2 flex justify-between font-bold text-sm text-primary">
-                    <span>Hizmet Toplamı:</span>
+                    <span>{t.boats.booking.serviceTotal}:</span>
                     <span>₺{servicesPrice.toLocaleString()}</span>
                   </div>
                 </div>
@@ -1218,12 +1214,12 @@ export function BookingForm({
               disabled={captainLoading || !captain}
             >
               <MessageCircle className="w-4 h-4 mr-2" />
-              {captainLoading ? "Loading..." : "Message Captain"}
+              {captainLoading ? t.boats.booking.loading : t.boats.booking.messageCaptain}
             </Button>
           )}
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            You won't be charged yet
+            {t.boats.booking.notChargedYet}
           </p>
         </CardContent>
 
@@ -1232,18 +1228,18 @@ export function BookingForm({
             <div className="flex justify-between">
               <span className="text-gray-600">
                 ₺{isHourlyMode ? hourlyPrice : dailyPrice} × {totalUnits}{" "}
-                {isHourlyMode ? "saat" : totalUnits === 1 ? "gün" : "gün"}
+                {isHourlyMode ? t.boats.booking.hour : t.boats.booking.day}
               </span>
               <span>₺{rentalPrice.toLocaleString()}</span>
             </div>
             {servicesPrice > 0 && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Ek hizmetler</span>
+                <span className="text-gray-600">{t.boats.booking.additionalServices}</span>
                 <span>₺{servicesPrice.toLocaleString()}</span>
               </div>
             )}
             <div className="flex justify-between font-semibold pt-3 border-t">
-              <span>Toplam tutar</span>
+              <span>{t.boats.booking.totalAmount}</span>
               <span>₺{estimatedTotal.toLocaleString()}</span>
             </div>
 
@@ -1251,7 +1247,7 @@ export function BookingForm({
             <div className="bg-blue-50 rounded-lg p-3 space-y-2 border border-blue-200">
               <div className="flex justify-between text-sm">
                 <span className="text-blue-700 font-medium flex items-center">
-                  💳 Online ön ödeme tutarı
+                  💳 {t.boats.booking.onlinePrePayment}
                   <span className="ml-1 text-xs bg-blue-200 text-blue-800 px-1 rounded">
                     %20
                   </span>
@@ -1261,7 +1257,7 @@ export function BookingForm({
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Teknede ödenecek tutar</span>
+                <span className="text-gray-600">{t.boats.booking.amountOnBoat}</span>
                 <span className="text-gray-700">
                   ₺{remainingAmount.toLocaleString()}
                 </span>
@@ -1269,7 +1265,7 @@ export function BookingForm({
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-              *Gerçek fiyat rezervasyon sırasında hesaplanacaktır
+              {t.boats.booking.priceNote}
             </p>
           </div>
         </CardFooter>
@@ -1294,7 +1290,7 @@ export function BookingForm({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              💳 Ödeme Sayfasına Yönlendiriliyorsunuz
+              💳 {t.boats.booking.redirectingToPayment}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -1302,28 +1298,28 @@ export function BookingForm({
               <>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                   <h3 className="font-semibold text-green-800 mb-2">
-                    Rezervasyon Başarıyla Oluşturuldu!
+                    {t.boats.booking.bookingSuccessfullyCreated}
                   </h3>
                   <p className="text-sm text-green-700">
-                    Rezervasyon ID: #{paymentStatus.bookingId}
+                    {t.boats.booking.bookingId}: #{paymentStatus.bookingId}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Toplam Tutar:</span>
+                    <span className="text-gray-600">{t.boats.booking.totalAmountLabel}:</span>
                     <span className="font-semibold">
                       ₺{paymentStatus.totalAmount.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between text-blue-700">
-                    <span>Şimdi Ödenecek (Depozito):</span>
+                    <span>{t.boats.booking.payNowDeposit}:</span>
                     <span className="font-bold">
                       ₺{paymentStatus.depositAmount.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Teknede Ödenecek:</span>
+                    <span>{t.boats.booking.payOnBoat}:</span>
                     <span>
                       ₺{paymentStatus.remainingAmount.toLocaleString()}
                     </span>
@@ -1332,7 +1328,7 @@ export function BookingForm({
 
                 <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                   <p className="text-sm text-blue-800 text-center">
-                    ⏰ Güvenli ödeme sayfasına yönlendiriliyorsunuz...
+                    ⏰ {t.boats.booking.redirectingToSecure}
                   </p>
                 </div>
               </>
@@ -1342,7 +1338,7 @@ export function BookingForm({
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <span className="ml-3 text-gray-600">
-                  Ödeme sayfası hazırlanıyor...
+                  {t.boats.booking.preparingPaymentPage}
                 </span>
               </div>
             )}
@@ -1356,7 +1352,7 @@ export function BookingForm({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Ekstralarınızı Seçiniz
+              {t.boats.booking.selectYourExtras}
             </DialogTitle>
             <Button
               variant="ghost"
@@ -1383,13 +1379,13 @@ export function BookingForm({
               variant="outline"
               onClick={() => setShowServiceModal(false)}
             >
-              İptal
+              {t.boats.booking.cancel}
             </Button>
             <Button
               onClick={() => setShowServiceModal(false)}
               className="bg-primary hover:bg-primary/90"
             >
-              Seçimi Tamamla ({selectedServices.length} hizmet)
+              {t.boats.booking.completeSelection} ({selectedServices.length} {t.boats.booking.services})
             </Button>
           </div>
         </DialogContent>

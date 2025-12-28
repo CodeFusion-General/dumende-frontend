@@ -44,27 +44,26 @@ const Unauthorized: React.FC = () => {
             <Shield className="w-8 h-8 text-red-600" />
           </div>
           <CardTitle className="text-2xl font-bold text-gray-900">
-            {t.errors.unauthorized}
+            {t.errors.unauthorizedPage.title}
           </CardTitle>
           <CardDescription className="text-gray-600">
             {isAuthenticated && user ? (
               // Giriş yapmış ama yetkisi olmayan kullanıcı
               <>
-                Bu sayfaya erişim yetkiniz bulunmamaktadır.
+                {t.errors.unauthorizedPage.noPermission}
                 {user.role === "CUSTOMER" && (
                   <span className="block mt-2 text-sm">
-                    Admin paneline sadece yöneticiler erişebilir.
+                    {t.errors.unauthorizedPage.adminOnly}
                   </span>
                 )}
                 {user.role === "BOAT_OWNER" && (
                   <span className="block mt-2 text-sm">
-                    Admin paneline sadece yöneticiler erişebilir. Kaptan paneli
-                    için{" "}
+                    {t.errors.unauthorizedPage.adminOnly}{" "}
                     <button
                       onClick={() => navigate("/captain")}
                       className="text-blue-600 hover:underline"
                     >
-                      buraya tıklayın
+                      {t.errors.unauthorizedPage.clickHere}
                     </button>
                     .
                   </span>
@@ -72,7 +71,7 @@ const Unauthorized: React.FC = () => {
               </>
             ) : (
               // Giriş yapmamış kullanıcı
-              "Bu sayfaya erişmek için giriş yapmanız ve gerekli yetkilere sahip olmanız gerekmektedir."
+              t.errors.unauthorizedPage.loginRequired
             )}
           </CardDescription>
         </CardHeader>
@@ -81,7 +80,7 @@ const Unauthorized: React.FC = () => {
             // Giriş yapmamış kullanıcı için login butonu
             <Button onClick={handleLogin} className="w-full" variant="default">
               <Shield className="w-4 h-4 mr-2" />
-              Giriş Yap
+              {t.errors.unauthorizedPage.login}
             </Button>
           ) : (
             // Giriş yapmış ama yetkisi olmayan kullanıcı için ana sayfa butonu
@@ -93,7 +92,7 @@ const Unauthorized: React.FC = () => {
 
           <Button onClick={handleGoBack} variant="outline" className="w-full">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Geri Dön
+            {t.errors.unauthorizedPage.goBack}
           </Button>
         </CardContent>
       </Card>

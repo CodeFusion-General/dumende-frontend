@@ -16,6 +16,7 @@ import {
   Shield,
   LogOut,
   Menu,
+  Globe,
 } from "lucide-react";
 import { bookingService } from "@/services/bookingService";
 import {
@@ -31,12 +32,22 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translations } from "@/locales/translations";
 
 const CaptainSidebar = () => {
   const location = useLocation();
   const { state } = useSidebar();
   const { logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const t = translations[language];
   const isCollapsed = state === "collapsed";
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -60,54 +71,52 @@ const CaptainSidebar = () => {
 
   const menuItems = [
     {
-      label: "Anasayfa",
+      label: t.captain.sidebar.home,
       icon: <LayoutDashboard size={20} />,
       path: "/captain",
     },
-    { label: "Taşıtlarım", icon: <Ship size={20} />, path: "/captain/vessels" },
+    { label: t.captain.sidebar.vessels, icon: <Ship size={20} />, path: "/captain/vessels" },
     {
-      label: "Turlarım",
+      label: t.captain.sidebar.tours,
       icon: <Map size={20} />,
       path: "/captain/tours",
     },
     {
-      label: "Müsaitlik",
+      label: t.captain.sidebar.availability,
       icon: <Clock size={20} />,
       path: "/captain/availability",
     },
     {
-      label: "Tur Müsaitlik",
+      label: t.captain.sidebar.tourAvailability,
       icon: <Clock size={20} />,
       path: "/captain/tour-availability",
     },
     {
-      label: "Bekleyen Rezervasyonlar",
+      label: t.captain.sidebar.pendingBookings,
       icon: <ClockAlert size={20} />,
       path: "/captain/pending-approvals",
       badge: pendingCount > 0 ? pendingCount : undefined,
     },
     {
-      label: "Mesajlar",
+      label: t.captain.sidebar.messages,
       icon: <MessageSquare size={20} />,
       path: "/captain/messages",
     },
-    // Takvim ve Tur Takvimi kaldırıldı
-    // Fiyatlar kaldırıldı; Finans bölümü kullanılacak
     {
-      label: "Finans",
+      label: t.captain.sidebar.finance,
       icon: <DollarSign size={20} />,
       path: "/captain/finance",
     },
     {
-      label: "Rezervasyonlar",
+      label: t.captain.sidebar.bookings,
       icon: <ClipboardList size={20} />,
       path: "/captain/bookings",
     },
-    { label: "Şirket", icon: <Building size={20} />, path: "/captain/company" },
-    { label: "Profil", icon: <User size={20} />, path: "/captain/profile" },
-    { label: "Puanlarım", icon: <Star size={20} />, path: "/captain/ratings" },
+    { label: t.captain.sidebar.company, icon: <Building size={20} />, path: "/captain/company" },
+    { label: t.captain.sidebar.profile, icon: <User size={20} />, path: "/captain/profile" },
+    { label: t.captain.sidebar.ratings, icon: <Star size={20} />, path: "/captain/ratings" },
     {
-      label: "Güvenlik",
+      label: t.captain.sidebar.security,
       icon: <Shield size={20} />,
       path: "/captain/security",
     },
@@ -210,31 +219,85 @@ const CaptainSidebar = () => {
           </ul>
         </nav>
 
-        {/* Logout Button */}
-        <div className={`mt-auto ${isCollapsed ? "px-1 pb-2" : "px-2 pb-4"}`}>
+        {/* Language Switcher & Logout */}
+        <div className={`mt-auto ${isCollapsed ? "px-1 pb-2" : "px-2 pb-4"} space-y-1`}>
+          {/* Language Switcher */}
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex justify-center items-center p-2 rounded-md transition-colors text-gray-300 hover:bg-gray-700 hover:text-white w-full">
+                      <Globe size={20} />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" className="bg-[#2c3e50] border-gray-700">
+                      <DropdownMenuItem
+                        onClick={() => setLanguage("tr")}
+                        className={`cursor-pointer ${language === "tr" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                      >
+                        🇹🇷 Türkçe
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setLanguage("en")}
+                        className={`cursor-pointer ${language === "en" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                      >
+                        🇬🇧 English
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">{t.captain.sidebar.language}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center px-3 py-2.5 rounded-md transition-colors text-gray-300 hover:bg-gray-700 hover:text-white w-full text-left">
+                <span className="mr-3 flex-shrink-0">
+                  <Globe size={20} />
+                </span>
+                <span className="text-left">{language === "tr" ? "Türkçe" : "English"}</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" className="bg-[#2c3e50] border-gray-700">
+                <DropdownMenuItem
+                  onClick={() => setLanguage("tr")}
+                  className={`cursor-pointer ${language === "tr" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                >
+                  🇹🇷 Türkçe
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLanguage("en")}
+                  className={`cursor-pointer ${language === "en" ? "bg-[#15847c] text-white" : "text-gray-300 hover:bg-gray-700 hover:text-white"}`}
+                >
+                  🇬🇧 English
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Logout Button */}
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={handleLogout}
                   className="flex justify-center items-center p-2 rounded-md transition-colors text-gray-300 hover:bg-red-600 hover:text-white w-full"
-                  aria-label="Çıkış Yap"
+                  aria-label={t.captain.sidebar.logout}
                 >
                   <LogOut size={20} />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Çıkış Yap</TooltipContent>
+              <TooltipContent side="right">{t.captain.sidebar.logout}</TooltipContent>
             </Tooltip>
           ) : (
             <button
               onClick={handleLogout}
               className="flex items-center px-3 py-2.5 rounded-md transition-colors text-gray-300 hover:bg-red-600 hover:text-white w-full text-left"
-              aria-label="Çıkış Yap"
+              aria-label={t.captain.sidebar.logout}
             >
               <span className="mr-3 flex-shrink-0">
                 <LogOut size={20} />
               </span>
-              <span className="text-left">Çıkış Yap</span>
+              <span className="text-left">{t.captain.sidebar.logout}</span>
             </button>
           )}
         </div>
